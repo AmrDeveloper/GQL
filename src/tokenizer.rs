@@ -7,6 +7,8 @@ pub enum TokenKind {
     Offset,
 
     Equal,
+    Or,
+    And,
 
     Symbol,
     Number,
@@ -121,6 +123,42 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, String> {
                 location: location,
                 kind: TokenKind::Star,
                 literal: "*".to_owned(),
+            };
+
+            tokens.push(token);
+            position += 1;
+            continue;
+        }
+
+        // Or
+        if char == '|' {
+            let location = Location {
+                start: column_start,
+                end: position,
+            };
+
+            let token = Token {
+                location: location,
+                kind: TokenKind::Or,
+                literal: "|".to_owned(),
+            };
+
+            tokens.push(token);
+            position += 1;
+            continue;
+        }
+
+        // And
+        if char == '&' {
+            let location = Location {
+                start: column_start,
+                end: position,
+            };
+
+            let token = Token {
+                location: location,
+                kind: TokenKind::And,
+                literal: "&".to_owned(),
             };
 
             tokens.push(token);

@@ -1,4 +1,4 @@
-use crate::expression::{EqualExpression, Expression};
+use crate::expression::{BinaryExpression, EqualExpression, Expression, Operator};
 use crate::tokenizer::{Token, TokenKind};
 
 use crate::statement::{
@@ -152,14 +152,49 @@ fn parse_expression(
     let expected_value = &tokens[*position].literal;
     *position += 1;
 
-    if function != "equals" {
-        return Err("Invalid function name".to_owned());
-    }
-
     let equals_expression = EqualExpression {
         field_name: field_name.to_string(),
         expected_value: expected_value.to_string(),
     };
+
+    if *position < tokens.len()
+        && (tokens[*position].kind == TokenKind::And || tokens[*position].kind == TokenKind::Or)
+    {
+        let operator = if tokens[*position].kind == TokenKind::And {
+            Operator::And
+        } else {
+            Operator::Or
+        };
+
+        *position += 1;
+        let other_expr = parse_expression(tokens, position);
+
+        let mut binary_expression = BinaryExpression {
+            right: Box::new(equals_expression),
+            operator: operator,
+            left: other_expr.ok().unwrap(),
+        };
+
+        while *position < tokens.len()
+            && (tokens[*position].kind == TokenKind::And || tokens[*position].kind == TokenKind::Or)
+        {
+            let operator = if tokens[*position].kind == TokenKind::And {
+                Operator::And
+            } else {
+                Operator::Or
+            };
+
+            *position += 1;
+            let other_expr = parse_expression(tokens, position);
+            binary_expression = BinaryExpression {
+                right: Box::new(binary_expression),
+                operator: operator,
+                left: other_expr.ok().unwrap(),
+            }
+        }
+
+        return Ok(Box::new(binary_expression));
+    }
 
     return Ok(Box::new(equals_expression));
 }

@@ -35,6 +35,7 @@ impl Expression for BinaryExpression {
     fn evaluate(&self, object: &GQLObject) -> bool {
         let rhs = self.right.evaluate(object);
         let lhs = self.left.evaluate(object);
+
         if self.operator == Operator::And {
             return rhs && lhs;
         }
@@ -42,6 +43,7 @@ impl Expression for BinaryExpression {
         if self.operator == Operator::Or {
             return rhs || lhs;
         }
+
         return false;
     }
 }
