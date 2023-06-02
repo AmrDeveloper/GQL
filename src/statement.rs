@@ -1,3 +1,5 @@
+use std::cmp;
+
 use self::expression::Expression;
 
 #[path = "expression.rs"]
@@ -43,5 +45,15 @@ impl Statement for LimitStatement {
         if self.count <= objects.len() {
             objects.drain(self.count..objects.len());
         }
+    }
+}
+
+pub struct OffsetStatement {
+    pub count: usize,
+}
+
+impl Statement for OffsetStatement {
+    fn execute(&self, repo: &git2::Repository, objects: &mut Vec<object::GQLObject>) {
+        objects.drain(0..cmp::min(self.count, objects.len()));
     }
 }
