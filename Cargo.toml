@@ -1,8 +1,11 @@
 [package]
-name = "GQL"
+name = "gql"
+authors = ["AmrDeveloper"]
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "Git query language"
+license = "MIT"
+repository = "https://github.com/amrdeveloper/gql"
 
 [dependencies]
+git2 = "0.17.1"
