@@ -22,11 +22,12 @@ fn select_commits(repo: &git2::Repository, fields: Vec<String>) -> Vec<object::G
     let mut revwalk = repo.revwalk().unwrap();
     revwalk.push_head().unwrap();
 
+    let is_limit_fields_empty = fields.is_empty();
+
     for commit_id in revwalk {
         let commit = repo.find_commit(commit_id.unwrap()).unwrap();
 
         let mut attributes: HashMap<String, String> = HashMap::new();
-        let is_limit_fields_empty = fields.is_empty();
 
         if is_limit_fields_empty || fields.contains(&String::from("name")) {
             attributes.insert(
@@ -60,12 +61,12 @@ fn select_commits(repo: &git2::Repository, fields: Vec<String>) -> Vec<object::G
 fn select_branches(repo: &git2::Repository, fields: Vec<String>) -> Vec<object::GQLObject> {
     let mut branches: Vec<object::GQLObject> = Vec::new();
     let local_branches = repo.branches(None).unwrap();
+    let is_limit_fields_empty = fields.is_empty();
 
     for branch in local_branches {
         let (branch, _) = branch.unwrap();
 
         let mut attributes: HashMap<String, String> = HashMap::new();
-        let is_limit_fields_empty = fields.is_empty();
 
         if is_limit_fields_empty || fields.contains(&String::from("name")) {
             attributes.insert(
