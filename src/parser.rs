@@ -152,9 +152,12 @@ fn parse_expression(
     let expected_value = &tokens[*position].literal;
     *position += 1;
 
-    let equals_expression = EqualExpression {
-        field_name: field_name.to_string(),
-        expected_value: expected_value.to_string(),
+    let expression = match function.as_str() {
+        "=" => EqualExpression {
+            field_name: field_name.to_string(),
+            expected_value: expected_value.to_string(),
+        },
+        _ => return Err("Unexpected operator".to_owned()),
     };
 
     if *position < tokens.len()
@@ -170,7 +173,7 @@ fn parse_expression(
         let other_expr = parse_expression(tokens, position);
 
         let mut binary_expression = BinaryExpression {
-            right: Box::new(equals_expression),
+            right: Box::new(expression),
             operator: operator,
             left: other_expr.ok().unwrap(),
         };
@@ -196,5 +199,5 @@ fn parse_expression(
         return Ok(Box::new(binary_expression));
     }
 
-    return Ok(Box::new(equals_expression));
+    return Ok(Box::new(expression));
 }
