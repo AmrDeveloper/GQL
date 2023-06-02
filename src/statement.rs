@@ -1,16 +1,11 @@
 use std::cmp;
 
-use self::expression::Expression;
-
-#[path = "expression.rs"]
-mod expression;
-
-use crate::object;
-
 use crate::engine_function::select_gql_objects;
+use crate::expression::Expression;
+use crate::object::GQLObject;
 
 pub trait Statement {
-    fn execute(&self, repo: &git2::Repository, objects: &mut Vec<object::GQLObject>);
+    fn execute(&self, repo: &git2::Repository, objects: &mut Vec<GQLObject>);
 }
 
 pub struct SelectStatement {
@@ -19,7 +14,7 @@ pub struct SelectStatement {
 }
 
 impl Statement for SelectStatement {
-    fn execute(&self, repo: &git2::Repository, objects: &mut Vec<object::GQLObject>) {
+    fn execute(&self, repo: &git2::Repository, objects: &mut Vec<GQLObject>) {
         let elements =
             select_gql_objects(repo, self.table_name.to_string(), self.fields.to_owned());
         for element in elements {
@@ -29,11 +24,23 @@ impl Statement for SelectStatement {
 }
 
 pub struct WhereStatement {
-    pub fields: dyn Expression,
+    pub condition: Box<dyn Expression>,
 }
 
 impl Statement for WhereStatement {
-    fn execute(&self, repo: &git2::Repository, objects: &mut Vec<object::GQLObject>) {}
+    fn execute(&self, _repo: &git2::Repository, objects: &mut Vec<GQLObject>) {
+        let result: Vec<GQLObject> = objects
+            .iter()
+            .filter(|&object| self.condition.evaluate(object))
+            .cloned()
+            .collect();
+
+        objects.clear();
+
+        for object in result {
+            objects.push(object);
+        }
+    }
 }
 
 pub struct LimitStatement {
@@ -41,7 +48,7 @@ pub struct LimitStatement {
 }
 
 impl Statement for LimitStatement {
-    fn execute(&self, repo: &git2::Repository, objects: &mut Vec<object::GQLObject>) {
+    fn execute(&self, _repo: &git2::Repository, objects: &mut Vec<GQLObject>) {
         if self.count <= objects.len() {
             objects.drain(self.count..objects.len());
         }
@@ -53,7 +60,7 @@ pub struct OffsetStatement {
 }
 
 impl Statement for OffsetStatement {
-    fn execute(&self, repo: &git2::Repository, objects: &mut Vec<object::GQLObject>) {
+    fn execute(&self, _repo: &git2::Repository, objects: &mut Vec<GQLObject>) {
         objects.drain(0..cmp::min(self.count, objects.len()));
     }
 }

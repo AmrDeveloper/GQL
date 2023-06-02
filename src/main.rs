@@ -9,6 +9,7 @@ mod object;
 
 mod engine;
 mod engine_function;
+mod expression;
 mod statement;
 
 fn main() {

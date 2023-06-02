@@ -6,8 +6,11 @@ pub enum TokenKind {
     Limit,
     Offset,
 
+    Equal,
+
     Symbol,
     Number,
+    String,
 
     Star,
 
@@ -83,6 +86,30 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, String> {
             continue;
         }
 
+        if char == '"' {
+            position += 1;
+            while position < len && characters[position] != '"' {
+                position += 1;
+            }
+            position += 1;
+
+            let literal = &script[column_start + 1..position - 1];
+
+            let location = Location {
+                start: column_start,
+                end: position,
+            };
+
+            let token = Token {
+                location: location,
+                kind: TokenKind::String,
+                literal: literal.to_string(),
+            };
+
+            tokens.push(token);
+            continue;
+        }
+
         // Star
         if char == '*' {
             let location = Location {
@@ -112,6 +139,24 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, String> {
                 location: location,
                 kind: TokenKind::Comma,
                 literal: ",".to_owned(),
+            };
+
+            tokens.push(token);
+            position += 1;
+            continue;
+        }
+
+        // Equal
+        if char == '=' {
+            let location = Location {
+                start: column_start,
+                end: position,
+            };
+
+            let token = Token {
+                location: location,
+                kind: TokenKind::Equal,
+                literal: "=".to_owned(),
             };
 
             tokens.push(token);

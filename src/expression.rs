@@ -1,8 +1,7 @@
-#[path = "object.rs"]
-mod object;
+use crate::object::GQLObject;
 
 pub trait Expression {
-    fn evaluate(&self, object: &object::GQLObject) -> bool;
+    fn evaluate(&self, object: &GQLObject) -> bool;
 }
 
 #[derive(PartialEq)]
@@ -17,7 +16,7 @@ pub struct EqualExpression {
 }
 
 impl Expression for EqualExpression {
-    fn evaluate(&self, object: &object::GQLObject) -> bool {
+    fn evaluate(&self, object: &GQLObject) -> bool {
         if object.attributes.contains_key(&self.field_name) {
             let attribute_value = object.attributes.get(&self.field_name).unwrap();
             return attribute_value.to_string() == self.expected_value;
@@ -33,7 +32,7 @@ pub struct BinaryExpression {
 }
 
 impl Expression for BinaryExpression {
-    fn evaluate(&self, object: &object::GQLObject) -> bool {
+    fn evaluate(&self, object: &GQLObject) -> bool {
         let rhs = self.right.evaluate(object);
         let lhs = self.left.evaluate(object);
         if self.operator == Operator::And {
