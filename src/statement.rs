@@ -17,10 +17,11 @@ pub struct SelectStatement {
 }
 
 impl Statement for SelectStatement {
-    fn execute(&self, repo: &git2::Repository, list: &mut Vec<object::GQLObject>) {
-        let objects = select_gql_objects(repo, self.table_name.to_string(), self.fields.to_owned());
-        for object in objects {
-            list.push(object);
+    fn execute(&self, repo: &git2::Repository, objects: &mut Vec<object::GQLObject>) {
+        let elements =
+            select_gql_objects(repo, self.table_name.to_string(), self.fields.to_owned());
+        for element in elements {
+            objects.push(element);
         }
     }
 }
@@ -30,5 +31,17 @@ pub struct WhereStatement {
 }
 
 impl Statement for WhereStatement {
-    fn execute(&self, repo: &git2::Repository, list: &mut Vec<object::GQLObject>) {}
+    fn execute(&self, repo: &git2::Repository, objects: &mut Vec<object::GQLObject>) {}
+}
+
+pub struct LimitStatement {
+    pub count: usize,
+}
+
+impl Statement for LimitStatement {
+    fn execute(&self, repo: &git2::Repository, objects: &mut Vec<object::GQLObject>) {
+        if self.count <= objects.len() {
+            objects.drain(self.count..objects.len());
+        }
+    }
 }

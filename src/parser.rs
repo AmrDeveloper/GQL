@@ -1,6 +1,6 @@
 use crate::tokenizer::{Token, TokenKind};
 
-use crate::statement::{SelectStatement, Statement};
+use crate::statement::{LimitStatement, SelectStatement, Statement};
 
 pub fn parse_gql(tokens: Vec<Token>) -> Result<Vec<Box<dyn Statement>>, String> {
     let mut statements: Vec<Box<dyn Statement>> = Vec::new();
@@ -48,7 +48,22 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<Vec<Box<dyn Statement>>, String> 
                 continue;
             }
             TokenKind::Where => {}
-            TokenKind::Limit => {}
+            TokenKind::Limit => {
+                position += 1;
+
+                if position >= len || tokens[position].kind != TokenKind::Number {
+                    return Err("Expect number after `limit` keyword".to_owned());
+                }
+
+                let count_str = tokens[position].literal.to_string();
+                let count: usize = count_str.parse().unwrap();
+
+                position += 1;
+
+                let limit_statement = LimitStatement { count };
+                statements.push(Box::new(limit_statement));
+                continue;
+            }
             TokenKind::Offset => {}
             _ => return Err("".to_owned()),
         }
