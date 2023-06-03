@@ -14,6 +14,11 @@ pub fn select_gql_objects(
     if table == "branches" {
         return select_branches(repo, fields);
     }
+
+    if table == "tags" {
+        return select_tags(repo, fields);
+    }
+
     return vec![];
 }
 
@@ -88,4 +93,25 @@ fn select_branches(repo: &git2::Repository, fields: Vec<String>) -> Vec<object::
     }
 
     return branches;
+}
+
+fn select_tags(repo: &git2::Repository, fields: Vec<String>) -> Vec<object::GQLObject> {
+    let mut tags: Vec<object::GQLObject> = Vec::new();
+    let tag_names = repo.tag_names(None).unwrap();
+    let is_limit_fields_empty = fields.is_empty();
+
+    for tag_name in tag_names.iter() {
+        match tag_name {
+            Some(name) => {
+                let mut attributes: HashMap<String, String> = HashMap::new();
+                if is_limit_fields_empty || fields.contains(&String::from("name")) {
+                    attributes.insert("name".to_string(), name.to_string());
+                    let gql_tag = object::GQLObject { attributes };
+                    tags.push(gql_tag);
+                }
+            }
+            None => {}
+        }
+    }
+    return tags;
 }
