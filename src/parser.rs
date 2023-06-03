@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 
 use crate::diagnostic::GQLError;
-use crate::expression::{BinaryExpression, EqualExpression, Expression, Operator};
+use crate::expression::{BinaryExpression, EqualExpression, Expression, LogicalOperator};
 use crate::tokenizer::{Token, TokenKind};
 
 use crate::statement::{
@@ -303,9 +303,9 @@ fn parse_expression(
         && (tokens[*position].kind == TokenKind::And || tokens[*position].kind == TokenKind::Or)
     {
         let operator = if tokens[*position].kind == TokenKind::And {
-            Operator::And
+            LogicalOperator::And
         } else {
-            Operator::Or
+            LogicalOperator::Or
         };
 
         *position += 1;
@@ -321,9 +321,9 @@ fn parse_expression(
             && (tokens[*position].kind == TokenKind::And || tokens[*position].kind == TokenKind::Or)
         {
             let operator = if tokens[*position].kind == TokenKind::And {
-                Operator::And
+                LogicalOperator::And
             } else {
-                Operator::Or
+                LogicalOperator::Or
             };
 
             *position += 1;

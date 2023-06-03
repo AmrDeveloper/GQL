@@ -39,7 +39,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
     let mut tokens: Vec<Token> = Vec::new();
 
     let mut position = 0;
-    let mut column_start = 0;
+    let mut column_start;
 
     let characters: Vec<char> = script.chars().collect();
     let len = characters.len();

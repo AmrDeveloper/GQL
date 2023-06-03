@@ -4,12 +4,6 @@ pub trait Expression {
     fn evaluate(&self, object: &GQLObject) -> bool;
 }
 
-#[derive(PartialEq)]
-pub enum Operator {
-    Or,
-    And,
-}
-
 pub struct EqualExpression {
     pub field_name: String,
     pub expected_value: String,
@@ -25,9 +19,15 @@ impl Expression for EqualExpression {
     }
 }
 
+#[derive(PartialEq)]
+pub enum LogicalOperator {
+    Or,
+    And,
+}
+
 pub struct BinaryExpression {
     pub right: Box<dyn Expression>,
-    pub operator: Operator,
+    pub operator: LogicalOperator,
     pub left: Box<dyn Expression>,
 }
 
@@ -36,14 +36,9 @@ impl Expression for BinaryExpression {
         let rhs = self.right.evaluate(object);
         let lhs = self.left.evaluate(object);
 
-        if self.operator == Operator::And {
-            return rhs && lhs;
-        }
-
-        if self.operator == Operator::Or {
-            return rhs || lhs;
-        }
-
-        return false;
+        return match self.operator {
+            LogicalOperator::And => lhs && rhs,
+            LogicalOperator::Or => lhs || rhs,
+        };
     }
 }
