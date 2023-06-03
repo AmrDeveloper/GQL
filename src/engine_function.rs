@@ -7,19 +7,12 @@ pub fn select_gql_objects(
     table: String,
     fields: Vec<String>,
 ) -> Vec<object::GQLObject> {
-    if table == "commits" {
-        return select_commits(repo, fields);
-    }
-
-    if table == "branches" {
-        return select_branches(repo, fields);
-    }
-
-    if table == "tags" {
-        return select_tags(repo, fields);
-    }
-
-    return vec![];
+    return match table.as_str() {
+        "commits" => select_commits(repo, fields),
+        "branches" => select_branches(repo, fields),
+        "tags" => select_tags(repo, fields),
+        _ => vec![],
+    };
 }
 
 fn select_commits(repo: &git2::Repository, fields: Vec<String>) -> Vec<object::GQLObject> {
