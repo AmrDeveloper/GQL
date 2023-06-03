@@ -1,3 +1,4 @@
+mod diagnostic;
 mod engine;
 mod engine_function;
 mod expression;
@@ -5,7 +6,6 @@ mod object;
 mod parser;
 mod statement;
 mod tokenizer;
-
 fn main() {
     let args: Vec<_> = std::env::args().collect();
     if args.len() != 2 {
@@ -41,14 +41,14 @@ fn main() {
 
         let tokenizer_result = tokenizer::tokenize(input.trim().to_string());
         if tokenizer_result.is_err() {
-            println!("ERROR: {}", tokenizer_result.err().unwrap());
+            diagnostic::report_gql_error(tokenizer_result.err().unwrap());
             return;
         }
 
         let tokens = tokenizer_result.ok().unwrap();
         let parser_result = parser::parse_gql(tokens);
         if parser_result.is_err() {
-            println!("ERROR: {}", parser_result.err().unwrap());
+            diagnostic::report_gql_error(parser_result.err().unwrap());
             return;
         }
 

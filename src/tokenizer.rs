@@ -21,6 +21,7 @@ pub enum TokenKind {
     Comma,
 }
 
+#[derive(Copy, Clone)]
 pub struct Location {
     pub start: usize,
     pub end: usize,
@@ -32,7 +33,9 @@ pub struct Token {
     pub literal: String,
 }
 
-pub fn tokenize(script: String) -> Result<Vec<Token>, String> {
+use crate::diagnostic::GQLError;
+
+pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
     let mut tokens: Vec<Token> = Vec::new();
 
     let mut position = 0;
@@ -210,7 +213,13 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, String> {
             continue;
         }
 
-        return Err("Un expected character".to_owned());
+        return Err(GQLError {
+            message: "Un expected character".to_owned(),
+            location: Location {
+                start: column_start,
+                end: position,
+            },
+        });
     }
 
     return Ok(tokens);
