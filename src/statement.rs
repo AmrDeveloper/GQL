@@ -64,3 +64,25 @@ impl Statement for OffsetStatement {
         objects.drain(0..cmp::min(self.count, objects.len()));
     }
 }
+
+pub struct OrderByStatement {
+    pub field_name: String,
+}
+
+impl Statement for OrderByStatement {
+    fn execute(&self, _repo: &git2::Repository, objects: &mut Vec<GQLObject>) {
+        if objects.is_empty() {
+            return;
+        }
+
+        if objects[0].attributes.contains_key(&self.field_name) {
+            objects.sort_by_key(|object| {
+                object
+                    .attributes
+                    .get(&self.field_name.to_string())
+                    .unwrap()
+                    .to_string()
+            });
+        }
+    }
+}

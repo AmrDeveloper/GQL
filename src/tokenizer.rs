@@ -5,6 +5,8 @@ pub enum TokenKind {
     Where,
     Limit,
     Offset,
+    Order,
+    By,
 
     Equal,
     Or,
@@ -221,6 +223,8 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "where" => TokenKind::Where,
         "limit" => TokenKind::Limit,
         "offset" => TokenKind::Offset,
+        "order" => TokenKind::Order,
+        "by" => TokenKind::By,
         _ => TokenKind::Symbol,
     };
 }

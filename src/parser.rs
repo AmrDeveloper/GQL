@@ -5,7 +5,7 @@ use crate::expression::{BinaryExpression, EqualExpression, Expression, Operator}
 use crate::tokenizer::{Token, TokenKind};
 
 use crate::statement::{
-    LimitStatement, OffsetStatement, SelectStatement, Statement, WhereStatement,
+    LimitStatement, OffsetStatement, OrderByStatement, SelectStatement, Statement, WhereStatement,
 };
 
 lazy_static! {
@@ -49,6 +49,13 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<Vec<Box<dyn Statement>>, String> 
             }
             TokenKind::Offset => {
                 let parse_result = parse_offset_statement(&tokens, &mut position);
+                if parse_result.is_err() {
+                    return Err(parse_result.err().unwrap());
+                }
+                statements.push(parse_result.ok().unwrap());
+            }
+            TokenKind::Order => {
+                let parse_result = parse_order_by_statement(&tokens, &mut position);
                 if parse_result.is_err() {
                     return Err(parse_result.err().unwrap());
                 }
@@ -160,6 +167,24 @@ fn parse_offset_statement(
     let count: usize = count_str.parse().unwrap();
     *position += 1;
     return Ok(Box::new(OffsetStatement { count }));
+}
+
+fn parse_order_by_statement(
+    tokens: &Vec<Token>,
+    position: &mut usize,
+) -> Result<Box<dyn Statement>, String> {
+    *position += 1;
+    if *position >= tokens.len() || tokens[*position].kind != TokenKind::By {
+        return Err("Expect keyword `by` after keyword `order`".to_owned());
+    }
+    *position += 1;
+    if *position >= tokens.len() || tokens[*position].kind != TokenKind::Symbol {
+        return Err("Expect field name after `order by`".to_owned());
+    }
+
+    let field_name = tokens[*position].literal.to_string();
+    *position += 1;
+    return Ok(Box::new(OrderByStatement { field_name }));
 }
 
 fn parse_expression(
