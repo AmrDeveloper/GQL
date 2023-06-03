@@ -1,16 +1,10 @@
-#[path = "tokenizer.rs"]
-mod tokenizer;
-
-#[path = "parser.rs"]
-mod parser;
-
-#[path = "object.rs"]
-mod object;
-
 mod engine;
 mod engine_function;
 mod expression;
+mod object;
+mod parser;
 mod statement;
+mod tokenizer;
 
 fn main() {
     let args: Vec<_> = std::env::args().collect();
@@ -41,6 +35,7 @@ fn main() {
         }
 
         if input.trim() == "exit" {
+            println!("Bye (^_*)");
             break;
         }
 

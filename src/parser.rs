@@ -1,9 +1,22 @@
+use lazy_static::lazy_static;
+use std::collections::HashMap;
+
 use crate::expression::{BinaryExpression, EqualExpression, Expression, Operator};
 use crate::tokenizer::{Token, TokenKind};
 
 use crate::statement::{
     LimitStatement, OffsetStatement, SelectStatement, Statement, WhereStatement,
 };
+
+lazy_static! {
+    static ref TABLES_FIELDS_NAMES: HashMap<&'static str, Vec<&'static str>> = {
+        let mut map = HashMap::new();
+        map.insert("commits", vec!["title", "message", "name", "email"]);
+        map.insert("branches", vec!["name", "ishead", "isremote"]);
+        map.insert("tags", vec!["name"]);
+        map
+    };
+}
 
 pub fn parse_gql(tokens: Vec<Token>) -> Result<Vec<Box<dyn Statement>>, String> {
     let mut statements: Vec<Box<dyn Statement>> = Vec::new();
@@ -77,7 +90,19 @@ fn parse_select_statement(
     }
 
     *position += 1;
+
     let table_name = &tokens[*position].literal;
+    if !TABLES_FIELDS_NAMES.contains_key(table_name.as_str()) {
+        return Err("Invalid table name".to_owned());
+    }
+
+    let valid_fields = TABLES_FIELDS_NAMES.get(table_name.as_str()).unwrap();
+    for field in &fields {
+        if !valid_fields.contains(&field.as_str()) {
+            return Err("Invalid Field name".to_owned());
+        }
+    }
+
     *position += 1;
 
     let statement = SelectStatement {
