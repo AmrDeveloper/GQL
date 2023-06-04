@@ -37,6 +37,36 @@ impl Expression for ComparisonExpression {
 }
 
 #[derive(PartialEq)]
+pub enum CheckOperator {
+    Contains,
+    StartsWith,
+    EndsWith,
+}
+
+pub struct CheckExpression {
+    pub field_name: String,
+    pub operator: CheckOperator,
+    pub expected_value: String,
+}
+
+impl Expression for CheckExpression {
+    fn evaluate(&self, object: &GQLObject) -> bool {
+        if object.attributes.contains_key(&self.field_name) {
+            let value = object.attributes.get(&self.field_name).unwrap();
+            if value == "AmrDeveloper" {
+                println!("Hello");
+            }
+            return match self.operator {
+                CheckOperator::Contains => value.contains(&self.expected_value),
+                CheckOperator::StartsWith => value.starts_with(&self.expected_value),
+                CheckOperator::EndsWith => value.ends_with(&self.expected_value),
+            };
+        }
+        return false;
+    }
+}
+
+#[derive(PartialEq)]
 pub enum LogicalOperator {
     Or,
     And,

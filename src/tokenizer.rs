@@ -14,6 +14,10 @@ pub enum TokenKind {
     LessEqual,
     Equal,
 
+    Contains,
+    StartsWith,
+    EndsWith,
+
     Or,
     And,
 
@@ -298,6 +302,10 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "offset" => TokenKind::Offset,
         "order" => TokenKind::Order,
         "by" => TokenKind::By,
+
+        "contains" => TokenKind::Contains,
+        "starts_with" => TokenKind::StartsWith,
+        "ends_with" => TokenKind::EndsWith,
         _ => TokenKind::Symbol,
     };
 }

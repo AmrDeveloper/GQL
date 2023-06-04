@@ -3,8 +3,9 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 
 use crate::diagnostic::GQLError;
+use crate::expression::CheckExpression;
 use crate::expression::{BinaryExpression, ComparisonExpression, Expression};
-use crate::expression::{ComparisonOperator, LogicalOperator};
+use crate::expression::{CheckOperator, ComparisonOperator, LogicalOperator};
 use crate::tokenizer::{Token, TokenKind};
 
 use crate::statement::{
@@ -287,32 +288,47 @@ fn parse_expression(
     let expected_value = &tokens[*position].literal;
     *position += 1;
 
-    let expression = match function.as_str() {
-        ">" => ComparisonExpression {
+    let expression: Box<dyn Expression> = match function.as_str() {
+        ">" => Box::new(ComparisonExpression {
             field_name: field_name.to_string(),
             operator: ComparisonOperator::Greater,
             expected_value: expected_value.to_string(),
-        },
-        ">=" => ComparisonExpression {
+        }),
+        ">=" => Box::new(ComparisonExpression {
             field_name: field_name.to_string(),
             operator: ComparisonOperator::GreaterEqual,
             expected_value: expected_value.to_string(),
-        },
-        "<" => ComparisonExpression {
+        }),
+        "<" => Box::new(ComparisonExpression {
             field_name: field_name.to_string(),
             operator: ComparisonOperator::Less,
             expected_value: expected_value.to_string(),
-        },
-        "<=" => ComparisonExpression {
+        }),
+        "<=" => Box::new(ComparisonExpression {
             field_name: field_name.to_string(),
             operator: ComparisonOperator::LessEqual,
             expected_value: expected_value.to_string(),
-        },
-        "=" => ComparisonExpression {
+        }),
+        "=" => Box::new(ComparisonExpression {
             field_name: field_name.to_string(),
             operator: ComparisonOperator::Equal,
             expected_value: expected_value.to_string(),
-        },
+        }),
+        "contains" => Box::new(CheckExpression {
+            field_name: field_name.to_string(),
+            operator: CheckOperator::Contains,
+            expected_value: expected_value.to_string(),
+        }),
+        "starts_with" => Box::new(CheckExpression {
+            field_name: field_name.to_string(),
+            operator: CheckOperator::StartsWith,
+            expected_value: expected_value.to_string(),
+        }),
+        "ends_with" => Box::new(CheckExpression {
+            field_name: field_name.to_string(),
+            operator: CheckOperator::EndsWith,
+            expected_value: expected_value.to_string(),
+        }),
         _ => {
             return Err(GQLError {
                 message: "Expect `symbol` as field name".to_owned(),
@@ -334,7 +350,7 @@ fn parse_expression(
         let other_expr = parse_expression(tokens, position);
 
         let mut binary_expression = BinaryExpression {
-            right: Box::new(expression),
+            right: expression,
             operator: operator,
             left: other_expr.ok().unwrap(),
         };
@@ -360,5 +376,5 @@ fn parse_expression(
         return Ok(Box::new(binary_expression));
     }
 
-    return Ok(Box::new(expression));
+    return Ok(expression);
 }
