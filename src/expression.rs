@@ -77,8 +77,17 @@ pub struct BinaryExpression {
 
 impl Expression for BinaryExpression {
     fn evaluate(&self, object: &GQLObject) -> bool {
-        let rhs = self.right.evaluate(object);
         let lhs = self.left.evaluate(object);
+
+        if self.operator == LogicalOperator::And && !lhs {
+            return false;
+        }
+
+        if self.operator == LogicalOperator::Or && lhs {
+            return true;
+        }
+
+        let rhs = self.right.evaluate(object);
 
         return match self.operator {
             LogicalOperator::And => lhs && rhs,
