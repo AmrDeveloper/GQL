@@ -53,9 +53,6 @@ impl Expression for CheckExpression {
     fn evaluate(&self, object: &GQLObject) -> bool {
         if object.attributes.contains_key(&self.field_name) {
             let value = object.attributes.get(&self.field_name).unwrap();
-            if value == "AmrDeveloper" {
-                println!("Hello");
-            }
             return match self.operator {
                 CheckOperator::Contains => value.contains(&self.expected_value),
                 CheckOperator::StartsWith => value.starts_with(&self.expected_value),
