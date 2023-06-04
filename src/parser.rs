@@ -3,7 +3,8 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 
 use crate::diagnostic::GQLError;
-use crate::expression::{BinaryExpression, EqualExpression, Expression, LogicalOperator};
+use crate::expression::{BinaryExpression, ComparisonExpression, Expression};
+use crate::expression::{ComparisonOperator, LogicalOperator};
 use crate::tokenizer::{Token, TokenKind};
 
 use crate::statement::{
@@ -287,14 +288,35 @@ fn parse_expression(
     *position += 1;
 
     let expression = match function.as_str() {
-        "=" => EqualExpression {
+        ">" => ComparisonExpression {
             field_name: field_name.to_string(),
+            operator: ComparisonOperator::Greater,
+            expected_value: expected_value.to_string(),
+        },
+        ">=" => ComparisonExpression {
+            field_name: field_name.to_string(),
+            operator: ComparisonOperator::GreaterEqual,
+            expected_value: expected_value.to_string(),
+        },
+        "<" => ComparisonExpression {
+            field_name: field_name.to_string(),
+            operator: ComparisonOperator::Less,
+            expected_value: expected_value.to_string(),
+        },
+        "<=" => ComparisonExpression {
+            field_name: field_name.to_string(),
+            operator: ComparisonOperator::LessEqual,
+            expected_value: expected_value.to_string(),
+        },
+        "=" => ComparisonExpression {
+            field_name: field_name.to_string(),
+            operator: ComparisonOperator::Equal,
             expected_value: expected_value.to_string(),
         },
         _ => {
             return Err(GQLError {
                 message: "Expect `symbol` as field name".to_owned(),
-                location: tokens[*position - 1].location,
+                location: tokens[*position].location,
             })
         }
     };

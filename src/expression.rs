@@ -4,16 +4,33 @@ pub trait Expression {
     fn evaluate(&self, object: &GQLObject) -> bool;
 }
 
-pub struct EqualExpression {
+#[derive(PartialEq)]
+pub enum ComparisonOperator {
+    Greater,
+    GreaterEqual,
+    Less,
+    LessEqual,
+    Equal,
+}
+
+pub struct ComparisonExpression {
     pub field_name: String,
+    pub operator: ComparisonOperator,
     pub expected_value: String,
 }
 
-impl Expression for EqualExpression {
+impl Expression for ComparisonExpression {
     fn evaluate(&self, object: &GQLObject) -> bool {
         if object.attributes.contains_key(&self.field_name) {
-            let attribute_value = object.attributes.get(&self.field_name).unwrap();
-            return attribute_value.to_string() == self.expected_value;
+            let value = object.attributes.get(&self.field_name).unwrap();
+            let result = value.cmp(&self.expected_value);
+            return match self.operator {
+                ComparisonOperator::Greater => result.is_gt(),
+                ComparisonOperator::GreaterEqual => result.is_ge(),
+                ComparisonOperator::Less => result.is_lt(),
+                ComparisonOperator::LessEqual => result.is_le(),
+                ComparisonOperator::Equal => result.is_eq(),
+            };
         }
         return false;
     }

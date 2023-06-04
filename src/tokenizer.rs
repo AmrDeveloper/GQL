@@ -8,7 +8,12 @@ pub enum TokenKind {
     Order,
     By,
 
+    Greater,
+    GreaterEqual,
+    Less,
+    LessEqual,
     Equal,
+
     Or,
     And,
 
@@ -49,7 +54,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
 
         let char = characters[position];
 
-        // Tokenize Symbol
+        // Symbol
         if char.is_alphabetic() {
             while position < len && characters[position].is_alphabetic() {
                 position += 1;
@@ -71,7 +76,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             continue;
         }
 
-        // Tokenize Number
+        // Number
         if char.is_numeric() {
             while position < len && characters[position].is_numeric() {
                 position += 1;
@@ -93,6 +98,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             continue;
         }
 
+        // String literal
         if char == '"' {
             position += 1;
             while position < len && characters[position] != '"' {
@@ -186,6 +192,62 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
 
             tokens.push(token);
             position += 1;
+            continue;
+        }
+
+        // Greater or GreaterEqual
+        if char == '>' {
+            let location = Location {
+                start: column_start,
+                end: position,
+            };
+
+            position += 1;
+
+            let mut kind = TokenKind::Greater;
+            let mut literal = ">";
+
+            if position < len && characters[position] == '=' {
+                position += 1;
+                kind = TokenKind::GreaterEqual;
+                literal = ">=";
+            }
+
+            let token = Token {
+                location: location,
+                kind: kind,
+                literal: literal.to_string(),
+            };
+
+            tokens.push(token);
+            continue;
+        }
+
+        // Less or LessEqual
+        if char == '<' {
+            let location = Location {
+                start: column_start,
+                end: position,
+            };
+
+            position += 1;
+
+            let mut kind = TokenKind::Less;
+            let mut literal = "<";
+
+            if position < len && characters[position] == '=' {
+                position += 1;
+                kind = TokenKind::LessEqual;
+                literal = "<=";
+            }
+
+            let token = Token {
+                location: location,
+                kind: kind,
+                literal: literal.to_owned(),
+            };
+
+            tokens.push(token);
             continue;
         }
 
