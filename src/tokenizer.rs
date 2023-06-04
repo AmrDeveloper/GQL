@@ -56,7 +56,9 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
 
         // Symbol
         if char.is_alphabetic() {
-            while position < len && characters[position].is_alphabetic() {
+            while position < len
+                && (characters[position] == '_' || characters[position].is_alphabetic())
+            {
                 position += 1;
             }
 
