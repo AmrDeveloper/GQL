@@ -11,6 +11,7 @@ pub enum ComparisonOperator {
     Less,
     LessEqual,
     Equal,
+    NotEqual,
 }
 
 pub struct ComparisonExpression {
@@ -30,6 +31,7 @@ impl Expression for ComparisonExpression {
                 ComparisonOperator::Less => result.is_lt(),
                 ComparisonOperator::LessEqual => result.is_le(),
                 ComparisonOperator::Equal => result.is_eq(),
+                ComparisonOperator::NotEqual => !result.is_eq(),
             };
         }
         return false;

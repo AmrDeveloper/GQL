@@ -314,6 +314,11 @@ fn parse_expression(
             operator: ComparisonOperator::Equal,
             expected_value: expected_value.to_string(),
         }),
+        "!" => Box::new(ComparisonExpression {
+            field_name: field_name.to_string(),
+            operator: ComparisonOperator::NotEqual,
+            expected_value: expected_value.to_string(),
+        }),
         "contains" => Box::new(CheckExpression {
             field_name: field_name.to_string(),
             operator: CheckOperator::Contains,
