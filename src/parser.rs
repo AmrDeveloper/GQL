@@ -15,7 +15,7 @@ use crate::statement::{
 lazy_static! {
     static ref TABLES_FIELDS_NAMES: HashMap<&'static str, Vec<&'static str>> = {
         let mut map = HashMap::new();
-        map.insert("commits", vec!["title", "message", "name", "email"]);
+        map.insert("commits", vec!["title", "message", "name", "email", "time"]);
         map.insert("branches", vec!["name", "ishead", "isremote"]);
         map.insert("tags", vec!["name"]);
         map

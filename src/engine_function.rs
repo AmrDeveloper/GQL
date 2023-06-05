@@ -49,6 +49,10 @@ fn select_commits(repo: &git2::Repository, fields: Vec<String>) -> Vec<object::G
             attributes.insert("message".to_string(), commit.message().unwrap().to_string());
         }
 
+        if is_limit_fields_empty || fields.contains(&String::from("time")) {
+            attributes.insert("time".to_string(), commit.time().seconds().to_string());
+        }
+
         let gql_commit = object::GQLObject { attributes };
         commits.push(gql_commit);
     }
