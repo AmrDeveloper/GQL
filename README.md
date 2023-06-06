@@ -25,6 +25,7 @@ select * from branches where ishead = "true"
 select * from branches where name ends_with "master"
 
 select * from tags
+select * from tags offset 1 limit 1
 ```
 
 ### Build and run
