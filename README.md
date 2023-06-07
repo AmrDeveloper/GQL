@@ -8,7 +8,9 @@
 GQL is a query language with a syntax very similar to SQL with a tiny engine to perform queries on .git files instance of database files, the engine executes the query on the fly without the need to create database files or convert .git files into any other format.
 </p>
 
-<video src="media/gql_demo.mp4" controls="controls" style="max-width: 100%"></video>
+<p align="center">
+  <img src="media/gql_demo.gif" alt="animated" width="100%"/>
+</p>
 
 ---
 
