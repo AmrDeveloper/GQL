@@ -64,6 +64,7 @@ Select keyword used to select all of some fields from specific table
 - `contains` used to check that field contains value.
 - `starts_with` used to check that field starts with value.
 - `ends_with` used to check that field ends with value.
+- `matches` used to check that field matches regex format.
 
 ---
 
