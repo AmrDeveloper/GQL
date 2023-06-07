@@ -18,6 +18,7 @@ pub enum TokenKind {
     Contains,
     StartsWith,
     EndsWith,
+    Matches,
 
     Or,
     And,
@@ -324,6 +325,7 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "contains" => TokenKind::Contains,
         "starts_with" => TokenKind::StartsWith,
         "ends_with" => TokenKind::EndsWith,
+        "matches" => TokenKind::Matches,
         _ => TokenKind::Symbol,
     };
 }

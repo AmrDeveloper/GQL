@@ -334,6 +334,11 @@ fn parse_expression(
             operator: CheckOperator::EndsWith,
             expected_value: expected_value.to_string(),
         }),
+        "matches" => Box::new(CheckExpression {
+            field_name: field_name.to_string(),
+            operator: CheckOperator::Matches,
+            expected_value: expected_value.to_string(),
+        }),
         _ => {
             return Err(GQLError {
                 message: "Expect `symbol` as field name".to_owned(),

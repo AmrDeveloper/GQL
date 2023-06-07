@@ -1,4 +1,5 @@
 use crate::object::GQLObject;
+use regex::Regex;
 
 pub trait Expression {
     fn evaluate(&self, object: &GQLObject) -> bool;
@@ -43,6 +44,7 @@ pub enum CheckOperator {
     Contains,
     StartsWith,
     EndsWith,
+    Matches,
 }
 
 pub struct CheckExpression {
@@ -59,6 +61,13 @@ impl Expression for CheckExpression {
                 CheckOperator::Contains => value.contains(&self.expected_value),
                 CheckOperator::StartsWith => value.starts_with(&self.expected_value),
                 CheckOperator::EndsWith => value.ends_with(&self.expected_value),
+                CheckOperator::Matches => {
+                    let regex = Regex::new(&value);
+                    if regex.is_err() {
+                        return false;
+                    }
+                    return regex.unwrap().is_match(&self.expected_value);
+                }
             };
         }
         return false;

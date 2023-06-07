@@ -9,4 +9,5 @@ repository = "https://github.com/amrdeveloper/gql"
 
 [dependencies]
 git2 = "0.17.1"
+regex = "1"
 lazy_static = "1.4.0"
