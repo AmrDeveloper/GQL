@@ -313,7 +313,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
 }
 
 fn resolve_symbol_kind(literal: String) -> TokenKind {
-    return match literal.as_str() {
+    return match literal.to_lowercase().as_str() {
         "select" => TokenKind::Select,
         "from" => TokenKind::From,
         "where" => TokenKind::Where,
