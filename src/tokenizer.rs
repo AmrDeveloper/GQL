@@ -30,6 +30,7 @@ pub enum TokenKind {
     Star,
 
     Comma,
+    Dot,
 }
 
 #[derive(Copy, Clone)]
@@ -196,6 +197,24 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
                 location: location,
                 kind: TokenKind::Comma,
                 literal: ",".to_owned(),
+            };
+
+            tokens.push(token);
+            position += 1;
+            continue;
+        }
+
+        // Dot
+        if char == '.' {
+            let location = Location {
+                start: column_start,
+                end: position,
+            };
+
+            let token = Token {
+                location: location,
+                kind: TokenKind::Dot,
+                literal: ".".to_owned(),
             };
 
             tokens.push(token);

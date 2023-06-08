@@ -3,16 +3,16 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 
 use crate::diagnostic::GQLError;
-use crate::expression::CheckExpression;
-use crate::expression::{CheckOperator, ComparisonOperator, LogicalOperator};
-use crate::expression::{
-    ComparisonExpression, Expression, LogicalExpression, StringExpression, SymbolExpression,
-};
+use crate::expression::{CallExpression, CheckOperator, ComparisonOperator, LogicalOperator};
+use crate::expression::{CheckExpression, ComparisonExpression, LogicalExpression};
+use crate::expression::{Expression, StringExpression, SymbolExpression};
 use crate::tokenizer::{Token, TokenKind};
 
 use crate::statement::{
     LimitStatement, OffsetStatement, OrderByStatement, SelectStatement, Statement, WhereStatement,
 };
+
+use crate::transformation::TRANSFORMATIONS;
 
 lazy_static! {
     static ref TABLES_FIELDS_NAMES: HashMap<&'static str, Vec<&'static str>> = {
@@ -307,15 +307,8 @@ fn parse_logical_expression(
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
     let expression = parse_comparison_expression(tokens, position);
-    if *position >= tokens.len() {
+    if expression.is_err() || *position >= tokens.len() {
         return expression;
-    }
-
-    if expression.is_err() {
-        return Err(GQLError {
-            message: "Can't parse expression".to_owned(),
-            location: tokens[*position].location,
-        });
     }
 
     let lhs = expression.ok().unwrap();
@@ -354,15 +347,8 @@ fn parse_comparison_expression(
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
     let expression = parse_check_expression(tokens, position);
-    if *position >= tokens.len() {
+    if expression.is_err() || *position >= tokens.len() {
         return expression;
-    }
-
-    if expression.is_err() {
-        return Err(GQLError {
-            message: "Can't parse expression".to_owned(),
-            location: tokens[*position].location,
-        });
     }
 
     let lhs = expression.ok().unwrap();
@@ -409,16 +395,9 @@ fn parse_check_expression(
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
-    let expression = parse_primary_expression(tokens, position);
-    if *position >= tokens.len() {
+    let expression = parse_call_expression(tokens, position);
+    if expression.is_err() || *position >= tokens.len() {
         return expression;
-    }
-
-    if expression.is_err() {
-        return Err(GQLError {
-            message: "Can't parse expression".to_owned(),
-            location: tokens[*position].location,
-        });
     }
 
     let lhs = expression.ok().unwrap();
@@ -439,7 +418,7 @@ fn parse_check_expression(
             _ => CheckOperator::Matches,
         };
 
-        let right_expr = parse_primary_expression(tokens, position);
+        let right_expr = parse_call_expression(tokens, position);
         if right_expr.is_err() {
             return Err(GQLError {
                 message: "Can't right side of check expression".to_owned(),
@@ -456,6 +435,45 @@ fn parse_check_expression(
     }
 
     return Ok(lhs);
+}
+
+fn parse_call_expression(
+    tokens: &Vec<Token>,
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, GQLError> {
+    let mut expression = parse_primary_expression(tokens, position);
+    if expression.is_err() || *position >= tokens.len() {
+        return expression;
+    }
+
+    while (&tokens[*position]).kind == TokenKind::Dot {
+        *position += 1;
+
+        let function_name_result = consume_kind(&tokens[*position], TokenKind::Symbol);
+        if function_name_result.is_err() {
+            return Err(GQLError {
+                message: "Expect `identifier` as a function name".to_owned(),
+                location: tokens[*position].location,
+            });
+        }
+
+        let function_name = function_name_result.ok().unwrap().literal.to_string();
+        if !TRANSFORMATIONS.contains_key(function_name.as_str()) {
+            return Err(GQLError {
+                message: "Invalid GQL function name".to_owned(),
+                location: tokens[*position].location,
+            });
+        }
+
+        *position += 1;
+
+        expression = Ok(Box::new(CallExpression {
+            left: expression.ok().unwrap(),
+            function_name: function_name,
+        }));
+    }
+
+    return expression;
 }
 
 fn parse_primary_expression(

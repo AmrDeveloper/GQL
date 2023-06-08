@@ -1,6 +1,8 @@
 use crate::object::GQLObject;
 use regex::Regex;
 
+use crate::transformation::TRANSFORMATIONS;
+
 pub trait Expression {
     fn evaluate(&self, object: &GQLObject) -> String;
 }
@@ -20,8 +22,8 @@ pub struct SymbolExpression {
 }
 
 impl Expression for SymbolExpression {
-    fn evaluate(&self, _object: &GQLObject) -> String {
-        return self.value.to_owned();
+    fn evaluate(&self, object: &GQLObject) -> String {
+        return object.attributes.get(&self.value).unwrap().to_string();
     }
 }
 
@@ -43,23 +45,18 @@ pub struct ComparisonExpression {
 
 impl Expression for ComparisonExpression {
     fn evaluate(&self, object: &GQLObject) -> String {
-        let key = self.left.evaluate(object);
+        let value = self.left.evaluate(object);
         let expected = self.right.evaluate(object);
-
-        if object.attributes.contains_key(&key) {
-            let field_value = object.attributes.get(&key).unwrap();
-            let result = field_value.cmp(&expected);
-            return match self.operator {
-                ComparisonOperator::Greater => result.is_gt(),
-                ComparisonOperator::GreaterEqual => result.is_ge(),
-                ComparisonOperator::Less => result.is_lt(),
-                ComparisonOperator::LessEqual => result.is_le(),
-                ComparisonOperator::Equal => result.is_eq(),
-                ComparisonOperator::NotEqual => !result.is_eq(),
-            }
-            .to_string();
+        let result = value.cmp(&expected);
+        return match self.operator {
+            ComparisonOperator::Greater => result.is_gt(),
+            ComparisonOperator::GreaterEqual => result.is_ge(),
+            ComparisonOperator::Less => result.is_lt(),
+            ComparisonOperator::LessEqual => result.is_le(),
+            ComparisonOperator::Equal => result.is_eq(),
+            ComparisonOperator::NotEqual => !result.is_eq(),
         }
-        return "false".to_owned();
+        .to_string();
     }
 }
 
@@ -79,25 +76,22 @@ pub struct CheckExpression {
 
 impl Expression for CheckExpression {
     fn evaluate(&self, object: &GQLObject) -> String {
-        let key = self.left.evaluate(object);
+        let value = self.left.evaluate(object);
         let expected = self.right.evaluate(object);
-        if object.attributes.contains_key(&key) {
-            let value = object.attributes.get(&key).unwrap();
-            return match self.operator {
-                CheckOperator::Contains => value.contains(&expected),
-                CheckOperator::StartsWith => value.starts_with(&expected),
-                CheckOperator::EndsWith => value.ends_with(&expected),
-                CheckOperator::Matches => {
-                    let regex = Regex::new(&expected);
-                    if regex.is_err() {
-                        return "false".to_owned();
-                    }
-                    regex.unwrap().is_match(value)
+
+        return match self.operator {
+            CheckOperator::Contains => value.contains(&expected),
+            CheckOperator::StartsWith => value.starts_with(&expected),
+            CheckOperator::EndsWith => value.ends_with(&expected),
+            CheckOperator::Matches => {
+                let regex = Regex::new(&expected);
+                if regex.is_err() {
+                    return "false".to_owned();
                 }
+                regex.unwrap().is_match(&value)
             }
-            .to_string();
         }
-        return "false".to_owned();
+        .to_string();
     }
 }
 
@@ -132,5 +126,18 @@ impl Expression for LogicalExpression {
             LogicalOperator::Or => lhs || rhs,
         }
         .to_string();
+    }
+}
+
+pub struct CallExpression {
+    pub left: Box<dyn Expression>,
+    pub function_name: String,
+}
+
+impl Expression for CallExpression {
+    fn evaluate(&self, object: &GQLObject) -> String {
+        let lhs = self.left.evaluate(object);
+        let transformation = TRANSFORMATIONS.get(self.function_name.as_str()).unwrap();
+        return transformation(lhs);
     }
 }
