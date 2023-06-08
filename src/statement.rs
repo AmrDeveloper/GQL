@@ -31,7 +31,7 @@ impl Statement for WhereStatement {
     fn execute(&self, _repo: &git2::Repository, objects: &mut Vec<GQLObject>) {
         let result: Vec<GQLObject> = objects
             .iter()
-            .filter(|&object| self.condition.evaluate(object))
+            .filter(|&object| self.condition.evaluate(object).eq("true"))
             .cloned()
             .collect();
 

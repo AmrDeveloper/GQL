@@ -2,7 +2,27 @@ use crate::object::GQLObject;
 use regex::Regex;
 
 pub trait Expression {
-    fn evaluate(&self, object: &GQLObject) -> bool;
+    fn evaluate(&self, object: &GQLObject) -> String;
+}
+
+pub struct StringExpression {
+    pub value: String,
+}
+
+impl Expression for StringExpression {
+    fn evaluate(&self, _object: &GQLObject) -> String {
+        return self.value.to_owned();
+    }
+}
+
+pub struct SymbolExpression {
+    pub value: String,
+}
+
+impl Expression for SymbolExpression {
+    fn evaluate(&self, _object: &GQLObject) -> String {
+        return self.value.to_owned();
+    }
 }
 
 #[derive(PartialEq)]
@@ -16,16 +36,19 @@ pub enum ComparisonOperator {
 }
 
 pub struct ComparisonExpression {
-    pub field_name: String,
+    pub left: Box<dyn Expression>,
     pub operator: ComparisonOperator,
-    pub expected_value: String,
+    pub right: Box<dyn Expression>,
 }
 
 impl Expression for ComparisonExpression {
-    fn evaluate(&self, object: &GQLObject) -> bool {
-        if object.attributes.contains_key(&self.field_name) {
-            let value = object.attributes.get(&self.field_name).unwrap();
-            let result = value.cmp(&self.expected_value);
+    fn evaluate(&self, object: &GQLObject) -> String {
+        let key = self.left.evaluate(object);
+        let expected = self.right.evaluate(object);
+
+        if object.attributes.contains_key(&key) {
+            let field_value = object.attributes.get(&key).unwrap();
+            let result = field_value.cmp(&expected);
             return match self.operator {
                 ComparisonOperator::Greater => result.is_gt(),
                 ComparisonOperator::GreaterEqual => result.is_ge(),
@@ -33,9 +56,10 @@ impl Expression for ComparisonExpression {
                 ComparisonOperator::LessEqual => result.is_le(),
                 ComparisonOperator::Equal => result.is_eq(),
                 ComparisonOperator::NotEqual => !result.is_eq(),
-            };
+            }
+            .to_string();
         }
-        return false;
+        return "false".to_owned();
     }
 }
 
@@ -48,29 +72,32 @@ pub enum CheckOperator {
 }
 
 pub struct CheckExpression {
-    pub field_name: String,
+    pub left: Box<dyn Expression>,
     pub operator: CheckOperator,
-    pub expected_value: String,
+    pub right: Box<dyn Expression>,
 }
 
 impl Expression for CheckExpression {
-    fn evaluate(&self, object: &GQLObject) -> bool {
-        if object.attributes.contains_key(&self.field_name) {
-            let value = object.attributes.get(&self.field_name).unwrap();
+    fn evaluate(&self, object: &GQLObject) -> String {
+        let key = self.left.evaluate(object);
+        let expected = self.right.evaluate(object);
+        if object.attributes.contains_key(&key) {
+            let value = object.attributes.get(&key).unwrap();
             return match self.operator {
-                CheckOperator::Contains => value.contains(&self.expected_value),
-                CheckOperator::StartsWith => value.starts_with(&self.expected_value),
-                CheckOperator::EndsWith => value.ends_with(&self.expected_value),
+                CheckOperator::Contains => value.contains(&expected),
+                CheckOperator::StartsWith => value.starts_with(&expected),
+                CheckOperator::EndsWith => value.ends_with(&expected),
                 CheckOperator::Matches => {
-                    let regex = Regex::new(&value);
+                    let regex = Regex::new(&expected);
                     if regex.is_err() {
-                        return false;
+                        return "false".to_owned();
                     }
-                    return regex.unwrap().is_match(&self.expected_value);
+                    regex.unwrap().is_match(value)
                 }
-            };
+            }
+            .to_string();
         }
-        return false;
+        return "false".to_owned();
     }
 }
 
@@ -80,29 +107,30 @@ pub enum LogicalOperator {
     And,
 }
 
-pub struct BinaryExpression {
-    pub right: Box<dyn Expression>,
-    pub operator: LogicalOperator,
+pub struct LogicalExpression {
     pub left: Box<dyn Expression>,
+    pub operator: LogicalOperator,
+    pub right: Box<dyn Expression>,
 }
 
-impl Expression for BinaryExpression {
-    fn evaluate(&self, object: &GQLObject) -> bool {
-        let lhs = self.left.evaluate(object);
+impl Expression for LogicalExpression {
+    fn evaluate(&self, object: &GQLObject) -> String {
+        let lhs = self.left.evaluate(object).eq("true");
 
         if self.operator == LogicalOperator::And && !lhs {
-            return false;
+            return "false".to_owned();
         }
 
         if self.operator == LogicalOperator::Or && lhs {
-            return true;
+            return "true".to_owned();
         }
 
-        let rhs = self.right.evaluate(object);
+        let rhs = self.right.evaluate(object).eq("true");
 
         return match self.operator {
             LogicalOperator::And => lhs && rhs,
             LogicalOperator::Or => lhs || rhs,
-        };
+        }
+        .to_string();
     }
 }

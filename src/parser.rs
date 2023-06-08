@@ -4,8 +4,10 @@ use std::collections::HashSet;
 
 use crate::diagnostic::GQLError;
 use crate::expression::CheckExpression;
-use crate::expression::{BinaryExpression, ComparisonExpression, Expression};
 use crate::expression::{CheckOperator, ComparisonOperator, LogicalOperator};
+use crate::expression::{
+    ComparisonExpression, Expression, LogicalExpression, StringExpression, SymbolExpression,
+};
 use crate::tokenizer::{Token, TokenKind};
 
 use crate::statement::{
@@ -297,117 +299,185 @@ fn parse_expression(
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
-    if tokens[*position].kind != TokenKind::Symbol {
+    return parse_logical_expression(tokens, position);
+}
+
+fn parse_logical_expression(
+    tokens: &Vec<Token>,
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, GQLError> {
+    let expression = parse_comparison_expression(tokens, position);
+    if *position >= tokens.len() {
+        return expression;
+    }
+
+    if expression.is_err() {
         return Err(GQLError {
-            message: "Expect `symbol` as field name".to_owned(),
+            message: "Can't parse expression".to_owned(),
             location: tokens[*position].location,
         });
     }
 
-    let field_name = &tokens[*position].literal;
-    *position += 1;
-    let function = &tokens[*position].literal;
-    *position += 1;
-    let expected_value = &tokens[*position].literal;
-    *position += 1;
+    let lhs = expression.ok().unwrap();
+    let operator = &tokens[*position];
 
-    let expression: Box<dyn Expression> = match function.as_str() {
-        ">" => Box::new(ComparisonExpression {
-            field_name: field_name.to_string(),
-            operator: ComparisonOperator::Greater,
-            expected_value: expected_value.to_string(),
-        }),
-        ">=" => Box::new(ComparisonExpression {
-            field_name: field_name.to_string(),
-            operator: ComparisonOperator::GreaterEqual,
-            expected_value: expected_value.to_string(),
-        }),
-        "<" => Box::new(ComparisonExpression {
-            field_name: field_name.to_string(),
-            operator: ComparisonOperator::Less,
-            expected_value: expected_value.to_string(),
-        }),
-        "<=" => Box::new(ComparisonExpression {
-            field_name: field_name.to_string(),
-            operator: ComparisonOperator::LessEqual,
-            expected_value: expected_value.to_string(),
-        }),
-        "=" => Box::new(ComparisonExpression {
-            field_name: field_name.to_string(),
-            operator: ComparisonOperator::Equal,
-            expected_value: expected_value.to_string(),
-        }),
-        "!" => Box::new(ComparisonExpression {
-            field_name: field_name.to_string(),
-            operator: ComparisonOperator::NotEqual,
-            expected_value: expected_value.to_string(),
-        }),
-        "contains" => Box::new(CheckExpression {
-            field_name: field_name.to_string(),
-            operator: CheckOperator::Contains,
-            expected_value: expected_value.to_string(),
-        }),
-        "starts_with" => Box::new(CheckExpression {
-            field_name: field_name.to_string(),
-            operator: CheckOperator::StartsWith,
-            expected_value: expected_value.to_string(),
-        }),
-        "ends_with" => Box::new(CheckExpression {
-            field_name: field_name.to_string(),
-            operator: CheckOperator::EndsWith,
-            expected_value: expected_value.to_string(),
-        }),
-        "matches" => Box::new(CheckExpression {
-            field_name: field_name.to_string(),
-            operator: CheckOperator::Matches,
-            expected_value: expected_value.to_string(),
-        }),
-        _ => {
-            return Err(GQLError {
-                message: "Expect `symbol` as field name".to_owned(),
-                location: tokens[*position].location,
-            })
-        }
-    };
+    if operator.kind == TokenKind::Or || operator.kind == TokenKind::And {
+        *position += 1;
 
-    if *position < tokens.len()
-        && (tokens[*position].kind == TokenKind::And || tokens[*position].kind == TokenKind::Or)
-    {
-        let operator = if tokens[*position].kind == TokenKind::And {
+        let logical_operator = if operator.kind == TokenKind::And {
             LogicalOperator::And
         } else {
             LogicalOperator::Or
         };
 
-        *position += 1;
-        let other_expr = parse_expression(tokens, position);
-
-        let mut binary_expression = BinaryExpression {
-            right: expression,
-            operator: operator,
-            left: other_expr.ok().unwrap(),
-        };
-
-        while *position < tokens.len()
-            && (tokens[*position].kind == TokenKind::And || tokens[*position].kind == TokenKind::Or)
-        {
-            let operator = if tokens[*position].kind == TokenKind::And {
-                LogicalOperator::And
-            } else {
-                LogicalOperator::Or
-            };
-
-            *position += 1;
-            let other_expr = parse_expression(tokens, position);
-            binary_expression = BinaryExpression {
-                right: Box::new(binary_expression),
-                operator: operator,
-                left: other_expr.ok().unwrap(),
-            }
+        let right_expr = parse_comparison_expression(tokens, position);
+        if right_expr.is_err() {
+            return Err(GQLError {
+                message: "Can't right side of logical expression".to_owned(),
+                location: tokens[*position].location,
+            });
         }
 
-        return Ok(Box::new(binary_expression));
+        let rhs = right_expr.ok().unwrap();
+        return Ok(Box::new(LogicalExpression {
+            left: lhs,
+            operator: logical_operator,
+            right: rhs,
+        }));
     }
 
-    return Ok(expression);
+    return Ok(lhs);
+}
+
+fn parse_comparison_expression(
+    tokens: &Vec<Token>,
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, GQLError> {
+    let expression = parse_check_expression(tokens, position);
+    if *position >= tokens.len() {
+        return expression;
+    }
+
+    if expression.is_err() {
+        return Err(GQLError {
+            message: "Can't parse expression".to_owned(),
+            location: tokens[*position].location,
+        });
+    }
+
+    let lhs = expression.ok().unwrap();
+
+    let operator = &tokens[*position];
+    if operator.kind == TokenKind::Greater
+        || operator.kind == TokenKind::GreaterEqual
+        || operator.kind == TokenKind::Less
+        || operator.kind == TokenKind::LessEqual
+        || operator.kind == TokenKind::Equal
+        || operator.kind == TokenKind::NotEqual
+    {
+        *position += 1;
+        let comparison_operator = match operator.kind {
+            TokenKind::Greater => ComparisonOperator::Greater,
+            TokenKind::GreaterEqual => ComparisonOperator::GreaterEqual,
+            TokenKind::Less => ComparisonOperator::Less,
+            TokenKind::LessEqual => ComparisonOperator::LessEqual,
+            TokenKind::Equal => ComparisonOperator::Equal,
+            _ => ComparisonOperator::NotEqual,
+        };
+
+        let right_expr = parse_check_expression(tokens, position);
+
+        if right_expr.is_err() {
+            return Err(GQLError {
+                message: "Can't right side of comparison expression".to_owned(),
+                location: tokens[*position].location,
+            });
+        }
+
+        let rhs = right_expr.ok().unwrap();
+        return Ok(Box::new(ComparisonExpression {
+            left: lhs,
+            operator: comparison_operator,
+            right: rhs,
+        }));
+    }
+
+    return Ok(lhs);
+}
+
+fn parse_check_expression(
+    tokens: &Vec<Token>,
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, GQLError> {
+    let expression = parse_primary_expression(tokens, position);
+    if *position >= tokens.len() {
+        return expression;
+    }
+
+    if expression.is_err() {
+        return Err(GQLError {
+            message: "Can't parse expression".to_owned(),
+            location: tokens[*position].location,
+        });
+    }
+
+    let lhs = expression.ok().unwrap();
+
+    let operator = &tokens[*position];
+
+    if operator.kind == TokenKind::Contains
+        || operator.kind == TokenKind::StartsWith
+        || operator.kind == TokenKind::EndsWith
+        || operator.kind == TokenKind::Matches
+    {
+        *position += 1;
+
+        let check_operator = match operator.kind {
+            TokenKind::Contains => CheckOperator::Contains,
+            TokenKind::StartsWith => CheckOperator::StartsWith,
+            TokenKind::EndsWith => CheckOperator::EndsWith,
+            _ => CheckOperator::Matches,
+        };
+
+        let right_expr = parse_primary_expression(tokens, position);
+        if right_expr.is_err() {
+            return Err(GQLError {
+                message: "Can't right side of check expression".to_owned(),
+                location: tokens[*position].location,
+            });
+        }
+
+        let rhs = right_expr.ok().unwrap();
+        return Ok(Box::new(CheckExpression {
+            left: lhs,
+            operator: check_operator,
+            right: rhs,
+        }));
+    }
+
+    return Ok(lhs);
+}
+
+fn parse_primary_expression(
+    tokens: &Vec<Token>,
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, GQLError> {
+    if tokens[*position].kind == TokenKind::String {
+        *position += 1;
+        return Ok(Box::new(StringExpression {
+            value: tokens[*position - 1].literal.to_string(),
+        }));
+    }
+
+    if tokens[*position].kind == TokenKind::Symbol {
+        *position += 1;
+        return Ok(Box::new(SymbolExpression {
+            value: tokens[*position - 1].literal.to_string(),
+        }));
+    }
+
+    return Err(GQLError {
+        message: "Can't parse primary expression".to_owned(),
+        location: tokens[*position].location,
+    });
 }
