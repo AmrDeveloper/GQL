@@ -92,8 +92,10 @@ Transofmations are functions with 0 arguments used to apply transformation on va
 SELECT * FROM commits where name.lower = "amrdeveloper"
 ```
 
-- `lower` used to convert the value to be lower case.
-- `upper` used to convert the value to be upper case.
+- `lower` convert the value to be lower case.
+- `upper` convert the value to be upper case.
+- `trim` remote leading and trailing whitespace.
+- `length` return the length as a string.
 
 ---
 
