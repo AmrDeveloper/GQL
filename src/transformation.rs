@@ -8,6 +8,8 @@ lazy_static! {
         let mut map: HashMap<&'static str, Transformation> = HashMap::new();
         map.insert("lower", lower);
         map.insert("upper", upper);
+        map.insert("trim", trim);
+        map.insert("length", length);
         map
     };
 }
@@ -18,4 +20,12 @@ fn lower(input: String) -> String {
 
 fn upper(input: String) -> String {
     return input.to_uppercase();
+}
+
+fn trim(input: String) -> String {
+    return input.trim().to_string();
+}
+
+fn length(input: String) -> String {
+    return input.len().to_string();
 }
