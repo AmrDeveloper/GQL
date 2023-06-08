@@ -119,6 +119,13 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<Vec<Box<dyn Statement>>, GQLError
     return Ok(statements);
 }
 
+pub fn consume_kind(token: &Token, kind: TokenKind) -> Result<&Token, i32> {
+    if token.kind == kind {
+        return Ok(token);
+    }
+    return Err(0);
+}
+
 fn parse_select_statement(
     tokens: &Vec<Token>,
     position: &mut usize,
@@ -136,7 +143,15 @@ fn parse_select_statement(
         *position += 1;
     } else if tokens[*position].kind == TokenKind::Symbol {
         while *position < tokens.len() {
-            fields.push(tokens[*position].literal.to_string());
+            let field_name_result = consume_kind(&tokens[*position], TokenKind::Symbol);
+            if field_name_result.is_err() {
+                return Err(GQLError {
+                    message: "Expect `identifier` as a field name".to_owned(),
+                    location: tokens[*position].location,
+                });
+            }
+
+            fields.push(field_name_result.ok().unwrap().literal.to_string());
             *position += 1;
             if tokens[*position].kind == TokenKind::Comma {
                 *position += 1;
@@ -146,7 +161,7 @@ fn parse_select_statement(
         }
     } else {
         return Err(GQLError {
-            message: "Expect `*` or `symbols` after `select` keyword".to_owned(),
+            message: "Expect `*` or `identifier` after `select` keyword".to_owned(),
             location: tokens[*position].location,
         });
     }
@@ -160,7 +175,15 @@ fn parse_select_statement(
 
     *position += 1;
 
-    let table_name = &tokens[*position].literal;
+    let table_name_result = consume_kind(&tokens[*position], TokenKind::Symbol);
+    if table_name_result.is_err() {
+        return Err(GQLError {
+            message: "Expect `identifier` as a table name".to_owned(),
+            location: tokens[*position].location,
+        });
+    }
+
+    let table_name = &table_name_result.ok().unwrap().literal;
     if !TABLES_FIELDS_NAMES.contains_key(table_name.as_str()) {
         return Err(GQLError {
             message: "Invalid table name".to_owned(),
