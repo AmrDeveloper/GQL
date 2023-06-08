@@ -21,10 +21,12 @@ select * from commits
 select name, email from commits
 select name, email from commits order by name
 select name, email from commits where name contains "gmail" order by name
+select * from commits where name.lower = "amrdeveloper"
 
 select * from branches
 select * from branches where ishead = "true"
 select * from branches where name ends_with "master"
+select * from branches where name contains "origin"
 
 select * from tags
 select * from tags offset 1 limit 1
@@ -87,10 +89,6 @@ offset statement take n as integer to ignore the first n result.
 
 ### Transformations
 Transofmations are functions with 0 arguments used to apply transformation on values
-
-```sql
-SELECT * FROM commits where name.lower = "amrdeveloper"
-```
 
 - `lower` convert the value to be lower case.
 - `upper` convert the value to be upper case.
