@@ -99,6 +99,7 @@ impl Expression for CheckExpression {
 pub enum LogicalOperator {
     Or,
     And,
+    Xor,
 }
 
 pub struct LogicalExpression {
@@ -124,6 +125,7 @@ impl Expression for LogicalExpression {
         return match self.operator {
             LogicalOperator::And => lhs && rhs,
             LogicalOperator::Or => lhs || rhs,
+            LogicalOperator::Xor => lhs ^ rhs,
         }
         .to_string();
     }

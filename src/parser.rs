@@ -314,13 +314,16 @@ fn parse_logical_expression(
     let lhs = expression.ok().unwrap();
     let operator = &tokens[*position];
 
-    if operator.kind == TokenKind::Or || operator.kind == TokenKind::And {
+    if operator.kind == TokenKind::Or
+        || operator.kind == TokenKind::And
+        || operator.kind == TokenKind::Xor
+    {
         *position += 1;
 
-        let logical_operator = if operator.kind == TokenKind::And {
-            LogicalOperator::And
-        } else {
-            LogicalOperator::Or
+        let logical_operator = match operator.kind {
+            TokenKind::Or => LogicalOperator::Or,
+            TokenKind::And => LogicalOperator::And,
+            _ => LogicalOperator::Xor,
         };
 
         let right_expr = parse_comparison_expression(tokens, position);

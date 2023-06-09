@@ -72,6 +72,14 @@ Select keyword used to select all of some fields from specific table
 
 ---
 
+## Logical Expressions
+
+- `|` or `or`: used to calculate or between two booleans,
+- `&` or `and`: used to calculate and between two booleans,
+- `^` or `xor`: used to calculate xor between two booleans,
+
+---
+
 ## Sorting
 To sort the result you need to use `order by` keyword followed by field name.
 

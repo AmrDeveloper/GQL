@@ -22,6 +22,7 @@ pub enum TokenKind {
 
     Or,
     And,
+    Xor,
 
     Symbol,
     Number,
@@ -186,6 +187,24 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             continue;
         }
 
+        // xor
+        if char == '^' {
+            let location = Location {
+                start: column_start,
+                end: position,
+            };
+
+            let token = Token {
+                location: location,
+                kind: TokenKind::Xor,
+                literal: "^".to_owned(),
+            };
+
+            tokens.push(token);
+            position += 1;
+            continue;
+        }
+
         // Comma
         if char == ',' {
             let location = Location {
@@ -333,6 +352,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
 
 fn resolve_symbol_kind(literal: String) -> TokenKind {
     return match literal.to_lowercase().as_str() {
+        // Reserved keywords
         "select" => TokenKind::Select,
         "from" => TokenKind::From,
         "where" => TokenKind::Where,
@@ -341,10 +361,18 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "order" => TokenKind::Order,
         "by" => TokenKind::By,
 
+        // Logical Operators
+        "or" => TokenKind::Or,
+        "and" => TokenKind::And,
+        "xor" => TokenKind::Xor,
+
+        // String operators
         "contains" => TokenKind::Contains,
         "starts_with" => TokenKind::StartsWith,
         "ends_with" => TokenKind::EndsWith,
         "matches" => TokenKind::Matches,
+
+        // Identifier
         _ => TokenKind::Symbol,
     };
 }
