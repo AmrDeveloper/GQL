@@ -27,6 +27,17 @@ impl Expression for SymbolExpression {
     }
 }
 
+pub struct NotExpression {
+    pub right: Box<dyn Expression>,
+}
+
+impl Expression for NotExpression {
+    fn evaluate(&self, object: &GQLObject) -> String {
+        let value = self.right.evaluate(object);
+        return (!value.eq("true")).to_string();
+    }
+}
+
 #[derive(PartialEq)]
 pub enum ComparisonOperator {
     Greater,

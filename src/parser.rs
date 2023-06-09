@@ -4,7 +4,7 @@ use std::collections::HashSet;
 
 use crate::diagnostic::GQLError;
 use crate::expression::{CallExpression, CheckOperator, ComparisonOperator, LogicalOperator};
-use crate::expression::{CheckExpression, ComparisonExpression, LogicalExpression};
+use crate::expression::{CheckExpression, ComparisonExpression, LogicalExpression, NotExpression};
 use crate::expression::{Expression, StringExpression, SymbolExpression};
 use crate::tokenizer::{Token, TokenKind};
 
@@ -362,7 +362,7 @@ fn parse_comparison_expression(
         || operator.kind == TokenKind::Less
         || operator.kind == TokenKind::LessEqual
         || operator.kind == TokenKind::Equal
-        || operator.kind == TokenKind::NotEqual
+        || operator.kind == TokenKind::Bang
     {
         *position += 1;
         let comparison_operator = match operator.kind {
@@ -398,7 +398,7 @@ fn parse_check_expression(
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
-    let expression = parse_call_expression(tokens, position);
+    let expression = parse_unary_expression(tokens, position);
     if expression.is_err() || *position >= tokens.len() {
         return expression;
     }
@@ -421,7 +421,7 @@ fn parse_check_expression(
             _ => CheckOperator::Matches,
         };
 
-        let right_expr = parse_call_expression(tokens, position);
+        let right_expr = parse_unary_expression(tokens, position);
         if right_expr.is_err() {
             return Err(GQLError {
                 message: "Can't right side of check expression".to_owned(),
@@ -438,6 +438,23 @@ fn parse_check_expression(
     }
 
     return Ok(lhs);
+}
+
+fn parse_unary_expression(
+    tokens: &Vec<Token>,
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, GQLError> {
+    if (&tokens[*position]).kind == TokenKind::Bang {
+        *position += 1;
+        let right_expr = parse_expression(tokens, position);
+        if right_expr.is_err() {
+            return right_expr;
+        }
+        let rhs = right_expr.ok().unwrap();
+        return Ok(Box::new(NotExpression { right: rhs }));
+    }
+
+    return parse_call_expression(tokens, position);
 }
 
 fn parse_call_expression(

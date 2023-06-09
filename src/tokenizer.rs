@@ -13,7 +13,7 @@ pub enum TokenKind {
     Less,
     LessEqual,
     Equal,
-    NotEqual,
+    Bang,
 
     Contains,
     StartsWith,
@@ -327,7 +327,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
 
             let token = Token {
                 location: location,
-                kind: TokenKind::NotEqual,
+                kind: TokenKind::Bang,
                 literal: "!".to_owned(),
             };
 
