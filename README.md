@@ -108,7 +108,7 @@ offset statement take n as integer to ignore the first n result.
 ---
 
 ### Transformations
-Transofmations are functions with 0 arguments used to apply transformation on values
+Transformations are functions with 0 arguments used to apply transformation on values
 
 - `lower` convert the value to be lower case.
 - `upper` convert the value to be upper case.
