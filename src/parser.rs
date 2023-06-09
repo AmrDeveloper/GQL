@@ -218,7 +218,7 @@ fn parse_where_statement(
     position: &mut usize,
 ) -> Result<Box<dyn Statement>, GQLError> {
     *position += 1;
-    if *position >= tokens.len() || tokens[*position].kind != TokenKind::Symbol {
+    if *position >= tokens.len() {
         return Err(GQLError {
             message: "Expect expression after `where` keyword".to_owned(),
             location: tokens[*position - 1].location,
@@ -483,22 +483,34 @@ fn parse_primary_expression(
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
-    if tokens[*position].kind == TokenKind::String {
-        *position += 1;
-        return Ok(Box::new(StringExpression {
-            value: tokens[*position - 1].literal.to_string(),
-        }));
-    }
-
-    if tokens[*position].kind == TokenKind::Symbol {
-        *position += 1;
-        return Ok(Box::new(SymbolExpression {
-            value: tokens[*position - 1].literal.to_string(),
-        }));
-    }
-
-    return Err(GQLError {
-        message: "Can't parse primary expression".to_owned(),
-        location: tokens[*position].location,
-    });
+    return match tokens[*position].kind {
+        TokenKind::String => {
+            *position += 1;
+            Ok(Box::new(StringExpression {
+                value: tokens[*position - 1].literal.to_string(),
+            }))
+        }
+        TokenKind::Symbol => {
+            *position += 1;
+            return Ok(Box::new(SymbolExpression {
+                value: tokens[*position - 1].literal.to_string(),
+            }));
+        }
+        TokenKind::LeftParen => {
+            *position += 1;
+            let expression = parse_expression(tokens, position);
+            if tokens[*position].kind != TokenKind::RightParen {
+                return Err(GQLError {
+                    message: "Expect `)` to end group expression".to_owned(),
+                    location: tokens[*position].location,
+                });
+            }
+            *position += 1;
+            expression
+        }
+        _ => Err(GQLError {
+            message: "Can't parse primary expression".to_owned(),
+            location: tokens[*position].location,
+        }),
+    };
 }

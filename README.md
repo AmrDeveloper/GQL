@@ -80,6 +80,12 @@ Select keyword used to select all of some fields from specific table
 
 ---
 
+## Group Expressions
+
+Group expression is an expresion inside `(` and `)` used to give high precedence for expression.
+
+---
+
 ## Sorting
 To sort the result you need to use `order by` keyword followed by field name.
 

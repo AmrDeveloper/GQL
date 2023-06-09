@@ -20,6 +20,9 @@ pub enum TokenKind {
     EndsWith,
     Matches,
 
+    LeftParen,
+    RightParen,
+
     Or,
     And,
     Xor,
@@ -315,6 +318,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             continue;
         }
 
+        // Not
         if char == '!' {
             let location = Location {
                 start: column_start,
@@ -325,6 +329,42 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
                 location: location,
                 kind: TokenKind::NotEqual,
                 literal: "!".to_owned(),
+            };
+
+            tokens.push(token);
+            position += 1;
+            continue;
+        }
+
+        // Left Paren
+        if char == '(' {
+            let location = Location {
+                start: column_start,
+                end: position,
+            };
+
+            let token = Token {
+                location: location,
+                kind: TokenKind::LeftParen,
+                literal: "(".to_owned(),
+            };
+
+            tokens.push(token);
+            position += 1;
+            continue;
+        }
+
+        // Right Paren
+        if char == ')' {
+            let location = Location {
+                start: column_start,
+                end: position,
+            };
+
+            let token = Token {
+                location: location,
+                kind: TokenKind::RightParen,
+                literal: ")".to_owned(),
             };
 
             tokens.push(token);
