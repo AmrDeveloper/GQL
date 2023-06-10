@@ -3,26 +3,30 @@ mod engine;
 mod engine_function;
 mod expression;
 mod object;
+mod colored_stream;
 mod parser;
 mod statement;
 mod tokenizer;
 mod transformation;
 
+use diagnostic::DiagnosticEngine;
+
 fn main() {
+    let print_analysis = true;
+    let mut diagnostics = DiagnosticEngine::new();
+
     let args: Vec<_> = std::env::args().collect();
     if args.len() != 2 {
-        println!("Invalid number of arguments");
-        println!("Usage: {} <repository path>", args[0]);
+        diagnostics.report_error("Invalid number of arguments");
+        diagnostics.report_error("Usage: gql <repository path>");
         return;
     }
-
-    let print_analysis = true;
 
     let working_path = &args[1];
     let repository = git2::Repository::open(working_path);
     if repository.is_err() {
         let error = repository.err();
-        println!("ERROR: {}", error.unwrap().message());
+        diagnostics.report_error(error.unwrap().message());
         return;
     }
 
@@ -35,25 +39,25 @@ fn main() {
 
         match std::io::stdin().read_line(&mut input) {
             Ok(_) => (),
-            Err(err) => println!("Invalid input {}", err),
+            Err(_err) => diagnostics.report_error("Invalid input"),
         }
 
         if input.trim() == "exit" {
-            println!("Bye (^_*)");
+            println!("Bye");
             break;
         }
 
         let front_start = std::time::Instant::now();
         let tokenizer_result = tokenizer::tokenize(input.trim().to_string());
         if tokenizer_result.is_err() {
-            diagnostic::report_gql_error(tokenizer_result.err().unwrap());
+            diagnostics.report_gql_error(tokenizer_result.err().unwrap());
             return;
         }
 
         let tokens = tokenizer_result.ok().unwrap();
         let parser_result = parser::parse_gql(tokens);
         if parser_result.is_err() {
-            diagnostic::report_gql_error(parser_result.err().unwrap());
+            diagnostics.report_gql_error(parser_result.err().unwrap());
             return;
         }
 
