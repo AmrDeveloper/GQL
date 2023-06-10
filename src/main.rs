@@ -16,6 +16,8 @@ fn main() {
         return;
     }
 
+    let print_analysis = true;
+
     let working_path = &args[1];
     let repository = git2::Repository::open(working_path);
     if repository.is_err() {
@@ -41,6 +43,7 @@ fn main() {
             break;
         }
 
+        let front_start = std::time::Instant::now();
         let tokenizer_result = tokenizer::tokenize(input.trim().to_string());
         if tokenizer_result.is_err() {
             diagnostic::report_gql_error(tokenizer_result.err().unwrap());
@@ -56,8 +59,19 @@ fn main() {
 
         let statements = parser_result.ok().unwrap();
         let repo = repository.as_ref().unwrap();
-        engine::evaluate(repo, statements);
+        let front_duration = front_start.elapsed();
 
+        let engine_start = std::time::Instant::now();
+        engine::evaluate(repo, statements);
+        let engine_duration = engine_start.elapsed();
         input.clear();
+
+        if print_analysis {
+            println!("\n");
+            println!("Analysis:");
+            println!("Frontend : {:?}", front_duration);
+            println!("Engine   : {:?}", engine_duration);
+            println!("\n");
+        }
     }
 }
