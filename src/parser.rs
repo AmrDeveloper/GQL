@@ -205,8 +205,10 @@ fn parse_select_statement(
                 location: tokens[*position].location,
             });
         }
+    }
 
-        unsafe { current_table_fields.push(field.to_string()) };
+    for valid_field in valid_fields {
+        unsafe { current_table_fields.push(valid_field.to_string()) };
     }
 
     *position += 1;
