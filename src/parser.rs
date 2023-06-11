@@ -24,6 +24,8 @@ lazy_static! {
     };
 }
 
+static mut current_table_fields: Vec<String> = Vec::new();
+
 pub fn parse_gql(tokens: Vec<Token>) -> Result<Vec<Box<dyn Statement>>, GQLError> {
     let mut statements: Vec<Box<dyn Statement>> = Vec::new();
     let len = tokens.len();
@@ -193,6 +195,8 @@ fn parse_select_statement(
         });
     }
 
+    unsafe { current_table_fields.clear() };
+
     let valid_fields = TABLES_FIELDS_NAMES.get(table_name.as_str()).unwrap();
     for field in &fields {
         if !valid_fields.contains(&field.as_str()) {
@@ -201,6 +205,8 @@ fn parse_select_statement(
                 location: tokens[*position].location,
             });
         }
+
+        unsafe { current_table_fields.push(field.to_string()) };
     }
 
     *position += 1;
@@ -509,8 +515,17 @@ fn parse_primary_expression(
         }
         TokenKind::Symbol => {
             *position += 1;
+
+            let literal = &tokens[*position - 1].literal;
+            if unsafe { !current_table_fields.contains(literal) } {
+                return Err(GQLError {
+                    message: "The current table contains no field with this name".to_owned(),
+                    location: tokens[*position - 1].location,
+                });
+            }
+
             return Ok(Box::new(SymbolExpression {
-                value: tokens[*position - 1].literal.to_string(),
+                value: literal.to_string(),
             }));
         }
         TokenKind::LeftParen => {
