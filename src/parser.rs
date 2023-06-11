@@ -329,7 +329,7 @@ fn parse_logical_expression(
         let right_expr = parse_comparison_expression(tokens, position);
         if right_expr.is_err() {
             return Err(GQLError {
-                message: "Can't right side of logical expression".to_owned(),
+                message: "Can't parser right side of logical expression".to_owned(),
                 location: tokens[*position].location,
             });
         }
@@ -424,7 +424,7 @@ fn parse_check_expression(
         let right_expr = parse_unary_expression(tokens, position);
         if right_expr.is_err() {
             return Err(GQLError {
-                message: "Can't right side of check expression".to_owned(),
+                message: "Can't parser right side of check expression".to_owned(),
                 location: tokens[*position].location,
             });
         }
