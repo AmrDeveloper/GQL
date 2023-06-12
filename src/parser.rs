@@ -6,11 +6,9 @@ use crate::diagnostic::GQLError;
 use crate::expression::{CallExpression, CheckOperator, ComparisonOperator, LogicalOperator};
 use crate::expression::{CheckExpression, ComparisonExpression, LogicalExpression, NotExpression};
 use crate::expression::{Expression, StringExpression, SymbolExpression};
+use crate::statement::{LimitStatement, OffsetStatement, OrderByStatement};
+use crate::statement::{SelectStatement, Statement, WhereStatement};
 use crate::tokenizer::{Token, TokenKind};
-
-use crate::statement::{
-    LimitStatement, OffsetStatement, OrderByStatement, SelectStatement, Statement, WhereStatement,
-};
 
 use crate::transformation::TRANSFORMATIONS;
 
@@ -24,7 +22,7 @@ lazy_static! {
     };
 }
 
-static mut current_table_fields: Vec<String> = Vec::new();
+static mut CURRENT_TABLE_FIELDS: Vec<String> = Vec::new();
 
 pub fn parse_gql(tokens: Vec<Token>) -> Result<Vec<Box<dyn Statement>>, GQLError> {
     let mut statements: Vec<Box<dyn Statement>> = Vec::new();
@@ -195,7 +193,7 @@ fn parse_select_statement(
         });
     }
 
-    unsafe { current_table_fields.clear() };
+    unsafe { CURRENT_TABLE_FIELDS.clear() };
 
     let valid_fields = TABLES_FIELDS_NAMES.get(table_name.as_str()).unwrap();
     for field in &fields {
@@ -208,7 +206,7 @@ fn parse_select_statement(
     }
 
     for valid_field in valid_fields {
-        unsafe { current_table_fields.push(valid_field.to_string()) };
+        unsafe { CURRENT_TABLE_FIELDS.push(valid_field.to_string()) };
     }
 
     *position += 1;
@@ -519,7 +517,7 @@ fn parse_primary_expression(
             *position += 1;
 
             let literal = &tokens[*position - 1].literal;
-            if unsafe { !current_table_fields.contains(literal) } {
+            if unsafe { !CURRENT_TABLE_FIELDS.contains(literal) } {
                 return Err(GQLError {
                     message: "The current table contains no field with this name".to_owned(),
                     location: tokens[*position - 1].location,
