@@ -493,6 +493,20 @@ fn parse_call_expression(
 
         *position += 1;
 
+        // Support calling functions with Left and Right paren as optional
+        // Later can used to support functions with arguments
+        if consume_kind(&tokens[*position], TokenKind::LeftParen).is_ok() {
+            *position += 1;
+            if consume_kind(&tokens[*position], TokenKind::RightParen).is_ok() {
+                *position += 1;
+            } else {
+                return Err(GQLError {
+                    message: "Expect `)` after function call arguments".to_owned(),
+                    location: tokens[*position].location,
+                });
+            }
+        }
+
         expression = Ok(Box::new(CallExpression {
             left: expression.ok().unwrap(),
             function_name: function_name,
