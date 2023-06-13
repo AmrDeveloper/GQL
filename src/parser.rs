@@ -144,6 +144,8 @@ fn parse_select_statement(
     if tokens[*position].kind == TokenKind::Star {
         *position += 1;
     } else if tokens[*position].kind == TokenKind::Symbol {
+        let mut fields_names: HashSet<String> = HashSet::new();
+
         while *position < tokens.len() {
             let field_name_result = consume_kind(&tokens[*position], TokenKind::Symbol);
             if field_name_result.is_err() {
@@ -153,7 +155,16 @@ fn parse_select_statement(
                 });
             }
 
-            fields.push(field_name_result.ok().unwrap().literal.to_string());
+            let field_name = field_name_result.ok().unwrap().literal.to_string();
+            if !fields_names.insert(field_name.to_string()) {
+                return Err(GQLError {
+                    message: "Can't select the same field twice".to_owned(),
+                    location: tokens[*position].location,
+                });
+            }
+
+            fields.push(field_name);
+
             *position += 1;
             if tokens[*position].kind == TokenKind::Comma {
                 *position += 1;
