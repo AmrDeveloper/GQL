@@ -43,7 +43,7 @@ impl DiagnosticEngine {
         self.stdout.print(&start.to_string());
         self.stdout.print(" - ");
         self.stdout.print(&end.to_string());
-        self.stdout.print("] ->");
+        self.stdout.print("] -> ");
         self.stdout.println(&message);
 
         self.stdout.reset();
