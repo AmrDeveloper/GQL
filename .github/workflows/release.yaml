@@ -34,6 +34,9 @@ jobs:
       gql_dry_run: ${{ env.GQL_DRY_RUN }}
 
     steps:
+      - name: Install OpenSSL
+        run: sudo apt-get update && sudo apt-get install -y libssl-dev
+
       - name: Inputs from workflow dispatch
         shell: bash
         if: ${{ github.event_name == 'workflow_dispatch' }}
