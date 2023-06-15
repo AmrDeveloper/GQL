@@ -1,0 +1,204 @@
+# Taken from ripgrep with modifications
+# Taken from mitsuhiko/rye with modifications
+#
+# Reference:
+# https://eugene-babichenko.github.io/blog/2020/05/09/github-actions-cross-platform-auto-releases/
+
+name: release
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        description: "Release version"
+        required: true
+      dry-run:
+        type: choice
+        description: "Dry Run"
+        options:
+          - "no"
+          - "yes"
+        required: true
+
+jobs:
+  create-release:
+    name: create-release
+    runs-on: ubuntu-22.04
+
+    outputs:
+      gql_version: ${{ env.GQL_VERSION }}
+      gql_dry_run: ${{ env.GQL_DRY_RUN }}
+
+    steps:
+      - name: Inputs from workflow dispatch
+        shell: bash
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          echo "GQL_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+          echo "GQL_DRY_RUN=${{ github.event.inputs.dry-run }}" >> $GITHUB_ENV
+          echo "GQL_VERSION: ${{ github.event.inputs.version }}"
+          echo "GQL_DRY_RUN: ${{ github.event.inputs.dry-run }}"
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Get the release version from the tag
+        shell: bash
+        if: env.GQL_VERSION == ''
+        run: |
+          # Apparently, this is the right way to get a tag name. Really?
+          #
+          # See: https://github.community/t5/GitHub-Actions/How-to-get-just-the-tag-name/m-p/32167/highlight/true#M1027
+          echo "GQL_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          echo "version is: ${{ env.GQL_VERSION }}"
+
+      - name: Create GitHub release
+        id: release
+        if: env.GQL_DRY_RUN != 'yes'
+        env:
+          GH_TOKEN: ${{ secrets.TOKEN }}
+        run: gh release create --draft --title "${{ env.GQL_VERSION }}" "${{ env.GQL_VERSION }}"
+
+  build-release:
+    name: build-release
+    needs: ["create-release"]
+    runs-on: ${{ matrix.os }}
+    env:
+      # For some builds, we use cross to test on 32-bit and big-endian
+      # systems.
+      CARGO: cargo
+      # When CARGO is set to CROSS, this is set to `--target matrix.target`.
+      TARGET_FLAGS: ""
+      # When CARGO is set to CROSS, TARGET_DIR includes matrix.target.
+      TARGET_DIR: ./target
+      # Emit backtraces on panics.
+      RUST_BACKTRACE: 1
+    strategy:
+      matrix:
+        build: [linux, macos, macos-arm, win-msvc, win32-msvc]
+        include:
+          - build: linux
+            os: ubuntu-22.04
+            rust: stable
+            target: x86_64-unknown-linux-musl
+            name: x86_64-linux
+          - build: linux-arm
+            os: ubuntu-22.04
+            rust: stable
+            target: aarch64-unknown-linux-musl
+            name: aarch64-linux
+          - build: macos
+            os: macos-12
+            rust: stable
+            target: x86_64-apple-darwin
+            name: x86_64-macos
+          - build: macos-arm
+            os: macos-12
+            rust: stable
+            target: aarch64-apple-darwin
+            name: aarch64-macos
+          - build: win-msvc
+            os: windows-2022
+            rust: stable
+            target: x86_64-pc-windows-msvc
+            name: x86_64-windows
+          - build: win32-msvc
+            os: windows-2022
+            rust: stable
+            target: i686-pc-windows-msvc
+            name: x86-windows
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+          target: ${{ matrix.target }}
+
+      - name: Use Cross
+        shell: bash
+        run: |
+          cargo install cross
+          echo "CARGO=cross" >> $GITHUB_ENV
+          echo "TARGET_FLAGS=--target ${{ matrix.target }}" >> $GITHUB_ENV
+          echo "TARGET_DIR=./target/${{ matrix.target }}" >> $GITHUB_ENV
+
+      - name: Show command used for Cargo
+        run: |
+          echo "cargo command is: ${{ env.CARGO }}"
+          echo "target flag is: ${{ env.TARGET_FLAGS }}"
+          echo "target dir is: ${{ env.TARGET_DIR }}"
+
+      - name: Build release binary
+        run: ${{ env.CARGO }} build --verbose --release ${{ env.TARGET_FLAGS }}
+
+      - name: Build release file
+        shell: bash
+        run: |
+          outdir="$(scripts/cargo-out-dir "${{ env.TARGET_DIR }}")"
+          bin="gql-${{ matrix.name }}"
+
+          if [ "${{ matrix.os }}" = "windows-2022" ]; then
+            cp "target/${{ matrix.target }}/release/gql.exe" "$bin.exe"
+            python scripts/sha256.py $bin.exe > "$bin.exe.sha256"
+            echo "ASSET=$bin.exe" >> $GITHUB_ENV
+            echo "SHA256_FILE=$bin.exe.sha256" >> $GITHUB_ENV
+          else
+            cp "target/${{ matrix.target }}/release/gql" "$bin"
+            gzip "$bin"
+            python scripts/sha256.py $bin.gz > "$bin.gz.sha256"
+            echo "ASSET=$bin.gz" >> $GITHUB_ENV
+            echo "SHA256_FILE=$bin.gz.sha256" >> $GITHUB_ENV
+          fi
+
+      - name: Upload release archive
+        if: ${{ needs.create-release.outputs.gql_dry_run }} != 'yes'
+        env:
+          GH_TOKEN: ${{ secrets.TOKEN }}
+        run: |
+          gh release upload "${{ needs.create-release.outputs.gql_version }}" "${{ env.ASSET }}"
+          gh release upload "${{ needs.create-release.outputs.gql_version }}" "${{ env.SHA256_FILE }}"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.ASSET }}
+          path: ${{ env.ASSET }}
+
+      - name: Upload artifact hash
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.SHA256_FILE }}
+          path: ${{ env.SHA256_FILE }}
+
+  write-release-meta:
+    name: write-release-meta
+    runs-on: ubuntu-22.04
+    needs: ["create-release", "build-release"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Upload Release Meta
+        if: ${{ needs.create-release.outputs.gql_dry_run }} != 'yes'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.TOKEN }}
+        run: |
+          gh run download $GH_RUNID -D artifacts-tmp -p "*.sha256"
+          python scripts/summarize-release.py "${{ needs.create-release.outputs.gql_version }}" artifacts-tmp > MANIFEST.json
+          gh release upload "${{ needs.create-release.outputs.gql_version }}" MANIFEST.json
+
+      - name: Upload artifact hash
+        uses: actions/upload-artifact@v3
+        with:
+          name: MANIFEST.json
+          path: MANIFEST.json
