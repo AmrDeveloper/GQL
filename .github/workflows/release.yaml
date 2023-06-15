@@ -37,7 +37,8 @@ jobs:
       - name: Install OpenSSL
         run: |
           sudo apt-get install libssl-dev
-          export PKG_CONFIG_PATH=/usr/lib/pkgconfig:/usr/local/lib/pkgconfig
+          export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/local/opt/openssl/lib/pkgconfig"
+          export OPENSSL_ROOT_DIR=/usr/local/opt/openssl
 
       - name: Inputs from workflow dispatch
         shell: bash
