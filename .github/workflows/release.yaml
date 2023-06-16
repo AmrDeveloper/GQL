@@ -34,12 +34,6 @@ jobs:
       gql_dry_run: ${{ env.GQL_DRY_RUN }}
 
     steps:
-      - name: Install OpenSSL
-        run: |
-          sudo apt-get install libssl-dev
-          export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/local/opt/openssl/lib/pkgconfig"
-          export OPENSSL_ROOT_DIR=/usr/local/opt/openssl
-
       - name: Inputs from workflow dispatch
         shell: bash
         if: ${{ github.event_name == 'workflow_dispatch' }}
@@ -128,6 +122,21 @@ jobs:
           toolchain: ${{ matrix.rust }}
           target: ${{ matrix.target }}
 
+      - name: Install OpenSSL on Ubuntu
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get install pkg-config libssl-dev
+
+      - name: Install OpenSSL on Windows
+        if: matrix.os == 'windows-2022'
+        run: |
+          vcpkg install openssl:x64-windows-static-md
+
+      - name: Install OpenSSL on Macos
+        if: matrix.os == 'macos-12'
+        run: |
+          brew install openssl@3
+
       - name: Use Cross
         shell: bash
         run: |
@@ -148,6 +157,7 @@ jobs:
       - name: Build release file
         shell: bash
         run: |
+          chmod +x scripts/cargo-out-dir
           outdir="$(scripts/cargo-out-dir "${{ env.TARGET_DIR }}")"
           bin="gql-${{ matrix.name }}"
 

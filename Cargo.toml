@@ -12,7 +12,4 @@ git2 = "0.17.1"
 regex = "1"
 lazy_static = "1.4.0"
 termcolor = "1.2.0"
-
-[build-dependencies.git2]
-version = "0.17.1"
-default-features = false
+openssl = { version = "0.10", features = ["vendored"] }
