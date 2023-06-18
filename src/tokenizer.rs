@@ -31,6 +31,9 @@ pub enum TokenKind {
     Number,
     String,
 
+    True,
+    False,
+
     Star,
 
     Comma,
@@ -405,6 +408,10 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "or" => TokenKind::Or,
         "and" => TokenKind::And,
         "xor" => TokenKind::Xor,
+
+        // True and False
+        "true" => TokenKind::True,
+        "false" => TokenKind::False,
 
         // String operators
         "contains" => TokenKind::Contains,

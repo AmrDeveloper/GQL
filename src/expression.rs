@@ -27,6 +27,19 @@ impl Expression for SymbolExpression {
     }
 }
 
+pub struct BooleanExpression {
+    pub is_true: bool,
+}
+
+impl Expression for BooleanExpression {
+    fn evaluate(&self, _object: &GQLObject) -> String {
+        return if self.is_true {
+            "true".to_owned()
+        } else {
+            "false".to_owned()
+        };
+    }
+}
 pub struct NotExpression {
     pub right: Box<dyn Expression>,
 }

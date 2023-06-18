@@ -3,9 +3,9 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 
 use crate::diagnostic::GQLError;
+use crate::expression::{BooleanExpression, Expression, StringExpression, SymbolExpression};
 use crate::expression::{CallExpression, CheckOperator, ComparisonOperator, LogicalOperator};
 use crate::expression::{CheckExpression, ComparisonExpression, LogicalExpression, NotExpression};
-use crate::expression::{Expression, StringExpression, SymbolExpression};
 use crate::statement::{LimitStatement, OffsetStatement, OrderByStatement};
 use crate::statement::{SelectStatement, Statement, WhereStatement};
 use crate::tokenizer::{Token, TokenKind};
@@ -552,6 +552,14 @@ fn parse_primary_expression(
             return Ok(Box::new(SymbolExpression {
                 value: literal.to_string(),
             }));
+        }
+        TokenKind::True => {
+            *position += 1;
+            return Ok(Box::new(BooleanExpression { is_true: true }));
+        }
+        TokenKind::False => {
+            *position += 1;
+            return Ok(Box::new(BooleanExpression { is_true: false }));
         }
         TokenKind::LeftParen => {
             *position += 1;
