@@ -92,6 +92,12 @@ Group expression is an expresion inside `(` and `)` used to give high precedence
 
 ---
 
+## Boolean Expressions
+
+- `true`, `false`
+
+---
+
 ## Sorting
 To sort the result you need to use `order by` keyword followed by field name.
 
