@@ -5,6 +5,7 @@
 </p>
 
 <p align="center">
+  <img alt="GitHub release (release name instead of tag name)" src="https://img.shields.io/github/v/release/amrdeveloper/gql">
   <img alt="GitHub issues" src="https://img.shields.io/github/issues/amrdeveloper/gql">
   <img alt="GitHub" src="https://img.shields.io/github/license/amrdeveloper/gql">
   <img alt="GitHub all releases" src="https://img.shields.io/github/downloads/amrdeveloper/gql/total">
