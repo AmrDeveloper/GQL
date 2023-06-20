@@ -12,7 +12,7 @@ mod transformation;
 use diagnostic::DiagnosticEngine;
 
 fn main() {
-    let print_analysis = true;
+    let print_analysis = false;
     let mut diagnostics = DiagnosticEngine::new();
 
     let args: Vec<_> = std::env::args().collect();

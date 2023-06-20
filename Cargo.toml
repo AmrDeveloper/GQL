@@ -5,11 +5,16 @@ version = "0.1.0"
 edition = "2021"
 description = "Git query language"
 license = "MIT"
-repository = "https://github.com/amrdeveloper/gql"
+repository = "https://github.com/amrdeveloper/gql/"
+readme = "README.md"
+categories = ["command-line-utilities"]
+exclude = [".github/**"]
 
 [dependencies]
 git2 = "0.17.1"
 regex = "1"
 lazy_static = "1.4.0"
 termcolor = "1.2.0"
+prettytable-rs = "^0.10"
+textwrap = "0.16.0"
 openssl = { version = "0.10", features = ["vendored"] }

@@ -1,4 +1,7 @@
-use crate::{object, statement::Statement};
+use crate::{
+    object::{self, render_objects},
+    statement::Statement,
+};
 
 pub fn evaluate(repo: &git2::Repository, statements: Vec<Box<dyn Statement>>) {
     let mut objects: Vec<object::GQLObject> = Vec::new();
@@ -6,7 +9,5 @@ pub fn evaluate(repo: &git2::Repository, statements: Vec<Box<dyn Statement>>) {
         statement.execute(repo, &mut objects);
     }
 
-    for object in objects {
-        object.print();
-    }
+    render_objects(&objects);
 }
