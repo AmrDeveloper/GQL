@@ -5,6 +5,12 @@
 </p>
 
 <p align="center">
+  <img alt="GitHub issues" src="https://img.shields.io/github/issues/amrdeveloper/gql">
+  <img alt="GitHub" src="https://img.shields.io/github/license/amrdeveloper/gql">
+  <img alt="GitHub all releases" src="https://img.shields.io/github/downloads/amrdeveloper/gql/total">
+</p>
+
+<p align="center">
 GQL is a query language with a syntax very similar to SQL with a tiny engine to perform queries on .git files instance of database files, the engine executes the query on the fly without the need to create database files or convert .git files into any other format.
 </p>
 
