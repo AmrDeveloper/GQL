@@ -309,7 +309,21 @@ fn parse_order_by_statement(
 
     let field_name = tokens[*position].literal.to_string();
     *position += 1;
-    return Ok(Box::new(OrderByStatement { field_name }));
+
+    // Consume optional ordering ASC or DES
+    let mut is_ascending = true;
+    if *position < tokens.len()
+        && (tokens[*position].kind == TokenKind::Ascending
+            || tokens[*position].kind == TokenKind::Descending)
+    {
+        is_ascending = tokens[*position].kind == TokenKind::Ascending;
+        *position += 1;
+    }
+
+    return Ok(Box::new(OrderByStatement {
+        field_name,
+        is_ascending,
+    }));
 }
 
 fn parse_expression(

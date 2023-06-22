@@ -38,6 +38,9 @@ pub enum TokenKind {
 
     Comma,
     Dot,
+
+    Ascending,
+    Descending,
 }
 
 #[derive(Copy, Clone)]
@@ -418,6 +421,10 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "starts_with" => TokenKind::StartsWith,
         "ends_with" => TokenKind::EndsWith,
         "matches" => TokenKind::Matches,
+
+        // Order by DES and ASC
+        "asc" => TokenKind::Ascending,
+        "des" => TokenKind::Descending,
 
         // Identifier
         _ => TokenKind::Symbol,

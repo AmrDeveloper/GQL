@@ -67,6 +67,7 @@ impl Statement for OffsetStatement {
 
 pub struct OrderByStatement {
     pub field_name: String,
+    pub is_ascending: bool,
 }
 
 impl Statement for OrderByStatement {
@@ -83,6 +84,10 @@ impl Statement for OrderByStatement {
                     .unwrap()
                     .to_string()
             });
+
+            if !self.is_ascending {
+                objects.reverse();
+            }
         }
     }
 }
