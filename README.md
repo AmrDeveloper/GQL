@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img alt="GitHub release (release name instead of tag name)" src="https://img.shields.io/github/v/release/amrdeveloper/gql">
+  <img alt="GitHub release" src="https://img.shields.io/github/v/release/amrdeveloper/gql">
   <img alt="GitHub issues" src="https://img.shields.io/github/issues/amrdeveloper/gql">
   <img alt="GitHub" src="https://img.shields.io/github/license/amrdeveloper/gql">
   <img alt="GitHub all releases" src="https://img.shields.io/github/downloads/amrdeveloper/gql/total">
@@ -24,6 +24,9 @@ GQL is a query language with a syntax very similar to SQL with a tiny engine to 
 ### Samples
 
 ```sql
+SELECT * FROM refs WHERE type = "branch"
+SELECT * FROM refs WHERE ORDER BY type
+
 SELECT * FROM commits
 SELECT name, email FROM commits
 SELECT name, email FROM commits ORDER BY name DES
@@ -55,6 +58,7 @@ Select keyword used to select all of some fields from specific table
 ---
 
 ### Tables and Fields
+- refs { name, full_name, type }
 - commits { name, email, title, message, time }
 - branches { name, ishead, isremote }
 - tags { name }
