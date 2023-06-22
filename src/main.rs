@@ -52,6 +52,7 @@ fn main() {
         let tokenizer_result = tokenizer::tokenize(input.trim().to_string());
         if tokenizer_result.is_err() {
             diagnostics.report_gql_error(tokenizer_result.err().unwrap());
+            input.clear();
             continue;
         }
 
@@ -59,6 +60,7 @@ fn main() {
         let parser_result = parser::parse_gql(tokens);
         if parser_result.is_err() {
             diagnostics.report_gql_error(parser_result.err().unwrap());
+            input.clear();
             continue;
         }
 
