@@ -1,13 +1,14 @@
+mod colored_stream;
 mod diagnostic;
 mod engine;
 mod engine_function;
 mod expression;
 mod object;
-mod colored_stream;
 mod parser;
 mod statement;
 mod tokenizer;
 mod transformation;
+mod types;
 
 use diagnostic::DiagnosticEngine;
 

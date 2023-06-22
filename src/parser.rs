@@ -10,7 +10,10 @@ use crate::statement::{LimitStatement, OffsetStatement, OrderByStatement};
 use crate::statement::{SelectStatement, Statement, WhereStatement};
 use crate::tokenizer::{Token, TokenKind};
 
+use crate::tokenizer::Location;
 use crate::transformation::TRANSFORMATIONS;
+use crate::transformation::TRANSFORMATIONS_PROTOS;
+use crate::types::DataType;
 
 lazy_static! {
     static ref TABLES_FIELDS_NAMES: HashMap<&'static str, Vec<&'static str>> = {
@@ -120,13 +123,6 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<Vec<Box<dyn Statement>>, GQLError
     }
 
     return Ok(statements);
-}
-
-pub fn consume_kind(token: &Token, kind: TokenKind) -> Result<&Token, i32> {
-    if token.kind == kind {
-        return Ok(token);
-    }
-    return Err(0);
 }
 
 fn parse_select_statement(
@@ -344,6 +340,7 @@ fn parse_logical_expression(
     }
 
     let lhs = expression.ok().unwrap();
+
     let operator = &tokens[*position];
 
     if operator.kind == TokenKind::Or
@@ -351,6 +348,14 @@ fn parse_logical_expression(
         || operator.kind == TokenKind::Xor
     {
         *position += 1;
+
+        if lhs.expr_type() != DataType::Boolean {
+            return Err(type_missmatch_error(
+                tokens[*position - 2].location,
+                DataType::Boolean,
+                lhs.expr_type(),
+            ));
+        }
 
         let logical_operator = match operator.kind {
             TokenKind::Or => LogicalOperator::Or,
@@ -367,6 +372,14 @@ fn parse_logical_expression(
         }
 
         let rhs = right_expr.ok().unwrap();
+        if rhs.expr_type() != DataType::Boolean {
+            return Err(type_missmatch_error(
+                tokens[*position].location,
+                DataType::Boolean,
+                lhs.expr_type(),
+            ));
+        }
+
         return Ok(Box::new(LogicalExpression {
             left: lhs,
             operator: logical_operator,
@@ -479,17 +492,27 @@ fn parse_unary_expression(
     if (&tokens[*position]).kind == TokenKind::Bang {
         *position += 1;
         let right_expr = parse_expression(tokens, position);
+
         if right_expr.is_err() {
             return right_expr;
         }
+
         let rhs = right_expr.ok().unwrap();
+        if rhs.expr_type() != DataType::Boolean {
+            return Err(type_missmatch_error(
+                tokens[*position - 1].location,
+                DataType::Boolean,
+                rhs.expr_type(),
+            ));
+        }
+
         return Ok(Box::new(NotExpression { right: rhs }));
     }
 
-    return parse_call_expression(tokens, position);
+    return parse_dot_expression(tokens, position);
 }
 
-fn parse_call_expression(
+fn parse_dot_expression(
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
@@ -510,36 +533,123 @@ fn parse_call_expression(
         }
 
         let function_name = function_name_result.ok().unwrap().literal.to_string();
+        let function_name_location = tokens[*position].location;
         if !TRANSFORMATIONS.contains_key(function_name.as_str()) {
             return Err(GQLError {
                 message: "Invalid GQL function name".to_owned(),
-                location: tokens[*position].location,
+                location: function_name_location,
             });
         }
 
         *position += 1;
 
-        // Support calling functions with Left and Right paren as optional
-        // Later can used to support functions with arguments
-        if consume_kind(&tokens[*position], TokenKind::LeftParen).is_ok() {
-            *position += 1;
-            if consume_kind(&tokens[*position], TokenKind::RightParen).is_ok() {
-                *position += 1;
-            } else {
+        let callee = expression.ok().unwrap();
+
+        let arguments_result = parse_call_arguments_expressions(tokens, position);
+        if arguments_result.is_err() {
+            return Err(arguments_result.err().unwrap());
+        }
+
+        let arguments = arguments_result.ok().unwrap();
+
+        let prototype = TRANSFORMATIONS_PROTOS.get(function_name.as_str()).unwrap();
+        let parameters = &prototype.parameters;
+        let callee_expected = parameters.first().unwrap();
+
+        // Check Callee type
+        if &callee.expr_type() != callee_expected {
+            let message = format!(
+                "Function `{}` must be called from type `{}` not `{}`",
+                function_name,
+                callee_expected.literal(),
+                callee.expr_type().literal()
+            );
+
+            return Err(GQLError {
+                message: message,
+                location: function_name_location,
+            });
+        }
+
+        // Check number of parameters and arguments
+        if arguments.len() != (parameters.len() - 1) {
+            let message = format!(
+                "Function `{}` expect `{}` arguments but got `{}`",
+                function_name,
+                parameters.len() - 1,
+                arguments.len()
+            );
+
+            return Err(GQLError {
+                message: message,
+                location: function_name_location,
+            });
+        }
+
+        // Check arguments vs parameters
+        for index in 0..arguments.len() {
+            let parameter_type = parameters.get(index + 1).unwrap();
+            let argument_type = arguments.get(index).unwrap().expr_type();
+
+            if parameter_type != &argument_type {
+                let message = format!(
+                    "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
+                    function_name,
+                    index,
+                    parameters.len() - 1,
+                    arguments.len()
+                );
+
                 return Err(GQLError {
-                    message: "Expect `)` after function call arguments".to_owned(),
-                    location: tokens[*position].location,
+                    message: message,
+                    location: function_name_location,
                 });
             }
         }
 
         expression = Ok(Box::new(CallExpression {
-            left: expression.ok().unwrap(),
-            function_name: function_name,
+            callee,
+            arguments,
+            function_name,
         }));
     }
 
     return expression;
+}
+
+fn parse_call_arguments_expressions(
+    tokens: &Vec<Token>,
+    position: &mut usize,
+) -> Result<Vec<Box<dyn Expression>>, GQLError> {
+    let mut arguments: Vec<Box<dyn Expression>> = vec![];
+    if consume_kind(&tokens[*position], TokenKind::LeftParen).is_ok() {
+        *position += 1;
+
+        while tokens[*position].kind != TokenKind::RightParen {
+            let argument_result = parse_expression(tokens, position);
+            if argument_result.is_err() {
+                return Err(argument_result.err().unwrap());
+            }
+
+            arguments.push(argument_result.ok().unwrap());
+
+            if tokens[*position].kind == TokenKind::Comma {
+                *position += 1;
+            } else {
+                break;
+            }
+        }
+
+        if consume_kind(&tokens[*position], TokenKind::RightParen).is_ok() {
+            *position += 1;
+        } else {
+            return Err(GQLError {
+                message: "Expect `)` after function call arguments".to_owned(),
+                location: tokens[*position].location,
+            });
+        }
+    }
+    return Ok(arguments);
 }
 
 fn parse_primary_expression(
@@ -593,4 +703,20 @@ fn parse_primary_expression(
             location: tokens[*position].location,
         }),
     };
+}
+
+fn consume_kind(token: &Token, kind: TokenKind) -> Result<&Token, i32> {
+    if token.kind == kind {
+        return Ok(token);
+    }
+    return Err(0);
+}
+
+fn type_missmatch_error(location: Location, expected: DataType, actual: DataType) -> GQLError {
+    let message = format!(
+        "Type mismatch expected `{}`, got `{}`",
+        expected.literal(),
+        actual.literal()
+    );
+    return GQLError { message, location };
 }

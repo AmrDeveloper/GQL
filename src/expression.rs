@@ -1,10 +1,12 @@
 use crate::object::GQLObject;
+use crate::types::{DataType, TABLES_FIELDS_TYPES};
 use regex::Regex;
 
-use crate::transformation::TRANSFORMATIONS;
+use crate::transformation::{TRANSFORMATIONS, TRANSFORMATIONS_PROTOS};
 
 pub trait Expression {
     fn evaluate(&self, object: &GQLObject) -> String;
+    fn expr_type(&self) -> DataType;
 }
 
 pub struct StringExpression {
@@ -15,6 +17,10 @@ impl Expression for StringExpression {
     fn evaluate(&self, _object: &GQLObject) -> String {
         return self.value.to_owned();
     }
+
+    fn expr_type(&self) -> DataType {
+        return DataType::Text;
+    }
 }
 
 pub struct SymbolExpression {
@@ -24,6 +30,13 @@ pub struct SymbolExpression {
 impl Expression for SymbolExpression {
     fn evaluate(&self, object: &GQLObject) -> String {
         return object.attributes.get(&self.value).unwrap().to_string();
+    }
+
+    fn expr_type(&self) -> DataType {
+        return TABLES_FIELDS_TYPES
+            .get(self.value.as_str())
+            .unwrap()
+            .clone();
     }
 }
 
@@ -39,6 +52,10 @@ impl Expression for BooleanExpression {
             "false".to_owned()
         };
     }
+
+    fn expr_type(&self) -> DataType {
+        return DataType::Boolean;
+    }
 }
 pub struct NotExpression {
     pub right: Box<dyn Expression>,
@@ -48,6 +65,10 @@ impl Expression for NotExpression {
     fn evaluate(&self, object: &GQLObject) -> String {
         let value = self.right.evaluate(object);
         return (!value.eq("true")).to_string();
+    }
+
+    fn expr_type(&self) -> DataType {
+        return DataType::Boolean;
     }
 }
 
@@ -81,6 +102,10 @@ impl Expression for ComparisonExpression {
             ComparisonOperator::NotEqual => !result.is_eq(),
         }
         .to_string();
+    }
+
+    fn expr_type(&self) -> DataType {
+        return DataType::Boolean;
     }
 }
 
@@ -116,6 +141,10 @@ impl Expression for CheckExpression {
             }
         }
         .to_string();
+    }
+
+    fn expr_type(&self) -> DataType {
+        return DataType::Boolean;
     }
 }
 
@@ -153,17 +182,29 @@ impl Expression for LogicalExpression {
         }
         .to_string();
     }
+
+    fn expr_type(&self) -> DataType {
+        return DataType::Boolean;
+    }
 }
 
 pub struct CallExpression {
-    pub left: Box<dyn Expression>,
+    pub callee: Box<dyn Expression>,
+    pub arguments: Vec<Box<dyn Expression>>,
     pub function_name: String,
 }
 
 impl Expression for CallExpression {
     fn evaluate(&self, object: &GQLObject) -> String {
-        let lhs = self.left.evaluate(object);
+        let lhs = self.callee.evaluate(object);
         let transformation = TRANSFORMATIONS.get(self.function_name.as_str()).unwrap();
         return transformation(lhs);
+    }
+
+    fn expr_type(&self) -> DataType {
+        let prototype = TRANSFORMATIONS_PROTOS
+            .get(&self.function_name.as_str())
+            .unwrap();
+        return prototype.ret_type.clone();
     }
 }
