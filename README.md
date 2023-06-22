@@ -135,6 +135,17 @@ Transformations are functions with 0 arguments used to apply transformation on v
 
 ---
 
+### Name Alias
+
+You can rename a column temporarily by giving another name, which is known as ALIAS,
+Renaming is a temporary change and the actual column name does not change
+
+```sql
+SELECT name as branch_name from branches
+```
+
+---
+
 ### License
 ```
 MIT License
