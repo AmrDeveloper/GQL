@@ -164,7 +164,6 @@ fn parse_select_statement(
             }
 
             fields.push(field_name.to_string());
-            fields_set.insert(field_name.to_string());
 
             *position += 1;
 
@@ -187,7 +186,14 @@ fn parse_select_statement(
                 }
 
                 *position += 1;
+
+                // Insert the alias name to used later in conditions
+                fields_set.insert(alias_name.to_string());
+
                 alias_table.insert(field_name, alias_name);
+            } else {
+                // Insert the origin name
+                fields_set.insert(field_name.to_string());
             }
 
             if tokens[*position].kind == TokenKind::Comma {
@@ -240,8 +246,16 @@ fn parse_select_statement(
         }
     }
 
-    for valid_field in valid_fields {
-        unsafe { CURRENT_TABLE_FIELDS.push(valid_field.to_string()) };
+    // If fields set is empty that mean it selecting all fields,
+    // else it should add all fields set
+    if fields_set.is_empty() {
+        for valid_field in valid_fields {
+            unsafe { CURRENT_TABLE_FIELDS.push(valid_field.to_string()) };
+        }
+    } else {
+        for field in fields_set.iter() {
+            unsafe { CURRENT_TABLE_FIELDS.push(field.to_string()) };
+        }
     }
 
     *position += 1;
@@ -636,9 +650,9 @@ fn parse_dot_expression(
         }
 
         expression = Ok(Box::new(CallExpression {
+            function_name,
             callee,
             arguments,
-            function_name,
         }));
     }
 
@@ -697,7 +711,8 @@ fn parse_primary_expression(
             let literal = &tokens[*position - 1].literal;
             if unsafe { !CURRENT_TABLE_FIELDS.contains(literal) } {
                 return Err(GQLError {
-                    message: "The current table contains no field with this name".to_owned(),
+                    message: "The current table contains no selected field with this name"
+                        .to_owned(),
                     location: tokens[*position - 1].location,
                 });
             }
