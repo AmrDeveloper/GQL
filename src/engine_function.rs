@@ -8,11 +8,65 @@ pub fn select_gql_objects(
     fields: Vec<String>,
 ) -> Vec<object::GQLObject> {
     return match table.as_str() {
+        "refs" => select_references(repo, fields),
         "commits" => select_commits(repo, fields),
         "branches" => select_branches(repo, fields),
         "tags" => select_tags(repo, fields),
         _ => vec![],
     };
+}
+
+fn select_references(repo: &git2::Repository, fields: Vec<String>) -> Vec<object::GQLObject> {
+    let mut gql_references: Vec<object::GQLObject> = Vec::new();
+    let git_references = repo.references();
+    if git_references.is_err() {
+        return gql_references;
+    }
+
+    let is_limit_fields_empty = fields.is_empty();
+    let references = git_references.ok().unwrap();
+
+    for reference_result in references {
+        if reference_result.is_err() {
+            break;
+        }
+
+        let reference = reference_result.ok().unwrap();
+        let mut attributes: HashMap<String, String> = HashMap::new();
+
+        if is_limit_fields_empty || fields.contains(&String::from("name")) {
+            attributes.insert(
+                "name".to_string(),
+                reference.shorthand().unwrap().to_string(),
+            );
+        }
+
+        if is_limit_fields_empty || fields.contains(&String::from("full_name")) {
+            attributes.insert(
+                "full_name".to_string(),
+                reference.name().unwrap().to_string(),
+            );
+        }
+
+        if is_limit_fields_empty || fields.contains(&String::from("type")) {
+            if reference.is_branch() {
+                attributes.insert("kind".to_string(), "branch".to_owned());
+            } else if reference.is_remote() {
+                attributes.insert("kind".to_string(), "remote".to_owned());
+            } else if reference.is_tag() {
+                attributes.insert("kind".to_string(), "tag".to_owned());
+            } else if reference.is_note() {
+                attributes.insert("kind".to_string(), "note".to_owned());
+            } else {
+                attributes.insert("kind".to_string(), "other".to_owned());
+            }
+        }
+
+        let gql_reference = object::GQLObject { attributes };
+        gql_references.push(gql_reference);
+    }
+
+    return gql_references;
 }
 
 fn select_commits(repo: &git2::Repository, fields: Vec<String>) -> Vec<object::GQLObject> {
@@ -77,11 +131,11 @@ fn select_branches(repo: &git2::Repository, fields: Vec<String>) -> Vec<object::
             );
         }
 
-        if is_limit_fields_empty || fields.contains(&String::from("ishead")) {
+        if is_limit_fields_empty || fields.contains(&String::from("is_head")) {
             attributes.insert("ishead".to_string(), branch.is_head().to_string());
         }
 
-        if is_limit_fields_empty || fields.contains(&String::from("isremote")) {
+        if is_limit_fields_empty || fields.contains(&String::from("is_remote")) {
             attributes.insert("isremote".to_string(), branch.get().is_remote().to_string());
         }
 
