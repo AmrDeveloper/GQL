@@ -20,6 +20,8 @@ pub enum TokenKind {
     EndsWith,
     Matches,
 
+    As,
+
     LeftParen,
     RightParen,
 
@@ -421,6 +423,8 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "starts_with" => TokenKind::StartsWith,
         "ends_with" => TokenKind::EndsWith,
         "matches" => TokenKind::Matches,
+
+        "as" => TokenKind::As,
 
         // Order by DES and ASC
         "asc" => TokenKind::Ascending,

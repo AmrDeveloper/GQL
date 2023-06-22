@@ -131,6 +131,9 @@ fn parse_select_statement(
 ) -> Result<Box<dyn Statement>, GQLError> {
     *position += 1;
     let mut fields: Vec<String> = Vec::new();
+    let mut fields_set: HashSet<String> = HashSet::new();
+    let mut alias_table: HashMap<String, String> = HashMap::new();
+
     if *position >= tokens.len() {
         return Err(GQLError {
             message: "Expect * or fields names after select keyword".to_owned(),
@@ -160,9 +163,33 @@ fn parse_select_statement(
                 });
             }
 
-            fields.push(field_name);
+            fields.push(field_name.to_string());
+            fields_set.insert(field_name.to_string());
 
             *position += 1;
+
+            if tokens[*position].kind == TokenKind::As {
+                *position += 1;
+                let alias_name_result = consume_kind(&tokens[*position], TokenKind::Symbol);
+                if alias_name_result.is_err() {
+                    return Err(GQLError {
+                        message: "Expect `identifier` as a field alias name".to_owned(),
+                        location: tokens[*position].location,
+                    });
+                }
+
+                let alias_name = alias_name_result.ok().unwrap().literal.to_string();
+                if fields_set.contains(&alias_name) {
+                    return Err(GQLError {
+                        message: "There is already field or alias with the same name".to_owned(),
+                        location: tokens[*position].location,
+                    });
+                }
+
+                *position += 1;
+                alias_table.insert(field_name, alias_name);
+            }
+
             if tokens[*position].kind == TokenKind::Comma {
                 *position += 1;
             } else {
@@ -222,6 +249,7 @@ fn parse_select_statement(
     let statement = SelectStatement {
         table_name: table_name.to_string(),
         fields,
+        alias_table,
     };
 
     return Ok(Box::new(statement));

@@ -1,4 +1,5 @@
 use std::cmp;
+use std::collections::HashMap;
 
 use crate::engine_function::select_gql_objects;
 use crate::expression::Expression;
@@ -11,12 +12,17 @@ pub trait Statement {
 pub struct SelectStatement {
     pub table_name: String,
     pub fields: Vec<String>,
+    pub alias_table: HashMap<String, String>,
 }
 
 impl Statement for SelectStatement {
     fn execute(&self, repo: &git2::Repository, objects: &mut Vec<GQLObject>) {
-        let elements =
-            select_gql_objects(repo, self.table_name.to_string(), self.fields.to_owned());
+        let elements = select_gql_objects(
+            repo,
+            self.table_name.to_string(),
+            self.fields.to_owned(),
+            self.alias_table.to_owned(),
+        );
         for element in elements {
             objects.push(element);
         }
