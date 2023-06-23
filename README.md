@@ -33,6 +33,7 @@ SELECT name, email FROM commits ORDER BY name DES
 SELECT name, email FROM commits WHERE name contains "gmail" ORDER BY name
 SELECT * FROM commits WHERE name.lower = "amrdeveloper"
 SELECT name FROM commits GROUP By name
+SELECT name FROM commits GROUP By name having name = "AmrDeveloper"
 
 SELECT * FROM branches
 SELECT * FROM branches WHERE ishead = "true"
@@ -43,10 +44,12 @@ SELECT * FROM tags
 SELECT * FROM tags OFFSET 1 LIMIT 1
 ```
 
-### Build and run
+### Build and run from source code
 To build and run GQL you need to have rust installed on your system and then use run command with folder that contains .git files
 
 ```
+git clone https://github.com/AmrDeveloper/GQL.git
+cd GQL
 cargo run <repository_path>
 ```
 
