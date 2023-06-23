@@ -6,7 +6,7 @@ use crate::diagnostic::GQLError;
 use crate::expression::{BooleanExpression, Expression, StringExpression, SymbolExpression};
 use crate::expression::{CallExpression, CheckOperator, ComparisonOperator, LogicalOperator};
 use crate::expression::{CheckExpression, ComparisonExpression, LogicalExpression, NotExpression};
-use crate::statement::GQLQuery;
+use crate::statement::{GQLQuery, GroupByStatement};
 use crate::statement::{LimitStatement, OffsetStatement, OrderByStatement};
 use crate::statement::{SelectStatement, Statement, WhereStatement};
 use crate::tokenizer::{Token, TokenKind};
@@ -52,6 +52,21 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<GQLQuery, GQLError> {
                     return Err(parse_result.err().unwrap());
                 }
                 statements.insert("select".to_string(), parse_result.ok().unwrap());
+            }
+            TokenKind::Group => {
+                if statements.contains_key("group") {
+                    return Err(GQLError {
+                        message: "you already used `group by` statement".to_owned(),
+                        location: token.location,
+                    });
+                }
+
+                let parse_result = parse_group_by_statement(&tokens, &mut position);
+                if parse_result.is_err() {
+                    return Err(parse_result.err().unwrap());
+                }
+
+                statements.insert("group".to_string(), parse_result.ok().unwrap());
             }
             TokenKind::Where => {
                 if statements.contains_key("where") {
@@ -262,6 +277,31 @@ fn parse_select_statement(
     };
 
     return Ok(Box::new(statement));
+}
+
+fn parse_group_by_statement(
+    tokens: &Vec<Token>,
+    position: &mut usize,
+) -> Result<Box<dyn Statement>, GQLError> {
+    *position += 1;
+    if *position >= tokens.len() || tokens[*position].kind != TokenKind::By {
+        return Err(GQLError {
+            message: "Expect keyword `by` after keyword `group`".to_owned(),
+            location: tokens[*position - 1].location,
+        });
+    }
+    *position += 1;
+    if *position >= tokens.len() || tokens[*position].kind != TokenKind::Symbol {
+        return Err(GQLError {
+            message: "Expect field name after `group by`".to_owned(),
+            location: tokens[*position - 1].location,
+        });
+    }
+
+    let field_name = tokens[*position].literal.to_string();
+    *position += 1;
+
+    return Ok(Box::new(GroupByStatement { field_name }));
 }
 
 fn parse_where_statement(

@@ -2,6 +2,7 @@
 pub enum TokenKind {
     Select,
     From,
+    Group,
     Where,
     Limit,
     Offset,
@@ -403,6 +404,7 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         // Reserved keywords
         "select" => TokenKind::Select,
         "from" => TokenKind::From,
+        "group" => TokenKind::Group,
         "where" => TokenKind::Where,
         "limit" => TokenKind::Limit,
         "offset" => TokenKind::Offset,

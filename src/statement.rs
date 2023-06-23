@@ -1,5 +1,6 @@
 use std::cmp;
 use std::collections::HashMap;
+use std::collections::HashSet;
 
 use crate::engine_function::select_gql_objects;
 use crate::expression::Expression;
@@ -99,5 +100,33 @@ impl Statement for OrderByStatement {
                 objects.reverse();
             }
         }
+    }
+}
+
+pub struct GroupByStatement {
+    pub field_name: String,
+}
+
+impl Statement for GroupByStatement {
+    fn execute(&self, _repo: &git2::Repository, objects: &mut Vec<GQLObject>) {
+        if objects.is_empty() {
+            return;
+        }
+
+        let mut fields_set: HashSet<String> = HashSet::new();
+        let mut group_result: Vec<GQLObject> = Vec::new();
+
+        for object in objects.iter() {
+            let field_value = object.attributes.get(&self.field_name).unwrap();
+            if fields_set.contains(field_value) {
+                continue;
+            }
+
+            fields_set.insert(field_value.to_string());
+            group_result.push(object.to_owned());
+        }
+
+        objects.clear();
+        objects.append(&mut group_result);
     }
 }
