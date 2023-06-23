@@ -9,6 +9,10 @@ pub trait Statement {
     fn execute(&self, repo: &git2::Repository, objects: &mut Vec<GQLObject>);
 }
 
+pub struct GQLQuery {
+    pub statements: HashMap<String, Box<dyn Statement>>,
+}
+
 pub struct SelectStatement {
     pub table_name: String,
     pub fields: Vec<String>,

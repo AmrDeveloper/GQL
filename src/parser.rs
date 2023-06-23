@@ -6,6 +6,7 @@ use crate::diagnostic::GQLError;
 use crate::expression::{BooleanExpression, Expression, StringExpression, SymbolExpression};
 use crate::expression::{CallExpression, CheckOperator, ComparisonOperator, LogicalOperator};
 use crate::expression::{CheckExpression, ComparisonExpression, LogicalExpression, NotExpression};
+use crate::statement::GQLQuery;
 use crate::statement::{LimitStatement, OffsetStatement, OrderByStatement};
 use crate::statement::{SelectStatement, Statement, WhereStatement};
 use crate::tokenizer::{Token, TokenKind};
@@ -28,20 +29,18 @@ lazy_static! {
 
 static mut CURRENT_TABLE_FIELDS: Vec<String> = Vec::new();
 
-pub fn parse_gql(tokens: Vec<Token>) -> Result<Vec<Box<dyn Statement>>, GQLError> {
-    let mut statements: Vec<Box<dyn Statement>> = Vec::new();
+pub fn parse_gql(tokens: Vec<Token>) -> Result<GQLQuery, GQLError> {
     let len = tokens.len();
     let mut position = 0;
 
-    let mut visisted_statements: HashSet<String> = HashSet::new();
+    let mut statements: HashMap<String, Box<dyn Statement>> = HashMap::new();
 
     while position < len {
         let token = &tokens[position];
 
         match &token.kind {
             TokenKind::Select => {
-                let is_unique = visisted_statements.insert(tokens[position].literal.to_string());
-                if !is_unique {
+                if statements.contains_key("select") {
                     return Err(GQLError {
                         message: "you already used `select` statement ".to_owned(),
                         location: token.location,
@@ -52,11 +51,10 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<Vec<Box<dyn Statement>>, GQLError
                 if parse_result.is_err() {
                     return Err(parse_result.err().unwrap());
                 }
-                statements.push(parse_result.ok().unwrap());
+                statements.insert("select".to_string(), parse_result.ok().unwrap());
             }
             TokenKind::Where => {
-                let is_unique = visisted_statements.insert(tokens[position].literal.to_string());
-                if !is_unique {
+                if statements.contains_key("where") {
                     return Err(GQLError {
                         message: "you already used `where` statement".to_owned(),
                         location: token.location,
@@ -66,11 +64,10 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<Vec<Box<dyn Statement>>, GQLError
                 if parse_result.is_err() {
                     return Err(parse_result.err().unwrap());
                 }
-                statements.push(parse_result.ok().unwrap());
+                statements.insert("where".to_string(), parse_result.ok().unwrap());
             }
             TokenKind::Limit => {
-                let is_unique = visisted_statements.insert(tokens[position].literal.to_string());
-                if !is_unique {
+                if statements.contains_key("limit") {
                     return Err(GQLError {
                         message: "you already used `limit` statement".to_owned(),
                         location: token.location,
@@ -81,11 +78,10 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<Vec<Box<dyn Statement>>, GQLError
                 if parse_result.is_err() {
                     return Err(parse_result.err().unwrap());
                 }
-                statements.push(parse_result.ok().unwrap());
+                statements.insert("limit".to_string(), parse_result.ok().unwrap());
             }
             TokenKind::Offset => {
-                let is_unique = visisted_statements.insert(tokens[position].literal.to_string());
-                if !is_unique {
+                if statements.contains_key("offset") {
                     return Err(GQLError {
                         message: "you already used `offset` statement".to_owned(),
                         location: token.location,
@@ -96,11 +92,10 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<Vec<Box<dyn Statement>>, GQLError
                 if parse_result.is_err() {
                     return Err(parse_result.err().unwrap());
                 }
-                statements.push(parse_result.ok().unwrap());
+                statements.insert("offset".to_string(), parse_result.ok().unwrap());
             }
             TokenKind::Order => {
-                let is_unique = visisted_statements.insert(tokens[position].literal.to_string());
-                if !is_unique {
+                if statements.contains_key("order") {
                     return Err(GQLError {
                         message: "you already used `order by` statement".to_owned(),
                         location: token.location,
@@ -111,7 +106,7 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<Vec<Box<dyn Statement>>, GQLError
                 if parse_result.is_err() {
                     return Err(parse_result.err().unwrap());
                 }
-                statements.push(parse_result.ok().unwrap());
+                statements.insert("order".to_string(), parse_result.ok().unwrap());
             }
             _ => {
                 return Err(GQLError {
@@ -122,7 +117,7 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<Vec<Box<dyn Statement>>, GQLError
         }
     }
 
-    return Ok(statements);
+    return Ok(GQLQuery { statements });
 }
 
 fn parse_select_statement(
