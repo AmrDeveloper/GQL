@@ -1,8 +1,9 @@
 use crate::object::{render_objects, GQLObject};
 use crate::statement::GQLQuery;
 
-const GQL_COMMANDS_IN_ORDER: [&'static str; 6] =
-    ["select", "where", "group", "order", "offset", "limit"];
+const GQL_COMMANDS_IN_ORDER: [&'static str; 7] = [
+    "select", "where", "group", "having", "order", "offset", "limit",
+];
 
 pub fn evaluate(repo: &git2::Repository, query: GQLQuery) {
     let mut objects: Vec<GQLObject> = Vec::new();

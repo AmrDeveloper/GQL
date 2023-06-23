@@ -54,6 +54,26 @@ impl Statement for WhereStatement {
     }
 }
 
+pub struct HavingStatement {
+    pub condition: Box<dyn Expression>,
+}
+
+impl Statement for HavingStatement {
+    fn execute(&self, _repo: &git2::Repository, objects: &mut Vec<GQLObject>) {
+        let result: Vec<GQLObject> = objects
+            .iter()
+            .filter(|&object| self.condition.evaluate(object).eq("true"))
+            .cloned()
+            .collect();
+
+        objects.clear();
+
+        for object in result {
+            objects.push(object);
+        }
+    }
+}
+
 pub struct LimitStatement {
     pub count: usize,
 }
