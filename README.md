@@ -32,6 +32,7 @@ SELECT name, email FROM commits
 SELECT name, email FROM commits ORDER BY name DES
 SELECT name, email FROM commits WHERE name contains "gmail" ORDER BY name
 SELECT * FROM commits WHERE name.lower = "amrdeveloper"
+SELECT name FROM commits GROUP By name
 
 SELECT * FROM branches
 SELECT * FROM branches WHERE ishead = "true"
@@ -62,6 +63,19 @@ Select keyword used to select all of some fields from specific table
 - commits { name, email, title, message, time }
 - branches { name, ishead, isremote }
 - tags { name }
+
+---
+
+### Group by
+
+The `GROUP BY` statement groups rows that have the same values into summary rows, like "find the number of customers in each country",
+note that `group by` always executed after `where` statement and before `having` statement,
+
+Example: Selecting all unique user names from commits
+
+```sql
+SELECT name FROM commits GROUP By name
+```
 
 ---
 
