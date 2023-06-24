@@ -32,6 +32,7 @@ lazy_static! {
         map.insert("time", DataType::Date);
         map.insert("is_head", DataType::Boolean);
         map.insert("is_remote", DataType::Boolean);
+        map.insert("commit_count", DataType::Number);
         map
     };
 }

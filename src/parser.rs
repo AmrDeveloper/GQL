@@ -24,7 +24,10 @@ lazy_static! {
         let mut map = HashMap::new();
         map.insert("refs", vec!["name", "full_name", "type"]);
         map.insert("commits", vec!["title", "message", "name", "email", "time"]);
-        map.insert("branches", vec!["name", "is_head", "is_remote"]);
+        map.insert(
+            "branches",
+            vec!["name", "commit_count", "is_head", "is_remote"],
+        );
         map.insert("tags", vec!["name"]);
         map
     };

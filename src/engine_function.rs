@@ -192,6 +192,20 @@ fn select_branches(
             attributes.insert(key, branch.name().unwrap().unwrap().to_string());
         }
 
+        if is_limit_fields_empty || fields.contains(&String::from("commit_count")) {
+            let key = if alias_table.contains_key("commit_count") {
+                alias_table.get("commit_count").unwrap()
+            } else {
+                "commit_count"
+            }
+            .to_string();
+
+            let branch_ref = branch.get().peel_to_commit().unwrap();
+            let mut revwalk = repo.revwalk().unwrap();
+            let _ = revwalk.push(branch_ref.id());
+            attributes.insert(key, revwalk.count().to_string());
+        }
+
         if is_limit_fields_empty || fields.contains(&String::from("is_head")) {
             let key = if alias_table.contains_key("is_head") {
                 alias_table.get("is_head").unwrap()
