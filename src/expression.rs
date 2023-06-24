@@ -2,7 +2,7 @@ use crate::object::GQLObject;
 use crate::types::{DataType, TABLES_FIELDS_TYPES};
 use regex::Regex;
 
-use crate::transformation::{TRANSFORMATIONS, TRANSFORMATIONS_PROTOS};
+use crate::transformations::{TRANSFORMATIONS, TRANSFORMATIONS_PROTOS};
 
 pub trait Expression {
     fn evaluate(&self, object: &GQLObject) -> String;
@@ -205,6 +205,6 @@ impl Expression for CallExpression {
         let prototype = TRANSFORMATIONS_PROTOS
             .get(&self.function_name.as_str())
             .unwrap();
-        return prototype.ret_type.clone();
+        return prototype.result.clone();
     }
 }

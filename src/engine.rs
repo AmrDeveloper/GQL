@@ -1,8 +1,15 @@
 use crate::object::{render_objects, GQLObject};
 use crate::statement::GQLQuery;
 
-const GQL_COMMANDS_IN_ORDER: [&'static str; 7] = [
-    "select", "where", "group", "having", "order", "offset", "limit",
+const GQL_COMMANDS_IN_ORDER: [&'static str; 8] = [
+    "select",
+    "where",
+    "group",
+    "aggregation",
+    "having",
+    "order",
+    "offset",
+    "limit",
 ];
 
 pub fn evaluate(repo: &git2::Repository, query: GQLQuery) {

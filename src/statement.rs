@@ -2,6 +2,7 @@ use std::cmp;
 use std::collections::HashMap;
 use std::collections::HashSet;
 
+use crate::aggregations::AGGREGATIONS;
 use crate::engine_function::select_gql_objects;
 use crate::expression::Expression;
 use crate::object::GQLObject;
@@ -148,5 +149,50 @@ impl Statement for GroupByStatement {
 
         objects.clear();
         objects.append(&mut group_result);
+    }
+}
+
+pub struct AggregateFunction {
+    pub function_name: String,
+    pub argument: String,
+}
+
+pub struct AggregationFunctionsStatement {
+    pub aggregations: HashMap<String, AggregateFunction>,
+}
+
+impl Statement for AggregationFunctionsStatement {
+    fn execute(&self, _repo: &git2::Repository, objects: &mut Vec<GQLObject>) {
+        if objects.is_empty() {
+            return;
+        }
+
+        let mut aggregation_result: Vec<GQLObject> = Vec::new();
+
+        let aggregations = &self.aggregations;
+        for aggregation in aggregations.iter() {
+            let result_column_name = aggregation.0;
+            let function = aggregation.1;
+
+            let mut index: usize = 0;
+            for object in objects.iter() {
+                let mut new_object = object.to_owned();
+
+                let aggregation_function =
+                    AGGREGATIONS.get(function.function_name.as_str()).unwrap();
+
+                let result = aggregation_function(&function.argument, index, &objects);
+
+                new_object
+                    .attributes
+                    .insert(result_column_name.to_string(), result);
+
+                aggregation_result.push(new_object);
+                index += 1;
+            }
+        }
+
+        objects.clear();
+        objects.append(&mut aggregation_result);
     }
 }

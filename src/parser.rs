@@ -2,19 +2,22 @@ use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::collections::HashSet;
 
+use crate::aggregations::AGGREGATIONS;
+use crate::aggregations::AGGREGATIONS_PROTOS;
 use crate::diagnostic::GQLError;
 use crate::expression::{BooleanExpression, Expression, StringExpression, SymbolExpression};
 use crate::expression::{CallExpression, CheckOperator, ComparisonOperator, LogicalOperator};
 use crate::expression::{CheckExpression, ComparisonExpression, LogicalExpression, NotExpression};
+use crate::statement::{AggregateFunction, AggregationFunctionsStatement};
 use crate::statement::{GQLQuery, HavingStatement, WhereStatement};
 use crate::statement::{GroupByStatement, SelectStatement, Statement};
 use crate::statement::{LimitStatement, OffsetStatement, OrderByStatement};
-use crate::tokenizer::{Token, TokenKind};
-
 use crate::tokenizer::Location;
-use crate::transformation::TRANSFORMATIONS;
-use crate::transformation::TRANSFORMATIONS_PROTOS;
+use crate::tokenizer::{Token, TokenKind};
+use crate::transformations::TRANSFORMATIONS;
+use crate::transformations::TRANSFORMATIONS_PROTOS;
 use crate::types::DataType;
+use crate::types::TABLES_FIELDS_TYPES;
 
 lazy_static! {
     static ref TABLES_FIELDS_NAMES: HashMap<&'static str, Vec<&'static str>> = {
@@ -34,6 +37,7 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<GQLQuery, GQLError> {
     let mut position = 0;
 
     let mut statements: HashMap<String, Box<dyn Statement>> = HashMap::new();
+    let mut aggregations: HashMap<String, AggregateFunction> = HashMap::new();
 
     while position < len {
         let token = &tokens[position];
@@ -47,7 +51,8 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<GQLQuery, GQLError> {
                     });
                 }
 
-                let parse_result = parse_select_statement(&tokens, &mut position);
+                let parse_result =
+                    parse_select_statement(&tokens, &mut position, &mut aggregations);
                 if parse_result.is_err() {
                     return Err(parse_result.err().unwrap());
                 }
@@ -145,12 +150,19 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<GQLQuery, GQLError> {
         }
     }
 
+    // If any aggregation function is used, add Aggregation Functions Node to the GQL Query
+    if !aggregations.is_empty() {
+        let aggregation_functions = AggregationFunctionsStatement { aggregations };
+        statements.insert("aggregation".to_string(), Box::new(aggregation_functions));
+    }
+
     return Ok(GQLQuery { statements });
 }
 
 fn parse_select_statement(
     tokens: &Vec<Token>,
     position: &mut usize,
+    aggregations: &mut HashMap<String, AggregateFunction>,
 ) -> Result<Box<dyn Statement>, GQLError> {
     *position += 1;
     let mut fields: Vec<String> = Vec::new();
@@ -168,8 +180,9 @@ fn parse_select_statement(
         *position += 1;
     } else if tokens[*position].kind == TokenKind::Symbol {
         let mut fields_names: HashSet<String> = HashSet::new();
+        let mut aggregation_function_index = 0;
 
-        while *position < tokens.len() {
+        while *position < tokens.len() && tokens[*position].kind == TokenKind::Symbol {
             let field_name_result = consume_kind(&tokens[*position], TokenKind::Symbol);
             if field_name_result.is_err() {
                 return Err(GQLError {
@@ -178,17 +191,85 @@ fn parse_select_statement(
                 });
             }
 
-            let field_name = field_name_result.ok().unwrap().literal.to_string();
+            let field_name_token = field_name_result.ok().unwrap();
+            let field_name_location = field_name_token.location;
+            let field_name = field_name_token.literal.to_string();
+
+            // Consume identifier as field or aggregation function name
+            *position += 1;
+
+            // Parse aggregation function
+            if *position < tokens.len() && tokens[*position].kind == TokenKind::LeftParen {
+                *position += 1;
+                let argument_result = consume_kind(&tokens[*position], TokenKind::Symbol);
+                if argument_result.is_err() {
+                    return Err(GQLError {
+                        message: "Expect `identifier` as aggregation function name".to_owned(),
+                        location: tokens[*position].location,
+                    });
+                }
+
+                let argument = argument_result.ok().unwrap();
+                // Consume argument
+                *position += 1;
+
+                // Consume `)`
+                if *position < tokens.len() && tokens[*position].kind == TokenKind::RightParen {
+                    *position += 1;
+                } else {
+                    return Err(GQLError {
+                        message: "Expect `)` at the end of aggregation function".to_owned(),
+                        location: tokens[*position].location,
+                    });
+                }
+
+                // Check if aggregation function name is valid
+                if !AGGREGATIONS.contains_key(&field_name.as_str()) {
+                    return Err(GQLError {
+                        message: "Invalid GQL aggregation function name".to_owned(),
+                        location: field_name_location,
+                    });
+                }
+
+                // Type check aggregation function argument type
+                let prototype = AGGREGATIONS_PROTOS.get(&field_name.as_str()).unwrap();
+                let field_type = TABLES_FIELDS_TYPES.get(argument.literal.as_str()).unwrap();
+                if field_type != &prototype.parameter {
+                    let message = format!(
+                        "Aggregation Function `{}` expect parameter type `{}` but got type `{}`",
+                        field_name.to_string(),
+                        &prototype.parameter.literal(),
+                        field_type.literal()
+                    );
+                    return Err(GQLError {
+                        message: message,
+                        location: argument.location,
+                    });
+                }
+
+                // Generated column name for this aggregation function
+                let column_name = format!("{}_{}", "field", aggregation_function_index);
+                aggregation_function_index += 1;
+
+                aggregations.insert(
+                    column_name.to_string(),
+                    AggregateFunction {
+                        function_name: field_name.to_string(),
+                        argument: argument.literal.to_string(),
+                    },
+                );
+
+                continue;
+            }
+
             if !fields_names.insert(field_name.to_string()) {
                 return Err(GQLError {
                     message: "Can't select the same field twice".to_owned(),
-                    location: tokens[*position].location,
+                    location: tokens[*position - 1].location,
                 });
             }
 
             fields.push(field_name.to_string());
-
-            *position += 1;
 
             if tokens[*position].kind == TokenKind::As {
                 *position += 1;
