@@ -5,7 +5,8 @@ use std::collections::HashSet;
 use crate::aggregations::AGGREGATIONS;
 use crate::aggregations::AGGREGATIONS_PROTOS;
 use crate::diagnostic::GQLError;
-use crate::expression::{BooleanExpression, Expression, StringExpression, SymbolExpression};
+use crate::expression::Expression;
+use crate::expression::{BooleanExpression, NumberExpression, StringExpression, SymbolExpression};
 use crate::expression::{CallExpression, CheckOperator, ComparisonOperator, LogicalOperator};
 use crate::expression::{CheckExpression, ComparisonExpression, LogicalExpression, NotExpression};
 use crate::statement::{AggregateFunction, AggregationFunctionsStatement};
@@ -875,6 +876,12 @@ fn parse_primary_expression(
                 value: literal.to_string(),
             }));
         }
+        TokenKind::Number => {
+            *position += 1;
+            let value = tokens[*position - 1].literal.parse::<i64>().unwrap();
+            return Ok(Box::new(NumberExpression { value }));
+        }
+
         TokenKind::True => {
             *position += 1;
             return Ok(Box::new(BooleanExpression { is_true: true }));

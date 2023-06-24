@@ -40,6 +40,20 @@ impl Expression for SymbolExpression {
     }
 }
 
+pub struct NumberExpression {
+    pub value: i64,
+}
+
+impl Expression for NumberExpression {
+    fn evaluate(&self, _object: &GQLObject) -> String {
+        return self.value.to_string();
+    }
+
+    fn expr_type(&self) -> DataType {
+        return DataType::Number;
+    }
+}
+
 pub struct BooleanExpression {
     pub is_true: bool,
 }
