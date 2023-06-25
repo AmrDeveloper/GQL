@@ -106,7 +106,17 @@ impl Expression for ComparisonExpression {
     fn evaluate(&self, object: &GQLObject) -> String {
         let value = self.left.evaluate(object);
         let expected = self.right.evaluate(object);
-        let result = value.cmp(&expected);
+
+        let is_numbers = self.left.expr_type() == DataType::Text;
+        let result = if is_numbers {
+            value.cmp(&expected)
+        } else {
+            value
+                .parse::<i64>()
+                .unwrap()
+                .cmp(&expected.parse::<i64>().unwrap())
+        };
+
         return match self.operator {
             ComparisonOperator::Greater => result.is_gt(),
             ComparisonOperator::GreaterEqual => result.is_ge(),

@@ -617,15 +617,25 @@ fn parse_comparison_expression(
         };
 
         let right_expr = parse_check_expression(tokens, position);
-
         if right_expr.is_err() {
-            return Err(GQLError {
-                message: "Can't right side of comparison expression".to_owned(),
-                location: tokens[*position].location,
-            });
+            return Err(right_expr.err().unwrap());
         }
 
         let rhs = right_expr.ok().unwrap();
+
+        // Make sure right and left hand side types are the same
+        if rhs.expr_type() != lhs.expr_type() {
+            let message = format!(
+                "Can't compare values of different types `{}` and `{}`",
+                lhs.expr_type().literal(),
+                rhs.expr_type().literal()
+            );
+            return Err(GQLError {
+                message: message,
+                location: tokens[*position - 2].location,
+            });
+        }
+
         return Ok(Box::new(ComparisonExpression {
             left: lhs,
             operator: comparison_operator,
