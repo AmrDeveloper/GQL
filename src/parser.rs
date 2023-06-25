@@ -214,6 +214,13 @@ fn parse_select_statement(
                 }
 
                 let argument = argument_result.ok().unwrap();
+                if !TABLES_FIELDS_TYPES.contains_key(argument.literal.as_str()) {
+                    return Err(GQLError {
+                        message: format!("No field on any table with name `{}`", argument.literal),
+                        location: tokens[*position].location,
+                    });
+                }
+
                 // Consume argument
                 *position += 1;
 
@@ -251,9 +258,36 @@ fn parse_select_statement(
                     });
                 }
 
-                // Generated column name for this aggregation function
-                let column_name = format!("{}_{}", "field", aggregation_function_index);
-                aggregation_function_index += 1;
+                let column_name =
+                    if *position < tokens.len() && tokens[*position].kind == TokenKind::As {
+                        *position += 1;
+                        let alias_name_result = consume_kind(&tokens[*position], TokenKind::Symbol);
+                        if alias_name_result.is_err() {
+                            return Err(GQLError {
+                                message: "Expect `identifier` as a field alias name".to_owned(),
+                                location: tokens[*position].location,
+                            });
+                        }
+
+                        let alias_name = alias_name_result.ok().unwrap().literal.to_string();
+                        if fields_set.contains(&alias_name) {
+                            return Err(GQLError {
+                                message: "There is already field or alias with the same name"
+                                    .to_owned(),
+                                location: tokens[*position].location,
+                            });
+                        }
+
+                        *position += 1;
+
+                        // Insert the alias name to used later in conditions
+                        fields_set.insert(alias_name.to_string());
+
+                        alias_name
+                    } else {
+                        aggregation_function_index += 1;
+                        format!("{}_{}", "field", aggregation_function_index)
+                    };
 
                 aggregations.insert(
                     column_name.to_string(),
