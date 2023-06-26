@@ -42,6 +42,7 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<GQLQuery, GQLError> {
 
     let mut statements: HashMap<String, Box<dyn Statement>> = HashMap::new();
     let mut aggregations: HashMap<String, AggregateFunction> = HashMap::new();
+    let mut extra_type_table: HashMap<String, DataType> = HashMap::new();
 
     while position < len {
         let token = &tokens[position];
@@ -55,8 +56,12 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<GQLQuery, GQLError> {
                     });
                 }
 
-                let parse_result =
-                    parse_select_statement(&tokens, &mut position, &mut aggregations);
+                let parse_result = parse_select_statement(
+                    &tokens,
+                    &mut position,
+                    &mut aggregations,
+                    &mut extra_type_table,
+                );
                 if parse_result.is_err() {
                     return Err(parse_result.err().unwrap());
                 }
@@ -139,7 +144,9 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<GQLQuery, GQLError> {
                     });
                 }
 
-                let parse_result = parse_order_by_statement(&tokens, &mut position);
+                let parse_result =
+                    parse_order_by_statement(&tokens, &mut position, &mut extra_type_table);
+
                 if parse_result.is_err() {
                     return Err(parse_result.err().unwrap());
                 }
@@ -167,6 +174,7 @@ fn parse_select_statement(
     tokens: &Vec<Token>,
     position: &mut usize,
     aggregations: &mut HashMap<String, AggregateFunction>,
+    extra_type_table: &mut HashMap<String, DataType>,
 ) -> Result<Box<dyn Statement>, GQLError> {
     *position += 1;
     let mut fields: Vec<String> = Vec::new();
@@ -289,6 +297,8 @@ fn parse_select_statement(
                         format!("{}_{}", "field", aggregation_function_index)
                     };
 
+                extra_type_table.insert(column_name.to_string(), prototype.result.clone());
+
                 aggregations.insert(
                     column_name.to_string(),
                     AggregateFunction {
@@ -328,6 +338,10 @@ fn parse_select_statement(
                 }
 
                 *position += 1;
+
+                // Update extra type table for this alias
+                let field_type = TABLES_FIELDS_TYPES.get(field_name.as_str()).unwrap();
+                extra_type_table.insert(alias_name.to_string(), field_type.clone());
 
                 // Insert the alias name to used later in conditions
                 fields_set.insert(alias_name.to_string());
@@ -519,6 +533,7 @@ fn parse_offset_statement(
 fn parse_order_by_statement(
     tokens: &Vec<Token>,
     position: &mut usize,
+    extra_type_table: &mut HashMap<String, DataType>,
 ) -> Result<Box<dyn Statement>, GQLError> {
     *position += 1;
     if *position >= tokens.len() || tokens[*position].kind != TokenKind::By {
@@ -536,6 +551,22 @@ fn parse_order_by_statement(
     }
 
     let field_name = tokens[*position].literal.to_string();
+
+    let field_type: DataType;
+    if TABLES_FIELDS_TYPES.contains_key(field_name.as_str()) {
+        field_type = TABLES_FIELDS_TYPES
+            .get(field_name.as_str())
+            .unwrap()
+            .clone();
+    } else if extra_type_table.contains_key(field_name.as_str()) {
+        field_type = extra_type_table.get(field_name.as_str()).unwrap().clone();
+    } else {
+        return Err(GQLError {
+            message: "Un resolved field name".to_owned(),
+            location: tokens[*position].location,
+        });
+    }
+
     *position += 1;
 
     // Consume optional ordering ASC or DES
@@ -551,6 +582,7 @@ fn parse_order_by_statement(
     return Ok(Box::new(OrderByStatement {
         field_name,
         is_ascending,
+        field_type,
     }));
 }
 

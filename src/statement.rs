@@ -6,6 +6,7 @@ use crate::aggregation::AGGREGATIONS;
 use crate::engine_function::select_gql_objects;
 use crate::expression::Expression;
 use crate::object::GQLObject;
+use crate::types::DataType;
 
 pub trait Statement {
     fn execute(&self, repo: &git2::Repository, groups: &mut Vec<Vec<GQLObject>>);
@@ -119,6 +120,7 @@ impl Statement for OffsetStatement {
 pub struct OrderByStatement {
     pub field_name: String,
     pub is_ascending: bool,
+    pub field_type: DataType,
 }
 
 impl Statement for OrderByStatement {
@@ -133,13 +135,34 @@ impl Statement for OrderByStatement {
         }
 
         if main_group[0].attributes.contains_key(&self.field_name) {
-            main_group.sort_by_key(|object| {
-                object
-                    .attributes
-                    .get(&self.field_name.to_string())
-                    .unwrap()
-                    .to_string()
-            });
+            if self.field_type == DataType::Number {
+                main_group.sort_by(|a, b| {
+                    let first_value = a
+                        .attributes
+                        .get(&self.field_name.to_string())
+                        .unwrap()
+                        .to_string()
+                        .parse::<i64>()
+                        .unwrap();
+
+                    let other = b
+                        .attributes
+                        .get(&self.field_name.to_string())
+                        .unwrap()
+                        .to_string()
+                        .parse::<i64>()
+                        .unwrap();
+                    first_value.partial_cmp(&other).unwrap()
+                });
+            } else {
+                main_group.sort_by_cached_key(|object| {
+                    object
+                        .attributes
+                        .get(&self.field_name.to_string())
+                        .unwrap()
+                        .to_string()
+                });
+            }
 
             if !self.is_ascending {
                 main_group.reverse();
