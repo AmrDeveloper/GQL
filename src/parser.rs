@@ -2,8 +2,8 @@ use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-use crate::aggregations::AGGREGATIONS;
-use crate::aggregations::AGGREGATIONS_PROTOS;
+use crate::aggregation::AGGREGATIONS;
+use crate::aggregation::AGGREGATIONS_PROTOS;
 use crate::diagnostic::GQLError;
 use crate::expression::Expression;
 use crate::expression::{BooleanExpression, NumberExpression, StringExpression, SymbolExpression};
@@ -15,8 +15,8 @@ use crate::statement::{GroupByStatement, SelectStatement, Statement};
 use crate::statement::{LimitStatement, OffsetStatement, OrderByStatement};
 use crate::tokenizer::Location;
 use crate::tokenizer::{Token, TokenKind};
-use crate::transformations::TRANSFORMATIONS;
-use crate::transformations::TRANSFORMATIONS_PROTOS;
+use crate::transformation::TRANSFORMATIONS;
+use crate::transformation::TRANSFORMATIONS_PROTOS;
 use crate::types::DataType;
 use crate::types::TABLES_FIELDS_TYPES;
 

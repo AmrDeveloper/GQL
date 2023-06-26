@@ -1,14 +1,14 @@
 use std::cmp;
 use std::collections::HashMap;
-use std::collections::HashSet;
+use std::vec;
 
-use crate::aggregations::AGGREGATIONS;
+use crate::aggregation::AGGREGATIONS;
 use crate::engine_function::select_gql_objects;
 use crate::expression::Expression;
 use crate::object::GQLObject;
 
 pub trait Statement {
-    fn execute(&self, repo: &git2::Repository, objects: &mut Vec<GQLObject>);
+    fn execute(&self, repo: &git2::Repository, groups: &mut Vec<Vec<GQLObject>>);
 }
 
 pub struct GQLQuery {
@@ -22,16 +22,17 @@ pub struct SelectStatement {
 }
 
 impl Statement for SelectStatement {
-    fn execute(&self, repo: &git2::Repository, objects: &mut Vec<GQLObject>) {
-        let elements = select_gql_objects(
+    fn execute(&self, repo: &git2::Repository, groups: &mut Vec<Vec<GQLObject>>) {
+        // Select obects from the target table
+        let objects = select_gql_objects(
             repo,
             self.table_name.to_string(),
             self.fields.to_owned(),
             self.alias_table.to_owned(),
         );
-        for element in elements {
-            objects.push(element);
-        }
+
+        // Push the selected elements as a first group
+        groups.push(objects);
     }
 }
 
@@ -40,18 +41,20 @@ pub struct WhereStatement {
 }
 
 impl Statement for WhereStatement {
-    fn execute(&self, _repo: &git2::Repository, objects: &mut Vec<GQLObject>) {
-        let result: Vec<GQLObject> = objects
+    fn execute(&self, _repo: &git2::Repository, groups: &mut Vec<Vec<GQLObject>>) {
+        // Perform where command only on the first group
+        // because group by command not executed yet
+        let filtered_group: Vec<GQLObject> = groups
+            .first()
+            .unwrap()
             .iter()
             .filter(|&object| self.condition.evaluate(object).eq("true"))
             .cloned()
             .collect();
 
-        objects.clear();
-
-        for object in result {
-            objects.push(object);
-        }
+        // Update the main group with the filtered data
+        groups.remove(0);
+        groups.push(filtered_group);
     }
 }
 
@@ -60,17 +63,23 @@ pub struct HavingStatement {
 }
 
 impl Statement for HavingStatement {
-    fn execute(&self, _repo: &git2::Repository, objects: &mut Vec<GQLObject>) {
-        let result: Vec<GQLObject> = objects
+    fn execute(&self, _repo: &git2::Repository, groups: &mut Vec<Vec<GQLObject>>) {
+        if groups.len() > 1 {
+            flat_groups(groups);
+        }
+
+        let main_group: &mut Vec<GQLObject> = groups[0].as_mut();
+
+        let result: Vec<GQLObject> = main_group
             .iter()
             .filter(|&object| self.condition.evaluate(object).eq("true"))
             .cloned()
             .collect();
 
-        objects.clear();
+        main_group.clear();
 
         for object in result {
-            objects.push(object);
+            main_group.push(object);
         }
     }
 }
@@ -80,9 +89,14 @@ pub struct LimitStatement {
 }
 
 impl Statement for LimitStatement {
-    fn execute(&self, _repo: &git2::Repository, objects: &mut Vec<GQLObject>) {
-        if self.count <= objects.len() {
-            objects.drain(self.count..objects.len());
+    fn execute(&self, _repo: &git2::Repository, groups: &mut Vec<Vec<GQLObject>>) {
+        if groups.len() > 1 {
+            flat_groups(groups);
+        }
+
+        let main_group: &mut Vec<GQLObject> = groups[0].as_mut();
+        if self.count <= main_group.len() {
+            main_group.drain(self.count..main_group.len());
         }
     }
 }
@@ -92,8 +106,13 @@ pub struct OffsetStatement {
 }
 
 impl Statement for OffsetStatement {
-    fn execute(&self, _repo: &git2::Repository, objects: &mut Vec<GQLObject>) {
-        objects.drain(0..cmp::min(self.count, objects.len()));
+    fn execute(&self, _repo: &git2::Repository, groups: &mut Vec<Vec<GQLObject>>) {
+        if groups.len() > 1 {
+            flat_groups(groups);
+        }
+
+        let main_group: &mut Vec<GQLObject> = groups[0].as_mut();
+        main_group.drain(0..cmp::min(self.count, main_group.len()));
     }
 }
 
@@ -103,13 +122,18 @@ pub struct OrderByStatement {
 }
 
 impl Statement for OrderByStatement {
-    fn execute(&self, _repo: &git2::Repository, objects: &mut Vec<GQLObject>) {
-        if objects.is_empty() {
+    fn execute(&self, _repo: &git2::Repository, groups: &mut Vec<Vec<GQLObject>>) {
+        if groups.len() > 1 {
+            flat_groups(groups);
+        }
+
+        let main_group: &mut Vec<GQLObject> = groups[0].as_mut();
+        if main_group.is_empty() {
             return;
         }
 
-        if objects[0].attributes.contains_key(&self.field_name) {
-            objects.sort_by_key(|object| {
+        if main_group[0].attributes.contains_key(&self.field_name) {
+            main_group.sort_by_key(|object| {
                 object
                     .attributes
                     .get(&self.field_name.to_string())
@@ -118,7 +142,7 @@ impl Statement for OrderByStatement {
             });
 
             if !self.is_ascending {
-                objects.reverse();
+                main_group.reverse();
             }
         }
     }
@@ -129,26 +153,34 @@ pub struct GroupByStatement {
 }
 
 impl Statement for GroupByStatement {
-    fn execute(&self, _repo: &git2::Repository, objects: &mut Vec<GQLObject>) {
-        if objects.is_empty() {
+    fn execute(&self, _repo: &git2::Repository, groups: &mut Vec<Vec<GQLObject>>) {
+        let main_group: Vec<GQLObject> = groups.remove(0);
+        if main_group.is_empty() {
             return;
         }
 
-        let mut fields_set: HashSet<String> = HashSet::new();
-        let mut group_result: Vec<GQLObject> = Vec::new();
+        // Mapping each unique value to it group index
+        let mut groups_map: HashMap<String, usize> = HashMap::new();
 
-        for object in objects.iter() {
+        // Track current group index
+        let mut next_group_index = 0;
+
+        for object in main_group.into_iter() {
             let field_value = object.attributes.get(&self.field_name).unwrap();
-            if fields_set.contains(field_value) {
-                continue;
+
+            // If there is an existing group for this value, append current object to it
+            if groups_map.contains_key(field_value) {
+                let index = *groups_map.get(field_value).unwrap();
+                let target_group = &mut groups[index];
+                target_group.push(object.to_owned());
             }
-
-            fields_set.insert(field_value.to_string());
-            group_result.push(object.to_owned());
+            // Push a new group for this unique value and update the next index
+            else {
+                groups_map.insert(field_value.to_string(), next_group_index);
+                next_group_index += 1;
+                groups.push(vec![object.to_owned()]);
+            }
         }
-
-        objects.clear();
-        objects.append(&mut group_result);
     }
 }
 
@@ -162,37 +194,46 @@ pub struct AggregationFunctionsStatement {
 }
 
 impl Statement for AggregationFunctionsStatement {
-    fn execute(&self, _repo: &git2::Repository, objects: &mut Vec<GQLObject>) {
-        if objects.is_empty() {
+    fn execute(&self, _repo: &git2::Repository, groups: &mut Vec<Vec<GQLObject>>) {
+        // Make sure you have at least one aggregation function to calculate
+        let aggregations_map = &self.aggregations;
+        if aggregations_map.is_empty() {
             return;
         }
 
-        let mut aggregation_result: Vec<GQLObject> = Vec::new();
+        // We should run aggregation function for each group
+        for group in groups {
+            for aggregation in aggregations_map {
+                let function = aggregation.1;
 
-        let aggregations = &self.aggregations;
-        for aggregation in aggregations.iter() {
-            let result_column_name = aggregation.0;
-            let function = aggregation.1;
-
-            let mut index: usize = 0;
-            for object in objects.iter() {
-                let mut new_object = object.to_owned();
-
+                // Get the target aggregation function
                 let aggregation_function =
                     AGGREGATIONS.get(function.function_name.as_str()).unwrap();
 
-                let result = aggregation_function(&function.argument, index, &objects);
+                // Execute aggregation function once for group
+                let result_column_name = aggregation.0;
+                let result = &aggregation_function(&function.argument, &group);
 
-                new_object
-                    .attributes
-                    .insert(result_column_name.to_string(), result);
-
-                aggregation_result.push(new_object);
-                index += 1;
+                // Insert the calculated value in the group objects
+                for object in group.into_iter() {
+                    object
+                        .attributes
+                        .insert(result_column_name.to_string(), result.to_string());
+                }
             }
-        }
 
-        objects.clear();
-        objects.append(&mut aggregation_result);
+            // Remove all elements expect the first one
+            group.drain(1..);
+        }
     }
+}
+
+fn flat_groups(groups: &mut Vec<Vec<GQLObject>>) {
+    let mut main_group: Vec<GQLObject> = Vec::new();
+    for group in groups.into_iter() {
+        main_group.append(group);
+    }
+
+    groups.clear();
+    groups.push(main_group);
 }

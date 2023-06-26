@@ -13,7 +13,7 @@ const GQL_COMMANDS_IN_ORDER: [&'static str; 8] = [
 ];
 
 pub fn evaluate(repo: &git2::Repository, query: GQLQuery) {
-    let mut objects: Vec<GQLObject> = Vec::new();
+    let mut objects: Vec<Vec<GQLObject>> = Vec::new();
     let statements_map = query.statements;
 
     for gql_command in GQL_COMMANDS_IN_ORDER {

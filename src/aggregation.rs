@@ -4,7 +4,7 @@ use crate::types::DataType;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 
-type Aggregation = fn(&String, usize, &Vec<GQLObject>) -> String;
+type Aggregation = fn(&String, &Vec<GQLObject>) -> String;
 
 pub struct AggregationPrototype {
     pub parameter: DataType,
@@ -33,10 +33,9 @@ lazy_static! {
     };
 }
 
-fn aggregation_max(field_name: &String, index: usize, objects: &Vec<GQLObject>) -> String {
+fn aggregation_max(field_name: &String, objects: &Vec<GQLObject>) -> String {
     let mut max_length: i64 = 0;
-    for i in 0..index + 1 {
-        let object = &objects[i];
+    for object in objects {
         let field_value = &object.attributes.get(field_name).unwrap();
         let int_value = field_value.parse::<i64>().unwrap();
         if int_value > max_length {

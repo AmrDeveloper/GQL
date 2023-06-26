@@ -2,7 +2,7 @@ use crate::object::GQLObject;
 use crate::types::{DataType, TABLES_FIELDS_TYPES};
 use regex::Regex;
 
-use crate::transformations::{TRANSFORMATIONS, TRANSFORMATIONS_PROTOS};
+use crate::transformation::{TRANSFORMATIONS, TRANSFORMATIONS_PROTOS};
 
 pub trait Expression {
     fn evaluate(&self, object: &GQLObject) -> String;
