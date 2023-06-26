@@ -245,7 +245,7 @@ fn parse_select_statement(
                 // Type check aggregation function argument type
                 let prototype = AGGREGATIONS_PROTOS.get(&field_name.as_str()).unwrap();
                 let field_type = TABLES_FIELDS_TYPES.get(argument.literal.as_str()).unwrap();
-                if field_type != &prototype.parameter {
+                if prototype.parameter != DataType::Any && field_type != &prototype.parameter {
                     let message = format!(
                         "Aggregation Function `{}` expect parameter type `{}` but got type `{}`",
                         field_name.to_string(),

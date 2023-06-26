@@ -23,5 +23,11 @@ pub fn evaluate(repo: &git2::Repository, query: GQLQuery) {
         }
     }
 
+    if objects.len() > 1 {
+        for group in objects.iter_mut() {
+            group.drain(1..);
+        }
+    }
+
     render_objects(&objects);
 }

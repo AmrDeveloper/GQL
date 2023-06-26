@@ -3,6 +3,7 @@ use std::collections::HashMap;
 
 #[derive(PartialEq, Clone)]
 pub enum DataType {
+    Any,
     Text,
     Number,
     Boolean,
@@ -12,6 +13,7 @@ pub enum DataType {
 impl DataType {
     pub fn literal(&self) -> &'static str {
         return match self {
+            DataType::Any => "Any",
             DataType::Text => "Text",
             DataType::Number => "Number",
             DataType::Boolean => "Boolean",

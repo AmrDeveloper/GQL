@@ -15,6 +15,7 @@ lazy_static! {
     pub static ref AGGREGATIONS: HashMap<&'static str, Aggregation> = {
         let mut map: HashMap<&'static str, Aggregation> = HashMap::new();
         map.insert("max", aggregation_max);
+        map.insert("count", aggregation_count);
         map
     };
 }
@@ -26,6 +27,13 @@ lazy_static! {
             "max",
             AggregationPrototype {
                 parameter: DataType::Number,
+                result: DataType::Number,
+            },
+        );
+        map.insert(
+            "count",
+            AggregationPrototype {
+                parameter: DataType::Any,
                 result: DataType::Number,
             },
         );
@@ -43,4 +51,8 @@ fn aggregation_max(field_name: &String, objects: &Vec<GQLObject>) -> String {
         }
     }
     return max_length.to_string();
+}
+
+fn aggregation_count(_field_name: &String, objects: &Vec<GQLObject>) -> String {
+    return objects.len().to_string();
 }

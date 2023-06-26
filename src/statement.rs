@@ -201,6 +201,9 @@ impl Statement for AggregationFunctionsStatement {
             return;
         }
 
+        // Used to determind if group by statement is executed before or not
+        let groups_count = groups.len();
+
         // We should run aggregation function for each group
         for group in groups {
             for aggregation in aggregations_map {
@@ -222,8 +225,11 @@ impl Statement for AggregationFunctionsStatement {
                 }
             }
 
+            // In case of group by statement is exectued
             // Remove all elements expect the first one
-            group.drain(1..);
+            if groups_count > 1 {
+                group.drain(1..);
+            }
         }
     }
 }
