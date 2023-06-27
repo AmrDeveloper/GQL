@@ -5,6 +5,7 @@
 </p>
 
 <p align="center">
+  <img alt="Release" src="https://github.com/AmrDeveloper/GQL/actions/workflows/release.yaml/badge.svg">
   <img alt="GitHub release" src="https://img.shields.io/github/v/release/amrdeveloper/gql">
   <img alt="GitHub issues" src="https://img.shields.io/github/issues/amrdeveloper/gql">
   <img alt="GitHub" src="https://img.shields.io/github/license/amrdeveloper/gql">
@@ -24,6 +25,8 @@ GQL is a query language with a syntax very similar to SQL with a tiny engine to 
 ### Samples
 
 ```sql
+SELECT name, count(name) AS commit_num FROM commits GROUP BY name ORDER BY commit_num DES LIMIT 10
+
 SELECT * FROM refs WHERE type = "branch"
 SELECT * FROM refs WHERE ORDER BY type
 
@@ -44,122 +47,18 @@ SELECT * FROM tags
 SELECT * FROM tags OFFSET 1 LIMIT 1
 ```
 
-### Build and run from source code
-To build and run GQL you need to have rust installed on your system and then use run command with folder that contains .git files
-
-```
-git clone https://github.com/AmrDeveloper/GQL.git
-cd GQL
-cargo run <repository_path>
-```
-
 ---
+
 ## Documentation:
 
-### Select from
-Select keyword used to select all of some fields from specific table
-
----
-
-### Tables and Fields
-- refs { name, full_name, type }
-- commits { name, email, title, message, time }
-- branches { name, ishead, isremote }
-- tags { name }
-
----
-
-### Group by
-
-The `GROUP BY` statement groups rows that have the same values into summary rows, like "find the number of customers in each country",
-note that `group by` always executed after `where` statement and before `having` statement,
-
-Example: Selecting all unique user names from commits
-
-```sql
-SELECT name FROM commits GROUP By name
-```
-
----
-
-### String Comparisons
-- `=` used to check if field equal to expected value.
-- `!` used to check if field not equal to expected value.
-- `>` used to check if field greater than expected value.
-- `>=` used to check if field greater than or equals expected value.
-- `<` used to check if field less than expected value.
-- `<=` used to check if field less than or equals expected value.
-
----
-
-### String checks
-- `contains` used to check that field contains value.
-- `starts_with` used to check that field starts with value.
-- `ends_with` used to check that field ends with value.
-- `matches` used to check that field matches regex format.
-
----
-
-## Logical Expressions
-
-- `|` or `or`: used to calculate or between two booleans,
-- `&` or `and`: used to calculate and between two booleans,
-- `^` or `xor`: used to calculate xor between two booleans,
-
----
-
-## Unary Expressions
-
-- `!`: used as prefix for expression to perform bang expression
-
----
-
-## Group Expressions
-
-Group expression is an expresion inside `(` and `)` used to give high precedence for expression.
-
----
-
-## Boolean Expressions
-
-- `true`, `false`
-
----
-
-## Sorting
-To sort the result you need to use `order by` keyword followed by field name,
-by default it will be in Ascending order, if you want Descending you need to add `DES` like SQL after field name
-
----
-
-### Limit
-limit statement take n as integer to limit the result number.
-
----
-
-### Offset
-offset statement take n as integer to ignore the first n result.
-
----
-
-### Transformations
-Transformations are functions with 0 arguments used to apply transformation on values
-
-- `lower` convert the value to be lower case.
-- `upper` convert the value to be upper case.
-- `trim` remote leading and trailing whitespace.
-- `length` return the length as a string.
-
----
-
-### Name Alias
-
-You can rename a column temporarily by giving another name, which is known as ALIAS,
-Renaming is a temporary change and the actual column name does not change
-
-```sql
-SELECT name as branch_name from branches
-```
+  - [Full Documentation](https://amrdeveloper.github.io/GQL/)
+  - [Install or Build](docs/setup.md)
+  - [Tables](docs/structure/tables.md)
+  - [Types](docs/structure/types.md)
+  - [Statements](docs/statement)
+  - [Expressions](docs/expression)
+  - [Transformations](docs/function/transformations.md)
+  - [Aggregations](docs/function/aggregations.md)
 
 ---
 
