@@ -13,7 +13,7 @@
 4. Tag
 
    ```
-   $ git tag -am "Version X.Y.Z" X.Y.Z
+   $ git tag -am "X.Y.Z" X.Y.Z
    ```
 
 5. Push!
