@@ -2,10 +2,12 @@ A binary expression contains two operands separated by one operator
 
 ### Arithmetic Expression
 
-- `+` Addition
-- `-` Subtraction
-- `*` Multiplication
-- `/` Division
+Used to perform arithmetic operators on number types.
+
+- `+` Addition.
+- `-` Subtraction.
+- `*` Multiplication.
+- `/` Division.
 
 ### Comparison Expression
 - `=` used to check if field equal to expected value.
