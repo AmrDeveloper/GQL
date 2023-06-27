@@ -1,0 +1,79 @@
+site_name: Git Query language
+
+site_url: https://amrdeveloper.github.io/gql
+site_description: A SQL Like query language to perform queries on .git files.
+site_author: AmrDeveloper
+
+copyright: Copyright &copy; 2023 Amr Heshan
+
+repo_name: amrdeveloper/gql
+repo_url: https://github.com/amrdeveloper/GQL
+edit_uri: blob/master/docs/
+
+theme:
+  name: material
+  logo: assets/gql_logo.svg
+  favicon: assets/gql_logo.svg
+
+  icon:
+    repo: fontawesome/brands/github
+    edit: material/pencil
+
+  font:
+    code: JetBrains Mono
+
+  palette:
+    primary: deep orange
+    accent: deep purple
+
+  features:
+    - content.code.annotate
+    - content.code.copy
+
+  plugins:
+    - offline
+
+markdown_extensions:
+  - pymdownx.highlight:
+      use_pygments: true
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+
+nav:
+  - Home: index.md
+  - Setup: setup.md
+  - Structure:
+      - Tables: structure/tables.md
+      - Types: structure/types.md
+  - Statement:
+      - Select: statement/select.md
+      - Where: statement/where.md
+      - Group by: statement/group_by.md
+      - Having: statement/having.md
+      - Ordre by: statement/order_by.md
+      - Limit & Offset: statement/limit_and_offset.md
+  - Expression:
+      - Unary: expression/unary.md
+      - Binary: expression/binary.md
+  - Function:
+      - Transformation: function/transformations.md
+      - Aggregations: function/aggregations.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/amrdeveloper
+      name: AmrDeveloper on Github
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/AmrDeveloper
+      name: AmrDeveloper on Twitter
+    - icon: fontawesome/brands/linkedin
+      link: https://www.linkedin.com/in/amrdeveloper
+      name: AmrDeveloper on Linkedin
+    - icon: fontawesome/brands/medium
+      link: https://amrdeveloper.medium.com
+      name: AmrDeveloper on Medium
