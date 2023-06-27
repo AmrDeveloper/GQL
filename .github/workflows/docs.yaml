@@ -1,0 +1,21 @@
+name: Build and deploy docs
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - docs/**
+      - mkdocs.yml
+permissions:
+  contents: write
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.x
+      - run: pip install mkdocs-material
+      - run: mkdocs gh-deploy --force
