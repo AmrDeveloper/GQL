@@ -6,6 +6,7 @@
 
 <p align="center">
   <img alt="Release" src="https://github.com/AmrDeveloper/GQL/actions/workflows/release.yaml/badge.svg">
+  <img alt="Docs" src="https://github.com/AmrDeveloper/GQL/actions/workflows/docs.yaml/badge.svg">
   <img alt="GitHub release" src="https://img.shields.io/github/v/release/amrdeveloper/gql">
   <img alt="GitHub issues" src="https://img.shields.io/github/issues/amrdeveloper/gql">
   <img alt="GitHub" src="https://img.shields.io/github/license/amrdeveloper/gql">
