@@ -38,7 +38,10 @@ pub enum TokenKind {
     True,
     False,
 
+    Plus,
+    Minus,
     Star,
+    Slash,
 
     Comma,
     Dot,
@@ -146,6 +149,42 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             continue;
         }
 
+        // Plus
+        if char == '+' {
+            let location = Location {
+                start: column_start,
+                end: position,
+            };
+
+            let token = Token {
+                location: location,
+                kind: TokenKind::Plus,
+                literal: "+".to_owned(),
+            };
+
+            tokens.push(token);
+            position += 1;
+            continue;
+        }
+
+        // Plus
+        if char == '-' {
+            let location = Location {
+                start: column_start,
+                end: position,
+            };
+
+            let token = Token {
+                location: location,
+                kind: TokenKind::Minus,
+                literal: "-".to_owned(),
+            };
+
+            tokens.push(token);
+            position += 1;
+            continue;
+        }
+
         // Star
         if char == '*' {
             let location = Location {
@@ -157,6 +196,24 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
                 location: location,
                 kind: TokenKind::Star,
                 literal: "*".to_owned(),
+            };
+
+            tokens.push(token);
+            position += 1;
+            continue;
+        }
+
+        // Plus
+        if char == '/' {
+            let location = Location {
+                start: column_start,
+                end: position,
+            };
+
+            let token = Token {
+                location: location,
+                kind: TokenKind::Slash,
+                literal: "/".to_owned(),
             };
 
             tokens.push(token);

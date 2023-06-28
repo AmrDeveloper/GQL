@@ -5,9 +5,9 @@ use std::collections::HashSet;
 use crate::aggregation::AGGREGATIONS;
 use crate::aggregation::AGGREGATIONS_PROTOS;
 use crate::diagnostic::GQLError;
-use crate::expression::Expression;
+use crate::expression::{ArithmeticExpression, CallExpression, Expression};
+use crate::expression::{ArithmeticOperator, CheckOperator, ComparisonOperator, LogicalOperator};
 use crate::expression::{BooleanExpression, NumberExpression, StringExpression, SymbolExpression};
-use crate::expression::{CallExpression, CheckOperator, ComparisonOperator, LogicalOperator};
 use crate::expression::{CheckExpression, ComparisonExpression, LogicalExpression, NotExpression};
 use crate::statement::{AggregateFunction, AggregationFunctionsStatement};
 use crate::statement::{GQLQuery, HavingStatement, WhereStatement};
@@ -657,7 +657,7 @@ fn parse_comparison_expression(
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
-    let expression = parse_check_expression(tokens, position);
+    let expression = parse_term_expression(tokens, position);
     if expression.is_err() || *position >= tokens.len() {
         return expression;
     }
@@ -682,7 +682,7 @@ fn parse_comparison_expression(
             _ => ComparisonOperator::NotEqual,
         };
 
-        let right_expr = parse_check_expression(tokens, position);
+        let right_expr = parse_term_expression(tokens, position);
         if right_expr.is_err() {
             return Err(right_expr.err().unwrap());
         }
@@ -707,6 +707,112 @@ fn parse_comparison_expression(
             operator: comparison_operator,
             right: rhs,
         }));
+    }
+
+    return Ok(lhs);
+}
+
+fn parse_term_expression(
+    tokens: &Vec<Token>,
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, GQLError> {
+    let expression = parse_factor_expression(tokens, position);
+    if expression.is_err() || *position >= tokens.len() {
+        return expression;
+    }
+
+    let mut lhs = expression.ok().unwrap();
+
+    while *position < tokens.len()
+        && (&tokens[*position].kind == &TokenKind::Plus
+            || &tokens[*position].kind == &TokenKind::Minus)
+    {
+        let operator = &tokens[*position];
+        *position += 1;
+        let math_operator = if operator.kind == TokenKind::Plus {
+            ArithmeticOperator::Plus
+        } else {
+            ArithmeticOperator::Minus
+        };
+
+        let right_expr = parse_factor_expression(tokens, position);
+        if right_expr.is_err() {
+            return Err(right_expr.err().unwrap());
+        }
+
+        let rhs = right_expr.ok().unwrap();
+
+        // Make sure right and left hand side types are numbers
+        if rhs.expr_type() == DataType::Number && rhs.expr_type() != lhs.expr_type() {
+            let message = format!(
+                "Math operators require number types but got `{}` and `{}`",
+                lhs.expr_type().literal(),
+                rhs.expr_type().literal()
+            );
+            return Err(GQLError {
+                message: message,
+                location: tokens[*position - 2].location,
+            });
+        }
+
+        lhs = Box::new(ArithmeticExpression {
+            left: lhs,
+            operator: math_operator,
+            right: rhs,
+        });
+    }
+
+    return Ok(lhs);
+}
+
+fn parse_factor_expression(
+    tokens: &Vec<Token>,
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, GQLError> {
+    let expression = parse_check_expression(tokens, position);
+    if expression.is_err() || *position >= tokens.len() {
+        return expression;
+    }
+
+    let mut lhs = expression.ok().unwrap();
+
+    while *position < tokens.len()
+        && (&tokens[*position].kind == &TokenKind::Star
+            || &tokens[*position].kind == &TokenKind::Slash)
+    {
+        let operator = &tokens[*position];
+        *position += 1;
+        let factor_operator = if operator.kind == TokenKind::Star {
+            ArithmeticOperator::Star
+        } else {
+            ArithmeticOperator::Slash
+        };
+
+        let right_expr = parse_check_expression(tokens, position);
+        if right_expr.is_err() {
+            return Err(right_expr.err().unwrap());
+        }
+
+        let rhs = right_expr.ok().unwrap();
+
+        // Make sure right and left hand side types are numbers
+        if rhs.expr_type() == DataType::Number && rhs.expr_type() != lhs.expr_type() {
+            let message = format!(
+                "Math operators require number types but got `{}` and `{}`",
+                lhs.expr_type().literal(),
+                rhs.expr_type().literal()
+            );
+            return Err(GQLError {
+                message: message,
+                location: tokens[*position - 2].location,
+            });
+        }
+
+        lhs = Box::new(ArithmeticExpression {
+            left: lhs,
+            operator: factor_operator,
+            right: rhs,
+        });
     }
 
     return Ok(lhs);

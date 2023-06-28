@@ -87,6 +87,38 @@ impl Expression for NotExpression {
 }
 
 #[derive(PartialEq)]
+pub enum ArithmeticOperator {
+    Plus,
+    Minus,
+    Star,
+    Slash,
+}
+
+pub struct ArithmeticExpression {
+    pub left: Box<dyn Expression>,
+    pub operator: ArithmeticOperator,
+    pub right: Box<dyn Expression>,
+}
+
+impl Expression for ArithmeticExpression {
+    fn evaluate(&self, object: &GQLObject) -> String {
+        let lhs = self.left.evaluate(object).parse::<i64>().unwrap();
+        let rhs = self.right.evaluate(object).parse::<i64>().unwrap();
+        return match self.operator {
+            ArithmeticOperator::Plus => lhs + rhs,
+            ArithmeticOperator::Minus => lhs - rhs,
+            ArithmeticOperator::Star => lhs * rhs,
+            ArithmeticOperator::Slash => lhs / rhs,
+        }
+        .to_string();
+    }
+
+    fn expr_type(&self) -> DataType {
+        return DataType::Number;
+    }
+}
+
+#[derive(PartialEq)]
 pub enum ComparisonOperator {
     Greater,
     GreaterEqual,
