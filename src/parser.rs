@@ -5,7 +5,7 @@ use std::collections::HashSet;
 use crate::aggregation::AGGREGATIONS;
 use crate::aggregation::AGGREGATIONS_PROTOS;
 use crate::diagnostic::GQLError;
-use crate::expression::{ArithmeticExpression, CallExpression, Expression};
+use crate::expression::{ArithmeticExpression, BetweenExpression, CallExpression, Expression};
 use crate::expression::{ArithmeticOperator, CheckOperator, ComparisonOperator, LogicalOperator};
 use crate::expression::{BooleanExpression, NumberExpression, StringExpression, SymbolExpression};
 use crate::expression::{CheckExpression, ComparisonExpression, LogicalExpression, NotExpression};
@@ -590,7 +590,91 @@ fn parse_expression(
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
-    return parse_logical_expression(tokens, position);
+    return parse_between_expression(tokens, position);
+}
+
+fn parse_between_expression(
+    tokens: &Vec<Token>,
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, GQLError> {
+    let expression = parse_logical_expression(tokens, position);
+    if expression.is_err() {
+        return expression;
+    }
+
+    if *position < tokens.len() && tokens[*position].kind == TokenKind::Between {
+        let between_location = tokens[*position].location;
+
+        // Consume Between keyword
+        *position += 1;
+
+        let value = expression.ok().unwrap();
+        if value.expr_type() != DataType::Number {
+            return Err(GQLError {
+                message: format!(
+                    "BETWEEN value must to be Number type but got {}",
+                    value.expr_type().literal()
+                ),
+                location: between_location,
+            });
+        }
+
+        if *position >= tokens.len() {
+            return Err(GQLError {
+                message: "Between keyword expects two range after it".to_owned(),
+                location: between_location,
+            });
+        }
+
+        let range_start_result = parse_logical_expression(tokens, position);
+        if range_start_result.is_err() {
+            return range_start_result;
+        }
+
+        let range_start = range_start_result.ok().unwrap();
+        if range_start.expr_type() != DataType::Number {
+            return Err(GQLError {
+                message: format!(
+                    "Expect range start to be Number type but got {}",
+                    range_start.expr_type().literal()
+                ),
+                location: between_location,
+            });
+        }
+
+        if *position >= tokens.len() || tokens[*position].kind != TokenKind::DotDot {
+            return Err(GQLError {
+                message: "Expect `..` after BETWEEN range start".to_owned(),
+                location: between_location,
+            });
+        }
+
+        // Consume AND keyword
+        *position += 1;
+
+        let range_end_result = parse_logical_expression(tokens, position);
+        if range_end_result.is_err() {
+            return range_end_result;
+        }
+
+        let range_end = range_end_result.ok().unwrap();
+        if range_end.expr_type() != DataType::Number {
+            return Err(GQLError {
+                message: format!(
+                    "Expect range end to be Number type but got {}",
+                    range_end.expr_type().literal()
+                ),
+                location: between_location,
+            });
+        }
+
+        return Ok(Box::new(BetweenExpression {
+            value,
+            range_start,
+            range_end,
+        }));
+    }
+    return expression;
 }
 
 fn parse_logical_expression(

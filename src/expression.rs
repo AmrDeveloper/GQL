@@ -264,3 +264,22 @@ impl Expression for CallExpression {
         return prototype.result.clone();
     }
 }
+
+pub struct BetweenExpression {
+    pub value: Box<dyn Expression>,
+    pub range_start: Box<dyn Expression>,
+    pub range_end: Box<dyn Expression>,
+}
+
+impl Expression for BetweenExpression {
+    fn evaluate(&self, object: &GQLObject) -> String {
+        let value = self.value.evaluate(object).parse::<i64>().unwrap();
+        let range_start = self.range_start.evaluate(object).parse::<i64>().unwrap();
+        let range_end = self.range_end.evaluate(object).parse::<i64>().unwrap();
+        return (value >= range_start && value <= range_end).to_string();
+    }
+
+    fn expr_type(&self) -> DataType {
+        return DataType::Boolean;
+    }
+}

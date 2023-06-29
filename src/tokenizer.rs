@@ -10,6 +10,9 @@ pub enum TokenKind {
     Order,
     By,
 
+    Between,
+    DotDot,
+
     Greater,
     GreaterEqual,
     Less,
@@ -293,21 +296,31 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             continue;
         }
 
-        // Dot
+        // Dot or Range (DotDot)
         if char == '.' {
             let location = Location {
                 start: column_start,
                 end: position,
             };
 
+            position += 1;
+
+            let mut kind = TokenKind::Dot;
+            let mut literal = ".";
+
+            if position < len && characters[position] == '.' {
+                position += 1;
+                kind = TokenKind::DotDot;
+                literal = "..";
+            }
+
             let token = Token {
                 location: location,
-                kind: TokenKind::Dot,
-                literal: ".".to_owned(),
+                kind: kind,
+                literal: literal.to_string(),
             };
 
             tokens.push(token);
-            position += 1;
             continue;
         }
 
@@ -469,6 +482,8 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "offset" => TokenKind::Offset,
         "order" => TokenKind::Order,
         "by" => TokenKind::By,
+
+        "between" => TokenKind::Between,
 
         // Logical Operators
         "or" => TokenKind::Or,
