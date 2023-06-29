@@ -27,6 +27,7 @@ GQL is a query language with a syntax very similar to SQL with a tiny engine to 
 
 ```sql
 SELECT name, count(name) AS commit_num FROM commits GROUP BY name ORDER BY commit_num DES LIMIT 10
+SELECT commit_count FROM branches WHERE commit_count BETWEEN 0 .. 10
 
 SELECT * FROM refs WHERE type = "branch"
 SELECT * FROM refs WHERE ORDER BY type
