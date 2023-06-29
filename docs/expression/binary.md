@@ -27,8 +27,17 @@ Used to perform arithmetic operators on number types.
 
 ---
 
-## Logical Expressions
+### Logical Expressions
 
 - `|` or `or`: used to calculate or between two booleans,
 - `&` or `and`: used to calculate and between two booleans,
 - `^` or `xor`: used to calculate xor between two booleans,
+
+---
+
+### Between Expression
+Used to check if value is between range start and end included
+
+```SQL
+SELECT commit_count FROM branches WHERE commit_count BETWEEN 2 .. 30000
+```
