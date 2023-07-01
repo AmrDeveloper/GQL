@@ -11,7 +11,7 @@ categories = ["command-line-utilities"]
 exclude = [".github/**"]
 
 [dependencies]
-git2 = "0.17.1"
+git2 = { version = "0.17.1", default-features = false }
 regex = "1"
 lazy_static = "1.4.0"
 termcolor = "1.2.0"
