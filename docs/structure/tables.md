@@ -13,13 +13,14 @@
 
 ---
 
-| Name    | Type | Description         |
-| ------- | ---- | ------------------- |
-| title   | Text | Commit title        |
-| message | Text | Commit full message |
-| name    | Text | Author name         |
-| email   | Text | Author email        |
-| time    | Date | Commit date         |
+| Name      | Type | Description         |
+| --------- | ---- | ------------------- |
+| commit_id | Text | Commit id           |
+| title     | Text | Commit title        |
+| message   | Text | Commit full message |
+| name      | Text | Author name         |
+| email     | Text | Author email        |
+| time      | Date | Commit date         |
 
 ---
 

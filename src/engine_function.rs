@@ -105,6 +105,17 @@ fn select_commits(
 
         let mut attributes: HashMap<String, String> = HashMap::new();
 
+        if is_limit_fields_empty || fields.contains(&String::from("commit_id")) {
+            let key = if alias_table.contains_key("commit_id") {
+                alias_table.get("commit_id").unwrap()
+            } else {
+                "commit_id"
+            }
+            .to_string();
+
+            attributes.insert(key, commit.id().to_string());
+        }
+
         if is_limit_fields_empty || fields.contains(&String::from("name")) {
             let key = if alias_table.contains_key("name") {
                 alias_table.get("name").unwrap()

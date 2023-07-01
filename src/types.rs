@@ -25,6 +25,7 @@ impl DataType {
 lazy_static! {
     pub static ref TABLES_FIELDS_TYPES: HashMap<&'static str, DataType> = {
         let mut map = HashMap::new();
+        map.insert("commit_id", DataType::Text);
         map.insert("title", DataType::Text);
         map.insert("message", DataType::Text);
         map.insert("name", DataType::Text);
