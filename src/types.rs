@@ -30,6 +30,9 @@ lazy_static! {
         map.insert("message", DataType::Text);
         map.insert("name", DataType::Text);
         map.insert("full_name", DataType::Text);
+        map.insert("insertions", DataType::Number);
+        map.insert("deletions", DataType::Number);
+        map.insert("files_changed", DataType::Number);
         map.insert("email", DataType::Text);
         map.insert("type", DataType::Text);
         map.insert("time", DataType::Date);

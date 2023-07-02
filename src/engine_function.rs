@@ -145,6 +145,48 @@ fn select_commits(
             attributes.insert(key, commit.time().seconds().to_string());
         }
 
+        let select_insertions = fields.contains(&String::from("insertions"));
+        let select_deletions = fields.contains(&String::from("deletions"));
+        let select_file_changed = fields.contains(&String::from("files_changed"));
+
+        if is_limit_fields_empty || select_insertions || select_deletions || select_file_changed {
+            let diff = if commit.parents().len() > 0 {
+                repo.diff_tree_to_tree(
+                    Some(&commit.parent(0).unwrap().tree().unwrap()),
+                    Some(&commit.tree().unwrap()),
+                    None,
+                )
+            } else {
+                repo.diff_tree_to_tree(None, Some(&commit.tree().unwrap()), None)
+            };
+
+            let diff_status = diff.unwrap().stats().unwrap();
+
+            if is_limit_fields_empty || select_insertions {
+                let key = alias_table
+                    .get("insertions")
+                    .unwrap_or(&"insertions".to_string())
+                    .to_string();
+                attributes.insert(key, diff_status.insertions().to_string());
+            }
+
+            if is_limit_fields_empty || select_deletions {
+                let key = alias_table
+                    .get("deletions")
+                    .unwrap_or(&"deletions".to_string())
+                    .to_string();
+                attributes.insert(key, diff_status.deletions().to_string());
+            }
+
+            if is_limit_fields_empty || select_file_changed {
+                let key = alias_table
+                    .get("files_changed")
+                    .unwrap_or(&"files_changed".to_string())
+                    .to_string();
+                attributes.insert(key, diff_status.files_changed().to_string());
+            }
+        }
+
         let gql_commit = object::GQLObject { attributes };
         commits.push(gql_commit);
     }
