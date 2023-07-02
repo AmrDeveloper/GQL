@@ -40,34 +40,26 @@ fn select_references(
         let mut attributes: HashMap<String, String> = HashMap::new();
 
         if is_limit_fields_empty || fields.contains(&String::from("name")) {
-            let key = if alias_table.contains_key("name") {
-                alias_table.get("name").unwrap()
-            } else {
-                "name"
-            }
-            .to_string();
-
-            attributes.insert(key, reference.shorthand().unwrap().to_string());
+            let key = alias_table
+                .get("name")
+                .unwrap_or(&"name".to_string())
+                .to_string();
+            attributes.insert(key, reference.shorthand().unwrap_or("").to_string());
         }
 
         if is_limit_fields_empty || fields.contains(&String::from("full_name")) {
-            let key = if alias_table.contains_key("full_name") {
-                alias_table.get("full_name").unwrap()
-            } else {
-                "full_name"
-            }
-            .to_string();
-
-            attributes.insert(key, reference.name().unwrap().to_string());
+            let key = alias_table
+                .get("full_name")
+                .unwrap_or(&"full_name".to_string())
+                .to_string();
+            attributes.insert(key, reference.name().unwrap_or("").to_string());
         }
 
         if is_limit_fields_empty || fields.contains(&String::from("type")) {
-            let key = if alias_table.contains_key("type") {
-                alias_table.get("type").unwrap()
-            } else {
-                "type"
-            }
-            .to_string();
+            let key = alias_table
+                .get("type")
+                .unwrap_or(&"type".to_string())
+                .to_string();
 
             if reference.is_branch() {
                 attributes.insert(key, "branch".to_owned());
@@ -106,68 +98,50 @@ fn select_commits(
         let mut attributes: HashMap<String, String> = HashMap::new();
 
         if is_limit_fields_empty || fields.contains(&String::from("commit_id")) {
-            let key = if alias_table.contains_key("commit_id") {
-                alias_table.get("commit_id").unwrap()
-            } else {
-                "commit_id"
-            }
-            .to_string();
-
+            let key = alias_table
+                .get("commit_id")
+                .unwrap_or(&"commit_id".to_string())
+                .to_string();
             attributes.insert(key, commit.id().to_string());
         }
 
         if is_limit_fields_empty || fields.contains(&String::from("name")) {
-            let key = if alias_table.contains_key("name") {
-                alias_table.get("name").unwrap()
-            } else {
-                "name"
-            }
-            .to_string();
-
-            attributes.insert(key, commit.author().name().unwrap().to_string());
+            let key = alias_table
+                .get("name")
+                .unwrap_or(&"name".to_string())
+                .to_string();
+            attributes.insert(key, commit.author().name().unwrap_or("").to_string());
         }
 
         if is_limit_fields_empty || fields.contains(&String::from("email")) {
-            let key = if alias_table.contains_key("email") {
-                alias_table.get("email").unwrap()
-            } else {
-                "email"
-            }
-            .to_string();
-
-            attributes.insert(key, commit.author().email().unwrap().to_string());
+            let key = alias_table
+                .get("email")
+                .unwrap_or(&"email".to_string())
+                .to_string();
+            attributes.insert(key, commit.author().email().unwrap_or("").to_string());
         }
 
         if is_limit_fields_empty || fields.contains(&String::from("title")) {
-            let key = if alias_table.contains_key("title") {
-                alias_table.get("title").unwrap()
-            } else {
-                "title"
-            }
-            .to_string();
-
+            let key = alias_table
+                .get("title")
+                .unwrap_or(&"title".to_string())
+                .to_string();
             attributes.insert(key, commit.summary().unwrap().to_string());
         }
 
         if is_limit_fields_empty || fields.contains(&String::from("message")) {
-            let key = if alias_table.contains_key("message") {
-                alias_table.get("message").unwrap()
-            } else {
-                "message"
-            }
-            .to_string();
-
-            attributes.insert(key, commit.message().unwrap().to_string());
+            let key = alias_table
+                .get("message")
+                .unwrap_or(&"message".to_string())
+                .to_string();
+            attributes.insert(key, commit.message().unwrap_or("").to_string());
         }
 
         if is_limit_fields_empty || fields.contains(&String::from("time")) {
-            let key = if alias_table.contains_key("time") {
-                alias_table.get("time").unwrap()
-            } else {
-                "time"
-            }
-            .to_string();
-
+            let key = alias_table
+                .get("time")
+                .unwrap_or(&"time".to_string())
+                .to_string();
             attributes.insert(key, commit.time().seconds().to_string());
         }
 
@@ -193,24 +167,18 @@ fn select_branches(
         let mut attributes: HashMap<String, String> = HashMap::new();
 
         if is_limit_fields_empty || fields.contains(&String::from("name")) {
-            let key = if alias_table.contains_key("name") {
-                alias_table.get("name").unwrap()
-            } else {
-                "name"
-            }
-            .to_string();
-
-            attributes.insert(key, branch.name().unwrap().unwrap().to_string());
+            let key = alias_table
+                .get("name")
+                .unwrap_or(&"name".to_string())
+                .to_string();
+            attributes.insert(key, branch.name().unwrap().unwrap_or("").to_string());
         }
 
         if is_limit_fields_empty || fields.contains(&String::from("commit_count")) {
-            let key = if alias_table.contains_key("commit_count") {
-                alias_table.get("commit_count").unwrap()
-            } else {
-                "commit_count"
-            }
-            .to_string();
-
+            let key = alias_table
+                .get("commit_count")
+                .unwrap_or(&"commit_count".to_string())
+                .to_string();
             let branch_ref = branch.get().peel_to_commit().unwrap();
             let mut revwalk = repo.revwalk().unwrap();
             let _ = revwalk.push(branch_ref.id());
@@ -218,24 +186,18 @@ fn select_branches(
         }
 
         if is_limit_fields_empty || fields.contains(&String::from("is_head")) {
-            let key = if alias_table.contains_key("is_head") {
-                alias_table.get("is_head").unwrap()
-            } else {
-                "is_head"
-            }
-            .to_string();
-
+            let key = alias_table
+                .get("is_head")
+                .unwrap_or(&"is_head".to_string())
+                .to_string();
             attributes.insert(key, branch.is_head().to_string());
         }
 
         if is_limit_fields_empty || fields.contains(&String::from("is_remote")) {
-            let key = if alias_table.contains_key("is_remote") {
-                alias_table.get("is_remote").unwrap()
-            } else {
-                "is_remote"
-            }
-            .to_string();
-
+            let key = alias_table
+                .get("is_remote")
+                .unwrap_or(&"is_remote".to_string())
+                .to_string();
             attributes.insert(key, branch.get().is_remote().to_string());
         }
 
@@ -260,13 +222,10 @@ fn select_tags(
             Some(name) => {
                 let mut attributes: HashMap<String, String> = HashMap::new();
                 if is_limit_fields_empty || fields.contains(&String::from("name")) {
-                    let key = if alias_table.contains_key("name") {
-                        alias_table.get("name").unwrap()
-                    } else {
-                        "name"
-                    }
-                    .to_string();
-
+                    let key = alias_table
+                        .get("name")
+                        .unwrap_or(&"name".to_string())
+                        .to_string();
                     attributes.insert(key, name.to_string());
                     let gql_tag = object::GQLObject { attributes };
                     tags.push(gql_tag);
