@@ -165,13 +165,22 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
 
         // Slash
         if char == '/' {
+            // Ignore C style comment which from /* comment */
+            if position + 1 < characters.len() && characters[position + 1] == '*' {
+                let result = ignore_c_style_comment(&characters, &mut position);
+                if result.is_err() {
+                    return Err(result.err().unwrap());
+                }
+                continue;
+            }
+
             let location = Location {
                 start: column_start,
                 end: position,
             };
 
             let token = Token {
-                location: location,
+                location,
                 kind: TokenKind::Slash,
                 literal: "/".to_owned(),
             };
@@ -516,6 +525,27 @@ fn ignore_single_line_comment(chars: &Vec<char>, pos: &mut usize) {
     }
 
     *pos += 1;
+}
+
+fn ignore_c_style_comment(chars: &Vec<char>, pos: &mut usize) -> Result<(), GQLError> {
+    *pos += 2;
+
+    while *pos + 1 < chars.len() && (chars[*pos] != '*' && chars[*pos + 1] != '/') {
+        *pos += 1;
+    }
+
+    if *pos + 2 > chars.len() {
+        return Err(GQLError {
+            message: "C Style comment must end with */".to_owned(),
+            location: Location {
+                start: *pos,
+                end: *pos,
+            },
+        });
+    }
+
+    *pos += 2;
+    return Ok(());
 }
 
 fn resolve_symbol_kind(literal: String) -> TokenKind {
