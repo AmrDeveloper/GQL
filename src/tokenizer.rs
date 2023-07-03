@@ -98,8 +98,12 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
 
         // String literal
         if char == '"' {
-            let string_literal = consume_string(&characters, &mut position, &mut column_start);
-            tokens.push(string_literal);
+            let result = consume_string(&characters, &mut position, &mut column_start);
+            if result.is_err() {
+                return Err(result.err().unwrap());
+            }
+
+            tokens.push(result.ok().unwrap());
             continue;
         }
 
@@ -494,12 +498,27 @@ fn consume_number(chars: &Vec<char>, pos: &mut usize, start: &mut usize) -> Toke
     };
 }
 
-fn consume_string(chars: &Vec<char>, pos: &mut usize, start: &mut usize) -> Token {
+fn consume_string(
+    chars: &Vec<char>,
+    pos: &mut usize,
+    start: &mut usize,
+) -> Result<Token, GQLError> {
     *pos += 1;
 
     while *pos < chars.len() && chars[*pos] != '"' {
         *pos += 1;
     }
+
+    if *pos >= chars.len() {
+        return Err(GQLError {
+            message: "Unterminated double quote string".to_owned(),
+            location: Location {
+                start: *start,
+                end: *pos,
+            },
+        });
+    }
+
     *pos += 1;
 
     let literal = &chars[*start + 1..*pos - 1];
@@ -510,11 +529,13 @@ fn consume_string(chars: &Vec<char>, pos: &mut usize, start: &mut usize) -> Toke
         end: *pos,
     };
 
-    return Token {
+    let string_literal = Token {
         location,
         kind: TokenKind::String,
         literal: string.to_string(),
     };
+
+    return Ok(string_literal);
 }
 
 fn ignore_single_line_comment(chars: &Vec<char>, pos: &mut usize) {
