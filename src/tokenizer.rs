@@ -84,72 +84,22 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
 
         // Symbol
         if char.is_alphabetic() {
-            while position < len
-                && (characters[position] == '_' || characters[position].is_alphabetic())
-            {
-                position += 1;
-            }
-
-            let literal = &script[column_start..position];
-            let location = Location {
-                start: column_start,
-                end: position,
-            };
-
-            let token = Token {
-                location: location,
-                kind: resolve_symbol_kind(literal.to_string()),
-                literal: literal.to_string(),
-            };
-
-            tokens.push(token);
+            let identifier = consume_identifier(&characters, &mut position, &mut column_start);
+            tokens.push(identifier);
             continue;
         }
 
         // Number
         if char.is_numeric() {
-            while position < len && characters[position].is_numeric() {
-                position += 1;
-            }
-
-            let literal = &script[column_start..position];
-            let location = Location {
-                start: column_start,
-                end: position,
-            };
-
-            let token = Token {
-                location: location,
-                kind: TokenKind::Number,
-                literal: literal.to_string(),
-            };
-
-            tokens.push(token);
+            let number = consume_number(&characters, &mut position, &mut column_start);
+            tokens.push(number);
             continue;
         }
 
         // String literal
         if char == '"' {
-            position += 1;
-            while position < len && characters[position] != '"' {
-                position += 1;
-            }
-            position += 1;
-
-            let literal = &script[column_start + 1..position - 1];
-
-            let location = Location {
-                start: column_start,
-                end: position,
-            };
-
-            let token = Token {
-                location: location,
-                kind: TokenKind::String,
-                literal: literal.to_string(),
-            };
-
-            tokens.push(token);
+            let string_literal = consume_string(&characters, &mut position, &mut column_start);
+            tokens.push(string_literal);
             continue;
         }
 
@@ -171,8 +121,14 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             continue;
         }
 
-        // Plus
+        // Minus
         if char == '-' {
+            // Ignore single line comment which from -- until the end of the current line
+            if position + 1 < characters.len() && characters[position + 1] == '-' {
+                ignore_single_line_comment(&characters, &mut position);
+                continue;
+            }
+
             let location = Location {
                 start: column_start,
                 end: position,
@@ -487,6 +443,79 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
     }
 
     return Ok(tokens);
+}
+
+fn consume_identifier(chars: &Vec<char>, pos: &mut usize, start: &mut usize) -> Token {
+    while *pos < chars.len() && (chars[*pos] == '_' || chars[*pos].is_alphabetic()) {
+        *pos += 1;
+    }
+
+    let literal = &chars[*start..*pos];
+    let string = String::from_utf8(literal.iter().map(|&c| c as u8).collect()).unwrap();
+
+    let location = Location {
+        start: *start,
+        end: *pos,
+    };
+
+    return Token {
+        location,
+        kind: resolve_symbol_kind(string.to_string()),
+        literal: string.to_string(),
+    };
+}
+
+fn consume_number(chars: &Vec<char>, pos: &mut usize, start: &mut usize) -> Token {
+    while *pos < chars.len() && chars[*pos].is_numeric() {
+        *pos += 1;
+    }
+
+    let literal = &chars[*start..*pos];
+    let string = String::from_utf8(literal.iter().map(|&c| c as u8).collect()).unwrap();
+
+    let location = Location {
+        start: *start,
+        end: *pos,
+    };
+
+    return Token {
+        location,
+        kind: TokenKind::Number,
+        literal: string.to_string(),
+    };
+}
+
+fn consume_string(chars: &Vec<char>, pos: &mut usize, start: &mut usize) -> Token {
+    *pos += 1;
+
+    while *pos < chars.len() && chars[*pos] != '"' {
+        *pos += 1;
+    }
+    *pos += 1;
+
+    let literal = &chars[*start + 1..*pos - 1];
+    let string = String::from_utf8(literal.iter().map(|&c| c as u8).collect()).unwrap();
+
+    let location = Location {
+        start: *start,
+        end: *pos,
+    };
+
+    return Token {
+        location,
+        kind: TokenKind::String,
+        literal: string.to_string(),
+    };
+}
+
+fn ignore_single_line_comment(chars: &Vec<char>, pos: &mut usize) {
+    *pos += 2;
+
+    while *pos < chars.len() && chars[*pos] != '\n' {
+        *pos += 1;
+    }
+
+    *pos += 1;
 }
 
 fn resolve_symbol_kind(literal: String) -> TokenKind {
