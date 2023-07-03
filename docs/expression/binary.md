@@ -8,6 +8,7 @@ Used to perform arithmetic operators on number types.
 - `-` Subtraction.
 - `*` Multiplication.
 - `/` Division.
+- `%` Modulus.
 
 ### Comparison Expression
 - `=` used to check if field equal to expected value.

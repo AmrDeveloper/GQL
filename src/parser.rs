@@ -875,14 +875,16 @@ fn parse_factor_expression(
 
     while *position < tokens.len()
         && (&tokens[*position].kind == &TokenKind::Star
-            || &tokens[*position].kind == &TokenKind::Slash)
+            || &tokens[*position].kind == &TokenKind::Slash
+            || &tokens[*position].kind == &TokenKind::Percentage)
     {
         let operator = &tokens[*position];
         *position += 1;
-        let factor_operator = if operator.kind == TokenKind::Star {
-            ArithmeticOperator::Star
-        } else {
-            ArithmeticOperator::Slash
+
+        let factor_operator = match operator.kind {
+            TokenKind::Star => ArithmeticOperator::Star,
+            TokenKind::Slash => ArithmeticOperator::Slash,
+            _ => ArithmeticOperator::Modulus,
         };
 
         let right_expr = parse_check_expression(tokens, position);

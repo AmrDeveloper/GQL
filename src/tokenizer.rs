@@ -45,6 +45,7 @@ pub enum TokenKind {
     Minus,
     Star,
     Slash,
+    Percentage,
 
     Comma,
     Dot,
@@ -206,7 +207,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             continue;
         }
 
-        // Plus
+        // Slash
         if char == '/' {
             let location = Location {
                 start: column_start,
@@ -217,6 +218,24 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
                 location: location,
                 kind: TokenKind::Slash,
                 literal: "/".to_owned(),
+            };
+
+            tokens.push(token);
+            position += 1;
+            continue;
+        }
+
+        // Percentage
+        if char == '%' {
+            let location = Location {
+                start: column_start,
+                end: position,
+            };
+
+            let token = Token {
+                location: location,
+                kind: TokenKind::Percentage,
+                literal: "%".to_owned(),
             };
 
             tokens.push(token);

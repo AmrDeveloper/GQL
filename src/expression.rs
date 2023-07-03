@@ -92,6 +92,7 @@ pub enum ArithmeticOperator {
     Minus,
     Star,
     Slash,
+    Modulus,
 }
 
 pub struct ArithmeticExpression {
@@ -109,6 +110,7 @@ impl Expression for ArithmeticExpression {
             ArithmeticOperator::Minus => lhs - rhs,
             ArithmeticOperator::Star => lhs * rhs,
             ArithmeticOperator::Slash => lhs / rhs,
+            ArithmeticOperator::Modulus => lhs % rhs,
         }
         .to_string();
     }
