@@ -122,21 +122,6 @@ jobs:
           toolchain: ${{ matrix.rust }}
           target: ${{ matrix.target }}
 
-      - name: Install OpenSSL on Ubuntu
-        if: matrix.os == 'ubuntu-22.04'
-        run: |
-          sudo apt-get install pkg-config libssl-dev
-
-      - name: Install OpenSSL on Windows
-        if: matrix.os == 'windows-2022'
-        run: |
-          vcpkg install openssl:x64-windows-static-md
-
-      - name: Install OpenSSL on Macos
-        if: matrix.os == 'macos-12'
-        run: |
-          brew install openssl@3
-
       - name: Use Cross
         shell: bash
         run: |
