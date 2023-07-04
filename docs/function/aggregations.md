@@ -7,6 +7,13 @@ Accept field name with `NUMBER` to calculate the maximum value of it for all ele
 SELECT name, commit_count, max(commit_count) FROM branches
 ```
 
+### Aggregation `min`
+Accept field name with `NUMBER` to calculate the minimum value of it for all elements until the current one
+
+```sql
+SELECT name, commit_count, min(commit_count) FROM branches
+```
+
 ### Aggregation `count`
 The function COUNT() is an aggregate function that returns the number of items in a group
 

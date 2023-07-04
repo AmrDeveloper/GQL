@@ -91,6 +91,9 @@ fn select_commits(
     revwalk.push_head().unwrap();
 
     let is_limit_fields_empty = fields.is_empty();
+    let select_insertions = fields.contains(&String::from("insertions"));
+    let select_deletions = fields.contains(&String::from("deletions"));
+    let select_file_changed = fields.contains(&String::from("files_changed"));
 
     for commit_id in revwalk {
         let commit = repo.find_commit(commit_id.unwrap()).unwrap();
@@ -144,10 +147,6 @@ fn select_commits(
                 .to_string();
             attributes.insert(key, commit.time().seconds().to_string());
         }
-
-        let select_insertions = fields.contains(&String::from("insertions"));
-        let select_deletions = fields.contains(&String::from("deletions"));
-        let select_file_changed = fields.contains(&String::from("files_changed"));
 
         if is_limit_fields_empty || select_insertions || select_deletions || select_file_changed {
             let diff = if commit.parents().len() > 0 {
