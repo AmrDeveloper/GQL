@@ -5,6 +5,9 @@
 </p>
 
 <p align="center">
+  <img alt="Crates.io" src="https://img.shields.io/crates/v/gitql?style=flat-square">
+  <img alt="Release" src="https://github.com/AmrDeveloper/GQL/actions/workflows/release.yaml/badge.svg">
+  <img alt="Docs" src="https://github.com/AmrDeveloper/GQL/actions/workflows/docs.yaml/badge.svg">
   <img alt="GitHub release" src="https://img.shields.io/github/v/release/amrdeveloper/gql">
   <img alt="GitHub issues" src="https://img.shields.io/github/issues/amrdeveloper/gql">
   <img alt="GitHub" src="https://img.shields.io/github/license/amrdeveloper/gql">
@@ -16,6 +19,9 @@ GQL is a query language with a syntax very similar to SQL with a tiny engine to 
 ### Samples
 
 ``` sql
+SELECT name, count(name) AS commit_num FROM commits GROUP BY name ORDER BY commit_num DES LIMIT 10
+SELECT commit_count FROM branches WHERE commit_count BETWEEN 0 .. 10
+
 SELECT * FROM refs WHERE type = "branch"
 SELECT * FROM refs WHERE ORDER BY type
 
@@ -24,6 +30,8 @@ SELECT name, email FROM commits
 SELECT name, email FROM commits ORDER BY name DES
 SELECT name, email FROM commits WHERE name contains "gmail" ORDER BY name
 SELECT * FROM commits WHERE name.lower = "amrdeveloper"
+SELECT name FROM commits GROUP By name
+SELECT name FROM commits GROUP By name having name = "AmrDeveloper"
 
 SELECT * FROM branches
 SELECT * FROM branches WHERE ishead = "true"
