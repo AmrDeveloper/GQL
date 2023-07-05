@@ -6,6 +6,7 @@
 
 <p align="center">
   <img alt="Crates.io" src="https://img.shields.io/crates/v/gitql?style=flat-square">
+  <img alt="Deps" src="https://deps.rs/repo/github/amrdeveloper/gql/status.svg">
   <img alt="Release" src="https://github.com/AmrDeveloper/GQL/actions/workflows/release.yaml/badge.svg">
   <img alt="Docs" src="https://github.com/AmrDeveloper/GQL/actions/workflows/docs.yaml/badge.svg">
   <img alt="GitHub release" src="https://img.shields.io/github/v/release/amrdeveloper/gql">

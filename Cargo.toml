@@ -13,7 +13,7 @@ exclude = [".github/**", "docs/**", "media/**", "scripts/**"]
 
 [dependencies]
 git2 = { version = "0.17.1", default-features = false }
-regex = "1"
+regex = "1.8.4"
 lazy_static = "1.4.0"
 termcolor = "1.2.0"
 prettytable-rs = "^0.10"
