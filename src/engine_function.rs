@@ -12,6 +12,7 @@ pub fn select_gql_objects(
         "refs" => select_references(repo, fields, alias_table),
         "commits" => select_commits(repo, fields, alias_table),
         "branches" => select_branches(repo, fields, alias_table),
+        "diffs" => select_diffs(repo, fields, alias_table),
         "tags" => select_tags(repo, fields, alias_table),
         _ => vec![],
     };
@@ -91,10 +92,6 @@ fn select_commits(
     revwalk.push_head().unwrap();
 
     let is_limit_fields_empty = fields.is_empty();
-    let select_insertions = fields.contains(&String::from("insertions"));
-    let select_deletions = fields.contains(&String::from("deletions"));
-    let select_file_changed = fields.contains(&String::from("files_changed"));
-
     for commit_id in revwalk {
         let commit = repo.find_commit(commit_id.unwrap()).unwrap();
 
@@ -148,6 +145,55 @@ fn select_commits(
             attributes.insert(key, commit.time().seconds().to_string());
         }
 
+        let gql_commit = object::GQLObject { attributes };
+        commits.push(gql_commit);
+    }
+
+    return commits;
+}
+
+fn select_diffs(
+    repo: &git2::Repository,
+    fields: Vec<String>,
+    alias_table: HashMap<String, String>,
+) -> Vec<object::GQLObject> {
+    let mut diffs: Vec<object::GQLObject> = Vec::new();
+    let mut revwalk = repo.revwalk().unwrap();
+    revwalk.push_head().unwrap();
+
+    let is_limit_fields_empty = fields.is_empty();
+    let select_insertions = fields.contains(&String::from("insertions"));
+    let select_deletions = fields.contains(&String::from("deletions"));
+    let select_file_changed = fields.contains(&String::from("files_changed"));
+
+    for commit_id in revwalk {
+        let commit = repo.find_commit(commit_id.unwrap()).unwrap();
+        let mut attributes: HashMap<String, String> = HashMap::new();
+
+        if is_limit_fields_empty || fields.contains(&String::from("commit_id")) {
+            let key = alias_table
+                .get("commit_id")
+                .unwrap_or(&"commit_id".to_string())
+                .to_string();
+            attributes.insert(key, commit.id().to_string());
+        }
+
+        if is_limit_fields_empty || fields.contains(&String::from("name")) {
+            let key = alias_table
+                .get("name")
+                .unwrap_or(&"name".to_string())
+                .to_string();
+            attributes.insert(key, commit.author().name().unwrap_or("").to_string());
+        }
+
+        if is_limit_fields_empty || fields.contains(&String::from("email")) {
+            let key = alias_table
+                .get("email")
+                .unwrap_or(&"email".to_string())
+                .to_string();
+            attributes.insert(key, commit.author().email().unwrap_or("").to_string());
+        }
+
         if is_limit_fields_empty || select_insertions || select_deletions || select_file_changed {
             let diff = if commit.parents().len() > 0 {
                 repo.diff_tree_to_tree(
@@ -186,11 +232,11 @@ fn select_commits(
             }
         }
 
-        let gql_commit = object::GQLObject { attributes };
-        commits.push(gql_commit);
+        let gql_diff = object::GQLObject { attributes };
+        diffs.push(gql_diff);
     }
 
-    return commits;
+    return diffs;
 }
 
 fn select_branches(

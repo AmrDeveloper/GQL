@@ -26,21 +26,22 @@ lazy_static! {
         map.insert("refs", vec!["name", "full_name", "type"]);
         map.insert(
             "commits",
-            vec![
-                "commit_id",
-                "title",
-                "message",
-                "name",
-                "email",
-                "time",
-                "insertions",
-                "deletions",
-                "files_changed",
-            ],
+            vec!["commit_id", "title", "message", "name", "email", "time"],
         );
         map.insert(
             "branches",
             vec!["name", "commit_count", "is_head", "is_remote"],
+        );
+        map.insert(
+            "diffs",
+            vec![
+                "commit_id",
+                "name",
+                "email",
+                "insertions",
+                "deletions",
+                "files_changed",
+            ],
         );
         map.insert("tags", vec!["name"]);
         map
