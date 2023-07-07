@@ -1,6 +1,19 @@
 Change Log
 ==========
 
+Version 0.3.0 *(2023-07-07)*
+-----------------------------
+
+* Implement Aggregation functions `count`, `max`, `min`, `sum`.
+* Implement insertions, deletations, file changes for diffs table.
+* Remove un needed dependencies #4.
+* Publish the project on crates.io.
+* Create docs website.
+* Support Number expression.
+* Support Arithmetics operators.
+* Support Bitwise operators.
+* Support selecting commit id
+
 Version 0.2.0 *(2023-06-27)*
 -----------------------------
 
