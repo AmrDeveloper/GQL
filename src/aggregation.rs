@@ -16,6 +16,7 @@ lazy_static! {
         let mut map: HashMap<&'static str, Aggregation> = HashMap::new();
         map.insert("max", aggregation_max);
         map.insert("min", aggregation_min);
+        map.insert("sum", aggregation_sum);
         map.insert("count", aggregation_count);
         map
     };
@@ -35,6 +36,13 @@ lazy_static! {
             "min",
             AggregationPrototype {
                 parameter: DataType::Number,
+                result: DataType::Number,
+            },
+        );
+        map.insert(
+            "sum",
+            AggregationPrototype {
+                parameter: DataType::Any,
                 result: DataType::Number,
             },
         );
@@ -71,6 +79,15 @@ fn aggregation_min(field_name: &String, objects: &Vec<GQLObject>) -> String {
         }
     }
     return max_length.to_string();
+}
+
+fn aggregation_sum(field_name: &String, objects: &Vec<GQLObject>) -> String {
+    let mut sum: i64 = 0;
+    for object in objects {
+        let field_value = &object.attributes.get(field_name).unwrap();
+        sum += field_value.parse::<i64>().unwrap();
+    }
+    return sum.to_string();
 }
 
 fn aggregation_count(_field_name: &String, objects: &Vec<GQLObject>) -> String {

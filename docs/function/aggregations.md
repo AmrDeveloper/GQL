@@ -14,6 +14,13 @@ Accept field name with `NUMBER` to calculate the minimum value of it for all ele
 SELECT name, commit_count, min(commit_count) FROM branches
 ```
 
+### Aggregation `sum`
+The function sum() is an aggregate function that returns the sum of items in a group
+
+```sql
+SELECT name, sum(insertions) FROM diffs GROUP BY name
+```
+
 ### Aggregation `count`
 The function COUNT() is an aggregate function that returns the number of items in a group
 

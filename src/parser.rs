@@ -322,6 +322,10 @@ fn parse_select_statement(
                     },
                 );
 
+                if tokens[*position].kind == TokenKind::Comma {
+                    *position += 1;
+                }
+
                 continue;
             }
 
@@ -381,6 +385,7 @@ fn parse_select_statement(
     }
 
     if tokens[*position].kind != TokenKind::From {
+        println!("{}", tokens[*position].literal);
         return Err(GQLError {
             message: "Expect `from` keyword after attributes".to_owned(),
             location: tokens[*position].location,
