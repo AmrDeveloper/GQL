@@ -246,6 +246,38 @@ impl Expression for LogicalExpression {
     }
 }
 
+#[derive(PartialEq)]
+pub enum BitwiseOperator {
+    Or,
+    And,
+    RightShift,
+    LeftShift,
+}
+
+pub struct BitwiseExpression {
+    pub left: Box<dyn Expression>,
+    pub operator: BitwiseOperator,
+    pub right: Box<dyn Expression>,
+}
+
+impl Expression for BitwiseExpression {
+    fn evaluate(&self, object: &GQLObject) -> String {
+        let lhs = self.left.evaluate(object).parse::<i64>().unwrap();
+        let rhs = self.right.evaluate(object).parse::<i64>().unwrap();
+        return match self.operator {
+            BitwiseOperator::Or => lhs | rhs,
+            BitwiseOperator::And => lhs & rhs,
+            BitwiseOperator::RightShift => lhs << rhs,
+            BitwiseOperator::LeftShift => lhs >> rhs,
+        }
+        .to_string();
+    }
+
+    fn expr_type(&self) -> DataType {
+        return DataType::Number;
+    }
+}
+
 pub struct CallExpression {
     pub callee: Box<dyn Expression>,
     pub arguments: Vec<Box<dyn Expression>>,

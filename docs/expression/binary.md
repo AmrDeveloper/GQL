@@ -30,10 +30,19 @@ Used to perform arithmetic operators on number types.
 
 ### Logical Expressions
 
-- `|` or `or`: used to calculate or between two booleans,
-- `&` or `and`: used to calculate and between two booleans,
-- `^` or `xor`: used to calculate xor between two booleans,
+- `||` or `or`: used to calculate logical or between two booleans,
+- `&&` or `and`: used to calculate logical and between two booleans,
+- `^` or `xor`: used to calculate logical xor between two booleans,
 
+---
+
+### Bitwise Expressions
+
+- `|`: used to calculate bitwise or between two numbers,
+- `&`: used to calculate bitwise and between two numbers,
+- `<<`: used to calculate bitwise right shift between two numbers,
+- `>>`: used to calculate bitwise left shift between two numbers,
+- 
 ---
 
 ### Between Expression

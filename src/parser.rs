@@ -7,6 +7,7 @@ use crate::aggregation::AGGREGATIONS_PROTOS;
 use crate::diagnostic::GQLError;
 use crate::expression::{ArithmeticExpression, BetweenExpression, CallExpression, Expression};
 use crate::expression::{ArithmeticOperator, CheckOperator, ComparisonOperator, LogicalOperator};
+use crate::expression::{BitwiseExpression, BitwiseOperator};
 use crate::expression::{BooleanExpression, NumberExpression, StringExpression, SymbolExpression};
 use crate::expression::{CheckExpression, ComparisonExpression, LogicalExpression, NotExpression};
 use crate::statement::{AggregateFunction, AggregationFunctionsStatement};
@@ -611,7 +612,7 @@ fn parse_between_expression(
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
-    let expression = parse_logical_expression(tokens, position);
+    let expression = parse_logical_or_expression(tokens, position);
     if expression.is_err() {
         return expression;
     }
@@ -640,7 +641,7 @@ fn parse_between_expression(
             });
         }
 
-        let range_start_result = parse_logical_expression(tokens, position);
+        let range_start_result = parse_logical_or_expression(tokens, position);
         if range_start_result.is_err() {
             return range_start_result;
         }
@@ -666,7 +667,7 @@ fn parse_between_expression(
         // Consume AND keyword
         *position += 1;
 
-        let range_end_result = parse_logical_expression(tokens, position);
+        let range_end_result = parse_logical_or_expression(tokens, position);
         if range_end_result.is_err() {
             return range_end_result;
         }
@@ -691,11 +692,11 @@ fn parse_between_expression(
     return expression;
 }
 
-fn parse_logical_expression(
+fn parse_logical_or_expression(
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
-    let expression = parse_comparison_expression(tokens, position);
+    let expression = parse_logical_and_expression(tokens, position);
     if expression.is_err() || *position >= tokens.len() {
         return expression;
     }
@@ -704,10 +705,7 @@ fn parse_logical_expression(
 
     let operator = &tokens[*position];
 
-    if operator.kind == TokenKind::Or
-        || operator.kind == TokenKind::And
-        || operator.kind == TokenKind::Xor
-    {
+    if operator.kind == TokenKind::LogicalOr {
         *position += 1;
 
         if lhs.expr_type() != DataType::Boolean {
@@ -718,13 +716,7 @@ fn parse_logical_expression(
             ));
         }
 
-        let logical_operator = match operator.kind {
-            TokenKind::Or => LogicalOperator::Or,
-            TokenKind::And => LogicalOperator::And,
-            _ => LogicalOperator::Xor,
-        };
-
-        let right_expr = parse_comparison_expression(tokens, position);
+        let right_expr = parse_logical_and_expression(tokens, position);
         if right_expr.is_err() {
             return Err(GQLError {
                 message: "Can't parser right side of logical expression".to_owned(),
@@ -743,7 +735,211 @@ fn parse_logical_expression(
 
         return Ok(Box::new(LogicalExpression {
             left: lhs,
-            operator: logical_operator,
+            operator: LogicalOperator::Or,
+            right: rhs,
+        }));
+    }
+
+    return Ok(lhs);
+}
+
+fn parse_logical_and_expression(
+    tokens: &Vec<Token>,
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, GQLError> {
+    let expression = parse_bitwise_or_expression(tokens, position);
+    if expression.is_err() || *position >= tokens.len() {
+        return expression;
+    }
+
+    let lhs = expression.ok().unwrap();
+
+    let operator = &tokens[*position];
+
+    if operator.kind == TokenKind::LogicalAnd {
+        *position += 1;
+
+        if lhs.expr_type() != DataType::Boolean {
+            return Err(type_missmatch_error(
+                tokens[*position - 2].location,
+                DataType::Boolean,
+                lhs.expr_type(),
+            ));
+        }
+
+        let right_expr = parse_bitwise_or_expression(tokens, position);
+        if right_expr.is_err() {
+            return Err(GQLError {
+                message: "Can't parser right side of logical expression".to_owned(),
+                location: tokens[*position].location,
+            });
+        }
+
+        let rhs = right_expr.ok().unwrap();
+        if rhs.expr_type() != DataType::Boolean {
+            return Err(type_missmatch_error(
+                tokens[*position].location,
+                DataType::Boolean,
+                lhs.expr_type(),
+            ));
+        }
+
+        return Ok(Box::new(LogicalExpression {
+            left: lhs,
+            operator: LogicalOperator::And,
+            right: rhs,
+        }));
+    }
+
+    return Ok(lhs);
+}
+
+fn parse_bitwise_or_expression(
+    tokens: &Vec<Token>,
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, GQLError> {
+    let expression = parse_logical_xor_expression(tokens, position);
+    if expression.is_err() || *position >= tokens.len() {
+        return expression;
+    }
+
+    let lhs = expression.ok().unwrap();
+
+    let operator = &tokens[*position];
+
+    if operator.kind == TokenKind::BitwiseOr {
+        *position += 1;
+
+        if lhs.expr_type() != DataType::Boolean {
+            return Err(type_missmatch_error(
+                tokens[*position - 2].location,
+                DataType::Boolean,
+                lhs.expr_type(),
+            ));
+        }
+
+        let right_expr = parse_logical_xor_expression(tokens, position);
+        if right_expr.is_err() {
+            return Err(GQLError {
+                message: "Can't parser right side of bitwise or expression".to_owned(),
+                location: tokens[*position].location,
+            });
+        }
+
+        let rhs = right_expr.ok().unwrap();
+        if rhs.expr_type() != DataType::Boolean {
+            return Err(type_missmatch_error(
+                tokens[*position].location,
+                DataType::Boolean,
+                lhs.expr_type(),
+            ));
+        }
+
+        return Ok(Box::new(BitwiseExpression {
+            left: lhs,
+            operator: BitwiseOperator::Or,
+            right: rhs,
+        }));
+    }
+
+    return Ok(lhs);
+}
+
+fn parse_logical_xor_expression(
+    tokens: &Vec<Token>,
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, GQLError> {
+    let expression = parse_bitwise_and_expression(tokens, position);
+    if expression.is_err() || *position >= tokens.len() {
+        return expression;
+    }
+
+    let lhs = expression.ok().unwrap();
+
+    let operator = &tokens[*position];
+
+    if operator.kind == TokenKind::LogicalXor {
+        *position += 1;
+
+        if lhs.expr_type() != DataType::Boolean {
+            return Err(type_missmatch_error(
+                tokens[*position - 2].location,
+                DataType::Boolean,
+                lhs.expr_type(),
+            ));
+        }
+
+        let right_expr = parse_bitwise_and_expression(tokens, position);
+        if right_expr.is_err() {
+            return Err(GQLError {
+                message: "Can't parser right side of logical expression".to_owned(),
+                location: tokens[*position].location,
+            });
+        }
+
+        let rhs = right_expr.ok().unwrap();
+        if rhs.expr_type() != DataType::Boolean {
+            return Err(type_missmatch_error(
+                tokens[*position].location,
+                DataType::Boolean,
+                lhs.expr_type(),
+            ));
+        }
+
+        return Ok(Box::new(LogicalExpression {
+            left: lhs,
+            operator: LogicalOperator::Xor,
+            right: rhs,
+        }));
+    }
+
+    return Ok(lhs);
+}
+
+fn parse_bitwise_and_expression(
+    tokens: &Vec<Token>,
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, GQLError> {
+    let expression = parse_comparison_expression(tokens, position);
+    if expression.is_err() || *position >= tokens.len() {
+        return expression;
+    }
+
+    let lhs = expression.ok().unwrap();
+
+    let operator = &tokens[*position];
+
+    if operator.kind == TokenKind::BitwiseAnd {
+        *position += 1;
+
+        if lhs.expr_type() != DataType::Boolean {
+            return Err(type_missmatch_error(
+                tokens[*position - 2].location,
+                DataType::Boolean,
+                lhs.expr_type(),
+            ));
+        }
+
+        let right_expr = parse_comparison_expression(tokens, position);
+        if right_expr.is_err() {
+            return Err(GQLError {
+                message: "Can't parser right side of bitwise and expression".to_owned(),
+                location: tokens[*position].location,
+            });
+        }
+
+        let rhs = right_expr.ok().unwrap();
+        if rhs.expr_type() != DataType::Boolean {
+            return Err(type_missmatch_error(
+                tokens[*position].location,
+                DataType::Boolean,
+                lhs.expr_type(),
+            ));
+        }
+
+        return Ok(Box::new(BitwiseExpression {
+            left: lhs,
+            operator: BitwiseOperator::And,
             right: rhs,
         }));
     }
@@ -755,7 +951,7 @@ fn parse_comparison_expression(
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
-    let expression = parse_term_expression(tokens, position);
+    let expression = parse_bitwise_shift_expression(tokens, position);
     if expression.is_err() || *position >= tokens.len() {
         return expression;
     }
@@ -780,7 +976,7 @@ fn parse_comparison_expression(
             _ => ComparisonOperator::NotEqual,
         };
 
-        let right_expr = parse_term_expression(tokens, position);
+        let right_expr = parse_bitwise_shift_expression(tokens, position);
         if right_expr.is_err() {
             return Err(right_expr.err().unwrap());
         }
@@ -805,6 +1001,59 @@ fn parse_comparison_expression(
             operator: comparison_operator,
             right: rhs,
         }));
+    }
+
+    return Ok(lhs);
+}
+
+fn parse_bitwise_shift_expression(
+    tokens: &Vec<Token>,
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, GQLError> {
+    let expression = parse_term_expression(tokens, position);
+    if expression.is_err() || *position >= tokens.len() {
+        return expression;
+    }
+
+    let mut lhs = expression.ok().unwrap();
+
+    while *position < tokens.len()
+        && (&tokens[*position].kind == &TokenKind::BitwiseRightShift
+            || &tokens[*position].kind == &TokenKind::BitwiseLeftShift)
+    {
+        let operator = &tokens[*position];
+        *position += 1;
+        let bitwise_operator = if operator.kind == TokenKind::BitwiseRightShift {
+            BitwiseOperator::RightShift
+        } else {
+            BitwiseOperator::LeftShift
+        };
+
+        let right_expr = parse_term_expression(tokens, position);
+        if right_expr.is_err() {
+            return Err(right_expr.err().unwrap());
+        }
+
+        let rhs = right_expr.ok().unwrap();
+
+        // Make sure right and left hand side types are numbers
+        if rhs.expr_type() == DataType::Number && rhs.expr_type() != lhs.expr_type() {
+            let message = format!(
+                "Bitwise operators require number types but got `{}` and `{}`",
+                lhs.expr_type().literal(),
+                rhs.expr_type().literal()
+            );
+            return Err(GQLError {
+                message: message,
+                location: tokens[*position - 2].location,
+            });
+        }
+
+        lhs = Box::new(BitwiseExpression {
+            left: lhs,
+            operator: bitwise_operator,
+            right: rhs,
+        });
     }
 
     return Ok(lhs);

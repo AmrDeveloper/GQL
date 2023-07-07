@@ -6,6 +6,7 @@ edition = "2021"
 description = "A SQL like query language to perform queries on .git files"
 license = "MIT"
 repository = "https://github.com/amrdeveloper/gql/"
+documentation = "https://github.com/amrdeveloper/gql"
 readme = "README.md"
 keywords = ["cli", "gql", "language", "git", "sql"]
 categories = ["command-line-utilities"]

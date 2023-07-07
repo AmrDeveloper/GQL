@@ -30,9 +30,14 @@ pub enum TokenKind {
     LeftParen,
     RightParen,
 
-    Or,
-    And,
-    Xor,
+    LogicalOr,
+    LogicalAnd,
+    LogicalXor,
+
+    BitwiseOr,
+    BitwiseAnd,
+    BitwiseRightShift,
+    BitwiseLeftShift,
 
     Symbol,
     Number,
@@ -219,14 +224,24 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
                 end: position,
             };
 
+            position += 1;
+
+            let mut kind = TokenKind::BitwiseOr;
+            let mut literal = "|";
+
+            if position < len && characters[position] == '|' {
+                position += 1;
+                kind = TokenKind::LogicalOr;
+                literal = "||";
+            }
+
             let token = Token {
-                location: location,
-                kind: TokenKind::Or,
-                literal: "|".to_owned(),
+                location,
+                kind,
+                literal: literal.to_string(),
             };
 
             tokens.push(token);
-            position += 1;
             continue;
         }
 
@@ -237,14 +252,23 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
                 end: position,
             };
 
+            position += 1;
+            let mut kind = TokenKind::BitwiseAnd;
+            let mut literal = "&";
+
+            if position < len && characters[position] == '&' {
+                position += 1;
+                kind = TokenKind::LogicalAnd;
+                literal = "&&";
+            }
+
             let token = Token {
-                location: location,
-                kind: TokenKind::And,
-                literal: "&".to_owned(),
+                location,
+                kind,
+                literal: literal.to_string(),
             };
 
             tokens.push(token);
-            position += 1;
             continue;
         }
 
@@ -257,7 +281,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
 
             let token = Token {
                 location: location,
-                kind: TokenKind::Xor,
+                kind: TokenKind::LogicalXor,
                 literal: "^".to_owned(),
             };
 
@@ -304,7 +328,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
 
             let token = Token {
                 location: location,
-                kind: kind,
+                kind,
                 literal: literal.to_string(),
             };
 
@@ -585,9 +609,9 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "between" => TokenKind::Between,
 
         // Logical Operators
-        "or" => TokenKind::Or,
-        "and" => TokenKind::And,
-        "xor" => TokenKind::Xor,
+        "or" => TokenKind::LogicalOr,
+        "and" => TokenKind::LogicalAnd,
+        "xor" => TokenKind::LogicalXor,
 
         // True and False
         "true" => TokenKind::True,
