@@ -17,6 +17,7 @@ lazy_static! {
         map.insert("max", aggregation_max);
         map.insert("min", aggregation_min);
         map.insert("sum", aggregation_sum);
+        map.insert("avg", aggregation_average);
         map.insert("count", aggregation_count);
         map
     };
@@ -41,6 +42,13 @@ lazy_static! {
         );
         map.insert(
             "sum",
+            AggregationPrototype {
+                parameter: DataType::Any,
+                result: DataType::Number,
+            },
+        );
+        map.insert(
+            "avg",
             AggregationPrototype {
                 parameter: DataType::Any,
                 result: DataType::Number,
@@ -88,6 +96,17 @@ fn aggregation_sum(field_name: &String, objects: &Vec<GQLObject>) -> String {
         sum += field_value.parse::<i64>().unwrap();
     }
     return sum.to_string();
+}
+
+fn aggregation_average(field_name: &String, objects: &Vec<GQLObject>) -> String {
+    let mut sum: i64 = 0;
+    let count: i64 = objects.len().try_into().unwrap();
+    for object in objects {
+        let field_value = &object.attributes.get(field_name).unwrap();
+        sum += field_value.parse::<i64>().unwrap();
+    }
+    let avg = sum / count;
+    return avg.to_string();
 }
 
 fn aggregation_count(_field_name: &String, objects: &Vec<GQLObject>) -> String {

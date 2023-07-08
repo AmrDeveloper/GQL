@@ -21,8 +21,15 @@ The function sum() is an aggregate function that returns the sum of items in a g
 SELECT name, sum(insertions) FROM diffs GROUP BY name
 ```
 
+### Aggregation `avg`
+The function avg() is an aggregate function that returns the average values of items in a group
+
+```sql
+SELECT name, avg(insertions) FROM commits GROUP BY name
+```
+
 ### Aggregation `count`
-The function COUNT() is an aggregate function that returns the number of items in a group
+The function count() is an aggregate function that returns the number of items in a group
 
 ```sql
 SELECT name, max(name) FROM commits GROUP BY name
