@@ -503,12 +503,14 @@ fn consume_identifier(chars: &Vec<char>, pos: &mut usize, start: &mut usize) -> 
 }
 
 fn consume_number(chars: &Vec<char>, pos: &mut usize, start: &mut usize) -> Token {
-    while *pos < chars.len() && chars[*pos].is_numeric() {
+    while *pos < chars.len() && (chars[*pos].is_numeric() || chars[*pos] == '_') {
         *pos += 1;
     }
 
     let literal = &chars[*start..*pos];
     let string = String::from_utf8(literal.iter().map(|&c| c as u8).collect()).unwrap();
+    let literal_num = string.to_string().replace("_", "");
+    println!("Number after {}", literal_num);
 
     let location = Location {
         start: *start,
@@ -518,7 +520,7 @@ fn consume_number(chars: &Vec<char>, pos: &mut usize, start: &mut usize) -> Toke
     return Token {
         location,
         kind: TokenKind::Number,
-        literal: string.to_string(),
+        literal: literal_num,
     };
 }
 
