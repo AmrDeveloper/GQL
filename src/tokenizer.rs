@@ -96,6 +96,19 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
 
         // Number
         if char.is_numeric() {
+            if char == '0' && position + 1 < len {
+                if characters[position + 1] == 'x' {
+                    position += 2;
+                    column_start += 2;
+                    let number = consume_hex_number(&characters, &mut position, &mut column_start);
+                    if number.is_err() {
+                        return Err(number.err().unwrap());
+                    }
+                    tokens.push(number.ok().unwrap());
+                    continue;
+                }
+            }
+
             let number = consume_number(&characters, &mut position, &mut column_start);
             tokens.push(number);
             continue;
@@ -510,7 +523,6 @@ fn consume_number(chars: &Vec<char>, pos: &mut usize, start: &mut usize) -> Toke
     let literal = &chars[*start..*pos];
     let string = String::from_utf8(literal.iter().map(|&c| c as u8).collect()).unwrap();
     let literal_num = string.to_string().replace("_", "");
-    println!("Number after {}", literal_num);
 
     let location = Location {
         start: *start,
@@ -522,6 +534,54 @@ fn consume_number(chars: &Vec<char>, pos: &mut usize, start: &mut usize) -> Toke
         kind: TokenKind::Number,
         literal: literal_num,
     };
+}
+
+fn consume_hex_number(
+    chars: &Vec<char>,
+    pos: &mut usize,
+    start: &mut usize,
+) -> Result<Token, GQLError> {
+    let mut has_digit = false;
+    while *pos < chars.len() && (chars[*pos].is_ascii_hexdigit() || chars[*pos] == '_') {
+        *pos += 1;
+        has_digit = true;
+    }
+
+    if !has_digit {
+        return Err(GQLError {
+            message: "Missing digits after the integer base prefix".to_owned(),
+            location: Location {
+                start: *start,
+                end: *pos,
+            },
+        });
+    }
+
+    let literal = &chars[*start..*pos];
+    let string = String::from_utf8(literal.iter().map(|&c| c as u8).collect()).unwrap();
+    let literal_num = string.to_string().replace("_", "");
+    let convert_result = i64::from_str_radix(&literal_num, 16);
+
+    if convert_result.is_err() {
+        return Err(GQLError {
+            message: "Invalid hex decinmal number".to_owned(),
+            location: Location {
+                start: *start,
+                end: *pos,
+            },
+        });
+    }
+
+    let location = Location {
+        start: *start,
+        end: *pos,
+    };
+
+    return Ok(Token {
+        location,
+        kind: TokenKind::Number,
+        literal: convert_result.ok().unwrap().to_string(),
+    });
 }
 
 fn consume_string(
