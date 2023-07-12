@@ -58,6 +58,7 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<GQLQuery, GQLError> {
     let mut statements: HashMap<String, Box<dyn Statement>> = HashMap::new();
     let mut aggregations: HashMap<String, AggregateFunction> = HashMap::new();
     let mut extra_type_table: HashMap<String, DataType> = HashMap::new();
+    let mut select_aggregations_only = false;
 
     while position < len {
         let token = &tokens[position];
@@ -80,7 +81,10 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<GQLQuery, GQLError> {
                 if parse_result.is_err() {
                     return Err(parse_result.err().unwrap());
                 }
-                statements.insert("select".to_string(), parse_result.ok().unwrap());
+
+                let select_info = parse_result.ok().unwrap();
+                select_aggregations_only = select_info.1;
+                statements.insert("select".to_string(), select_info.0);
             }
             TokenKind::Where => {
                 if statements.contains_key("where") {
@@ -182,7 +186,10 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<GQLQuery, GQLError> {
         statements.insert("aggregation".to_string(), Box::new(aggregation_functions));
     }
 
-    return Ok(GQLQuery { statements });
+    return Ok(GQLQuery {
+        statements,
+        select_aggregations_only,
+    });
 }
 
 fn parse_select_statement(
@@ -190,11 +197,12 @@ fn parse_select_statement(
     position: &mut usize,
     aggregations: &mut HashMap<String, AggregateFunction>,
     extra_type_table: &mut HashMap<String, DataType>,
-) -> Result<Box<dyn Statement>, GQLError> {
+) -> Result<(Box<dyn Statement>, bool), GQLError> {
     *position += 1;
     let mut fields: Vec<String> = Vec::new();
     let mut fields_set: HashSet<String> = HashSet::new();
     let mut alias_table: HashMap<String, String> = HashMap::new();
+    let mut select_aggregations_only = true;
 
     if *position >= tokens.len() {
         return Err(GQLError {
@@ -329,6 +337,7 @@ fn parse_select_statement(
                 continue;
             }
 
+            select_aggregations_only = false;
             if !fields_names.insert(field_name.to_string()) {
                 return Err(GQLError {
                     message: "Can't select the same field twice".to_owned(),
@@ -442,7 +451,7 @@ fn parse_select_statement(
         alias_table,
     };
 
-    return Ok(Box::new(statement));
+    return Ok((Box::new(statement), select_aggregations_only));
 }
 
 fn parse_where_statement(

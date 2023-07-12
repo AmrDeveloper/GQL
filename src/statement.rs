@@ -14,6 +14,7 @@ pub trait Statement {
 
 pub struct GQLQuery {
     pub statements: HashMap<String, Box<dyn Statement>>,
+    pub select_aggregations_only: bool,
 }
 
 pub struct SelectStatement {

@@ -23,10 +23,18 @@ pub fn evaluate(repo: &git2::Repository, query: GQLQuery) {
         }
     }
 
+    // If there are many groups that mean group by is executed before.
+    // must merge each group into only one element
     if objects.len() > 1 {
         for group in objects.iter_mut() {
             group.drain(1..);
         }
+    }
+    // If it a single group but it select only aggregations function,
+    // should return only first element in the group
+    else if objects.len() == 1 && query.select_aggregations_only {
+        let group: &mut Vec<GQLObject> = objects[0].as_mut();
+        group.drain(1..);
     }
 
     render_objects(&objects);
