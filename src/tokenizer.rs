@@ -100,11 +100,23 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
                 if characters[position + 1] == 'x' {
                     position += 2;
                     column_start += 2;
-                    let number = consume_hex_number(&characters, &mut position, &mut column_start);
-                    if number.is_err() {
-                        return Err(number.err().unwrap());
+                    let result = consume_hex_number(&characters, &mut position, &mut column_start);
+                    if result.is_err() {
+                        return Err(result.err().unwrap());
                     }
-                    tokens.push(number.ok().unwrap());
+                    tokens.push(result.ok().unwrap());
+                    continue;
+                }
+
+                if characters[position + 1] == 'b' {
+                    position += 2;
+                    column_start += 2;
+                    let result =
+                        consume_binary_number(&characters, &mut position, &mut column_start);
+                    if result.is_err() {
+                        return Err(result.err().unwrap());
+                    }
+                    tokens.push(result.ok().unwrap());
                     continue;
                 }
             }
@@ -534,6 +546,54 @@ fn consume_number(chars: &Vec<char>, pos: &mut usize, start: &mut usize) -> Toke
         kind: TokenKind::Number,
         literal: literal_num,
     };
+}
+
+fn consume_binary_number(
+    chars: &Vec<char>,
+    pos: &mut usize,
+    start: &mut usize,
+) -> Result<Token, GQLError> {
+    let mut has_digit = false;
+    while *pos < chars.len() && ((chars[*pos] == '0' || chars[*pos] == '1') || chars[*pos] == '_') {
+        *pos += 1;
+        has_digit = true;
+    }
+
+    if !has_digit {
+        return Err(GQLError {
+            message: "Missing digits after the integer base prefix".to_owned(),
+            location: Location {
+                start: *start,
+                end: *pos,
+            },
+        });
+    }
+
+    let literal = &chars[*start..*pos];
+    let string = String::from_utf8(literal.iter().map(|&c| c as u8).collect()).unwrap();
+    let literal_num = string.to_string().replace("_", "");
+    let convert_result = i64::from_str_radix(&literal_num, 2);
+
+    if convert_result.is_err() {
+        return Err(GQLError {
+            message: "Invalid binary number".to_owned(),
+            location: Location {
+                start: *start,
+                end: *pos,
+            },
+        });
+    }
+
+    let location = Location {
+        start: *start,
+        end: *pos,
+    };
+
+    return Ok(Token {
+        location,
+        kind: TokenKind::Number,
+        literal: convert_result.ok().unwrap().to_string(),
+    });
 }
 
 fn consume_hex_number(
