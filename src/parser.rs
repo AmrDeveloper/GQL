@@ -279,7 +279,8 @@ fn parse_select_statement(
                 }
 
                 // Check if aggregation function name is valid
-                if !AGGREGATIONS.contains_key(&field_name.as_str()) {
+                let function_name = field_name.to_lowercase();
+                if !AGGREGATIONS.contains_key(function_name.as_str()) {
                     return Err(GQLError {
                         message: "Invalid GQL aggregation function name".to_owned(),
                         location: field_name_location,
@@ -287,12 +288,12 @@ fn parse_select_statement(
                 }
 
                 // Type check aggregation function argument type
-                let prototype = AGGREGATIONS_PROTOS.get(&field_name.as_str()).unwrap();
+                let prototype = AGGREGATIONS_PROTOS.get(function_name.as_str()).unwrap();
                 let field_type = TABLES_FIELDS_TYPES.get(argument.literal.as_str()).unwrap();
                 if prototype.parameter != DataType::Any && field_type != &prototype.parameter {
                     let message = format!(
                         "Aggregation Function `{}` expect parameter type `{}` but got type `{}`",
-                        field_name.to_string(),
+                        function_name,
                         &prototype.parameter.literal(),
                         field_type.literal()
                     );
@@ -338,7 +339,7 @@ fn parse_select_statement(
                 aggregations.insert(
                     column_name.to_string(),
                     AggregateFunction {
-                        function_name: field_name.to_string(),
+                        function_name: function_name,
                         argument: argument.literal.to_string(),
                     },
                 );
