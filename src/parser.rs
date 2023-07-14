@@ -58,6 +58,8 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<GQLQuery, GQLError> {
     let mut statements: HashMap<String, Box<dyn Statement>> = HashMap::new();
     let mut aggregations: HashMap<String, AggregateFunction> = HashMap::new();
     let mut extra_type_table: HashMap<String, DataType> = HashMap::new();
+    let mut hidden_selections: Vec<String> = Vec::new();
+
     let mut select_aggregations_only = false;
 
     while position < len {
@@ -77,7 +79,9 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<GQLQuery, GQLError> {
                     &mut position,
                     &mut aggregations,
                     &mut extra_type_table,
+                    &mut hidden_selections,
                 );
+
                 if parse_result.is_err() {
                     return Err(parse_result.err().unwrap());
                 }
@@ -189,6 +193,7 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<GQLQuery, GQLError> {
     return Ok(GQLQuery {
         statements,
         select_aggregations_only,
+        hidden_selections,
     });
 }
 
@@ -197,11 +202,13 @@ fn parse_select_statement(
     position: &mut usize,
     aggregations: &mut HashMap<String, AggregateFunction>,
     extra_type_table: &mut HashMap<String, DataType>,
+    hidden_selections: &mut Vec<String>,
 ) -> Result<(Box<dyn Statement>, bool), GQLError> {
     *position += 1;
-    let mut fields: Vec<String> = Vec::new();
+    let mut selected_fields: Vec<String> = Vec::new();
     let mut fields_set: HashSet<String> = HashSet::new();
     let mut alias_table: HashMap<String, String> = HashMap::new();
+
     let mut select_aggregations_only = true;
 
     if *position >= tokens.len() {
@@ -213,6 +220,7 @@ fn parse_select_statement(
 
     if tokens[*position].kind == TokenKind::Star {
         *position += 1;
+        select_aggregations_only = false;
     } else if tokens[*position].kind == TokenKind::Symbol {
         let mut fields_names: HashSet<String> = HashSet::new();
         let mut aggregation_function_index = 0;
@@ -250,6 +258,11 @@ fn parse_select_statement(
                         message: format!("No field on any table with name `{}`", argument.literal),
                         location: tokens[*position].location,
                     });
+                }
+
+                if !fields_set.contains(&argument.literal) {
+                    selected_fields.push(argument.literal.to_string());
+                    hidden_selections.push(argument.literal.to_string());
                 }
 
                 // Consume argument
@@ -345,7 +358,12 @@ fn parse_select_statement(
                 });
             }
 
-            fields.push(field_name.to_string());
+            let index = hidden_selections.iter().position(|r| r == &field_name);
+            if let Some(position) = index {
+                hidden_selections.remove(position);
+            }
+
+            selected_fields.push(field_name.to_string());
 
             if tokens[*position].kind == TokenKind::As {
                 *position += 1;
@@ -394,7 +412,6 @@ fn parse_select_statement(
     }
 
     if tokens[*position].kind != TokenKind::From {
-        println!("{}", tokens[*position].literal);
         return Err(GQLError {
             message: "Expect `from` keyword after attributes".to_owned(),
             location: tokens[*position].location,
@@ -422,10 +439,10 @@ fn parse_select_statement(
     unsafe { CURRENT_TABLE_FIELDS.clear() };
 
     let valid_fields = TABLES_FIELDS_NAMES.get(table_name.as_str()).unwrap();
-    for field in &fields {
+    for field in &selected_fields {
         if !valid_fields.contains(&field.as_str()) {
             return Err(GQLError {
-                message: "Invalid Field name".to_owned(),
+                message: format!("Table {} has no field with name {}", table_name, field),
                 location: tokens[*position].location,
             });
         }
@@ -447,7 +464,7 @@ fn parse_select_statement(
 
     let statement = SelectStatement {
         table_name: table_name.to_string(),
-        fields,
+        fields: selected_fields,
         alias_table,
     };
 

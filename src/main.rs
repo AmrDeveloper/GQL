@@ -6,6 +6,7 @@ mod engine_function;
 mod expression;
 mod object;
 mod parser;
+mod render;
 mod statement;
 mod tokenizer;
 mod transformation;

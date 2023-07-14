@@ -1,4 +1,5 @@
-use crate::object::{render_objects, GQLObject};
+use crate::object::GQLObject;
+use crate::render::render_objects;
 use crate::statement::GQLQuery;
 
 const GQL_COMMANDS_IN_ORDER: [&'static str; 8] = [
@@ -37,5 +38,5 @@ pub fn evaluate(repo: &git2::Repository, query: GQLQuery) {
         group.drain(1..);
     }
 
-    render_objects(&objects);
+    render_objects(&objects, &query.hidden_selections);
 }
