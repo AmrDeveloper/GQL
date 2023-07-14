@@ -1,6 +1,18 @@
 Change Log
 ==========
 
+Version 0.4.0 *(2023-07-14)*
+-----------------------------
+
+* Support hex decimal number format.
+* Support binary decimal number format.
+* Support octal decimal number format.
+* Support Aggregations function without selecting the field.
+* Support Merging group if it only select aggregations.
+* Implement Aggregation functions `avg`.
+* Improve render performance.
+* Allow calling aggregation function with upper or lowre cases.
+
 Version 0.3.0 *(2023-07-07)*
 -----------------------------
 
