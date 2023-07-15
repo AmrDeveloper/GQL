@@ -213,8 +213,8 @@ fn parse_select_statement(
 
     if *position >= tokens.len() {
         return Err(GQLError {
-            message: "Expect * or fields names after select keyword".to_owned(),
-            location: tokens[*position].location,
+            message: "Expect * or fields names after the select keyword".to_owned(),
+            location: tokens[*position - 1].location,
         });
     }
 
@@ -255,7 +255,7 @@ fn parse_select_statement(
                 let argument = argument_result.ok().unwrap();
                 if !TABLES_FIELDS_TYPES.contains_key(argument.literal.as_str()) {
                     return Err(GQLError {
-                        message: format!("No field on any table with name `{}`", argument.literal),
+                        message: format!("No table has field with name `{}`", argument.literal),
                         location: tokens[*position].location,
                     });
                 }
@@ -306,6 +306,14 @@ fn parse_select_statement(
                 let column_name =
                     if *position < tokens.len() && tokens[*position].kind == TokenKind::As {
                         *position += 1;
+
+                        if *position >= tokens.len() {
+                            return Err(GQLError {
+                                message: "Expect `identifier` as a field alias name".to_owned(),
+                                location: tokens[*position - 1].location,
+                            });
+                        }
+
                         let alias_name_result = consume_kind(&tokens[*position], TokenKind::Symbol);
                         if alias_name_result.is_err() {
                             return Err(GQLError {
@@ -315,6 +323,13 @@ fn parse_select_statement(
                         }
 
                         let alias_name = alias_name_result.ok().unwrap().literal.to_string();
+                        if TABLES_FIELDS_TYPES.contains_key(&alias_name.as_str()) {
+                            return Err(GQLError {
+                                message: "You can't use column name as alias name".to_owned(),
+                                location: tokens[*position].location,
+                            });
+                        }
+
                         if fields_set.contains(&alias_name) {
                             return Err(GQLError {
                                 message: "There is already field or alias with the same name"
@@ -344,7 +359,7 @@ fn parse_select_statement(
                     },
                 );
 
-                if tokens[*position].kind == TokenKind::Comma {
+                if *position < tokens.len() && tokens[*position].kind == TokenKind::Comma {
                     *position += 1;
                 }
 
@@ -366,8 +381,9 @@ fn parse_select_statement(
 
             selected_fields.push(field_name.to_string());
 
-            if tokens[*position].kind == TokenKind::As {
+            if *position < tokens.len() && tokens[*position].kind == TokenKind::As {
                 *position += 1;
+
                 let alias_name_result = consume_kind(&tokens[*position], TokenKind::Symbol);
                 if alias_name_result.is_err() {
                     return Err(GQLError {
@@ -386,6 +402,21 @@ fn parse_select_statement(
 
                 *position += 1;
 
+                if TABLES_FIELDS_TYPES.contains_key(&alias_name.as_str()) {
+                    return Err(GQLError {
+                        message: "You can't use column name as alias name".to_owned(),
+                        location: tokens[*position].location,
+                    });
+                }
+
+                // Make sure there is a field with this name before alias
+                if !TABLES_FIELDS_TYPES.contains_key(field_name.as_str()) {
+                    return Err(GQLError {
+                        message: format!("No table has field with name `{}`", field_name),
+                        location: field_name_location,
+                    });
+                }
+
                 // Update extra type table for this alias
                 let field_type = TABLES_FIELDS_TYPES.get(field_name.as_str()).unwrap();
                 extra_type_table.insert(alias_name.to_string(), field_type.clone());
@@ -399,7 +430,7 @@ fn parse_select_statement(
                 fields_set.insert(field_name.to_string());
             }
 
-            if tokens[*position].kind == TokenKind::Comma {
+            if *position < tokens.len() && tokens[*position].kind == TokenKind::Comma {
                 *position += 1;
             } else {
                 break;
@@ -412,10 +443,10 @@ fn parse_select_statement(
         });
     }
 
-    if tokens[*position].kind != TokenKind::From {
+    if *position >= tokens.len() || tokens[*position].kind != TokenKind::From {
         return Err(GQLError {
             message: "Expect `from` keyword after attributes".to_owned(),
-            location: tokens[*position].location,
+            location: tokens[*position - 1].location,
         });
     }
 
