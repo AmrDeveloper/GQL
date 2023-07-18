@@ -91,6 +91,13 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<GQLQuery, GQLError> {
                 statements.insert("select".to_string(), select_info.0);
             }
             TokenKind::Where => {
+                if !statements.contains_key("select") {
+                    return Err(GQLError {
+                        message: "`WHERE` must be used after `SELECT` statement".to_owned(),
+                        location: token.location,
+                    });
+                }
+
                 if statements.contains_key("where") {
                     return Err(GQLError {
                         message: "you already used `where` statement".to_owned(),
@@ -104,6 +111,13 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<GQLQuery, GQLError> {
                 statements.insert("where".to_string(), parse_result.ok().unwrap());
             }
             TokenKind::Group => {
+                if !statements.contains_key("select") {
+                    return Err(GQLError {
+                        message: "`GROUP BY` must be used after `SELECT` statement".to_owned(),
+                        location: token.location,
+                    });
+                }
+
                 if statements.contains_key("group") {
                     return Err(GQLError {
                         message: "you already used `group by` statement".to_owned(),
@@ -125,6 +139,14 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<GQLQuery, GQLError> {
                         location: token.location,
                     });
                 }
+
+                if !statements.contains_key("group") {
+                    return Err(GQLError {
+                        message: "`HAVING` must be used after GROUP BY".to_owned(),
+                        location: token.location,
+                    });
+                }
+
                 let parse_result = parse_having_statement(&tokens, &mut position);
                 if parse_result.is_err() {
                     return Err(parse_result.err().unwrap());
@@ -132,6 +154,13 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<GQLQuery, GQLError> {
                 statements.insert("having".to_string(), parse_result.ok().unwrap());
             }
             TokenKind::Limit => {
+                if !statements.contains_key("select") {
+                    return Err(GQLError {
+                        message: "`LIMIT` must be used after `SELECT` statement".to_owned(),
+                        location: token.location,
+                    });
+                }
+
                 if statements.contains_key("limit") {
                     return Err(GQLError {
                         message: "you already used `limit` statement".to_owned(),
@@ -146,6 +175,13 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<GQLQuery, GQLError> {
                 statements.insert("limit".to_string(), parse_result.ok().unwrap());
             }
             TokenKind::Offset => {
+                if !statements.contains_key("select") {
+                    return Err(GQLError {
+                        message: "`OFFSET` must be used after `SELECT` statement".to_owned(),
+                        location: token.location,
+                    });
+                }
+
                 if statements.contains_key("offset") {
                     return Err(GQLError {
                         message: "you already used `offset` statement".to_owned(),
@@ -160,6 +196,13 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<GQLQuery, GQLError> {
                 statements.insert("offset".to_string(), parse_result.ok().unwrap());
             }
             TokenKind::Order => {
+                if !statements.contains_key("select") {
+                    return Err(GQLError {
+                        message: "`ORDER BY` must be used after `SELECT` statement".to_owned(),
+                        location: token.location,
+                    });
+                }
+
                 if statements.contains_key("order") {
                     return Err(GQLError {
                         message: "you already used `order by` statement".to_owned(),
