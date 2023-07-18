@@ -45,6 +45,9 @@ pub struct WhereStatement {
 
 impl Statement for WhereStatement {
     fn execute(&self, _repo: &git2::Repository, groups: &mut Vec<Vec<GQLObject>>) {
+        if groups.is_empty() {
+            return;
+        }
         // Perform where command only on the first group
         // because group by command not executed yet
         let filtered_group: Vec<GQLObject> = groups
@@ -67,6 +70,10 @@ pub struct HavingStatement {
 
 impl Statement for HavingStatement {
     fn execute(&self, _repo: &git2::Repository, groups: &mut Vec<Vec<GQLObject>>) {
+        if groups.is_empty() {
+            return;
+        }
+
         if groups.len() > 1 {
             flat_groups(groups);
         }
@@ -93,6 +100,10 @@ pub struct LimitStatement {
 
 impl Statement for LimitStatement {
     fn execute(&self, _repo: &git2::Repository, groups: &mut Vec<Vec<GQLObject>>) {
+        if groups.is_empty() {
+            return;
+        }
+
         if groups.len() > 1 {
             flat_groups(groups);
         }
@@ -110,6 +121,10 @@ pub struct OffsetStatement {
 
 impl Statement for OffsetStatement {
     fn execute(&self, _repo: &git2::Repository, groups: &mut Vec<Vec<GQLObject>>) {
+        if groups.is_empty() {
+            return;
+        }
+
         if groups.len() > 1 {
             flat_groups(groups);
         }
@@ -127,6 +142,10 @@ pub struct OrderByStatement {
 
 impl Statement for OrderByStatement {
     fn execute(&self, _repo: &git2::Repository, groups: &mut Vec<Vec<GQLObject>>) {
+        if groups.is_empty() {
+            return;
+        }
+
         if groups.len() > 1 {
             flat_groups(groups);
         }
@@ -179,6 +198,10 @@ pub struct GroupByStatement {
 
 impl Statement for GroupByStatement {
     fn execute(&self, _repo: &git2::Repository, groups: &mut Vec<Vec<GQLObject>>) {
+        if groups.is_empty() {
+            return;
+        }
+
         let main_group: Vec<GQLObject> = groups.remove(0);
         if main_group.is_empty() {
             return;
