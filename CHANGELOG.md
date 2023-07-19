@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+Version 0.4.1 *(2023-07-19)*
+-----------------------------
+
+* Prevent crash and report more error messages.
+* Make sure select statement is used before any other statement.
+* Make sure having is used after group by expression.
+
 Version 0.4.0 *(2023-07-14)*
 -----------------------------
 
