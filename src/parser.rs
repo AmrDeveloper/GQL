@@ -1006,7 +1006,7 @@ fn parse_bitwise_and_expression(
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
-    let expression = parse_comparison_expression(tokens, position);
+    let expression = parse_equality_expression(tokens, position);
     if expression.is_err() || *position >= tokens.len() {
         return expression;
     }
@@ -1026,7 +1026,7 @@ fn parse_bitwise_and_expression(
             ));
         }
 
-        let right_expr = parse_comparison_expression(tokens, position);
+        let right_expr = parse_equality_expression(tokens, position);
         if right_expr.is_err() {
             return Err(GQLError {
                 message: "Can't parser right side of bitwise and expression".to_owned(),
@@ -1053,6 +1053,56 @@ fn parse_bitwise_and_expression(
     return Ok(lhs);
 }
 
+fn parse_equality_expression(
+    tokens: &Vec<Token>,
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, GQLError> {
+    let expression = parse_comparison_expression(tokens, position);
+    if expression.is_err() || *position >= tokens.len() {
+        return expression;
+    }
+
+    let lhs = expression.ok().unwrap();
+
+    let operator = &tokens[*position];
+    if operator.kind == TokenKind::Equal || operator.kind == TokenKind::Bang {
+        *position += 1;
+        let comparison_operator = if operator.kind == TokenKind::Equal {
+            ComparisonOperator::Equal
+        } else {
+            ComparisonOperator::NotEqual
+        };
+
+        let right_expr = parse_comparison_expression(tokens, position);
+        if right_expr.is_err() {
+            return Err(right_expr.err().unwrap());
+        }
+
+        let rhs = right_expr.ok().unwrap();
+
+        // Make sure right and left hand side types are the same
+        if rhs.expr_type() != lhs.expr_type() {
+            let message = format!(
+                "Can't compare values of different types `{}` and `{}`",
+                lhs.expr_type().literal(),
+                rhs.expr_type().literal()
+            );
+            return Err(GQLError {
+                message: message,
+                location: tokens[*position - 2].location,
+            });
+        }
+
+        return Ok(Box::new(ComparisonExpression {
+            left: lhs,
+            operator: comparison_operator,
+            right: rhs,
+        }));
+    }
+
+    return Ok(lhs);
+}
+
 fn parse_comparison_expression(
     tokens: &Vec<Token>,
     position: &mut usize,
@@ -1063,23 +1113,14 @@ fn parse_comparison_expression(
     }
 
     let lhs = expression.ok().unwrap();
-
-    let operator = &tokens[*position];
-    if operator.kind == TokenKind::Greater
-        || operator.kind == TokenKind::GreaterEqual
-        || operator.kind == TokenKind::Less
-        || operator.kind == TokenKind::LessEqual
-        || operator.kind == TokenKind::Equal
-        || operator.kind == TokenKind::Bang
-    {
+    if is_comparison_operator(&tokens[*position]) {
+        let operator = &tokens[*position];
         *position += 1;
         let comparison_operator = match operator.kind {
             TokenKind::Greater => ComparisonOperator::Greater,
             TokenKind::GreaterEqual => ComparisonOperator::GreaterEqual,
             TokenKind::Less => ComparisonOperator::Less,
-            TokenKind::LessEqual => ComparisonOperator::LessEqual,
-            TokenKind::Equal => ComparisonOperator::Equal,
-            _ => ComparisonOperator::NotEqual,
+            _ => ComparisonOperator::LessEqual,
         };
 
         let right_expr = parse_bitwise_shift_expression(tokens, position);
@@ -1228,12 +1269,7 @@ fn parse_factor_expression(
     }
 
     let mut lhs = expression.ok().unwrap();
-
-    while *position < tokens.len()
-        && (&tokens[*position].kind == &TokenKind::Star
-            || &tokens[*position].kind == &TokenKind::Slash
-            || &tokens[*position].kind == &TokenKind::Percentage)
-    {
+    while *position < tokens.len() && is_factor_operator(&tokens[*position]) {
         let operator = &tokens[*position];
         *position += 1;
 
@@ -1546,6 +1582,7 @@ fn parse_primary_expression(
     };
 }
 
+#[inline(always)]
 fn consume_kind(token: &Token, kind: TokenKind) -> Result<&Token, i32> {
     if token.kind == kind {
         return Ok(token);
@@ -1553,6 +1590,22 @@ fn consume_kind(token: &Token, kind: TokenKind) -> Result<&Token, i32> {
     return Err(0);
 }
 
+#[inline(always)]
+fn is_comparison_operator(token: &Token) -> bool {
+    return token.kind == TokenKind::Greater
+        || token.kind == TokenKind::GreaterEqual
+        || token.kind == TokenKind::Less
+        || token.kind == TokenKind::LessEqual;
+}
+
+#[inline(always)]
+fn is_factor_operator(token: &Token) -> bool {
+    return token.kind == TokenKind::Star
+        || token.kind == TokenKind::Slash
+        || token.kind == TokenKind::Percentage;
+}
+
+#[inline(always)]
 fn type_missmatch_error(location: Location, expected: DataType, actual: DataType) -> GQLError {
     let message = format!(
         "Type mismatch expected `{}`, got `{}`",
