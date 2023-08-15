@@ -809,7 +809,7 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
 
         // Order by DES and ASC
         "asc" => TokenKind::Ascending,
-        "des" => TokenKind::Descending,
+        "desc" => TokenKind::Descending,
 
         // Identifier
         _ => TokenKind::Symbol,

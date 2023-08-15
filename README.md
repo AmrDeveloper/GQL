@@ -28,7 +28,7 @@ GQL is a query language with a syntax very similar to SQL with a tiny engine to 
 ### Samples
 
 ```sql
-SELECT name, count(name) AS commit_num FROM commits GROUP BY name ORDER BY commit_num DES LIMIT 10
+SELECT name, count(name) AS commit_num FROM commits GROUP BY name ORDER BY commit_num DESC LIMIT 10
 SELECT commit_count FROM branches WHERE commit_count BETWEEN 0 .. 10
 
 SELECT * FROM refs WHERE type = "branch"
@@ -36,7 +36,7 @@ SELECT * FROM refs WHERE ORDER BY type
 
 SELECT * FROM commits
 SELECT name, email FROM commits
-SELECT name, email FROM commits ORDER BY name DES
+SELECT name, email FROM commits ORDER BY name DESC
 SELECT name, email FROM commits WHERE name contains "gmail" ORDER BY name
 SELECT * FROM commits WHERE name.lower = "amrdeveloper"
 SELECT name FROM commits GROUP By name
