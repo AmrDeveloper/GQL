@@ -63,6 +63,7 @@ SELECT * FROM tags OFFSET 1 LIMIT 1
   - [Expressions](docs/expression)
   - [Transformations](docs/function/transformations.md)
   - [Aggregations](docs/function/aggregations.md)
+  - [As Libraries](docs/libraries.md)
 
 ---
 

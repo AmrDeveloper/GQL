@@ -62,6 +62,7 @@ nav:
   - Function:
       - Transformation: function/transformations.md
       - Aggregations: function/aggregations.md
+  - Libraries: libraries.md
 
 extra:
   social:
