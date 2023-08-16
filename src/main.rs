@@ -1,22 +1,12 @@
-mod aggregation;
-mod colored_stream;
-mod diagnostic;
-mod engine;
-mod engine_function;
-mod expression;
-mod object;
-mod parser;
-mod render;
-mod statement;
-mod tokenizer;
-mod transformation;
-mod types;
-
-use diagnostic::DiagnosticEngine;
+use gitql_cli::render;
+use gitql_cli::reporter;
+use gitql_engine::engine;
+use gitql_parser::parser;
+use gitql_parser::tokenizer;
 
 fn main() {
     let print_analysis = false;
-    let mut diagnostics = DiagnosticEngine::new();
+    let mut diagnostics = reporter::DiagnosticReporter::new();
 
     let args: Vec<_> = std::env::args().collect();
     if args.len() != 2 {
@@ -71,7 +61,9 @@ fn main() {
         let front_duration = front_start.elapsed();
 
         let engine_start = std::time::Instant::now();
-        engine::evaluate(repo, statements);
+        let (groups, hidden_selections) = engine::evaluate(repo, statements);
+        render::render_objects(&groups, &hidden_selections);
+
         let engine_duration = engine_start.elapsed();
         input.clear();
 

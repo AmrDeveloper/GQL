@@ -12,10 +12,17 @@ keywords = ["cli", "gql", "language", "git", "sql"]
 categories = ["command-line-utilities"]
 exclude = [".github/**", "docs/**", "media/**", "scripts/**"]
 
+[workspace]
+members = [
+    "crates/gitql-ast",
+    "crates/gitql-cli",
+    "crates/gitql-parser",
+    "crates/gitql-engine",
+]
+
 [dependencies]
+gitql-ast = { path = "./crates/gitql-ast", version = "0.1.0" }
+gitql-parser = { path = "./crates/gitql-parser", version = "0.1.0" }
+gitql-engine = { path = "./crates/gitql-engine", version = "0.1.0" }
+gitql-cli = { path = "./crates/gitql-cli", version = "0.1.0" }
 git2 = { version = "0.17.1", default-features = false }
-regex = "1.8.4"
-lazy_static = "1.4.0"
-termcolor = "1.2.0"
-prettytable-rs = "^0.10"
-textwrap = "0.16.0"
