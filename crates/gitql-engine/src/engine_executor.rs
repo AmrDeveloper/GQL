@@ -83,7 +83,7 @@ fn execute_select_statement(
     groups: &mut Vec<Vec<GQLObject>>,
 ) {
     // Select obects from the target table
-    let objects = select_gql_objects(
+    let mut objects = select_gql_objects(
         repo,
         statement.table_name.to_string(),
         statement.fields.to_owned(),
@@ -91,7 +91,11 @@ fn execute_select_statement(
     );
 
     // Push the selected elements as a first group
-    groups.push(objects);
+    if groups.is_empty() {
+        groups.push(objects);
+    } else {
+        groups[0].append(&mut objects);
+    }
 }
 
 fn execute_where_statement(statement: &WhereStatement, groups: &mut Vec<Vec<GQLObject>>) {
