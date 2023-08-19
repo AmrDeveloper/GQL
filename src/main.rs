@@ -1,3 +1,4 @@
+use gitql_cli::arguments;
 use gitql_cli::render;
 use gitql_cli::reporter;
 use gitql_engine::engine;
@@ -5,22 +6,30 @@ use gitql_parser::parser;
 use gitql_parser::tokenizer;
 
 fn main() {
-    let print_analysis = false;
-    let mut diagnostics = reporter::DiagnosticReporter::new();
+    if cfg!(debug_assertions) {
+        std::env::set_var("RUST_BACKTRACE", "1");
+    }
 
-    let args: Vec<_> = std::env::args().collect();
-    if args.len() != 2 {
-        diagnostics.report_error("Invalid number of arguments");
-        diagnostics.report_error("Usage: gql <repository path>");
+    let mut reporter = reporter::DiagnosticReporter::new();
+
+    let args: Vec<String> = std::env::args().collect();
+    let arguments_result = arguments::parse_arguments(args);
+    if arguments_result.is_err() {
+        reporter.report_error(arguments_result.err().unwrap());
         return;
     }
 
-    let working_path = &args[1];
-    let repository = git2::Repository::open(working_path);
-    if repository.is_err() {
-        let error = repository.err();
-        diagnostics.report_error(error.unwrap().message());
-        return;
+    let arguments = arguments_result.ok().unwrap();
+
+    let mut git_repositories: Vec<git2::Repository> = vec![];
+    for repsitory in arguments.repositories {
+        let git_repository = git2::Repository::open(repsitory);
+        if git_repository.is_err() {
+            reporter.report_error(git_repository.err().unwrap().message());
+            return;
+        }
+
+        git_repositories.push(git_repository.ok().unwrap());
     }
 
     let mut input = String::new();
@@ -32,18 +41,18 @@ fn main() {
 
         match std::io::stdin().read_line(&mut input) {
             Ok(_) => (),
-            Err(_err) => diagnostics.report_error("Invalid input"),
+            Err(_err) => reporter.report_error("Invalid input"),
         }
 
         if input.trim() == "exit" {
-            println!("Bye");
+            println!("Goodbye!");
             break;
         }
 
         let front_start = std::time::Instant::now();
         let tokenizer_result = tokenizer::tokenize(input.trim().to_string());
         if tokenizer_result.is_err() {
-            diagnostics.report_gql_error(tokenizer_result.err().unwrap());
+            reporter.report_gql_error(tokenizer_result.err().unwrap());
             input.clear();
             continue;
         }
@@ -51,23 +60,22 @@ fn main() {
         let tokens = tokenizer_result.ok().unwrap();
         let parser_result = parser::parse_gql(tokens);
         if parser_result.is_err() {
-            diagnostics.report_gql_error(parser_result.err().unwrap());
+            reporter.report_gql_error(parser_result.err().unwrap());
             input.clear();
             continue;
         }
 
         let statements = parser_result.ok().unwrap();
-        let repo = repository.as_ref().unwrap();
         let front_duration = front_start.elapsed();
 
         let engine_start = std::time::Instant::now();
-        let (groups, hidden_selections) = engine::evaluate(repo, statements);
+        let (groups, hidden_selections) = engine::evaluate(&git_repositories, statements);
         render::render_objects(&groups, &hidden_selections);
 
         let engine_duration = engine_start.elapsed();
         input.clear();
 
-        if print_analysis {
+        if arguments.show_analyisis {
             println!("\n");
             println!("Analysis:");
             println!("Frontend : {:?}", front_duration);
