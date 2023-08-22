@@ -10,25 +10,15 @@ fn main() {
         std::env::set_var("RUST_BACKTRACE", "1");
     }
 
+    let arguments = arguments::parse_arguments();
     let mut reporter = reporter::DiagnosticReporter::new();
-
-    let args: Vec<String> = std::env::args().collect();
-    let arguments_result = arguments::parse_arguments(args);
-    if arguments_result.is_err() {
-        reporter.report_error(arguments_result.err().unwrap());
-        return;
-    }
-
-    let arguments = arguments_result.ok().unwrap();
-
     let mut git_repositories: Vec<git2::Repository> = vec![];
-    for repsitory in arguments.repositories {
+    for repsitory in arguments.repos {
         let git_repository = git2::Repository::open(repsitory);
         if git_repository.is_err() {
             reporter.report_error(git_repository.err().unwrap().message());
             return;
         }
-
         git_repositories.push(git_repository.ok().unwrap());
     }
 
@@ -75,7 +65,7 @@ fn main() {
         let engine_duration = engine_start.elapsed();
         input.clear();
 
-        if arguments.show_analyisis {
+        if arguments.analysis {
             println!("\n");
             println!("Analysis:");
             println!("Frontend : {:?}", front_duration);

@@ -13,3 +13,4 @@ gitql-parser = { path = "../gitql-parser", version = "0.1.0" }
 prettytable-rs = "^0.10"
 textwrap = "0.16.0"
 termcolor = "1.2.0"
+clap = { version = "4.3.23", features = ["derive"] }
