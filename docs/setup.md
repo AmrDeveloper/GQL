@@ -27,6 +27,6 @@ cd gql
 cargo run <repository_path>
 
 # On multi repositoies
-cargo run --repo <repository_path> <repository_path> ...etc
-cargo run -r <repository_path> <repository_path> ...etc
+cargo run -- --repo <repository_path> <repository_path> ...etc
+cargo run -- -r <repository_path> <repository_path> ...etc
 ```
