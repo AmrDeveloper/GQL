@@ -22,66 +22,66 @@ pub fn execute_statement(
     statement: &Box<dyn Statement>,
     repo: &git2::Repository,
     groups: &mut Vec<Vec<GQLObject>>,
-) {
+) -> Result<(), String> {
     match statement.get_statement_kind() {
         Select => {
             let statement = statement
                 .as_any()
                 .downcast_ref::<SelectStatement>()
                 .unwrap();
-            execute_select_statement(statement, repo, groups);
+            return execute_select_statement(statement, repo, groups);
         }
         Where => {
             let statement = statement.as_any().downcast_ref::<WhereStatement>().unwrap();
-            execute_where_statement(statement, groups);
+            return execute_where_statement(statement, groups);
         }
         Having => {
             let statement = statement
                 .as_any()
                 .downcast_ref::<HavingStatement>()
                 .unwrap();
-            execute_having_statement(statement, groups);
+            return execute_having_statement(statement, groups);
         }
         Limit => {
             let statement = statement.as_any().downcast_ref::<LimitStatement>().unwrap();
-            execute_limit_statement(statement, groups);
+            return execute_limit_statement(statement, groups);
         }
         Offset => {
             let statement = statement
                 .as_any()
                 .downcast_ref::<OffsetStatement>()
                 .unwrap();
-            execute_offset_statement(statement, groups);
+            return execute_offset_statement(statement, groups);
         }
         OrderBy => {
             let statement = statement
                 .as_any()
                 .downcast_ref::<OrderByStatement>()
                 .unwrap();
-            execute_order_by_statement(statement, groups);
+            return execute_order_by_statement(statement, groups);
         }
         GroupBy => {
             let statement = statement
                 .as_any()
                 .downcast_ref::<GroupByStatement>()
                 .unwrap();
-            execute_group_by_statement(statement, groups);
+            return execute_group_by_statement(statement, groups);
         }
         AggregateFunction => {
             let statement = statement
                 .as_any()
                 .downcast_ref::<AggregationFunctionsStatement>()
                 .unwrap();
-            execute_aggregation_function_statement(statement, groups);
+            return execute_aggregation_function_statement(statement, groups);
         }
-    }
+    };
 }
 
 fn execute_select_statement(
     statement: &SelectStatement,
     repo: &git2::Repository,
     groups: &mut Vec<Vec<GQLObject>>,
-) {
+) -> Result<(), String> {
     // Select obects from the target table
     let mut objects = select_gql_objects(
         repo,
@@ -96,36 +96,71 @@ fn execute_select_statement(
     } else {
         groups[0].append(&mut objects);
     }
+
+    return Ok(());
 }
 
-fn execute_where_statement(statement: &WhereStatement, groups: &mut Vec<Vec<GQLObject>>) {
+fn execute_where_statement(
+    statement: &WhereStatement,
+    groups: &mut Vec<Vec<GQLObject>>,
+) -> Result<(), String> {
     if groups.is_empty() {
-        return;
+        return Ok(());
     }
+
     // Perform where command only on the first group
     // because group by command not executed yet
-    let filtered_group: Vec<GQLObject> = groups
-        .first()
-        .unwrap()
-        .iter()
-        .filter(|&object| evaluate_expression(&statement.condition, object).eq("true"))
-        .cloned()
-        .collect();
+    let mut filtered_group: Vec<GQLObject> = vec![];
+    let first_group = groups.first().unwrap().iter();
+    for object in first_group {
+        let eval_result = evaluate_expression(&statement.condition, object);
+        if eval_result.is_err() {
+            return Err(eval_result.err().unwrap());
+        }
+
+        if eval_result.ok().unwrap().eq("true") {
+            filtered_group.push(object.clone());
+        }
+    }
 
     // Update the main group with the filtered data
     groups.remove(0);
     groups.push(filtered_group);
+
+    return Ok(());
 }
 
-fn execute_having_statement(statement: &HavingStatement, groups: &mut Vec<Vec<GQLObject>>) {
+fn execute_having_statement(
+    statement: &HavingStatement,
+    groups: &mut Vec<Vec<GQLObject>>,
+) -> Result<(), String> {
     if groups.is_empty() {
-        return;
+        return Ok(());
     }
 
     if groups.len() > 1 {
         flat_groups(groups);
     }
 
+    // Perform where command only on the first group
+    // because groups are already merged
+    let mut filtered_group: Vec<GQLObject> = vec![];
+    let first_group = groups.first().unwrap().iter();
+    for object in first_group {
+        let eval_result = evaluate_expression(&statement.condition, object);
+        if eval_result.is_err() {
+            return Err(eval_result.err().unwrap());
+        }
+
+        if eval_result.ok().unwrap().eq("true") {
+            filtered_group.push(object.clone());
+        }
+    }
+
+    // Update the main group with the filtered data
+    groups.remove(0);
+    groups.push(filtered_group);
+    /*
     let main_group: &mut Vec<GQLObject> = groups[0].as_mut();
 
     let result: Vec<GQLObject> = main_group
@@ -139,11 +174,17 @@ fn execute_having_statement(statement: &HavingStatement, groups: &mut Vec<Vec<GQ
     for object in result {
         main_group.push(object);
     }
+    */
+
+    return Ok(());
 }
 
-fn execute_limit_statement(statement: &LimitStatement, groups: &mut Vec<Vec<GQLObject>>) {
+fn execute_limit_statement(
+    statement: &LimitStatement,
+    groups: &mut Vec<Vec<GQLObject>>,
+) -> Result<(), String> {
     if groups.is_empty() {
-        return;
+        return Ok(());
     }
 
     if groups.len() > 1 {
@@ -154,24 +195,33 @@ fn execute_limit_statement(statement: &LimitStatement, groups: &mut Vec<Vec<GQLO
     if statement.count <= main_group.len() {
         main_group.drain(statement.count..main_group.len());
     }
+
+    return Ok(());
 }
 
-fn execute_offset_statement(statement: &OffsetStatement, groups: &mut Vec<Vec<GQLObject>>) {
+fn execute_offset_statement(
+    statement: &OffsetStatement,
+    groups: &mut Vec<Vec<GQLObject>>,
+) -> Result<(), String> {
     if groups.is_empty() {
-        return;
+        return Ok(());
     }
 
     if groups.len() > 1 {
         flat_groups(groups);
     }
-
     let main_group: &mut Vec<GQLObject> = groups[0].as_mut();
     main_group.drain(0..cmp::min(statement.count, main_group.len()));
+
+    return Ok(());
 }
 
-fn execute_order_by_statement(statement: &OrderByStatement, groups: &mut Vec<Vec<GQLObject>>) {
+fn execute_order_by_statement(
+    statement: &OrderByStatement,
+    groups: &mut Vec<Vec<GQLObject>>,
+) -> Result<(), String> {
     if groups.is_empty() {
-        return;
+        return Ok(());
     }
 
     if groups.len() > 1 {
@@ -180,7 +230,7 @@ fn execute_order_by_statement(statement: &OrderByStatement, groups: &mut Vec<Vec
 
     let main_group: &mut Vec<GQLObject> = groups[0].as_mut();
     if main_group.is_empty() {
-        return;
+        return Ok(());
     }
 
     if main_group[0].attributes.contains_key(&statement.field_name) {
@@ -217,16 +267,21 @@ fn execute_order_by_statement(statement: &OrderByStatement, groups: &mut Vec<Vec
             main_group.reverse();
         }
     }
+
+    return Ok(());
 }
 
-fn execute_group_by_statement(statement: &GroupByStatement, groups: &mut Vec<Vec<GQLObject>>) {
+fn execute_group_by_statement(
+    statement: &GroupByStatement,
+    groups: &mut Vec<Vec<GQLObject>>,
+) -> Result<(), String> {
     if groups.is_empty() {
-        return;
+        return Ok(());
     }
 
     let main_group: Vec<GQLObject> = groups.remove(0);
     if main_group.is_empty() {
-        return;
+        return Ok(());
     }
 
     // Mapping each unique value to it group index
@@ -251,16 +306,18 @@ fn execute_group_by_statement(statement: &GroupByStatement, groups: &mut Vec<Vec
             groups.push(vec![object.to_owned()]);
         }
     }
+
+    return Ok(());
 }
 
 fn execute_aggregation_function_statement(
     statement: &AggregationFunctionsStatement,
     groups: &mut Vec<Vec<GQLObject>>,
-) {
+) -> Result<(), String> {
     // Make sure you have at least one aggregation function to calculate
     let aggregations_map = &statement.aggregations;
     if aggregations_map.is_empty() {
-        return;
+        return Ok(());
     }
 
     // Used to determind if group by statement is executed before or not
@@ -292,6 +349,8 @@ fn execute_aggregation_function_statement(
             group.drain(1..);
         }
     }
+
+    return Ok(());
 }
 
 fn flat_groups(groups: &mut Vec<Vec<GQLObject>>) {

@@ -14,10 +14,15 @@ const GQL_COMMANDS_IN_ORDER: [&'static str; 8] = [
     "limit",
 ];
 
+pub struct EvaluationValues {
+    pub groups: Vec<Vec<GQLObject>>,
+    pub hidden_selections: Vec<std::string::String>,
+}
+
 pub fn evaluate(
     repos: &Vec<git2::Repository>,
     query: GQLQuery,
-) -> (Vec<Vec<GQLObject>>, Vec<std::string::String>) {
+) -> Result<EvaluationValues, String> {
     let mut groups: Vec<Vec<GQLObject>> = Vec::new();
     let statements_map = query.statements;
     let first_repo = repos.first().unwrap();
@@ -29,12 +34,18 @@ pub fn evaluate(
                 "select" => {
                     // Select statement should be performed on all repositories, can be executed in parallel
                     for repo in repos {
-                        execute_statement(&statement, repo, &mut groups);
+                        let result = execute_statement(&statement, repo, &mut groups);
+                        if result.is_err() {
+                            return Err(result.err().unwrap());
+                        }
                     }
                 }
                 _ => {
                     // Any other statement can be performend on first or non repository
-                    execute_statement(&statement, first_repo, &mut groups);
+                    let result = execute_statement(&statement, first_repo, &mut groups);
+                    if result.is_err() {
+                        return Err(result.err().unwrap());
+                    }
                 }
             }
         }
@@ -57,5 +68,8 @@ pub fn evaluate(
     }
 
     // Return the groups and hidden selections to be used later in GUI or TUI ...etc
-    return (groups.to_owned(), query.hidden_selections.to_owned());
+    return Ok(EvaluationValues {
+        groups: groups.to_owned(),
+        hidden_selections: query.hidden_selections.to_owned(),
+    });
 }
