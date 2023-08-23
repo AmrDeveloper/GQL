@@ -1,6 +1,18 @@
 Change Log
 ==========
 
+Version 0.5.0 *(2023-08-23)*
+-----------------------------
+
+* Split the project into multi crates.
+* Support query from multi repositories.
+* Add CLI flag to enable/disable reporting analysis.
+* Report error when `WHERE` or `HAVING` condition is not boolean.
+* Introduce Runtime exceptions.
+* Report runtime exception for divide by zero.
+* Report runtime exception for reminder by zero.
+* Report runtime exception for right and left shift overflow.
+
 Version 0.4.1 *(2023-07-19)*
 -----------------------------
 
