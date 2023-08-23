@@ -59,8 +59,20 @@ fn main() {
         let front_duration = front_start.elapsed();
 
         let engine_start = std::time::Instant::now();
-        let (groups, hidden_selections) = engine::evaluate(&git_repositories, statements);
-        render::render_objects(&groups, &hidden_selections);
+        let evaluation_result = engine::evaluate(&git_repositories, statements);
+
+        // Report Runtime exceptions if they exists
+        if evaluation_result.is_err() {
+            reporter.report_runtime_error(evaluation_result.err().unwrap());
+            input.clear();
+            continue;
+        }
+
+        let evaluation_values = evaluation_result.ok().unwrap();
+        render::render_objects(
+            &evaluation_values.groups,
+            &evaluation_values.hidden_selections,
+        );
 
         let engine_duration = engine_start.elapsed();
         input.clear();
