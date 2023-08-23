@@ -564,14 +564,28 @@ fn parse_where_statement(
         });
     }
 
-    let expression_result = parse_expression(&tokens, position);
-    if expression_result.is_err() {
-        return Err(expression_result.err().unwrap());
+    let condition_location = tokens[*position].location;
+    let condition_result = parse_expression(&tokens, position);
+    if condition_result.is_err() {
+        return Err(condition_result.err().unwrap());
     }
 
-    return Ok(Box::new(WhereStatement {
-        condition: expression_result.ok().unwrap(),
-    }));
+    // Make sure WHERE condition expression has boolean type
+    let condition = condition_result.ok().unwrap();
+    let condition_type = condition.expr_type();
+    if condition_type != DataType::Boolean {
+        let message = format!(
+            "Expect `WHERE` condition bo be type {} but got {}",
+            DataType::Boolean.literal(),
+            condition_type.literal()
+        );
+        return Err(GQLError {
+            message,
+            location: condition_location,
+        });
+    }
+
+    return Ok(Box::new(WhereStatement { condition }));
 }
 
 fn parse_group_by_statement(
@@ -611,14 +625,28 @@ fn parse_having_statement(
         });
     }
 
-    let expression_result = parse_expression(&tokens, position);
-    if expression_result.is_err() {
-        return Err(expression_result.err().unwrap());
+    let condition_location = tokens[*position].location;
+    let condition_result = parse_expression(&tokens, position);
+    if condition_result.is_err() {
+        return Err(condition_result.err().unwrap());
     }
 
-    return Ok(Box::new(HavingStatement {
-        condition: expression_result.ok().unwrap(),
-    }));
+    // Make sure HAVING condition expression has boolean type
+    let condition = condition_result.ok().unwrap();
+    let condition_type = condition.expr_type();
+    if condition_type != DataType::Boolean {
+        let message = format!(
+            "Expect `HAVING` condition bo be type {} but got {}",
+            DataType::Boolean.literal(),
+            condition_type.literal()
+        );
+        return Err(GQLError {
+            message,
+            location: condition_location,
+        });
+    }
+
+    return Ok(Box::new(HavingStatement { condition }));
 }
 
 fn parse_limit_statement(
