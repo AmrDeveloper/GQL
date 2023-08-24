@@ -158,7 +158,17 @@ fn evaluate_arithmetic(expr: &ArithmeticExpression, object: &GQLObject) -> Resul
     return match expr.operator {
         ArithmeticOperator::Plus => Ok((lhs + rhs).to_string()),
         ArithmeticOperator::Minus => Ok((lhs - rhs).to_string()),
-        ArithmeticOperator::Star => Ok((lhs * rhs).to_string()),
+        ArithmeticOperator::Star => {
+            let mul_result = lhs.overflowing_mul(rhs);
+            if mul_result.1 {
+                Err(format!(
+                    "Attempt to compute `{} * {}`, which would overflow",
+                    lhs, rhs
+                ))
+            } else {
+                Ok(mul_result.0.to_string())
+            }
+        }
         ArithmeticOperator::Slash => {
             if rhs == 0 {
                 Err(format!("Attempt to divide `{}` by zero", lhs))
