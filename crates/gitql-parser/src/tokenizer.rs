@@ -389,6 +389,10 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
                 position += 1;
                 kind = TokenKind::GreaterEqual;
                 literal = ">=";
+            } else if position < len && characters[position] == '>' {
+                position += 1;
+                kind = TokenKind::BitwiseRightShift;
+                literal = ">>";
             }
 
             let token = Token {
@@ -417,6 +421,10 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
                 position += 1;
                 kind = TokenKind::LessEqual;
                 literal = "<=";
+            } else if position < len && characters[position] == '<' {
+                position += 1;
+                kind = TokenKind::BitwiseLeftShift;
+                literal = "<<";
             }
 
             let token = Token {
