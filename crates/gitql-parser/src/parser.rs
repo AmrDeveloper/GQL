@@ -1609,10 +1609,60 @@ fn parse_primary_expression(
             *position += 1;
             expression
         }
-        _ => Err(GQLError {
+        _ => Err(un_expected_token_error(tokens, position)),
+    };
+}
+
+fn un_expected_token_error(tokens: &Vec<Token>, position: &mut usize) -> GQLError {
+    let location = tokens[*position].location;
+
+    // If it first token just return default error message
+    if *position == 0 {
+        return GQLError {
             message: "Can't parse primary expression".to_owned(),
-            location: tokens[*position].location,
-        }),
+            location,
+        };
+    }
+
+    let current = &tokens[*position];
+    let previous = &tokens[*position - 1];
+
+    // `< =` the user may mean to write `<=`
+    if previous.kind == TokenKind::Greater && current.kind == TokenKind::Equal {
+        return GQLError {
+            message: "Unexpected `> =`, do you mean `>=`?".to_owned(),
+            location,
+        };
+    }
+
+    // `> =` the user may mean to write `>=`
+    if previous.kind == TokenKind::Less && current.kind == TokenKind::Equal {
+        return GQLError {
+            message: "Unexpected `< =`, do you mean `<=`?".to_owned(),
+            location,
+        };
+    }
+
+    // `> >` the user may mean to write '>>'
+    if previous.kind == TokenKind::Greater && current.kind == TokenKind::Greater {
+        return GQLError {
+            message: "Unexpected `> >`, do you mean `>>`?".to_owned(),
+            location,
+        };
+    }
+
+    // `< <` the user may mean to write `<<`
+    if previous.kind == TokenKind::Less && current.kind == TokenKind::Less {
+        return GQLError {
+            message: "Unexpected `< <`, do you mean `<<`?".to_owned(),
+            location,
+        };
+    }
+
+    // Default error message
+    return GQLError {
+        message: "Can't parse primary expression".to_owned(),
+        location,
     };
 }
 
