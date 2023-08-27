@@ -1099,7 +1099,7 @@ fn parse_equality_expression(
     let lhs = expression.ok().unwrap();
 
     let operator = &tokens[*position];
-    if operator.kind == TokenKind::Equal || operator.kind == TokenKind::Bang {
+    if operator.kind == TokenKind::Equal || operator.kind == TokenKind::BangEqual {
         *position += 1;
         let comparison_operator = if operator.kind == TokenKind::Equal {
             ComparisonOperator::Equal
@@ -1626,6 +1626,14 @@ fn un_expected_token_error(tokens: &Vec<Token>, position: &mut usize) -> GQLErro
 
     let current = &tokens[*position];
     let previous = &tokens[*position - 1];
+
+    // Similar to SQL just `=` is used for equality comparisons
+    if previous.kind == TokenKind::Equal && current.kind == TokenKind::Equal {
+        return GQLError {
+            message: "Unexpected `==`, Just use `=` to check equality".to_owned(),
+            location,
+        };
+    }
 
     // `< =` the user may mean to write `<=`
     if previous.kind == TokenKind::Greater && current.kind == TokenKind::Equal {

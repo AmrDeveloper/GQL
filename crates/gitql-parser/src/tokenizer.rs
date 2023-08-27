@@ -19,6 +19,7 @@ pub enum TokenKind {
     LessEqual,
     Equal,
     Bang,
+    BangEqual,
 
     Contains,
     StartsWith,
@@ -455,21 +456,31 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             continue;
         }
 
-        // Not
+        // Bang or Bang Equal
         if char == '!' {
             let location = Location {
                 start: column_start,
                 end: position,
             };
 
+            position += 1;
+
+            let mut kind = TokenKind::Bang;
+            let mut literal = "!";
+
+            if position < len && characters[position] == '=' {
+                position += 1;
+                kind = TokenKind::BangEqual;
+                literal = "!=";
+            }
+
             let token = Token {
                 location: location,
-                kind: TokenKind::Bang,
-                literal: "!".to_owned(),
+                kind: kind,
+                literal: literal.to_owned(),
             };
 
             tokens.push(token);
-            position += 1;
             continue;
         }
 
