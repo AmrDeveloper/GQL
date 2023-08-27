@@ -12,7 +12,7 @@ Used to perform arithmetic operators on number types.
 
 ### Comparison Expression
 - `=` used to check if field equal to expected value.
-- `!` used to check if field not equal to expected value.
+- `!=` used to check if field not equal to expected value.
 - `>` used to check if field greater than expected value.
 - `>=` used to check if field greater than or equals expected value.
 - `<` used to check if field less than expected value.
