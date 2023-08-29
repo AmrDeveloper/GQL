@@ -17,6 +17,7 @@ pub enum ExpressionKind {
     Bitwise,
     Call,
     Between,
+    Case,
 }
 
 pub trait Expression {
@@ -295,6 +296,27 @@ impl Expression for BetweenExpression {
 
     fn expr_type(&self) -> DataType {
         return DataType::Boolean;
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+pub struct CaseExpression {
+    pub conditions: Vec<Box<dyn Expression>>,
+    pub values: Vec<Box<dyn Expression>>,
+    pub default_value: Option<Box<dyn Expression>>,
+    pub values_type: DataType,
+}
+
+impl Expression for CaseExpression {
+    fn get_expression_kind(&self) -> ExpressionKind {
+        ExpressionKind::Case
+    }
+
+    fn expr_type(&self) -> DataType {
+        return self.values_type.clone();
     }
 
     fn as_any(&self) -> &dyn Any {

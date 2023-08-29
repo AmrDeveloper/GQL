@@ -7,6 +7,7 @@ use crate::aggregation::AGGREGATIONS_PROTOS;
 use crate::diagnostic::GQLError;
 use crate::tokenizer::Location;
 use crate::tokenizer::{Token, TokenKind};
+use gitql_ast::expression::CaseExpression;
 use gitql_ast::expression::{ArithmeticExpression, BetweenExpression, CallExpression, Expression};
 use gitql_ast::expression::{
     ArithmeticOperator, CheckOperator, ComparisonOperator, LogicalOperator,
@@ -1560,12 +1561,12 @@ fn parse_primary_expression(
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
-    return match tokens[*position].kind {
+    match tokens[*position].kind {
         TokenKind::String => {
             *position += 1;
-            Ok(Box::new(StringExpression {
+            return Ok(Box::new(StringExpression {
                 value: tokens[*position - 1].literal.to_string(),
-            }))
+            }));
         }
         TokenKind::Symbol => {
             *position += 1;
@@ -1607,10 +1608,135 @@ fn parse_primary_expression(
                 });
             }
             *position += 1;
-            expression
+            return expression;
         }
-        _ => Err(un_expected_token_error(tokens, position)),
+        TokenKind::Case => return parse_case_expression(tokens, position),
+        _ => return Err(un_expected_token_error(tokens, position)),
     };
+}
+
+fn parse_case_expression(
+    tokens: &Vec<Token>,
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, GQLError> {
+    let mut conditions: Vec<Box<dyn Expression>> = vec![];
+    let mut values: Vec<Box<dyn Expression>> = vec![];
+    let mut default_value: Option<Box<dyn Expression>> = None;
+
+    // Consume `case` keyword
+    let case_location = tokens[*position].location;
+    *position += 1;
+
+    let mut has_else_branch = false;
+
+    while *position < tokens.len() && tokens[*position].kind != TokenKind::End {
+        // Else branch
+        if tokens[*position].kind == TokenKind::Else {
+            if has_else_branch {
+                return Err(GQLError {
+                    message: "This case expression already has else branch".to_owned(),
+                    location: tokens[*position].location,
+                });
+            }
+
+            // consume else keyword
+            *position += 1;
+
+            let default_value_result = parse_expression(tokens, position);
+            if default_value_result.is_err() {
+                return default_value_result;
+            }
+
+            default_value = Some(default_value_result.ok().unwrap());
+            has_else_branch = true;
+            continue;
+        }
+
+        // When
+        let when_result = consume_kind(&tokens[*position], TokenKind::When);
+        if when_result.is_err() {
+            return Err(GQLError {
+                message: "Expect `when` before case condition".to_owned(),
+                location: tokens[*position].location,
+            });
+        }
+
+        // Consume when keyword
+        *position += 1;
+
+        let condition_result = parse_expression(tokens, position);
+        if condition_result.is_err() {
+            return condition_result;
+        }
+
+        let condition = condition_result.ok().unwrap();
+        if condition.expr_type() != DataType::Boolean {
+            return Err(GQLError {
+                message: "Case condition must be a boolean type".to_owned(),
+                location: tokens[*position - 1].location,
+            });
+        }
+        conditions.push(condition);
+
+        let then_result = consume_kind(&tokens[*position], TokenKind::Then);
+        if then_result.is_err() {
+            return Err(GQLError {
+                message: "Expect `then` after case condition".to_owned(),
+                location: tokens[*position].location,
+            });
+        }
+
+        // Consume then keyword
+        *position += 1;
+
+        let value_result = parse_expression(tokens, position);
+        if value_result.is_err() {
+            return value_result;
+        }
+
+        values.push(value_result.ok().unwrap());
+    }
+
+    // Make sure case expression end with END keyword
+    if *position >= tokens.len() && tokens[*position].kind != TokenKind::End {
+        return Err(GQLError {
+            message: "Expect `end` after case branches".to_owned(),
+            location: tokens[*position].location,
+        });
+    }
+
+    // Consume end
+    *position += 1;
+
+    // Make sure this case expression has else branch
+    if !has_else_branch {
+        return Err(GQLError {
+            message: "Case expression must has else branch".to_owned(),
+            location: tokens[*position].location,
+        });
+    }
+
+    // Assert that all values has the same type
+    let values_type: DataType = values[0].expr_type();
+    for i in 1..values.len() {
+        if values_type != values[i].expr_type() {
+            return Err(GQLError {
+                message: format!(
+                    "Case value in branch {} has different type than the last branch",
+                    i + 1
+                )
+                .to_owned(),
+                location: case_location,
+            });
+        }
+    }
+
+    return Ok(Box::new(CaseExpression {
+        conditions,
+        values,
+        default_value,
+        values_type,
+    }));
 }
 
 fn un_expected_token_error(tokens: &Vec<Token>, position: &mut usize) -> GQLError {
@@ -1675,11 +1801,11 @@ fn un_expected_token_error(tokens: &Vec<Token>, position: &mut usize) -> GQLErro
 }
 
 #[inline(always)]
-fn consume_kind(token: &Token, kind: TokenKind) -> Result<&Token, i32> {
+fn consume_kind(token: &Token, kind: TokenKind) -> Result<&Token, ()> {
     if token.kind == kind {
         return Ok(token);
     }
-    return Err(0);
+    return Err(());
 }
 
 #[inline(always)]

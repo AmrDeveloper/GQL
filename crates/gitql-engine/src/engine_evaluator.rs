@@ -5,6 +5,7 @@ use gitql_ast::expression::BitwiseExpression;
 use gitql_ast::expression::BitwiseOperator;
 use gitql_ast::expression::BooleanExpression;
 use gitql_ast::expression::CallExpression;
+use gitql_ast::expression::CaseExpression;
 use gitql_ast::expression::CheckExpression;
 use gitql_ast::expression::CheckOperator;
 use gitql_ast::expression::ComparisonExpression;
@@ -109,6 +110,13 @@ pub fn evaluate_expression(
                 .downcast_ref::<BetweenExpression>()
                 .unwrap();
             return evaluate_between(expr, object);
+        }
+        Case => {
+            let expr = expression
+                .as_any()
+                .downcast_ref::<CaseExpression>()
+                .unwrap();
+            return evaluate_case(expr, object);
         }
     };
 }
@@ -348,4 +356,26 @@ fn evaluate_between(expr: &BetweenExpression, object: &GQLObject) -> Result<Stri
     let range_end = range_end_result.ok().unwrap().parse::<i64>().unwrap();
 
     return Ok((value >= range_start && value <= range_end).to_string());
+}
+
+fn evaluate_case(expr: &CaseExpression, object: &GQLObject) -> Result<String, String> {
+    let conditions = &expr.conditions;
+    let values = &expr.values;
+
+    for i in 0..conditions.len() {
+        let condition_result = evaluate_expression(&conditions[i], object);
+        if condition_result.is_err() {
+            return condition_result;
+        }
+
+        let condition = condition_result.ok().unwrap();
+        if condition.eq("true") {
+            return evaluate_expression(&values[i], object);
+        }
+    }
+
+    return match &expr.default_value {
+        Some(default_value) => evaluate_expression(default_value, object),
+        _ => Err("Invalid case statement".to_owned()),
+    };
 }

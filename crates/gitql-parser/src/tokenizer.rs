@@ -10,6 +10,12 @@ pub enum TokenKind {
     Order,
     By,
 
+    Case,
+    When,
+    Then,
+    Else,
+    End,
+
     Between,
     DotDot,
 
@@ -806,7 +812,11 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "offset" => TokenKind::Offset,
         "order" => TokenKind::Order,
         "by" => TokenKind::By,
-
+        "case" => TokenKind::Case,
+        "when" => TokenKind::When,
+        "then" => TokenKind::Then,
+        "else" => TokenKind::Else,
+        "end" => TokenKind::End,
         "between" => TokenKind::Between,
 
         // Logical Operators
