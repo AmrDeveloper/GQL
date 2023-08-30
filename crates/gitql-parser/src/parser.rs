@@ -7,22 +7,9 @@ use crate::aggregation::AGGREGATIONS_PROTOS;
 use crate::diagnostic::GQLError;
 use crate::tokenizer::Location;
 use crate::tokenizer::{Token, TokenKind};
-use gitql_ast::expression::CaseExpression;
-use gitql_ast::expression::{ArithmeticExpression, BetweenExpression, CallExpression, Expression};
-use gitql_ast::expression::{
-    ArithmeticOperator, CheckOperator, ComparisonOperator, LogicalOperator,
-};
-use gitql_ast::expression::{BitwiseExpression, BitwiseOperator};
-use gitql_ast::expression::{
-    BooleanExpression, NumberExpression, StringExpression, SymbolExpression,
-};
-use gitql_ast::expression::{
-    CheckExpression, ComparisonExpression, LogicalExpression, NotExpression,
-};
-use gitql_ast::statement::{AggregateFunction, AggregationFunctionsStatement};
-use gitql_ast::statement::{GQLQuery, HavingStatement, WhereStatement};
-use gitql_ast::statement::{GroupByStatement, SelectStatement, Statement};
-use gitql_ast::statement::{LimitStatement, OffsetStatement, OrderByStatement};
+
+use gitql_ast::expression::*;
+use gitql_ast::statement::*;
 use gitql_ast::transformation::TRANSFORMATIONS;
 use gitql_ast::transformation::TRANSFORMATIONS_PROTOS;
 use gitql_ast::types::DataType;
@@ -264,7 +251,7 @@ fn parse_select_statement(
     if *position >= tokens.len() {
         return Err(GQLError {
             message: "Expect * or fields names after the select keyword".to_owned(),
-            location: tokens[*position - 1].location,
+            location: get_safe_location(tokens, *position - 1),
         });
     }
 
@@ -276,11 +263,11 @@ fn parse_select_statement(
         let mut aggregation_function_index = 0;
 
         while *position < tokens.len() && tokens[*position].kind == TokenKind::Symbol {
-            let field_name_result = consume_kind(&tokens[*position], TokenKind::Symbol);
+            let field_name_result = consume_kind(tokens, *position, TokenKind::Symbol);
             if field_name_result.is_err() {
                 return Err(GQLError {
                     message: "Expect `identifier` as a field name".to_owned(),
-                    location: tokens[*position].location,
+                    location: get_safe_location(tokens, *position),
                 });
             }
 
@@ -294,11 +281,11 @@ fn parse_select_statement(
             // Parse aggregation function
             if *position < tokens.len() && tokens[*position].kind == TokenKind::LeftParen {
                 *position += 1;
-                let argument_result = consume_kind(&tokens[*position], TokenKind::Symbol);
+                let argument_result = consume_kind(tokens, *position, TokenKind::Symbol);
                 if argument_result.is_err() {
                     return Err(GQLError {
-                        message: "Expect `identifier` as aggregation function name".to_owned(),
-                        location: tokens[*position].location,
+                        message: "Expect `identifier` as aggregation function argument".to_owned(),
+                        location: get_safe_location(tokens, *position),
                     });
                 }
 
@@ -306,7 +293,7 @@ fn parse_select_statement(
                 if !TABLES_FIELDS_TYPES.contains_key(argument.literal.as_str()) {
                     return Err(GQLError {
                         message: format!("No table has field with name `{}`", argument.literal),
-                        location: tokens[*position].location,
+                        location: get_safe_location(tokens, *position),
                     });
                 }
 
@@ -324,7 +311,7 @@ fn parse_select_statement(
                 } else {
                     return Err(GQLError {
                         message: "Expect `)` at the end of aggregation function".to_owned(),
-                        location: tokens[*position].location,
+                        location: get_safe_location(tokens, *position),
                     });
                 }
 
@@ -360,15 +347,15 @@ fn parse_select_statement(
                         if *position >= tokens.len() {
                             return Err(GQLError {
                                 message: "Expect `identifier` as a field alias name".to_owned(),
-                                location: tokens[*position - 1].location,
+                                location: get_safe_location(tokens, *position - 1),
                             });
                         }
 
-                        let alias_name_result = consume_kind(&tokens[*position], TokenKind::Symbol);
+                        let alias_name_result = consume_kind(tokens, *position, TokenKind::Symbol);
                         if alias_name_result.is_err() {
                             return Err(GQLError {
                                 message: "Expect `identifier` as a field alias name".to_owned(),
-                                location: tokens[*position].location,
+                                location: get_safe_location(tokens, *position),
                             });
                         }
 
@@ -376,7 +363,7 @@ fn parse_select_statement(
                         if TABLES_FIELDS_TYPES.contains_key(&alias_name.as_str()) {
                             return Err(GQLError {
                                 message: "You can't use column name as alias name".to_owned(),
-                                location: tokens[*position].location,
+                                location: get_safe_location(tokens, *position),
                             });
                         }
 
@@ -384,7 +371,7 @@ fn parse_select_statement(
                             return Err(GQLError {
                                 message: "There is already field or alias with the same name"
                                     .to_owned(),
-                                location: tokens[*position].location,
+                                location: get_safe_location(tokens, *position),
                             });
                         }
 
@@ -404,7 +391,7 @@ fn parse_select_statement(
                 aggregations.insert(
                     column_name.to_string(),
                     AggregateFunction {
-                        function_name: function_name,
+                        function_name,
                         argument: argument.literal.to_string(),
                     },
                 );
@@ -420,7 +407,7 @@ fn parse_select_statement(
             if !fields_names.insert(field_name.to_string()) {
                 return Err(GQLError {
                     message: "Can't select the same field twice".to_owned(),
-                    location: tokens[*position - 1].location,
+                    location: get_safe_location(tokens, *position - 1),
                 });
             }
 
@@ -434,11 +421,11 @@ fn parse_select_statement(
             if *position < tokens.len() && tokens[*position].kind == TokenKind::As {
                 *position += 1;
 
-                let alias_name_result = consume_kind(&tokens[*position], TokenKind::Symbol);
+                let alias_name_result = consume_kind(tokens, *position, TokenKind::Symbol);
                 if alias_name_result.is_err() {
                     return Err(GQLError {
                         message: "Expect `identifier` as a field alias name".to_owned(),
-                        location: tokens[*position].location,
+                        location: get_safe_location(tokens, *position),
                     });
                 }
 
@@ -446,7 +433,7 @@ fn parse_select_statement(
                 if fields_set.contains(&alias_name) {
                     return Err(GQLError {
                         message: "There is already field or alias with the same name".to_owned(),
-                        location: tokens[*position].location,
+                        location: get_safe_location(tokens, *position),
                     });
                 }
 
@@ -455,7 +442,7 @@ fn parse_select_statement(
                 if TABLES_FIELDS_TYPES.contains_key(&alias_name.as_str()) {
                     return Err(GQLError {
                         message: "You can't use column name as alias name".to_owned(),
-                        location: tokens[*position].location,
+                        location: get_safe_location(tokens, *position),
                     });
                 }
 
@@ -489,24 +476,24 @@ fn parse_select_statement(
     } else {
         return Err(GQLError {
             message: "Expect `*` or `identifier` after `select` keyword".to_owned(),
-            location: tokens[*position].location,
+            location: get_safe_location(tokens, *position),
         });
     }
 
     if *position >= tokens.len() || tokens[*position].kind != TokenKind::From {
         return Err(GQLError {
             message: "Expect `from` keyword after attributes".to_owned(),
-            location: tokens[*position - 1].location,
+            location: get_safe_location(tokens, *position - 1),
         });
     }
 
     *position += 1;
 
-    let table_name_result = consume_kind(&tokens[*position], TokenKind::Symbol);
+    let table_name_result = consume_kind(tokens, *position, TokenKind::Symbol);
     if table_name_result.is_err() {
         return Err(GQLError {
             message: "Expect `identifier` as a table name".to_owned(),
-            location: tokens[*position].location,
+            location: get_safe_location(tokens, *position),
         });
     }
 
@@ -514,7 +501,7 @@ fn parse_select_statement(
     if !TABLES_FIELDS_NAMES.contains_key(table_name.as_str()) {
         return Err(GQLError {
             message: "Invalid table name".to_owned(),
-            location: tokens[*position].location,
+            location: get_safe_location(tokens, *position),
         });
     }
 
@@ -525,7 +512,7 @@ fn parse_select_statement(
         if !valid_fields.contains(&field.as_str()) {
             return Err(GQLError {
                 message: format!("Table {} has no field with name {}", table_name, field),
-                location: tokens[*position].location,
+                location: get_safe_location(tokens, *position),
             });
         }
     }
@@ -561,7 +548,7 @@ fn parse_where_statement(
     if *position >= tokens.len() {
         return Err(GQLError {
             message: "Expect expression after `where` keyword".to_owned(),
-            location: tokens[*position - 1].location,
+            location: get_safe_location(tokens, *position - 1),
         });
     }
 
@@ -597,14 +584,14 @@ fn parse_group_by_statement(
     if *position >= tokens.len() || tokens[*position].kind != TokenKind::By {
         return Err(GQLError {
             message: "Expect keyword `by` after keyword `group`".to_owned(),
-            location: tokens[*position - 1].location,
+            location: get_safe_location(tokens, *position - 1),
         });
     }
     *position += 1;
     if *position >= tokens.len() || tokens[*position].kind != TokenKind::Symbol {
         return Err(GQLError {
             message: "Expect field name after `group by`".to_owned(),
-            location: tokens[*position - 1].location,
+            location: get_safe_location(tokens, *position - 1),
         });
     }
 
@@ -622,7 +609,7 @@ fn parse_having_statement(
     if *position >= tokens.len() {
         return Err(GQLError {
             message: "Expect expression after `where` keyword".to_owned(),
-            location: tokens[*position - 1].location,
+            location: get_safe_location(tokens, *position - 1),
         });
     }
 
@@ -658,7 +645,7 @@ fn parse_limit_statement(
     if *position >= tokens.len() || tokens[*position].kind != TokenKind::Number {
         return Err(GQLError {
             message: "Expect number after `limit` keyword".to_owned(),
-            location: tokens[*position - 1].location,
+            location: get_safe_location(tokens, *position - 1),
         });
     }
 
@@ -676,7 +663,7 @@ fn parse_offset_statement(
     if *position >= tokens.len() || tokens[*position].kind != TokenKind::Number {
         return Err(GQLError {
             message: "Expect number after `offset` keyword".to_owned(),
-            location: tokens[*position - 1].location,
+            location: get_safe_location(tokens, *position - 1),
         });
     }
 
@@ -695,14 +682,14 @@ fn parse_order_by_statement(
     if *position >= tokens.len() || tokens[*position].kind != TokenKind::By {
         return Err(GQLError {
             message: "Expect keyword `by` after keyword `order`".to_owned(),
-            location: tokens[*position - 1].location,
+            location: get_safe_location(tokens, *position - 1),
         });
     }
     *position += 1;
     if *position >= tokens.len() || tokens[*position].kind != TokenKind::Symbol {
         return Err(GQLError {
             message: "Expect field name after `order by`".to_owned(),
-            location: tokens[*position - 1].location,
+            location: get_safe_location(tokens, *position - 1),
         });
     }
 
@@ -719,7 +706,7 @@ fn parse_order_by_statement(
     } else {
         return Err(GQLError {
             message: "Un resolved field name".to_owned(),
-            location: tokens[*position].location,
+            location: get_safe_location(tokens, *position),
         });
     }
 
@@ -861,7 +848,7 @@ fn parse_logical_or_expression(
         if right_expr.is_err() {
             return Err(GQLError {
                 message: "Can't parser right side of logical expression".to_owned(),
-                location: tokens[*position].location,
+                location: get_safe_location(tokens, *position),
             });
         }
 
@@ -912,7 +899,7 @@ fn parse_logical_and_expression(
         if right_expr.is_err() {
             return Err(GQLError {
                 message: "Can't parser right side of logical expression".to_owned(),
-                location: tokens[*position].location,
+                location: get_safe_location(tokens, *position),
             });
         }
 
@@ -963,7 +950,7 @@ fn parse_bitwise_or_expression(
         if right_expr.is_err() {
             return Err(GQLError {
                 message: "Can't parser right side of bitwise or expression".to_owned(),
-                location: tokens[*position].location,
+                location: get_safe_location(tokens, *position),
             });
         }
 
@@ -1014,7 +1001,7 @@ fn parse_logical_xor_expression(
         if right_expr.is_err() {
             return Err(GQLError {
                 message: "Can't parser right side of logical expression".to_owned(),
-                location: tokens[*position].location,
+                location: get_safe_location(tokens, *position),
             });
         }
 
@@ -1065,7 +1052,7 @@ fn parse_bitwise_and_expression(
         if right_expr.is_err() {
             return Err(GQLError {
                 message: "Can't parser right side of bitwise and expression".to_owned(),
-                location: tokens[*position].location,
+                location: get_safe_location(tokens, *position),
             });
         }
 
@@ -1124,7 +1111,7 @@ fn parse_equality_expression(
             );
             return Err(GQLError {
                 message: message,
-                location: tokens[*position - 2].location,
+                location: get_safe_location(tokens, *position - 2),
             });
         }
 
@@ -1174,7 +1161,7 @@ fn parse_comparison_expression(
             );
             return Err(GQLError {
                 message: message,
-                location: tokens[*position - 2].location,
+                location: get_safe_location(tokens, *position - 2),
             });
         }
 
@@ -1227,7 +1214,7 @@ fn parse_bitwise_shift_expression(
             );
             return Err(GQLError {
                 message: message,
-                location: tokens[*position - 2].location,
+                location: get_safe_location(tokens, *position - 2),
             });
         }
 
@@ -1280,7 +1267,7 @@ fn parse_term_expression(
             );
             return Err(GQLError {
                 message: message,
-                location: tokens[*position - 2].location,
+                location: get_safe_location(tokens, *position - 2),
             });
         }
 
@@ -1330,7 +1317,7 @@ fn parse_factor_expression(
             );
             return Err(GQLError {
                 message: message,
-                location: tokens[*position - 2].location,
+                location: get_safe_location(tokens, *position - 2),
             });
         }
 
@@ -1375,7 +1362,7 @@ fn parse_check_expression(
         if right_expr.is_err() {
             return Err(GQLError {
                 message: "Can't parser right side of check expression".to_owned(),
-                location: tokens[*position].location,
+                location: get_safe_location(tokens, *position),
             });
         }
 
@@ -1394,7 +1381,7 @@ fn parse_unary_expression(
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
-    if (&tokens[*position]).kind == TokenKind::Bang {
+    if *position < tokens.len() && tokens[*position].kind == TokenKind::Bang {
         *position += 1;
         let right_expr = parse_expression(tokens, position);
 
@@ -1413,7 +1400,6 @@ fn parse_unary_expression(
 
         return Ok(Box::new(NotExpression { right: rhs }));
     }
-
     return parse_dot_expression(tokens, position);
 }
 
@@ -1429,11 +1415,11 @@ fn parse_dot_expression(
     while (&tokens[*position]).kind == TokenKind::Dot {
         *position += 1;
 
-        let function_name_result = consume_kind(&tokens[*position], TokenKind::Symbol);
+        let function_name_result = consume_kind(tokens, *position, TokenKind::Symbol);
         if function_name_result.is_err() {
             return Err(GQLError {
                 message: "Expect `identifier` as a function name".to_owned(),
-                location: tokens[*position].location,
+                location: get_safe_location(tokens, *position),
             });
         }
 
@@ -1527,7 +1513,7 @@ fn parse_call_arguments_expressions(
     position: &mut usize,
 ) -> Result<Vec<Box<dyn Expression>>, GQLError> {
     let mut arguments: Vec<Box<dyn Expression>> = vec![];
-    if consume_kind(&tokens[*position], TokenKind::LeftParen).is_ok() {
+    if consume_kind(tokens, *position, TokenKind::LeftParen).is_ok() {
         *position += 1;
 
         while tokens[*position].kind != TokenKind::RightParen {
@@ -1545,12 +1531,12 @@ fn parse_call_arguments_expressions(
             }
         }
 
-        if consume_kind(&tokens[*position], TokenKind::RightParen).is_ok() {
+        if consume_kind(tokens, *position, TokenKind::RightParen).is_ok() {
             *position += 1;
         } else {
             return Err(GQLError {
                 message: "Expect `)` after function call arguments".to_owned(),
-                location: tokens[*position].location,
+                location: get_safe_location(tokens, *position),
             });
         }
     }
@@ -1561,6 +1547,10 @@ fn parse_primary_expression(
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
+    if *position >= tokens.len() {
+        return Err(un_expected_token_error(tokens, position));
+    }
+
     match tokens[*position].kind {
         TokenKind::String => {
             *position += 1;
@@ -1576,7 +1566,7 @@ fn parse_primary_expression(
                 return Err(GQLError {
                     message: "The current table contains no selected field with this name"
                         .to_owned(),
-                    location: tokens[*position - 1].location,
+                    location: get_safe_location(tokens, *position - 1),
                 });
             }
 
@@ -1604,7 +1594,7 @@ fn parse_primary_expression(
             if tokens[*position].kind != TokenKind::RightParen {
                 return Err(GQLError {
                     message: "Expect `)` to end group expression".to_owned(),
-                    location: tokens[*position].location,
+                    location: get_safe_location(tokens, *position),
                 });
             }
             *position += 1;
@@ -1635,7 +1625,7 @@ fn parse_case_expression(
             if has_else_branch {
                 return Err(GQLError {
                     message: "This case expression already has else branch".to_owned(),
-                    location: tokens[*position].location,
+                    location: get_safe_location(tokens, *position),
                 });
             }
 
@@ -1653,11 +1643,11 @@ fn parse_case_expression(
         }
 
         // When
-        let when_result = consume_kind(&tokens[*position], TokenKind::When);
+        let when_result = consume_kind(tokens, *position, TokenKind::When);
         if when_result.is_err() {
             return Err(GQLError {
                 message: "Expect `when` before case condition".to_owned(),
-                location: tokens[*position].location,
+                location: get_safe_location(tokens, *position),
             });
         }
 
@@ -1673,16 +1663,16 @@ fn parse_case_expression(
         if condition.expr_type() != DataType::Boolean {
             return Err(GQLError {
                 message: "Case condition must be a boolean type".to_owned(),
-                location: tokens[*position - 1].location,
+                location: get_safe_location(tokens, *position - 1),
             });
         }
         conditions.push(condition);
 
-        let then_result = consume_kind(&tokens[*position], TokenKind::Then);
+        let then_result = consume_kind(tokens, *position, TokenKind::Then);
         if then_result.is_err() {
             return Err(GQLError {
                 message: "Expect `then` after case condition".to_owned(),
-                location: tokens[*position].location,
+                location: get_safe_location(tokens, *position),
             });
         }
 
@@ -1697,11 +1687,19 @@ fn parse_case_expression(
         values.push(value_result.ok().unwrap());
     }
 
+    // Make sure case expression has at least else branch
+    if conditions.is_empty() && !has_else_branch {
+        return Err(GQLError {
+            message: "Case expression must has at least else branch".to_owned(),
+            location: get_safe_location(tokens, *position),
+        });
+    }
+
     // Make sure case expression end with END keyword
-    if *position >= tokens.len() && tokens[*position].kind != TokenKind::End {
+    if *position >= tokens.len() || tokens[*position].kind != TokenKind::End {
         return Err(GQLError {
             message: "Expect `end` after case branches".to_owned(),
-            location: tokens[*position].location,
+            location: get_safe_location(tokens, *position),
         });
     }
 
@@ -1712,7 +1710,7 @@ fn parse_case_expression(
     if !has_else_branch {
         return Err(GQLError {
             message: "Case expression must has else branch".to_owned(),
-            location: tokens[*position].location,
+            location: get_safe_location(tokens, *position),
         });
     }
 
@@ -1740,12 +1738,11 @@ fn parse_case_expression(
 }
 
 fn un_expected_token_error(tokens: &Vec<Token>, position: &mut usize) -> GQLError {
-    let location = tokens[*position].location;
+    let location = get_safe_location(tokens, *position);
 
-    // If it first token just return default error message
-    if *position == 0 {
+    if *position == 0 || *position >= tokens.len() {
         return GQLError {
-            message: "Can't parse primary expression".to_owned(),
+            message: "Can't complete parsing this expression".to_owned(),
             location,
         };
     }
@@ -1795,17 +1792,26 @@ fn un_expected_token_error(tokens: &Vec<Token>, position: &mut usize) -> GQLErro
 
     // Default error message
     return GQLError {
-        message: "Can't parse primary expression".to_owned(),
+        message: "Can't complete parsing this expression".to_owned(),
         location,
     };
 }
 
 #[inline(always)]
-fn consume_kind(token: &Token, kind: TokenKind) -> Result<&Token, ()> {
-    if token.kind == kind {
+fn consume_kind(tokens: &Vec<Token>, position: usize, kind: TokenKind) -> Result<&Token, ()> {
+    if position < tokens.len() && tokens[position].kind == kind {
+        let token = &tokens[position];
         return Ok(token);
     }
     return Err(());
+}
+
+#[inline(always)]
+fn get_safe_location(tokens: &Vec<Token>, position: usize) -> Location {
+    if position < tokens.len() {
+        return tokens[position].location;
+    }
+    return tokens[tokens.len() - 1].location;
 }
 
 #[inline(always)]
