@@ -59,6 +59,7 @@ nav:
   - Expression:
       - Unary: expression/unary.md
       - Binary: expression/binary.md
+      - Case: expression/case.md
   - Function:
       - Transformation: function/transformations.md
       - Aggregations: function/aggregations.md
