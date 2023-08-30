@@ -14,8 +14,9 @@ use gitql_ast::expression::Expression;
 use gitql_ast::expression::ExpressionKind::*;
 use gitql_ast::expression::LogicalExpression;
 use gitql_ast::expression::LogicalOperator;
-use gitql_ast::expression::NotExpression;
 use gitql_ast::expression::NumberExpression;
+use gitql_ast::expression::PrefixUnary;
+use gitql_ast::expression::PrefixUnaryOperator;
 use gitql_ast::expression::StringExpression;
 use gitql_ast::expression::SymbolExpression;
 use gitql_ast::object::GQLObject;
@@ -59,7 +60,7 @@ pub fn evaluate_expression(
             return evaluate_boolean(expr);
         }
         PrefixUnary => {
-            let expr = expression.as_any().downcast_ref::<NotExpression>().unwrap();
+            let expr = expression.as_any().downcast_ref::<PrefixUnary>().unwrap();
             return evaluate_prefix_unary(expr, object);
         }
         Arithmetic => {
@@ -141,12 +142,18 @@ fn evaluate_boolean(expr: &BooleanExpression) -> Result<String, String> {
     });
 }
 
-fn evaluate_prefix_unary(expr: &NotExpression, object: &GQLObject) -> Result<String, String> {
+fn evaluate_prefix_unary(expr: &PrefixUnary, object: &GQLObject) -> Result<String, String> {
     let value_result = evaluate_expression(&expr.right, object);
     if value_result.is_err() {
         return value_result;
     }
-    return Ok((!value_result.ok().unwrap().eq("true")).to_string());
+
+    let rhs = value_result.ok().unwrap();
+    return if expr.op == PrefixUnaryOperator::Bang {
+        Ok((!rhs.eq("true")).to_string())
+    } else {
+        Ok((-rhs.parse::<i64>().unwrap()).to_string())
+    };
 }
 
 fn evaluate_arithmetic(expr: &ArithmeticExpression, object: &GQLObject) -> Result<String, String> {

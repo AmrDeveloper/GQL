@@ -100,17 +100,29 @@ impl Expression for BooleanExpression {
         self
     }
 }
-pub struct NotExpression {
-    pub right: Box<dyn Expression>,
+
+#[derive(PartialEq)]
+pub enum PrefixUnaryOperator {
+    Minus,
+    Bang,
 }
 
-impl Expression for NotExpression {
+pub struct PrefixUnary {
+    pub right: Box<dyn Expression>,
+    pub op: PrefixUnaryOperator,
+}
+
+impl Expression for PrefixUnary {
     fn get_expression_kind(&self) -> ExpressionKind {
         ExpressionKind::PrefixUnary
     }
 
     fn expr_type(&self) -> DataType {
-        return DataType::Boolean;
+        return if self.op == PrefixUnaryOperator::Bang {
+            DataType::Boolean
+        } else {
+            DataType::Number
+        };
     }
 
     fn as_any(&self) -> &dyn Any {

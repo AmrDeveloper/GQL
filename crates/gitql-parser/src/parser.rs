@@ -1381,25 +1381,39 @@ fn parse_unary_expression(
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
-    if *position < tokens.len() && tokens[*position].kind == TokenKind::Bang {
-        *position += 1;
-        let right_expr = parse_expression(tokens, position);
+    if *position < tokens.len() && is_prefix_unary_operator(&tokens[*position]) {
+        let op = if tokens[*position].kind == TokenKind::Bang {
+            PrefixUnaryOperator::Bang
+        } else {
+            PrefixUnaryOperator::Minus
+        };
 
+        *position += 1;
+
+        let right_expr = parse_expression(tokens, position);
         if right_expr.is_err() {
             return right_expr;
         }
 
         let rhs = right_expr.ok().unwrap();
-        if rhs.expr_type() != DataType::Boolean {
+        let rhs_type = rhs.expr_type();
+        if op == PrefixUnaryOperator::Bang && rhs_type != DataType::Boolean {
             return Err(type_missmatch_error(
-                tokens[*position - 1].location,
+                get_safe_location(tokens, *position - 1),
                 DataType::Boolean,
-                rhs.expr_type(),
+                rhs_type,
+            ));
+        } else if op == PrefixUnaryOperator::Minus && rhs_type != DataType::Number {
+            return Err(type_missmatch_error(
+                get_safe_location(tokens, *position - 1),
+                DataType::Number,
+                rhs_type,
             ));
         }
 
-        return Ok(Box::new(NotExpression { right: rhs }));
+        return Ok(Box::new(PrefixUnary { right: rhs, op }));
     }
+
     return parse_dot_expression(tokens, position);
 }
 
@@ -1812,6 +1826,11 @@ fn get_safe_location(tokens: &Vec<Token>, position: usize) -> Location {
         return tokens[position].location;
     }
     return tokens[tokens.len() - 1].location;
+}
+
+#[inline(always)]
+fn is_prefix_unary_operator(token: &Token) -> bool {
+    return token.kind == TokenKind::Bang || token.kind == TokenKind::Minus;
 }
 
 #[inline(always)]
