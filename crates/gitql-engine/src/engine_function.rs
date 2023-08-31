@@ -23,6 +23,7 @@ fn select_references(
     fields: Vec<String>,
     alias_table: HashMap<String, String>,
 ) -> Vec<GQLObject> {
+    let repo_path = repo.path().to_str().unwrap().to_string();
     let mut gql_references: Vec<GQLObject> = Vec::new();
     let git_references = repo.references();
     if git_references.is_err() {
@@ -75,6 +76,15 @@ fn select_references(
             }
         }
 
+        if is_limit_fields_empty || fields.contains(&String::from("repo")) {
+            let key = alias_table
+                .get("repo")
+                .unwrap_or(&"repo".to_string())
+                .to_string();
+
+            attributes.insert(key, repo_path.to_string());
+        }
+
         let gql_reference = GQLObject { attributes };
         gql_references.push(gql_reference);
     }
@@ -87,6 +97,8 @@ fn select_commits(
     fields: Vec<String>,
     alias_table: HashMap<String, String>,
 ) -> Vec<GQLObject> {
+    let repo_path = repo.path().to_str().unwrap().to_string();
+
     let mut commits: Vec<GQLObject> = Vec::new();
     let mut revwalk = repo.revwalk().unwrap();
     revwalk.push_head().unwrap();
@@ -145,6 +157,15 @@ fn select_commits(
             attributes.insert(key, commit.time().seconds().to_string());
         }
 
+        if is_limit_fields_empty || fields.contains(&String::from("repo")) {
+            let key = alias_table
+                .get("repo")
+                .unwrap_or(&"repo".to_string())
+                .to_string();
+
+            attributes.insert(key, repo_path.to_string());
+        }
+
         let gql_commit = GQLObject { attributes };
         commits.push(gql_commit);
     }
@@ -165,6 +186,7 @@ fn select_diffs(
     let select_insertions = fields.contains(&String::from("insertions"));
     let select_deletions = fields.contains(&String::from("deletions"));
     let select_file_changed = fields.contains(&String::from("files_changed"));
+    let repo_path = repo.path().to_str().unwrap().to_string();
 
     for commit_id in revwalk {
         let commit = repo.find_commit(commit_id.unwrap()).unwrap();
@@ -192,6 +214,15 @@ fn select_diffs(
                 .unwrap_or(&"email".to_string())
                 .to_string();
             attributes.insert(key, commit.author().email().unwrap_or("").to_string());
+        }
+
+        if is_limit_fields_empty || fields.contains(&String::from("repo")) {
+            let key = alias_table
+                .get("repo")
+                .unwrap_or(&"repo".to_string())
+                .to_string();
+
+            attributes.insert(key, repo_path.to_string());
         }
 
         if is_limit_fields_empty || select_insertions || select_deletions || select_file_changed {
@@ -247,6 +278,7 @@ fn select_branches(
     let mut branches: Vec<GQLObject> = Vec::new();
     let local_branches = repo.branches(None).unwrap();
     let is_limit_fields_empty = fields.is_empty();
+    let repo_path = repo.path().to_str().unwrap().to_string();
 
     for branch in local_branches {
         let (branch, _) = branch.unwrap();
@@ -288,6 +320,15 @@ fn select_branches(
             attributes.insert(key, branch.get().is_remote().to_string());
         }
 
+        if is_limit_fields_empty || fields.contains(&String::from("repo")) {
+            let key = alias_table
+                .get("repo")
+                .unwrap_or(&"repo".to_string())
+                .to_string();
+
+            attributes.insert(key, repo_path.to_string());
+        }
+
         let gql_branch = GQLObject { attributes };
         branches.push(gql_branch);
     }
@@ -303,20 +344,32 @@ fn select_tags(
     let mut tags: Vec<GQLObject> = Vec::new();
     let tag_names = repo.tag_names(None).unwrap();
     let is_limit_fields_empty = fields.is_empty();
+    let repo_path = repo.path().to_str().unwrap().to_string();
 
     for tag_name in tag_names.iter() {
         match tag_name {
             Some(name) => {
                 let mut attributes: HashMap<String, String> = HashMap::new();
+
                 if is_limit_fields_empty || fields.contains(&String::from("name")) {
                     let key = alias_table
                         .get("name")
                         .unwrap_or(&"name".to_string())
                         .to_string();
                     attributes.insert(key, name.to_string());
-                    let gql_tag = GQLObject { attributes };
-                    tags.push(gql_tag);
                 }
+
+                if is_limit_fields_empty || fields.contains(&String::from("repo")) {
+                    let key = alias_table
+                        .get("repo")
+                        .unwrap_or(&"repo".to_string())
+                        .to_string();
+
+                    attributes.insert(key, repo_path.to_string());
+                }
+
+                let gql_tag = GQLObject { attributes };
+                tags.push(gql_tag);
             }
             None => {}
         }

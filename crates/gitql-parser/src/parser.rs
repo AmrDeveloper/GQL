@@ -18,14 +18,22 @@ use gitql_ast::types::TABLES_FIELDS_TYPES;
 lazy_static! {
     static ref TABLES_FIELDS_NAMES: HashMap<&'static str, Vec<&'static str>> = {
         let mut map = HashMap::new();
-        map.insert("refs", vec!["name", "full_name", "type"]);
+        map.insert("refs", vec!["name", "full_name", "type", "repo"]);
         map.insert(
             "commits",
-            vec!["commit_id", "title", "message", "name", "email", "time"],
+            vec![
+                "commit_id",
+                "title",
+                "message",
+                "name",
+                "email",
+                "time",
+                "repo",
+            ],
         );
         map.insert(
             "branches",
-            vec!["name", "commit_count", "is_head", "is_remote"],
+            vec!["name", "commit_count", "is_head", "is_remote", "repo"],
         );
         map.insert(
             "diffs",
@@ -36,9 +44,10 @@ lazy_static! {
                 "insertions",
                 "deletions",
                 "files_changed",
+                "repo",
             ],
         );
-        map.insert("tags", vec!["name"]);
+        map.insert("tags", vec!["name", "repo"]);
         map
     };
 }
