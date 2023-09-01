@@ -32,7 +32,7 @@ SELECT name, count(name) AS commit_num FROM commits GROUP BY name ORDER BY commi
 SELECT commit_count FROM branches WHERE commit_count BETWEEN 0 .. 10
 
 SELECT * FROM refs WHERE type = "branch"
-SELECT * FROM refs WHERE ORDER BY type
+SELECT * FROM refs ORDER BY type
 
 SELECT * FROM commits
 SELECT name, email FROM commits
