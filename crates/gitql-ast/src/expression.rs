@@ -1,6 +1,6 @@
 use std::any::Any;
 
-use crate::transformation::TRANSFORMATIONS_PROTOS;
+use crate::function::PROTOTYPES;
 use crate::types::DataType;
 use crate::types::TABLES_FIELDS_TYPES;
 
@@ -284,9 +284,7 @@ impl Expression for CallExpression {
     }
 
     fn expr_type(&self) -> DataType {
-        let prototype = TRANSFORMATIONS_PROTOS
-            .get(&self.function_name.as_str())
-            .unwrap();
+        let prototype = PROTOTYPES.get(&self.function_name.as_str()).unwrap();
         return prototype.result.clone();
     }
 

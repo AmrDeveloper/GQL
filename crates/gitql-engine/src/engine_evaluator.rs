@@ -19,8 +19,8 @@ use gitql_ast::expression::PrefixUnary;
 use gitql_ast::expression::PrefixUnaryOperator;
 use gitql_ast::expression::StringExpression;
 use gitql_ast::expression::SymbolExpression;
+use gitql_ast::function::FUNCTIONS;
 use gitql_ast::object::GQLObject;
-use gitql_ast::transformation::TRANSFORMATIONS;
 use gitql_ast::types::DataType;
 use gitql_ast::value::Value;
 
@@ -335,8 +335,9 @@ fn evaluate_call(expr: &CallExpression, object: &GQLObject) -> Result<Value, Str
         return lhs_result;
     }
     let lhs = lhs_result.ok().unwrap();
-    let transformation = TRANSFORMATIONS.get(expr.function_name.as_str()).unwrap();
-    return Ok(transformation(lhs));
+    let function_name = expr.function_name.as_str();
+    let function = FUNCTIONS.get(function_name).unwrap();
+    return Ok(function(vec![lhs]));
 }
 
 fn evaluate_between(expr: &BetweenExpression, object: &GQLObject) -> Result<Value, String> {

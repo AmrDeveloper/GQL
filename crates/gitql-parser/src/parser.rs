@@ -9,9 +9,9 @@ use crate::tokenizer::{Token, TokenKind};
 use gitql_ast::aggregation::AGGREGATIONS;
 use gitql_ast::aggregation::AGGREGATIONS_PROTOS;
 use gitql_ast::expression::*;
+use gitql_ast::function::FUNCTIONS;
+use gitql_ast::function::PROTOTYPES;
 use gitql_ast::statement::*;
-use gitql_ast::transformation::TRANSFORMATIONS;
-use gitql_ast::transformation::TRANSFORMATIONS_PROTOS;
 use gitql_ast::types::DataType;
 use gitql_ast::types::TABLES_FIELDS_TYPES;
 
@@ -1446,9 +1446,15 @@ fn parse_dot_expression(
             });
         }
 
-        let function_name = function_name_result.ok().unwrap().literal.to_string();
+        let function_name = function_name_result
+            .ok()
+            .unwrap()
+            .literal
+            .to_string()
+            .to_lowercase();
+
         let function_name_location = tokens[*position].location;
-        if !TRANSFORMATIONS.contains_key(function_name.as_str()) {
+        if !FUNCTIONS.contains_key(function_name.as_str()) {
             return Err(GQLError {
                 message: "Invalid GQL function name".to_owned(),
                 location: function_name_location,
@@ -1456,7 +1462,6 @@ fn parse_dot_expression(
         }
 
         *position += 1;
-
         let callee = expression.ok().unwrap();
 
         let arguments_result = parse_call_arguments_expressions(tokens, position);
@@ -1466,7 +1471,7 @@ fn parse_dot_expression(
 
         let arguments = arguments_result.ok().unwrap();
 
-        let prototype = TRANSFORMATIONS_PROTOS.get(function_name.as_str()).unwrap();
+        let prototype = PROTOTYPES.get(function_name.as_str()).unwrap();
         let parameters = &prototype.parameters;
         let callee_expected = parameters.first().unwrap();
 
