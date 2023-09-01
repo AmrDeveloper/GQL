@@ -43,7 +43,7 @@ SELECT name FROM commits GROUP By name
 SELECT name FROM commits GROUP By name having name = "AmrDeveloper"
 
 SELECT * FROM branches
-SELECT * FROM branches WHERE ishead = "true"
+SELECT * FROM branches WHERE ishead = true
 SELECT * FROM branches WHERE name ends_with "master"
 SELECT * FROM branches WHERE name contains "origin"
 

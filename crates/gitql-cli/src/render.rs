@@ -27,13 +27,14 @@ pub fn render_objects(groups: &Vec<Vec<GQLObject>>, hidden_selections: &Vec<Stri
         for object in group {
             let mut table_row = Row::new(Vec::new());
             for key in &titles {
-                let value = &object.attributes.get(&key as &str).unwrap();
-                if value.len() > table_field_max_len {
-                    let wrapped = textwrap::wrap(value, table_field_max_len);
+                let value = &object.attributes.get(&key as &str).clone().unwrap();
+                let value_literal = value.literal();
+                if value_literal.len() > table_field_max_len {
+                    let wrapped = textwrap::wrap(value_literal.as_str(), table_field_max_len);
                     let formatted = wrapped.join("\n");
                     table_row.add_cell(Cell::new(&formatted));
                 } else {
-                    table_row.add_cell(Cell::new(value));
+                    table_row.add_cell(Cell::new(value_literal.as_str()));
                 }
             }
             table.add_row(table_row);

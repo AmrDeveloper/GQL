@@ -22,6 +22,7 @@ use gitql_ast::expression::SymbolExpression;
 use gitql_ast::object::GQLObject;
 use gitql_ast::transformation::TRANSFORMATIONS;
 use gitql_ast::types::DataType;
+use gitql_ast::value::Value;
 
 use regex::Regex;
 use std::string::String;
@@ -29,7 +30,7 @@ use std::string::String;
 pub fn evaluate_expression(
     expression: &Box<dyn Expression>,
     object: &GQLObject,
-) -> Result<String, String> {
+) -> Result<Value, String> {
     match expression.get_expression_kind() {
         String => {
             let expr = expression
@@ -122,27 +123,23 @@ pub fn evaluate_expression(
     };
 }
 
-fn evaluate_string(expr: &StringExpression) -> Result<String, String> {
-    return Ok(expr.value.to_owned());
+fn evaluate_string(expr: &StringExpression) -> Result<Value, String> {
+    return Ok(Value::Text(expr.value.to_owned()));
 }
 
-fn evaluate_symbol(expr: &SymbolExpression, object: &GQLObject) -> Result<String, String> {
-    return Ok(object.attributes.get(&expr.value).unwrap().to_string());
+fn evaluate_symbol(expr: &SymbolExpression, object: &GQLObject) -> Result<Value, String> {
+    return Ok(object.attributes.get(&expr.value).unwrap().clone());
 }
 
-fn evaluate_number(expr: &NumberExpression) -> Result<String, String> {
-    return Ok(expr.value.to_string());
+fn evaluate_number(expr: &NumberExpression) -> Result<Value, String> {
+    return Ok(Value::Number(expr.value));
 }
 
-fn evaluate_boolean(expr: &BooleanExpression) -> Result<String, String> {
-    return Ok(if expr.is_true {
-        "true".to_owned()
-    } else {
-        "false".to_owned()
-    });
+fn evaluate_boolean(expr: &BooleanExpression) -> Result<Value, String> {
+    return Ok(Value::Boolean(expr.is_true));
 }
 
-fn evaluate_prefix_unary(expr: &PrefixUnary, object: &GQLObject) -> Result<String, String> {
+fn evaluate_prefix_unary(expr: &PrefixUnary, object: &GQLObject) -> Result<Value, String> {
     let value_result = evaluate_expression(&expr.right, object);
     if value_result.is_err() {
         return value_result;
@@ -150,13 +147,13 @@ fn evaluate_prefix_unary(expr: &PrefixUnary, object: &GQLObject) -> Result<Strin
 
     let rhs = value_result.ok().unwrap();
     return if expr.op == PrefixUnaryOperator::Bang {
-        Ok((!rhs.eq("true")).to_string())
+        Ok(Value::Boolean(!rhs.as_bool()))
     } else {
-        Ok((-rhs.parse::<i64>().unwrap()).to_string())
+        Ok(Value::Number(-rhs.as_number()))
     };
 }
 
-fn evaluate_arithmetic(expr: &ArithmeticExpression, object: &GQLObject) -> Result<String, String> {
+fn evaluate_arithmetic(expr: &ArithmeticExpression, object: &GQLObject) -> Result<Value, String> {
     let lhs_result = evaluate_expression(&expr.left, object);
     if lhs_result.is_err() {
         return lhs_result;
@@ -167,12 +164,12 @@ fn evaluate_arithmetic(expr: &ArithmeticExpression, object: &GQLObject) -> Resul
         return lhs_result;
     }
 
-    let lhs = lhs_result.ok().unwrap().parse::<i64>().unwrap();
-    let rhs = rhs_result.ok().unwrap().parse::<i64>().unwrap();
+    let lhs = lhs_result.ok().unwrap().as_number();
+    let rhs = rhs_result.ok().unwrap().as_number();
 
     return match expr.operator {
-        ArithmeticOperator::Plus => Ok((lhs + rhs).to_string()),
-        ArithmeticOperator::Minus => Ok((lhs - rhs).to_string()),
+        ArithmeticOperator::Plus => Ok(Value::Number(lhs + rhs)),
+        ArithmeticOperator::Minus => Ok(Value::Number(lhs - rhs)),
         ArithmeticOperator::Star => {
             let mul_result = lhs.overflowing_mul(rhs);
             if mul_result.1 {
@@ -181,14 +178,14 @@ fn evaluate_arithmetic(expr: &ArithmeticExpression, object: &GQLObject) -> Resul
                     lhs, rhs
                 ))
             } else {
-                Ok(mul_result.0.to_string())
+                Ok(Value::Number(mul_result.0))
             }
         }
         ArithmeticOperator::Slash => {
             if rhs == 0 {
                 Err(format!("Attempt to divide `{}` by zero", lhs))
             } else {
-                Ok((lhs / rhs).to_string())
+                Ok(Value::Number(lhs / rhs))
             }
         }
         ArithmeticOperator::Modulus => {
@@ -198,13 +195,13 @@ fn evaluate_arithmetic(expr: &ArithmeticExpression, object: &GQLObject) -> Resul
                     lhs
                 ))
             } else {
-                Ok((lhs % rhs).to_string())
+                Ok(Value::Number(lhs % rhs))
             }
         }
     };
 }
 
-fn evaluate_comparison(expr: &ComparisonExpression, object: &GQLObject) -> Result<String, String> {
+fn evaluate_comparison(expr: &ComparisonExpression, object: &GQLObject) -> Result<Value, String> {
     let lhs_result = evaluate_expression(&expr.left, object);
     if lhs_result.is_err() {
         return lhs_result;
@@ -218,27 +215,30 @@ fn evaluate_comparison(expr: &ComparisonExpression, object: &GQLObject) -> Resul
     let lhs = lhs_result.ok().unwrap();
     let rhs = rhs_result.ok().unwrap();
 
-    let is_string_comparison = expr.left.expr_type() == DataType::Text;
-    let result = if is_string_comparison {
-        lhs.cmp(&rhs)
-    } else {
-        let ilhs = lhs.parse::<i64>().unwrap();
-        let irhs = rhs.parse::<i64>().unwrap();
+    let left_type = expr.left.expr_type();
+    let comparison_result = if left_type == DataType::Number {
+        let ilhs = lhs.as_number();
+        let irhs = rhs.as_number();
         ilhs.cmp(&irhs)
+    } else if left_type == DataType::Boolean {
+        let ilhs = lhs.as_bool();
+        let irhs = rhs.as_bool();
+        ilhs.cmp(&irhs)
+    } else {
+        lhs.as_text().cmp(&rhs.as_text())
     };
 
-    return Ok(match expr.operator {
-        ComparisonOperator::Greater => result.is_gt(),
-        ComparisonOperator::GreaterEqual => result.is_ge(),
-        ComparisonOperator::Less => result.is_lt(),
-        ComparisonOperator::LessEqual => result.is_le(),
-        ComparisonOperator::Equal => result.is_eq(),
-        ComparisonOperator::NotEqual => !result.is_eq(),
-    }
-    .to_string());
+    return Ok(Value::Boolean(match expr.operator {
+        ComparisonOperator::Greater => comparison_result.is_gt(),
+        ComparisonOperator::GreaterEqual => comparison_result.is_ge(),
+        ComparisonOperator::Less => comparison_result.is_lt(),
+        ComparisonOperator::LessEqual => comparison_result.is_le(),
+        ComparisonOperator::Equal => comparison_result.is_eq(),
+        ComparisonOperator::NotEqual => !comparison_result.is_eq(),
+    }));
 }
 
-fn evaluate_check(expr: &CheckExpression, object: &GQLObject) -> Result<String, String> {
+fn evaluate_check(expr: &CheckExpression, object: &GQLObject) -> Result<Value, String> {
     let lhs_result = evaluate_expression(&expr.left, object);
     if lhs_result.is_err() {
         return lhs_result;
@@ -249,38 +249,37 @@ fn evaluate_check(expr: &CheckExpression, object: &GQLObject) -> Result<String, 
         return rhs_result;
     }
 
-    let lhs = lhs_result.ok().unwrap();
-    let rhs = rhs_result.ok().unwrap();
+    let lhs = lhs_result.ok().unwrap().as_text();
+    let rhs = rhs_result.ok().unwrap().as_text();
 
     return Ok(match expr.operator {
-        CheckOperator::Contains => lhs.contains(&rhs),
-        CheckOperator::StartsWith => lhs.starts_with(&rhs),
-        CheckOperator::EndsWith => lhs.ends_with(&rhs),
+        CheckOperator::Contains => Value::Boolean(lhs.contains(&rhs)),
+        CheckOperator::StartsWith => Value::Boolean(lhs.starts_with(&rhs)),
+        CheckOperator::EndsWith => Value::Boolean(lhs.ends_with(&rhs)),
         CheckOperator::Matches => {
             let regex = Regex::new(&rhs);
             if regex.is_err() {
-                return Ok("false".to_owned());
+                return Ok(Value::Boolean(false));
             }
-            regex.unwrap().is_match(&lhs)
+            Value::Boolean(regex.unwrap().is_match(&lhs))
         }
-    }
-    .to_string());
+    });
 }
 
-fn evaluate_logical(expr: &LogicalExpression, object: &GQLObject) -> Result<String, String> {
+fn evaluate_logical(expr: &LogicalExpression, object: &GQLObject) -> Result<Value, String> {
     let lhs_result = evaluate_expression(&expr.left, object);
     if lhs_result.is_err() {
         return lhs_result;
     }
 
-    let lhs = lhs_result.ok().unwrap().eq("true");
+    let lhs = lhs_result.ok().unwrap().as_bool();
 
     if expr.operator == LogicalOperator::And && !lhs {
-        return Ok("false".to_owned());
+        return Ok(Value::Boolean(false));
     }
 
     if expr.operator == LogicalOperator::Or && lhs {
-        return Ok("true".to_owned());
+        return Ok(Value::Boolean(true));
     }
 
     let rhs_result = evaluate_expression(&expr.right, object);
@@ -288,17 +287,15 @@ fn evaluate_logical(expr: &LogicalExpression, object: &GQLObject) -> Result<Stri
         return rhs_result;
     }
 
-    let rhs = rhs_result.ok().unwrap().eq("true");
-
-    return Ok(match expr.operator {
+    let rhs = rhs_result.ok().unwrap().as_bool();
+    return Ok(Value::Boolean(match expr.operator {
         LogicalOperator::And => lhs && rhs,
         LogicalOperator::Or => lhs || rhs,
         LogicalOperator::Xor => lhs ^ rhs,
-    }
-    .to_string());
+    }));
 }
 
-fn evaluate_bitwise(expr: &BitwiseExpression, object: &GQLObject) -> Result<String, String> {
+fn evaluate_bitwise(expr: &BitwiseExpression, object: &GQLObject) -> Result<Value, String> {
     let lhs_result = evaluate_expression(&expr.left, object);
     if lhs_result.is_err() {
         return lhs_result;
@@ -309,30 +306,30 @@ fn evaluate_bitwise(expr: &BitwiseExpression, object: &GQLObject) -> Result<Stri
         return rhs_result;
     }
 
-    let lhs = lhs_result.ok().unwrap().parse::<i64>().unwrap();
-    let rhs = rhs_result.ok().unwrap().parse::<i64>().unwrap();
+    let lhs = lhs_result.ok().unwrap().as_number();
+    let rhs = rhs_result.ok().unwrap().as_number();
 
     return match expr.operator {
-        BitwiseOperator::Or => Ok((lhs | rhs).to_string()),
-        BitwiseOperator::And => Ok((lhs & rhs).to_string()),
+        BitwiseOperator::Or => Ok(Value::Number(lhs | rhs)),
+        BitwiseOperator::And => Ok(Value::Number(lhs & rhs)),
         BitwiseOperator::RightShift => {
             if rhs >= 64 {
                 Err("Attempt to shift right with overflow".to_string())
             } else {
-                Ok((lhs >> rhs).to_string())
+                Ok(Value::Number(lhs >> rhs))
             }
         }
         BitwiseOperator::LeftShift => {
             if rhs >= 64 {
                 Err("Attempt to shift left with overflow".to_string())
             } else {
-                Ok((lhs << rhs).to_string())
+                Ok(Value::Number(lhs << rhs))
             }
         }
     };
 }
 
-fn evaluate_call(expr: &CallExpression, object: &GQLObject) -> Result<String, String> {
+fn evaluate_call(expr: &CallExpression, object: &GQLObject) -> Result<Value, String> {
     let lhs_result = evaluate_expression(&expr.callee, object);
     if lhs_result.is_err() {
         return lhs_result;
@@ -342,7 +339,7 @@ fn evaluate_call(expr: &CallExpression, object: &GQLObject) -> Result<String, St
     return Ok(transformation(lhs));
 }
 
-fn evaluate_between(expr: &BetweenExpression, object: &GQLObject) -> Result<String, String> {
+fn evaluate_between(expr: &BetweenExpression, object: &GQLObject) -> Result<Value, String> {
     let value_result = evaluate_expression(&expr.value, object);
     if value_result.is_err() {
         return value_result;
@@ -358,14 +355,13 @@ fn evaluate_between(expr: &BetweenExpression, object: &GQLObject) -> Result<Stri
         return range_end_result;
     }
 
-    let value = value_result.ok().unwrap().parse::<i64>().unwrap();
-    let range_start = range_start_result.ok().unwrap().parse::<i64>().unwrap();
-    let range_end = range_end_result.ok().unwrap().parse::<i64>().unwrap();
-
-    return Ok((value >= range_start && value <= range_end).to_string());
+    let value = value_result.ok().unwrap().as_number();
+    let range_start = range_start_result.ok().unwrap().as_number();
+    let range_end = range_end_result.ok().unwrap().as_number();
+    return Ok(Value::Boolean(value >= range_start && value <= range_end));
 }
 
-fn evaluate_case(expr: &CaseExpression, object: &GQLObject) -> Result<String, String> {
+fn evaluate_case(expr: &CaseExpression, object: &GQLObject) -> Result<Value, String> {
     let conditions = &expr.conditions;
     let values = &expr.values;
 
@@ -376,7 +372,7 @@ fn evaluate_case(expr: &CaseExpression, object: &GQLObject) -> Result<String, St
         }
 
         let condition = condition_result.ok().unwrap();
-        if condition.eq("true") {
+        if condition.as_bool() {
             return evaluate_expression(&values[i], object);
         }
     }

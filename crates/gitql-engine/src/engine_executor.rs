@@ -118,7 +118,7 @@ fn execute_where_statement(
             return Err(eval_result.err().unwrap());
         }
 
-        if eval_result.ok().unwrap().eq("true") {
+        if eval_result.ok().unwrap().as_bool() {
             filtered_group.push(object.clone());
         }
     }
@@ -152,7 +152,7 @@ fn execute_having_statement(
             return Err(eval_result.err().unwrap());
         }
 
-        if eval_result.ok().unwrap().eq("true") {
+        if eval_result.ok().unwrap().as_bool() {
             filtered_group.push(object.clone());
         }
     }
@@ -240,17 +240,14 @@ fn execute_order_by_statement(
                     .attributes
                     .get(&statement.field_name.to_string())
                     .unwrap()
-                    .to_string()
-                    .parse::<i64>()
-                    .unwrap();
+                    .as_number();
 
                 let other = b
                     .attributes
                     .get(&statement.field_name.to_string())
                     .unwrap()
-                    .to_string()
-                    .parse::<i64>()
-                    .unwrap();
+                    .as_number();
+
                 first_value.partial_cmp(&other).unwrap()
             });
         } else {
@@ -259,7 +256,7 @@ fn execute_order_by_statement(
                     .attributes
                     .get(&statement.field_name.to_string())
                     .unwrap()
-                    .to_string()
+                    .as_text()
             });
         }
 
@@ -294,14 +291,14 @@ fn execute_group_by_statement(
         let field_value = object.attributes.get(&statement.field_name).unwrap();
 
         // If there is an existing group for this value, append current object to it
-        if groups_map.contains_key(field_value) {
-            let index = *groups_map.get(field_value).unwrap();
+        if groups_map.contains_key(&field_value.as_text()) {
+            let index = *groups_map.get(&field_value.as_text()).unwrap();
             let target_group = &mut groups[index];
             target_group.push(object.to_owned());
         }
         // Push a new group for this unique value and update the next index
         else {
-            groups_map.insert(field_value.to_string(), next_group_index);
+            groups_map.insert(field_value.as_text(), next_group_index);
             next_group_index += 1;
             groups.push(vec![object.to_owned()]);
         }
@@ -339,7 +336,7 @@ fn execute_aggregation_function_statement(
             for object in group.into_iter() {
                 object
                     .attributes
-                    .insert(result_column_name.to_string(), result.to_string());
+                    .insert(result_column_name.to_string(), result.to_owned());
             }
         }
 

@@ -21,9 +21,9 @@ Transform String value to String with removes whitespace from the start and eng 
 SELECT * FROM commits where name.trim = ""
 ```
 
-### String length
+### String len
 Transform String value to the length of it
 
 ```sql
-SELECT * FROM commits where name.length > 0
+SELECT * FROM commits where name.len > 0
 ```

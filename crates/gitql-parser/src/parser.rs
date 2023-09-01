@@ -2,12 +2,12 @@ use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-use crate::aggregation::AGGREGATIONS;
-use crate::aggregation::AGGREGATIONS_PROTOS;
 use crate::diagnostic::GQLError;
 use crate::tokenizer::Location;
 use crate::tokenizer::{Token, TokenKind};
 
+use gitql_ast::aggregation::AGGREGATIONS;
+use gitql_ast::aggregation::AGGREGATIONS_PROTOS;
 use gitql_ast::expression::*;
 use gitql_ast::statement::*;
 use gitql_ast::transformation::TRANSFORMATIONS;

@@ -8,6 +8,7 @@ pub enum DataType {
     Number,
     Boolean,
     Date,
+    Null,
 }
 
 impl DataType {
@@ -18,6 +19,7 @@ impl DataType {
             DataType::Number => "Number",
             DataType::Boolean => "Boolean",
             DataType::Date => "Date",
+            DataType::Null => "Null",
         };
     }
 }
