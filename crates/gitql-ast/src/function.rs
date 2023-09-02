@@ -17,6 +17,8 @@ lazy_static! {
         // String functions
         map.insert("lower", text_lowercase);
         map.insert("upper", text_uppercase);
+        map.insert("reverse", text_reverse);
+        map.insert("replicate", text_replicate);
         map.insert("trim", text_trim);
         map.insert("len", text_len);
         map
@@ -33,7 +35,6 @@ lazy_static! {
                 result: DataType::Text,
             },
         );
-
         map.insert(
             "upper",
             Prototype {
@@ -41,7 +42,20 @@ lazy_static! {
                 result: DataType::Text,
             },
         );
-
+        map.insert(
+            "reverse",
+            Prototype {
+                parameters: vec![DataType::Text],
+                result: DataType::Text,
+            },
+        );
+        map.insert(
+            "replicate",
+            Prototype {
+                parameters: vec![DataType::Text, DataType::Number],
+                result: DataType::Text,
+            },
+        );
         map.insert(
             "trim",
             Prototype {
@@ -49,7 +63,6 @@ lazy_static! {
                 result: DataType::Text,
             },
         );
-
         map.insert(
             "len",
             Prototype {
@@ -67,6 +80,16 @@ fn text_lowercase(inputs: Vec<Value>) -> Value {
 
 fn text_uppercase(inputs: Vec<Value>) -> Value {
     return Value::Text(inputs[0].as_text().to_uppercase());
+}
+
+fn text_reverse(inputs: Vec<Value>) -> Value {
+    return Value::Text(inputs[0].as_text().chars().rev().collect::<String>());
+}
+
+fn text_replicate(inputs: Vec<Value>) -> Value {
+    let str = inputs[0].as_text();
+    let count = inputs[1].as_number() as usize;
+    return Value::Text(str.repeat(count));
 }
 
 fn text_trim(inputs: Vec<Value>) -> Value {

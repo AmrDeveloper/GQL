@@ -140,12 +140,7 @@ fn evaluate_boolean(expr: &BooleanExpression) -> Result<Value, String> {
 }
 
 fn evaluate_prefix_unary(expr: &PrefixUnary, object: &GQLObject) -> Result<Value, String> {
-    let value_result = evaluate_expression(&expr.right, object);
-    if value_result.is_err() {
-        return value_result;
-    }
-
-    let rhs = value_result.ok().unwrap();
+    let rhs = evaluate_expression(&expr.right, object)?;
     return if expr.op == PrefixUnaryOperator::Bang {
         Ok(Value::Boolean(!rhs.as_bool()))
     } else {
@@ -154,18 +149,8 @@ fn evaluate_prefix_unary(expr: &PrefixUnary, object: &GQLObject) -> Result<Value
 }
 
 fn evaluate_arithmetic(expr: &ArithmeticExpression, object: &GQLObject) -> Result<Value, String> {
-    let lhs_result = evaluate_expression(&expr.left, object);
-    if lhs_result.is_err() {
-        return lhs_result;
-    }
-
-    let rhs_result = evaluate_expression(&expr.right, object);
-    if rhs_result.is_err() {
-        return lhs_result;
-    }
-
-    let lhs = lhs_result.ok().unwrap().as_number();
-    let rhs = rhs_result.ok().unwrap().as_number();
+    let lhs = evaluate_expression(&expr.left, object)?.as_number();
+    let rhs = evaluate_expression(&expr.right, object)?.as_number();
 
     return match expr.operator {
         ArithmeticOperator::Plus => Ok(Value::Number(lhs + rhs)),
@@ -202,18 +187,8 @@ fn evaluate_arithmetic(expr: &ArithmeticExpression, object: &GQLObject) -> Resul
 }
 
 fn evaluate_comparison(expr: &ComparisonExpression, object: &GQLObject) -> Result<Value, String> {
-    let lhs_result = evaluate_expression(&expr.left, object);
-    if lhs_result.is_err() {
-        return lhs_result;
-    }
-
-    let rhs_result = evaluate_expression(&expr.right, object);
-    if rhs_result.is_err() {
-        return lhs_result;
-    }
-
-    let lhs = lhs_result.ok().unwrap();
-    let rhs = rhs_result.ok().unwrap();
+    let lhs = evaluate_expression(&expr.left, object)?;
+    let rhs = evaluate_expression(&expr.right, object)?;
 
     let left_type = expr.left.expr_type();
     let comparison_result = if left_type == DataType::Number {
@@ -239,18 +214,8 @@ fn evaluate_comparison(expr: &ComparisonExpression, object: &GQLObject) -> Resul
 }
 
 fn evaluate_check(expr: &CheckExpression, object: &GQLObject) -> Result<Value, String> {
-    let lhs_result = evaluate_expression(&expr.left, object);
-    if lhs_result.is_err() {
-        return lhs_result;
-    }
-
-    let rhs_result = evaluate_expression(&expr.right, object);
-    if rhs_result.is_err() {
-        return rhs_result;
-    }
-
-    let lhs = lhs_result.ok().unwrap().as_text();
-    let rhs = rhs_result.ok().unwrap().as_text();
+    let lhs = evaluate_expression(&expr.left, object)?.as_text();
+    let rhs = evaluate_expression(&expr.right, object)?.as_text();
 
     return Ok(match expr.operator {
         CheckOperator::Contains => Value::Boolean(lhs.contains(&rhs)),
@@ -267,13 +232,7 @@ fn evaluate_check(expr: &CheckExpression, object: &GQLObject) -> Result<Value, S
 }
 
 fn evaluate_logical(expr: &LogicalExpression, object: &GQLObject) -> Result<Value, String> {
-    let lhs_result = evaluate_expression(&expr.left, object);
-    if lhs_result.is_err() {
-        return lhs_result;
-    }
-
-    let lhs = lhs_result.ok().unwrap().as_bool();
-
+    let lhs = evaluate_expression(&expr.left, object)?.as_bool();
     if expr.operator == LogicalOperator::And && !lhs {
         return Ok(Value::Boolean(false));
     }
@@ -282,12 +241,8 @@ fn evaluate_logical(expr: &LogicalExpression, object: &GQLObject) -> Result<Valu
         return Ok(Value::Boolean(true));
     }
 
-    let rhs_result = evaluate_expression(&expr.right, object);
-    if rhs_result.is_err() {
-        return rhs_result;
-    }
+    let rhs = evaluate_expression(&expr.right, object)?.as_bool();
 
-    let rhs = rhs_result.ok().unwrap().as_bool();
     return Ok(Value::Boolean(match expr.operator {
         LogicalOperator::And => lhs && rhs,
         LogicalOperator::Or => lhs || rhs,
@@ -296,18 +251,8 @@ fn evaluate_logical(expr: &LogicalExpression, object: &GQLObject) -> Result<Valu
 }
 
 fn evaluate_bitwise(expr: &BitwiseExpression, object: &GQLObject) -> Result<Value, String> {
-    let lhs_result = evaluate_expression(&expr.left, object);
-    if lhs_result.is_err() {
-        return lhs_result;
-    }
-
-    let rhs_result = evaluate_expression(&expr.right, object);
-    if rhs_result.is_err() {
-        return rhs_result;
-    }
-
-    let lhs = lhs_result.ok().unwrap().as_number();
-    let rhs = rhs_result.ok().unwrap().as_number();
+    let lhs = evaluate_expression(&expr.left, object)?.as_number();
+    let rhs = evaluate_expression(&expr.right, object)?.as_number();
 
     return match expr.operator {
         BitwiseOperator::Or => Ok(Value::Number(lhs | rhs)),
@@ -330,14 +275,17 @@ fn evaluate_bitwise(expr: &BitwiseExpression, object: &GQLObject) -> Result<Valu
 }
 
 fn evaluate_call(expr: &CallExpression, object: &GQLObject) -> Result<Value, String> {
-    let lhs_result = evaluate_expression(&expr.callee, object);
-    if lhs_result.is_err() {
-        return lhs_result;
-    }
-    let lhs = lhs_result.ok().unwrap();
+    let lhs = evaluate_expression(&expr.callee, object)?;
+
     let function_name = expr.function_name.as_str();
     let function = FUNCTIONS.get(function_name).unwrap();
-    return Ok(function(vec![lhs]));
+
+    let mut arguments = vec![lhs];
+    for arg in expr.arguments.iter() {
+        arguments.push(evaluate_expression(arg, object)?);
+    }
+
+    return Ok(function(arguments));
 }
 
 fn evaluate_between(expr: &BetweenExpression, object: &GQLObject) -> Result<Value, String> {
@@ -367,12 +315,7 @@ fn evaluate_case(expr: &CaseExpression, object: &GQLObject) -> Result<Value, Str
     let values = &expr.values;
 
     for i in 0..conditions.len() {
-        let condition_result = evaluate_expression(&conditions[i], object);
-        if condition_result.is_err() {
-            return condition_result;
-        }
-
-        let condition = condition_result.ok().unwrap();
+        let condition = evaluate_expression(&conditions[i], object)?;
         if condition.as_bool() {
             return evaluate_expression(&values[i], object);
         }
