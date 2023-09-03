@@ -275,12 +275,10 @@ fn evaluate_bitwise(expr: &BitwiseExpression, object: &GQLObject) -> Result<Valu
 }
 
 fn evaluate_call(expr: &CallExpression, object: &GQLObject) -> Result<Value, String> {
-    let lhs = evaluate_expression(&expr.callee, object)?;
-
     let function_name = expr.function_name.as_str();
     let function = FUNCTIONS.get(function_name).unwrap();
 
-    let mut arguments = vec![lhs];
+    let mut arguments = vec![];
     for arg in expr.arguments.iter() {
         arguments.push(evaluate_expression(arg, object)?);
     }

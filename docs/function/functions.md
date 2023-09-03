@@ -14,9 +14,9 @@ note that all functions names are case-insensitive.
 ### String functions samples
 
 ```sql
-SELECT * FROM commits where name.lower = "amrdeveloper"
-SELECT * FROM commits where name.upper = "AMRDEVELOPER"
-SELECT * FROM commits where name.reverse = "repolevedrma"
-SELECT * FROM commits where name.trim = ""
-SELECT * FROM commits where name.len > 0
+SELECT * FROM commits where LOWER(name) = "amrdeveloper"
+SELECT * FROM commits where UPPER(name) = "AMRDEVELOPER"
+SELECT * FROM commits where REVERSE(name) = "repolevedrma"
+SELECT * FROM commits where TRIM(name) = ""
+SELECT * FROM commits where LEN(name) > 0
 ```

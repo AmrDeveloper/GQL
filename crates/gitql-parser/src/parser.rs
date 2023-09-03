@@ -1188,17 +1188,9 @@ fn parse_bitwise_shift_expression(
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
-    let expression = parse_term_expression(tokens, position);
-    if expression.is_err() || *position >= tokens.len() {
-        return expression;
-    }
+    let mut lhs = parse_term_expression(tokens, position)?;
 
-    let mut lhs = expression.ok().unwrap();
-
-    while *position < tokens.len()
-        && (&tokens[*position].kind == &TokenKind::BitwiseRightShift
-            || &tokens[*position].kind == &TokenKind::BitwiseLeftShift)
-    {
+    while *position < tokens.len() && is_bitwise_shift_operator(&tokens[*position]) {
         let operator = &tokens[*position];
         *position += 1;
         let bitwise_operator = if operator.kind == TokenKind::BitwiseRightShift {
@@ -1241,17 +1233,9 @@ fn parse_term_expression(
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
-    let expression = parse_factor_expression(tokens, position);
-    if expression.is_err() || *position >= tokens.len() {
-        return expression;
-    }
+    let mut lhs = parse_factor_expression(tokens, position)?;
 
-    let mut lhs = expression.ok().unwrap();
-
-    while *position < tokens.len()
-        && (&tokens[*position].kind == &TokenKind::Plus
-            || &tokens[*position].kind == &TokenKind::Minus)
-    {
+    while *position < tokens.len() && is_term_operator(&tokens[*position]) {
         let operator = &tokens[*position];
         *position += 1;
         let math_operator = if operator.kind == TokenKind::Plus {
@@ -1260,12 +1244,7 @@ fn parse_term_expression(
             ArithmeticOperator::Minus
         };
 
-        let right_expr = parse_factor_expression(tokens, position);
-        if right_expr.is_err() {
-            return Err(right_expr.err().unwrap());
-        }
-
-        let rhs = right_expr.ok().unwrap();
+        let rhs = parse_factor_expression(tokens, position)?;
 
         // Make sure right and left hand side types are numbers
         if rhs.expr_type() == DataType::Number && rhs.expr_type() != lhs.expr_type() {
@@ -1423,117 +1402,90 @@ fn parse_unary_expression(
         return Ok(Box::new(PrefixUnary { right: rhs, op }));
     }
 
-    return parse_dot_expression(tokens, position);
+    return parse_function_call_expression(tokens, position);
 }
 
-fn parse_dot_expression(
+fn parse_function_call_expression(
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
-    let mut expression = parse_primary_expression(tokens, position);
-    if expression.is_err() || *position >= tokens.len() {
-        return expression;
-    }
+    let expression = parse_primary_expression(tokens, position)?;
+    if *position < tokens.len() && tokens[*position].kind == TokenKind::LeftParen {
+        let symbol_expression = expression.as_any().downcast_ref::<SymbolExpression>();
+        let function_name_location = get_safe_location(tokens, *position);
 
-    while (&tokens[*position]).kind == TokenKind::Dot {
-        *position += 1;
-
-        let function_name_result = consume_kind(tokens, *position, TokenKind::Symbol);
-        if function_name_result.is_err() {
+        // Make sure function name is SymbolExpression
+        if symbol_expression.is_none() {
             return Err(GQLError {
-                message: "Expect `identifier` as a function name".to_owned(),
-                location: get_safe_location(tokens, *position),
+                message: "Function name must be identifier".to_owned(),
+                location: function_name_location,
             });
         }
 
-        let function_name = function_name_result
-            .ok()
-            .unwrap()
-            .literal
-            .to_string()
-            .to_lowercase();
-
-        let function_name_location = tokens[*position].location;
+        // Make sure it's valid function name
+        let function_name = &symbol_expression.unwrap().value;
         if !FUNCTIONS.contains_key(function_name.as_str()) {
             return Err(GQLError {
-                message: "Invalid GQL function name".to_owned(),
+                message: "Un resolved function name".to_owned(),
                 location: function_name_location,
             });
         }
 
-        *position += 1;
-        let callee = expression.ok().unwrap();
-
-        let arguments_result = parse_call_arguments_expressions(tokens, position);
-        if arguments_result.is_err() {
-            return Err(arguments_result.err().unwrap());
-        }
-
-        let arguments = arguments_result.ok().unwrap();
-
+        let arguments = parse_call_arguments_expressions(tokens, position)?;
         let prototype = PROTOTYPES.get(function_name.as_str()).unwrap();
         let parameters = &prototype.parameters;
-        let callee_expected = parameters.first().unwrap();
 
-        // Check Callee type
-        if &callee.expr_type() != callee_expected {
-            let message = format!(
-                "Function `{}` must be called from type `{}` not `{}`",
-                function_name,
-                callee_expected.literal(),
-                callee.expr_type().literal()
-            );
+        check_function_call_arguments(
+            &arguments,
+            parameters,
+            function_name.to_string(),
+            function_name_location,
+        )?;
 
-            return Err(GQLError {
-                message: message,
-                location: function_name_location,
-            });
-        }
-
-        // Check number of parameters and arguments
-        if arguments.len() != (parameters.len() - 1) {
-            let message = format!(
-                "Function `{}` expect `{}` arguments but got `{}`",
-                function_name,
-                parameters.len() - 1,
-                arguments.len()
-            );
-
-            return Err(GQLError {
-                message: message,
-                location: function_name_location,
-            });
-        }
-
-        // Check arguments vs parameters
-        for index in 0..arguments.len() {
-            let parameter_type = parameters.get(index + 1).unwrap();
-            let argument_type = arguments.get(index).unwrap().expr_type();
-
-            if parameter_type != &argument_type {
-                let message = format!(
-                    "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
-                    function_name,
-                    index,
-                    parameters.len() - 1,
-                    arguments.len()
-                );
-
-                return Err(GQLError {
-                    message: message,
-                    location: function_name_location,
-                });
-            }
-        }
-
-        expression = Ok(Box::new(CallExpression {
-            function_name,
-            callee,
+        return Ok(Box::new(CallExpression {
+            function_name: function_name.to_string(),
             arguments,
         }));
     }
+    return Ok(expression);
+}
 
-    return expression;
+fn check_function_call_arguments(
+    arguments: &Vec<Box<dyn Expression>>,
+    parameters: &Vec<DataType>,
+    function_name: String,
+    location: Location,
+) -> Result<(), GQLError> {
+    let arguments_len = arguments.len();
+    let parameters_len = parameters.len();
+
+    // Make sure number of arguments and parameters are the same
+    if arguments_len != parameters_len {
+        let message = format!(
+            "Function `{}` expects `{}` arguments but got `{}`",
+            function_name, parameters_len, arguments_len
+        );
+        return Err(GQLError { message, location });
+    }
+
+    // Check each argument vs parameter type
+    for index in 0..arguments_len {
+        let argument_type = arguments.get(index).unwrap().expr_type();
+        let parameter_type = parameters.get(index).unwrap();
+
+        if argument_type != *parameter_type {
+            let message = format!(
+                "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
+                function_name,
+                index,
+                argument_type.literal(),
+                parameter_type.literal()
+            );
+            return Err(GQLError { message, location });
+        }
+    }
+
+    return Ok(());
 }
 
 fn parse_call_arguments_expressions(
@@ -1588,26 +1540,14 @@ fn parse_primary_expression(
         }
         TokenKind::Symbol => {
             *position += 1;
-
-            let literal = &tokens[*position - 1].literal;
-            if unsafe { !CURRENT_TABLE_FIELDS.contains(literal) } {
-                return Err(GQLError {
-                    message: "The current table contains no selected field with this name"
-                        .to_owned(),
-                    location: get_safe_location(tokens, *position - 1),
-                });
-            }
-
-            return Ok(Box::new(SymbolExpression {
-                value: literal.to_string(),
-            }));
+            let value = tokens[*position - 1].literal.to_string();
+            return Ok(Box::new(SymbolExpression { value }));
         }
         TokenKind::Number => {
             *position += 1;
             let value = tokens[*position - 1].literal.parse::<i64>().unwrap();
             return Ok(Box::new(NumberExpression { value }));
         }
-
         TokenKind::True => {
             *position += 1;
             return Ok(Box::new(BooleanExpression { is_true: true }));
@@ -1616,21 +1556,26 @@ fn parse_primary_expression(
             *position += 1;
             return Ok(Box::new(BooleanExpression { is_true: false }));
         }
-        TokenKind::LeftParen => {
-            *position += 1;
-            let expression = parse_expression(tokens, position);
-            if tokens[*position].kind != TokenKind::RightParen {
-                return Err(GQLError {
-                    message: "Expect `)` to end group expression".to_owned(),
-                    location: get_safe_location(tokens, *position),
-                });
-            }
-            *position += 1;
-            return expression;
-        }
+        TokenKind::LeftParen => return parse_group_expression(tokens, position),
         TokenKind::Case => return parse_case_expression(tokens, position),
         _ => return Err(un_expected_token_error(tokens, position)),
     };
+}
+
+fn parse_group_expression(
+    tokens: &Vec<Token>,
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, GQLError> {
+    *position += 1;
+    let expression = parse_expression(tokens, position)?;
+    if tokens[*position].kind != TokenKind::RightParen {
+        return Err(GQLError {
+            message: "Expect `)` to end group expression".to_owned(),
+            location: get_safe_location(tokens, *position),
+        });
+    }
+    *position += 1;
+    return Ok(expression);
 }
 
 fn parse_case_expression(
@@ -1840,6 +1785,16 @@ fn get_safe_location(tokens: &Vec<Token>, position: usize) -> Location {
         return tokens[position].location;
     }
     return tokens[tokens.len() - 1].location;
+}
+
+#[inline(always)]
+fn is_term_operator(token: &Token) -> bool {
+    return token.kind == TokenKind::Plus || token.kind == TokenKind::Minus;
+}
+
+#[inline(always)]
+fn is_bitwise_shift_operator(token: &Token) -> bool {
+    return token.kind == TokenKind::BitwiseLeftShift || token.kind == TokenKind::BitwiseRightShift;
 }
 
 #[inline(always)]

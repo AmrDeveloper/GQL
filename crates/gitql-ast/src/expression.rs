@@ -54,10 +54,15 @@ impl Expression for SymbolExpression {
     }
 
     fn expr_type(&self) -> DataType {
-        return TABLES_FIELDS_TYPES
-            .get(self.value.as_str())
-            .unwrap()
-            .clone();
+        let is_valid_name = TABLES_FIELDS_TYPES.contains_key(self.value.as_str());
+        return if is_valid_name {
+            TABLES_FIELDS_TYPES
+                .get(self.value.as_str())
+                .unwrap()
+                .clone()
+        } else {
+            DataType::Null
+        };
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -273,9 +278,8 @@ impl Expression for BitwiseExpression {
 }
 
 pub struct CallExpression {
-    pub callee: Box<dyn Expression>,
-    pub arguments: Vec<Box<dyn Expression>>,
     pub function_name: String,
+    pub arguments: Vec<Box<dyn Expression>>,
 }
 
 impl Expression for CallExpression {
