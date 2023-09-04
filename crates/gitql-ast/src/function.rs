@@ -19,6 +19,7 @@ lazy_static! {
         map.insert("upper", text_uppercase);
         map.insert("reverse", text_reverse);
         map.insert("replicate", text_replicate);
+        map.insert("space", text_space);
         map.insert("trim", text_trim);
         map.insert("len", text_len);
         map
@@ -57,6 +58,13 @@ lazy_static! {
             },
         );
         map.insert(
+            "space",
+            Prototype {
+                parameters: vec![DataType::Number],
+                result: DataType::Text,
+            },
+        );
+        map.insert(
             "trim",
             Prototype {
                 parameters: vec![DataType::Text],
@@ -90,6 +98,11 @@ fn text_replicate(inputs: Vec<Value>) -> Value {
     let str = inputs[0].as_text();
     let count = inputs[1].as_number() as usize;
     return Value::Text(str.repeat(count));
+}
+
+fn text_space(inputs: Vec<Value>) -> Value {
+    let n = inputs[0].as_number() as usize;
+    return Value::Text(" ".repeat(n));
 }
 
 fn text_trim(inputs: Vec<Value>) -> Value {
