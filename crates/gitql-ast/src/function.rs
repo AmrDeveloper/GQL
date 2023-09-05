@@ -21,6 +21,8 @@ lazy_static! {
         map.insert("replicate", text_replicate);
         map.insert("space", text_space);
         map.insert("trim", text_trim);
+        map.insert("ltrim", text_left_trim);
+        map.insert("rtrim", text_right_trim);
         map.insert("len", text_len);
         map
     };
@@ -72,6 +74,20 @@ lazy_static! {
             },
         );
         map.insert(
+            "ltrim",
+            Prototype {
+                parameters: vec![DataType::Text],
+                result: DataType::Text,
+            },
+        );
+        map.insert(
+            "rtrim",
+            Prototype {
+                parameters: vec![DataType::Text],
+                result: DataType::Text,
+            },
+        );
+        map.insert(
             "len",
             Prototype {
                 parameters: vec![DataType::Text],
@@ -107,6 +123,14 @@ fn text_space(inputs: Vec<Value>) -> Value {
 
 fn text_trim(inputs: Vec<Value>) -> Value {
     return Value::Text(inputs[0].as_text().trim().to_string());
+}
+
+fn text_left_trim(inputs: Vec<Value>) -> Value {
+    return Value::Text(inputs[0].as_text().trim_start().to_string());
+}
+
+fn text_right_trim(inputs: Vec<Value>) -> Value {
+    return Value::Text(inputs[0].as_text().trim_end().to_string());
 }
 
 fn text_len(inputs: Vec<Value>) -> Value {
