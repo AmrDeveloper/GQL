@@ -28,6 +28,10 @@ GQL is a query language with a syntax very similar to SQL with a tiny engine to 
 ### Samples
 
 ```sql
+SELECT 1
+SELECT 1 + 2
+SELECT LEN("Git Query Language")
+
 SELECT name, COUNT(name) AS commit_num FROM commits GROUP BY name ORDER BY commit_num DESC LIMIT 10
 SELECT commit_count FROM branches WHERE commit_count BETWEEN 0 .. 10
 
@@ -46,6 +50,7 @@ SELECT * FROM branches
 SELECT * FROM branches WHERE is_head = true
 SELECT * FROM branches WHERE name ends_with "master"
 SELECT * FROM branches WHERE name contains "origin"
+SELECT name, LEN(name) FROM branches
 
 SELECT * FROM tags
 SELECT * FROM tags OFFSET 1 LIMIT 1
