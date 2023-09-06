@@ -1,6 +1,33 @@
 Change Log
 ==========
 
+Version 0.6.0 *(2023-09-06)*
+-----------------------------
+
+* Support `<<` and `>>` overflow.
+* Fix reporting error with out of index position.
+* Implement `Case` expression.
+* Support bang equal != for comparisons.
+* Improve error message for unexpected token.
+* Support negative numbers.
+* Add repository path as a field for data all tables.
+* Make function name case-insensitive.
+* Support Text `reverse` function.
+* Support Text `replicate` function.
+* Support Text `ltrim`, `rtrim` function.
+* Select the same field twice.
+* Optimize engine to work on one repo only if table name is empty.
+* Fix merging empty groups.
+* Add custom error message for invalid use of `asc` and `desc`.
+* Fix resolving symbols.
+* Fix name alias for non symbols.
+* Fix name alias for aggregation function.
+* Use aggregation function after select statement.
+* Don't allow using aggregation in where statement.
+* Fix hidden selections.
+* Alias the same name twice
+* Fix evaluate function before argument
+
 Version 0.5.0 *(2023-08-23)*
 -----------------------------
 
