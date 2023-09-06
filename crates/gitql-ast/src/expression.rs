@@ -1,8 +1,8 @@
 use std::any::Any;
 
 use crate::function::PROTOTYPES;
-use crate::types::DataType;
-use crate::types::TABLES_FIELDS_TYPES;
+use crate::scope::Scope;
+use crate::types::{DataType, TABLES_FIELDS_TYPES};
 
 pub enum ExpressionKind {
     String,
@@ -22,7 +22,7 @@ pub enum ExpressionKind {
 
 pub trait Expression {
     fn get_expression_kind(&self) -> ExpressionKind;
-    fn expr_type(&self) -> DataType;
+    fn expr_type(&self, scope: &Scope) -> DataType;
     fn as_any(&self) -> &dyn Any;
 }
 
@@ -35,7 +35,7 @@ impl Expression for StringExpression {
         ExpressionKind::String
     }
 
-    fn expr_type(&self) -> DataType {
+    fn expr_type(&self, _scope: &Scope) -> DataType {
         return DataType::Text;
     }
 
@@ -53,16 +53,18 @@ impl Expression for SymbolExpression {
         ExpressionKind::Symbol
     }
 
-    fn expr_type(&self) -> DataType {
-        let is_valid_name = TABLES_FIELDS_TYPES.contains_key(self.value.as_str());
-        return if is_valid_name {
-            TABLES_FIELDS_TYPES
-                .get(self.value.as_str())
-                .unwrap()
-                .clone()
-        } else {
-            DataType::Null
-        };
+    fn expr_type(&self, scope: &Scope) -> DataType {
+        // Search in symbol table
+        if scope.contains(&self.value) {
+            return scope.env[self.value.as_str()].clone();
+        }
+
+        // Search in static table fields types
+        if TABLES_FIELDS_TYPES.contains_key(&self.value.as_str()) {
+            return TABLES_FIELDS_TYPES[&self.value.as_str()].clone();
+        }
+
+        return DataType::Undefined;
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -79,7 +81,7 @@ impl Expression for NumberExpression {
         ExpressionKind::Number
     }
 
-    fn expr_type(&self) -> DataType {
+    fn expr_type(&self, _scope: &Scope) -> DataType {
         return DataType::Number;
     }
 
@@ -97,7 +99,7 @@ impl Expression for BooleanExpression {
         ExpressionKind::Boolean
     }
 
-    fn expr_type(&self) -> DataType {
+    fn expr_type(&self, _scope: &Scope) -> DataType {
         return DataType::Boolean;
     }
 
@@ -122,7 +124,7 @@ impl Expression for PrefixUnary {
         ExpressionKind::PrefixUnary
     }
 
-    fn expr_type(&self) -> DataType {
+    fn expr_type(&self, _scope: &Scope) -> DataType {
         return if self.op == PrefixUnaryOperator::Bang {
             DataType::Boolean
         } else {
@@ -155,7 +157,7 @@ impl Expression for ArithmeticExpression {
         ExpressionKind::Arithmetic
     }
 
-    fn expr_type(&self) -> DataType {
+    fn expr_type(&self, _scope: &Scope) -> DataType {
         return DataType::Number;
     }
 
@@ -185,7 +187,7 @@ impl Expression for ComparisonExpression {
         ExpressionKind::Comparison
     }
 
-    fn expr_type(&self) -> DataType {
+    fn expr_type(&self, _scope: &Scope) -> DataType {
         return DataType::Boolean;
     }
 
@@ -213,7 +215,7 @@ impl Expression for CheckExpression {
         ExpressionKind::Check
     }
 
-    fn expr_type(&self) -> DataType {
+    fn expr_type(&self, _scope: &Scope) -> DataType {
         return DataType::Boolean;
     }
 
@@ -240,7 +242,7 @@ impl Expression for LogicalExpression {
         ExpressionKind::Logical
     }
 
-    fn expr_type(&self) -> DataType {
+    fn expr_type(&self, _scope: &Scope) -> DataType {
         return DataType::Boolean;
     }
 
@@ -268,7 +270,7 @@ impl Expression for BitwiseExpression {
         ExpressionKind::Bitwise
     }
 
-    fn expr_type(&self) -> DataType {
+    fn expr_type(&self, _scope: &Scope) -> DataType {
         return DataType::Number;
     }
 
@@ -280,6 +282,7 @@ impl Expression for BitwiseExpression {
 pub struct CallExpression {
     pub function_name: String,
     pub arguments: Vec<Box<dyn Expression>>,
+    pub is_aggregation: bool,
 }
 
 impl Expression for CallExpression {
@@ -287,7 +290,7 @@ impl Expression for CallExpression {
         ExpressionKind::Call
     }
 
-    fn expr_type(&self) -> DataType {
+    fn expr_type(&self, _scope: &Scope) -> DataType {
         let prototype = PROTOTYPES.get(&self.function_name.as_str()).unwrap();
         return prototype.result.clone();
     }
@@ -308,7 +311,7 @@ impl Expression for BetweenExpression {
         ExpressionKind::Between
     }
 
-    fn expr_type(&self) -> DataType {
+    fn expr_type(&self, _scope: &Scope) -> DataType {
         return DataType::Boolean;
     }
 
@@ -329,7 +332,7 @@ impl Expression for CaseExpression {
         ExpressionKind::Case
     }
 
-    fn expr_type(&self) -> DataType {
+    fn expr_type(&self, _scope: &Scope) -> DataType {
         return self.values_type.clone();
     }
 

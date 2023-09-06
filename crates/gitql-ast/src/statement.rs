@@ -22,13 +22,14 @@ pub trait Statement {
 
 pub struct GQLQuery {
     pub statements: HashMap<String, Box<dyn Statement>>,
-    pub select_aggregations_only: bool,
+    pub has_aggregation_function: bool,
     pub hidden_selections: Vec<String>,
 }
 
 pub struct SelectStatement {
     pub table_name: String,
-    pub fields: Vec<String>,
+    pub fields_names: Vec<String>,
+    pub fields_values: Vec<Box<dyn Expression>>,
     pub alias_table: HashMap<String, String>,
 }
 

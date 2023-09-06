@@ -1,27 +1,34 @@
 use std::collections::HashMap;
 
-use gitql_ast::{object::GQLObject, value::Value};
+use gitql_ast::expression::Expression;
+use gitql_ast::expression::SymbolExpression;
+use gitql_ast::object::GQLObject;
+use gitql_ast::value::Value;
+
+use crate::engine_evaluator::evaluate_expression;
 
 pub fn select_gql_objects(
     repo: &git2::Repository,
     table: String,
-    fields: Vec<String>,
-    alias_table: HashMap<String, String>,
+    fields_names: &Vec<String>,
+    fields_values: &Vec<Box<dyn Expression>>,
+    alias_table: &HashMap<String, String>,
 ) -> Vec<GQLObject> {
     return match table.as_str() {
-        "refs" => select_references(repo, fields, alias_table),
-        "commits" => select_commits(repo, fields, alias_table),
-        "branches" => select_branches(repo, fields, alias_table),
-        "diffs" => select_diffs(repo, fields, alias_table),
-        "tags" => select_tags(repo, fields, alias_table),
-        _ => vec![],
+        "refs" => select_references(repo, fields_names, fields_values, alias_table),
+        "commits" => select_commits(repo, fields_names, fields_values, alias_table),
+        "branches" => select_branches(repo, fields_names, fields_values, alias_table),
+        "diffs" => select_diffs(repo, fields_names, fields_values, alias_table),
+        "tags" => select_tags(repo, fields_names, fields_values, alias_table),
+        _ => select_values(repo, fields_names, fields_values, alias_table),
     };
 }
 
 fn select_references(
     repo: &git2::Repository,
-    fields: Vec<String>,
-    alias_table: HashMap<String, String>,
+    fields_names: &Vec<String>,
+    fields_values: &Vec<Box<dyn Expression>>,
+    alias_table: &HashMap<String, String>,
 ) -> Vec<GQLObject> {
     let repo_path = repo.path().to_str().unwrap().to_string();
     let mut gql_references: Vec<GQLObject> = Vec::new();
@@ -30,8 +37,10 @@ fn select_references(
         return gql_references;
     }
 
-    let is_limit_fields_empty = fields.is_empty();
     let references = git_references.ok().unwrap();
+    let names_len = fields_names.len() as i64;
+    let values_len = fields_values.len() as i64;
+    let padding = names_len - values_len;
 
     for reference_result in references {
         if reference_result.is_err() {
@@ -41,50 +50,58 @@ fn select_references(
         let reference = reference_result.ok().unwrap();
         let mut attributes: HashMap<String, Value> = HashMap::new();
 
-        if is_limit_fields_empty || fields.contains(&String::from("name")) {
-            let key = alias_table
-                .get("name")
-                .unwrap_or(&"name".to_string())
-                .to_string();
-            let name = reference.shorthand().unwrap_or("").to_string();
-            attributes.insert(key, Value::Text(name));
-        }
+        for index in 0..names_len {
+            let field_name = &fields_names[index as usize];
 
-        if is_limit_fields_empty || fields.contains(&String::from("full_name")) {
-            let key = alias_table
-                .get("full_name")
-                .unwrap_or(&"full_name".to_string())
-                .to_string();
-            let full_name = reference.name().unwrap_or("").to_string();
-            attributes.insert(key, Value::Text(full_name));
-        }
-
-        if is_limit_fields_empty || fields.contains(&String::from("type")) {
-            let key = alias_table
-                .get("type")
-                .unwrap_or(&"type".to_string())
-                .to_string();
-
-            if reference.is_branch() {
-                attributes.insert(key, Value::Text("branch".to_owned()));
-            } else if reference.is_remote() {
-                attributes.insert(key, Value::Text("remote".to_owned()));
-            } else if reference.is_tag() {
-                attributes.insert(key, Value::Text("tag".to_owned()));
-            } else if reference.is_note() {
-                attributes.insert(key, Value::Text("note".to_owned()));
-            } else {
-                attributes.insert(key, Value::Text("other".to_owned()));
+            if (index - padding) >= 0 {
+                let value = &fields_values[(index - padding) as usize];
+                if !value.as_any().downcast_ref::<SymbolExpression>().is_some() {
+                    let evaulated = evaluate_expression(value, &attributes);
+                    let column_name = get_column_name(&alias_table, field_name);
+                    if evaulated.is_err() {
+                        println!("Error {}", evaulated.err().unwrap());
+                        continue;
+                    }
+                    attributes.insert(column_name, evaulated.ok().unwrap());
+                    continue;
+                }
             }
-        }
 
-        if is_limit_fields_empty || fields.contains(&String::from("repo")) {
-            let key = alias_table
-                .get("repo")
-                .unwrap_or(&"repo".to_string())
-                .to_string();
+            if field_name == "name" {
+                let name = reference.shorthand().unwrap_or("").to_string();
+                let column_name = get_column_name(&alias_table, &"name".to_string());
+                attributes.insert(column_name, Value::Text(name));
+                continue;
+            }
 
-            attributes.insert(key, Value::Text(repo_path.to_string()));
+            if field_name == "full_name" {
+                let full_name = reference.name().unwrap_or("").to_string();
+                let column_name = get_column_name(&alias_table, &"full_name".to_string());
+                attributes.insert(column_name, Value::Text(full_name));
+                continue;
+            }
+
+            if field_name == "type" {
+                let column_name = get_column_name(&alias_table, &"type".to_string());
+                if reference.is_branch() {
+                    attributes.insert(column_name, Value::Text("branch".to_owned()));
+                } else if reference.is_remote() {
+                    attributes.insert(column_name, Value::Text("remote".to_owned()));
+                } else if reference.is_tag() {
+                    attributes.insert(column_name, Value::Text("tag".to_owned()));
+                } else if reference.is_note() {
+                    attributes.insert(column_name, Value::Text("note".to_owned()));
+                } else {
+                    attributes.insert(column_name, Value::Text("other".to_owned()));
+                }
+                continue;
+            }
+
+            if field_name == "repo" {
+                let column_name = get_column_name(&alias_table, &"repo".to_string());
+                attributes.insert(column_name, Value::Text(repo_path.to_string()));
+                continue;
+            }
         }
 
         let gql_reference = GQLObject { attributes };
@@ -96,8 +113,9 @@ fn select_references(
 
 fn select_commits(
     repo: &git2::Repository,
-    fields: Vec<String>,
-    alias_table: HashMap<String, String>,
+    fields_names: &Vec<String>,
+    fields_values: &Vec<Box<dyn Expression>>,
+    alias_table: &HashMap<String, String>,
 ) -> Vec<GQLObject> {
     let repo_path = repo.path().to_str().unwrap().to_string();
 
@@ -105,69 +123,78 @@ fn select_commits(
     let mut revwalk = repo.revwalk().unwrap();
     revwalk.push_head().unwrap();
 
-    let is_limit_fields_empty = fields.is_empty();
+    let names_len = fields_names.len() as i64;
+    let values_len = fields_values.len() as i64;
+    let padding = names_len - values_len;
+
     for commit_id in revwalk {
         let commit = repo.find_commit(commit_id.unwrap()).unwrap();
 
         let mut attributes: HashMap<String, Value> = HashMap::new();
 
-        if is_limit_fields_empty || fields.contains(&String::from("commit_id")) {
-            let key = alias_table
-                .get("commit_id")
-                .unwrap_or(&"commit_id".to_string())
-                .to_string();
-            attributes.insert(key, Value::Text(commit.id().to_string()));
-        }
+        for index in 0..names_len {
+            let field_name = &fields_names[index as usize];
 
-        if is_limit_fields_empty || fields.contains(&String::from("name")) {
-            let key = alias_table
-                .get("name")
-                .unwrap_or(&"name".to_string())
-                .to_string();
-            let name = commit.author().name().unwrap_or("").to_string();
-            attributes.insert(key, Value::Text(name));
-        }
+            if (index - padding) >= 0 {
+                let value = &fields_values[(index - padding) as usize];
+                if !value.as_any().downcast_ref::<SymbolExpression>().is_some() {
+                    let evaulated = evaluate_expression(value, &attributes);
+                    let column_name = get_column_name(&alias_table, field_name);
+                    if evaulated.is_err() {
+                        println!("Error {}", evaulated.err().unwrap());
+                        continue;
+                    }
+                    attributes.insert(column_name, evaulated.ok().unwrap());
+                    continue;
+                }
+            }
 
-        if is_limit_fields_empty || fields.contains(&String::from("email")) {
-            let key = alias_table
-                .get("email")
-                .unwrap_or(&"email".to_string())
-                .to_string();
-            let email = commit.author().email().unwrap_or("").to_string();
-            attributes.insert(key, Value::Text(email));
-        }
+            if field_name == "commit_id" {
+                let commit_id = Value::Text(commit.id().to_string());
+                let column_name = get_column_name(&alias_table, &"commit_id".to_string());
+                attributes.insert(column_name, commit_id);
+                continue;
+            }
 
-        if is_limit_fields_empty || fields.contains(&String::from("title")) {
-            let key = alias_table
-                .get("title")
-                .unwrap_or(&"title".to_string())
-                .to_string();
-            attributes.insert(key, Value::Text(commit.summary().unwrap().to_string()));
-        }
+            if field_name == "name" {
+                let name = commit.author().name().unwrap_or("").to_string();
+                let column_name = get_column_name(&alias_table, &"name".to_string());
+                attributes.insert(column_name, Value::Text(name));
+                continue;
+            }
 
-        if is_limit_fields_empty || fields.contains(&String::from("message")) {
-            let key = alias_table
-                .get("message")
-                .unwrap_or(&"message".to_string())
-                .to_string();
-            attributes.insert(key, Value::Text(commit.message().unwrap_or("").to_string()));
-        }
+            if field_name == "email" {
+                let email = commit.author().email().unwrap_or("").to_string();
+                let column_name = get_column_name(&alias_table, &"email".to_string());
+                attributes.insert(column_name, Value::Text(email));
+                continue;
+            }
 
-        if is_limit_fields_empty || fields.contains(&String::from("time")) {
-            let key = alias_table
-                .get("time")
-                .unwrap_or(&"time".to_string())
-                .to_string();
-            attributes.insert(key, Value::Date(commit.time().seconds()));
-        }
+            if field_name == "title" {
+                let summary = Value::Text(commit.summary().unwrap().to_string());
+                let column_name = get_column_name(&alias_table, &"title".to_string());
+                attributes.insert(column_name, summary);
+                continue;
+            }
 
-        if is_limit_fields_empty || fields.contains(&String::from("repo")) {
-            let key = alias_table
-                .get("repo")
-                .unwrap_or(&"repo".to_string())
-                .to_string();
+            if field_name == "message" {
+                let message = Value::Text(commit.message().unwrap_or("").to_string());
+                let column_name = get_column_name(&alias_table, &"message".to_string());
+                attributes.insert(column_name, message);
+                continue;
+            }
 
-            attributes.insert(key, Value::Text(repo_path.to_string()));
+            if field_name == "time" {
+                let column_name = get_column_name(&alias_table, &"time".to_string());
+                attributes.insert(column_name, Value::Date(commit.time().seconds()));
+                continue;
+            }
+
+            if field_name == "repo" {
+                let column_name = get_column_name(&alias_table, &"repo".to_string());
+                attributes.insert(column_name, Value::Text(repo_path.to_string()));
+                continue;
+            }
         }
 
         let gql_commit = GQLObject { attributes };
@@ -179,93 +206,103 @@ fn select_commits(
 
 fn select_diffs(
     repo: &git2::Repository,
-    fields: Vec<String>,
-    alias_table: HashMap<String, String>,
+    fields_names: &Vec<String>,
+    fields_values: &Vec<Box<dyn Expression>>,
+    alias_table: &HashMap<String, String>,
 ) -> Vec<GQLObject> {
     let mut diffs: Vec<GQLObject> = Vec::new();
     let mut revwalk = repo.revwalk().unwrap();
     revwalk.push_head().unwrap();
 
-    let is_limit_fields_empty = fields.is_empty();
-    let select_insertions = fields.contains(&String::from("insertions"));
-    let select_deletions = fields.contains(&String::from("deletions"));
-    let select_file_changed = fields.contains(&String::from("files_changed"));
     let repo_path = repo.path().to_str().unwrap().to_string();
+
+    let names_len = fields_names.len() as i64;
+    let values_len = fields_values.len() as i64;
+    let padding = names_len - values_len;
 
     for commit_id in revwalk {
         let commit = repo.find_commit(commit_id.unwrap()).unwrap();
         let mut attributes: HashMap<String, Value> = HashMap::new();
 
-        if is_limit_fields_empty || fields.contains(&String::from("commit_id")) {
-            let key = alias_table
-                .get("commit_id")
-                .unwrap_or(&"commit_id".to_string())
-                .to_string();
-            attributes.insert(key, Value::Text(commit.id().to_string()));
-        }
+        for index in 0..names_len {
+            let field_name = &fields_names[index as usize];
 
-        if is_limit_fields_empty || fields.contains(&String::from("name")) {
-            let key = alias_table
-                .get("name")
-                .unwrap_or(&"name".to_string())
-                .to_string();
-            let name = commit.author().name().unwrap_or("").to_string();
-            attributes.insert(key, Value::Text(name));
-        }
-
-        if is_limit_fields_empty || fields.contains(&String::from("email")) {
-            let key = alias_table
-                .get("email")
-                .unwrap_or(&"email".to_string())
-                .to_string();
-            let email = commit.author().email().unwrap_or("").to_string();
-            attributes.insert(key, Value::Text(email));
-        }
-
-        if is_limit_fields_empty || fields.contains(&String::from("repo")) {
-            let key = alias_table
-                .get("repo")
-                .unwrap_or(&"repo".to_string())
-                .to_string();
-
-            attributes.insert(key, Value::Text(repo_path.to_string()));
-        }
-
-        if is_limit_fields_empty || select_insertions || select_deletions || select_file_changed {
-            let diff = if commit.parents().len() > 0 {
-                repo.diff_tree_to_tree(
-                    Some(&commit.parent(0).unwrap().tree().unwrap()),
-                    Some(&commit.tree().unwrap()),
-                    None,
-                )
-            } else {
-                repo.diff_tree_to_tree(None, Some(&commit.tree().unwrap()), None)
-            };
-
-            let diff_status = diff.unwrap().stats().unwrap();
-
-            if is_limit_fields_empty || select_insertions {
-                let key = alias_table
-                    .get("insertions")
-                    .unwrap_or(&"insertions".to_string())
-                    .to_string();
-                attributes.insert(key, Value::Number(diff_status.insertions() as i64));
+            if (index - padding) >= 0 {
+                let value = &fields_values[(index - padding) as usize];
+                if !value.as_any().downcast_ref::<SymbolExpression>().is_some() {
+                    let evaulated = evaluate_expression(value, &attributes);
+                    let column_name = get_column_name(&alias_table, field_name);
+                    if evaulated.is_err() {
+                        println!("Error {}", evaulated.err().unwrap());
+                        continue;
+                    }
+                    attributes.insert(column_name, evaulated.ok().unwrap());
+                    continue;
+                }
             }
 
-            if is_limit_fields_empty || select_deletions {
-                let key = alias_table
-                    .get("deletions")
-                    .unwrap_or(&"deletions".to_string())
-                    .to_string();
-                attributes.insert(key, Value::Number(diff_status.deletions() as i64));
+            if field_name == "commit_id" {
+                let column_name = get_column_name(&alias_table, &"commit_id".to_string());
+                attributes.insert(column_name, Value::Text(commit.id().to_string()));
+                continue;
             }
 
-            if is_limit_fields_empty || select_file_changed {
-                let key = alias_table
-                    .get("files_changed")
-                    .unwrap_or(&"files_changed".to_string())
-                    .to_string();
-                attributes.insert(key, Value::Number(diff_status.files_changed() as i64));
+            if field_name == "name" {
+                let name = commit.author().name().unwrap_or("").to_string();
+                let column_name = get_column_name(&alias_table, &"name".to_string());
+                attributes.insert(column_name, Value::Text(name));
+                continue;
+            }
+
+            if field_name == "email" {
+                let email = commit.author().email().unwrap_or("").to_string();
+                let column_name = get_column_name(&alias_table, &"email".to_string());
+                attributes.insert(column_name, Value::Text(email));
+                continue;
+            }
+
+            if field_name == "repo" {
+                let column_name = get_column_name(&alias_table, &"repo".to_string());
+                attributes.insert(column_name, Value::Text(repo_path.to_string()));
+                continue;
+            }
+
+            if field_name == "insertions"
+                || field_name == "deletions"
+                || field_name == "files_changed"
+            {
+                let diff = if commit.parents().len() > 0 {
+                    repo.diff_tree_to_tree(
+                        Some(&commit.parent(0).unwrap().tree().unwrap()),
+                        Some(&commit.tree().unwrap()),
+                        None,
+                    )
+                } else {
+                    repo.diff_tree_to_tree(None, Some(&commit.tree().unwrap()), None)
+                };
+
+                let diff_status = diff.unwrap().stats().unwrap();
+
+                if field_name == "insertions" {
+                    let insertions = Value::Number(diff_status.insertions() as i64);
+                    let column_name = get_column_name(&alias_table, &"insertions".to_string());
+                    attributes.insert(column_name, insertions);
+                    continue;
+                }
+
+                if field_name == "deletions" {
+                    let deletations = Value::Number(diff_status.deletions() as i64);
+                    let column_name = get_column_name(&alias_table, &"deletions".to_string());
+                    attributes.insert(column_name, deletations);
+                    continue;
+                }
+
+                if field_name == "files_changed" {
+                    let file_changed = Value::Number(diff_status.files_changed() as i64);
+                    let column_name = get_column_name(&alias_table, &"files_changed".to_string());
+                    attributes.insert(column_name, file_changed);
+                    continue;
+                }
             }
         }
 
@@ -278,62 +315,72 @@ fn select_diffs(
 
 fn select_branches(
     repo: &git2::Repository,
-    fields: Vec<String>,
-    alias_table: HashMap<String, String>,
+    fields_names: &Vec<String>,
+    fields_values: &Vec<Box<dyn Expression>>,
+    alias_table: &HashMap<String, String>,
 ) -> Vec<GQLObject> {
     let mut branches: Vec<GQLObject> = Vec::new();
     let local_branches = repo.branches(None).unwrap();
-    let is_limit_fields_empty = fields.is_empty();
     let repo_path = repo.path().to_str().unwrap().to_string();
+
+    let names_len = fields_names.len() as i64;
+    let values_len = fields_values.len() as i64;
+    let padding = names_len - values_len;
 
     for branch in local_branches {
         let (branch, _) = branch.unwrap();
 
         let mut attributes: HashMap<String, Value> = HashMap::new();
+        for index in 0..names_len {
+            let field_name = &fields_names[index as usize];
 
-        if is_limit_fields_empty || fields.contains(&String::from("name")) {
-            let key = alias_table
-                .get("name")
-                .unwrap_or(&"name".to_string())
-                .to_string();
-            let branch_name = branch.name().unwrap().unwrap_or("").to_string();
-            attributes.insert(key, Value::Text(branch_name));
-        }
+            if (index - padding) >= 0 {
+                let value = &fields_values[(index - padding) as usize];
+                if !value.as_any().downcast_ref::<SymbolExpression>().is_some() {
+                    let evaulated = evaluate_expression(value, &attributes);
+                    let column_name = get_column_name(&alias_table, field_name);
+                    if evaulated.is_err() {
+                        println!("Error {}", evaulated.err().unwrap());
+                        continue;
+                    }
+                    attributes.insert(column_name, evaulated.ok().unwrap());
+                    continue;
+                }
+            }
 
-        if is_limit_fields_empty || fields.contains(&String::from("commit_count")) {
-            let key = alias_table
-                .get("commit_count")
-                .unwrap_or(&"commit_count".to_string())
-                .to_string();
-            let branch_ref = branch.get().peel_to_commit().unwrap();
-            let mut revwalk = repo.revwalk().unwrap();
-            let _ = revwalk.push(branch_ref.id());
-            attributes.insert(key, Value::Number(revwalk.count() as i64));
-        }
+            if field_name == "name" {
+                let branch_name = branch.name().unwrap().unwrap_or("").to_string();
+                let column_name = get_column_name(&alias_table, &"name".to_string());
+                attributes.insert(column_name, Value::Text(branch_name));
+                continue;
+            }
 
-        if is_limit_fields_empty || fields.contains(&String::from("is_head")) {
-            let key = alias_table
-                .get("is_head")
-                .unwrap_or(&"is_head".to_string())
-                .to_string();
-            attributes.insert(key, Value::Boolean(branch.is_head()));
-        }
+            if field_name == "commit_count" {
+                let branch_ref = branch.get().peel_to_commit().unwrap();
+                let mut revwalk = repo.revwalk().unwrap();
+                let _ = revwalk.push(branch_ref.id());
+                let column_name = get_column_name(&alias_table, &"commit_count".to_string());
+                attributes.insert(column_name, Value::Number(revwalk.count() as i64));
+                continue;
+            }
 
-        if is_limit_fields_empty || fields.contains(&String::from("is_remote")) {
-            let key = alias_table
-                .get("is_remote")
-                .unwrap_or(&"is_remote".to_string())
-                .to_string();
-            attributes.insert(key, Value::Boolean(branch.get().is_remote()));
-        }
+            if field_name == "is_head" {
+                let column_name = get_column_name(&alias_table, &"is_head".to_string());
+                attributes.insert(column_name, Value::Boolean(branch.is_head()));
+                continue;
+            }
 
-        if is_limit_fields_empty || fields.contains(&String::from("repo")) {
-            let key = alias_table
-                .get("repo")
-                .unwrap_or(&"repo".to_string())
-                .to_string();
+            if field_name == "is_remote" {
+                let column_name = get_column_name(&alias_table, &"is_remote".to_string());
+                attributes.insert(column_name, Value::Boolean(branch.get().is_remote()));
+                continue;
+            }
 
-            attributes.insert(key, Value::Text(repo_path.to_string()));
+            if field_name == "repo" {
+                let column_name = get_column_name(&alias_table, &"repo".to_string());
+                attributes.insert(column_name, Value::Text(repo_path.to_string()));
+                continue;
+            }
         }
 
         let gql_branch = GQLObject { attributes };
@@ -345,34 +392,51 @@ fn select_branches(
 
 fn select_tags(
     repo: &git2::Repository,
-    fields: Vec<String>,
-    alias_table: HashMap<String, String>,
+    fields_names: &Vec<String>,
+    fields_values: &Vec<Box<dyn Expression>>,
+    alias_table: &HashMap<String, String>,
 ) -> Vec<GQLObject> {
     let mut tags: Vec<GQLObject> = Vec::new();
     let tag_names = repo.tag_names(None).unwrap();
-    let is_limit_fields_empty = fields.is_empty();
     let repo_path = repo.path().to_str().unwrap().to_string();
+
+    let names_len = fields_names.len() as i64;
+    let values_len = fields_values.len() as i64;
+    let padding = names_len - values_len;
 
     for tag_name in tag_names.iter() {
         match tag_name {
             Some(name) => {
                 let mut attributes: HashMap<String, Value> = HashMap::new();
 
-                if is_limit_fields_empty || fields.contains(&String::from("name")) {
-                    let key = alias_table
-                        .get("name")
-                        .unwrap_or(&"name".to_string())
-                        .to_string();
-                    attributes.insert(key, Value::Text(name.to_string()));
-                }
+                for index in 0..names_len {
+                    let field_name = &fields_names[index as usize];
+                    if (index - padding) >= 0 {
+                        let value = &fields_values[(index - padding) as usize];
 
-                if is_limit_fields_empty || fields.contains(&String::from("repo")) {
-                    let key = alias_table
-                        .get("repo")
-                        .unwrap_or(&"repo".to_string())
-                        .to_string();
+                        if !value.as_any().downcast_ref::<SymbolExpression>().is_some() {
+                            let evaulated = evaluate_expression(value, &attributes);
+                            let column_name = get_column_name(&alias_table, field_name);
+                            if evaulated.is_err() {
+                                println!("Error {}", evaulated.err().unwrap());
+                                continue;
+                            }
+                            attributes.insert(column_name, evaulated.ok().unwrap());
+                            continue;
+                        }
+                    }
 
-                    attributes.insert(key, Value::Text(repo_path.to_string()));
+                    if field_name == "name" {
+                        let column_name = get_column_name(&alias_table, &"name".to_string());
+                        attributes.insert(column_name, Value::Text(name.to_string()));
+                        continue;
+                    }
+
+                    if field_name == "repo" {
+                        let column_name = get_column_name(&alias_table, &"repo".to_string());
+                        attributes.insert(column_name, Value::Text(repo_path.to_string()));
+                        continue;
+                    }
                 }
 
                 let gql_tag = GQLObject { attributes };
@@ -382,4 +446,35 @@ fn select_tags(
         }
     }
     return tags;
+}
+
+fn select_values(
+    _repo: &git2::Repository,
+    fields_names: &Vec<String>,
+    fields_values: &Vec<Box<dyn Expression>>,
+    alias_table: &HashMap<String, String>,
+) -> Vec<GQLObject> {
+    let mut values: Vec<GQLObject> = Vec::new();
+    let mut attributes: HashMap<String, Value> = HashMap::new();
+    let len = fields_values.len();
+
+    for index in 0..len {
+        let field_name = &fields_names[index];
+        let value = &fields_values[index];
+        let evaulated = evaluate_expression(value, &attributes);
+        let column_name = get_column_name(&alias_table, field_name);
+        attributes.insert(column_name, evaulated.ok().unwrap());
+    }
+
+    let gql_object = GQLObject { attributes };
+    values.push(gql_object);
+    return values;
+}
+
+#[inline(always)]
+pub fn get_column_name(alias_table: &HashMap<String, String>, name: &String) -> String {
+    return alias_table
+        .get(name)
+        .unwrap_or(&name.to_string())
+        .to_string();
 }

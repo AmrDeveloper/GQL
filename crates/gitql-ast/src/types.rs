@@ -8,6 +8,7 @@ pub enum DataType {
     Number,
     Boolean,
     Date,
+    Undefined,
     Null,
 }
 
@@ -19,6 +20,7 @@ impl DataType {
             DataType::Number => "Number",
             DataType::Boolean => "Boolean",
             DataType::Date => "Date",
+            DataType::Undefined => "Undefined",
             DataType::Null => "Null",
         };
     }
@@ -41,6 +43,7 @@ lazy_static! {
         map.insert("is_head", DataType::Boolean);
         map.insert("is_remote", DataType::Boolean);
         map.insert("commit_count", DataType::Number);
+        map.insert("repo", DataType::Text);
         map
     };
 }

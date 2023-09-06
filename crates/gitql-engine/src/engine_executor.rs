@@ -16,12 +16,15 @@ use gitql_ast::statement::WhereStatement;
 use gitql_ast::types::DataType;
 
 use crate::engine_evaluator::evaluate_expression;
+use crate::engine_function::get_column_name;
 use crate::engine_function::select_gql_objects;
 
 pub fn execute_statement(
     statement: &Box<dyn Statement>,
     repo: &git2::Repository,
     groups: &mut Vec<Vec<GQLObject>>,
+    alias_table: &mut HashMap<String, String>,
+    hidden_selection: &Vec<String>,
 ) -> Result<(), String> {
     match statement.get_statement_kind() {
         Select => {
@@ -29,7 +32,13 @@ pub fn execute_statement(
                 .as_any()
                 .downcast_ref::<SelectStatement>()
                 .unwrap();
-            return execute_select_statement(statement, repo, groups);
+
+            // Copy alias table to be last later for Aggregations functions
+            for alias in &statement.alias_table {
+                alias_table.insert(alias.0.to_string(), alias.1.to_string());
+            }
+
+            return execute_select_statement(statement, repo, groups, hidden_selection);
         }
         Where => {
             let statement = statement.as_any().downcast_ref::<WhereStatement>().unwrap();
@@ -72,7 +81,7 @@ pub fn execute_statement(
                 .as_any()
                 .downcast_ref::<AggregationFunctionsStatement>()
                 .unwrap();
-            return execute_aggregation_function_statement(statement, groups);
+            return execute_aggregation_function_statement(statement, groups, &alias_table);
         }
     };
 }
@@ -81,13 +90,25 @@ fn execute_select_statement(
     statement: &SelectStatement,
     repo: &git2::Repository,
     groups: &mut Vec<Vec<GQLObject>>,
+    hidden_selections: &Vec<String>,
 ) -> Result<(), String> {
+    // Append hidden selection to the selected fields names
+    let mut fields_names = statement.fields_names.to_owned();
+    if !statement.table_name.is_empty() {
+        for hidden in hidden_selections {
+            if !fields_names.contains(hidden) {
+                fields_names.insert(0, hidden.to_string());
+            }
+        }
+    }
+
     // Select obects from the target table
     let mut objects = select_gql_objects(
         repo,
         statement.table_name.to_string(),
-        statement.fields.to_owned(),
-        statement.alias_table.to_owned(),
+        &fields_names,
+        &statement.fields_values,
+        &statement.alias_table,
     );
 
     // Push the selected elements as a first group
@@ -113,7 +134,7 @@ fn execute_where_statement(
     let mut filtered_group: Vec<GQLObject> = vec![];
     let first_group = groups.first().unwrap().iter();
     for object in first_group {
-        let eval_result = evaluate_expression(&statement.condition, object);
+        let eval_result = evaluate_expression(&statement.condition, &object.attributes);
         if eval_result.is_err() {
             return Err(eval_result.err().unwrap());
         }
@@ -147,7 +168,7 @@ fn execute_having_statement(
     let mut filtered_group: Vec<GQLObject> = vec![];
     let first_group = groups.first().unwrap().iter();
     for object in first_group {
-        let eval_result = evaluate_expression(&statement.condition, object);
+        let eval_result = evaluate_expression(&statement.condition, &object.attributes);
         if eval_result.is_err() {
             return Err(eval_result.err().unwrap());
         }
@@ -160,21 +181,6 @@ fn execute_having_statement(
     // Update the main group with the filtered data
     groups.remove(0);
     groups.push(filtered_group);
-    /*
-    let main_group: &mut Vec<GQLObject> = groups[0].as_mut();
-
-    let result: Vec<GQLObject> = main_group
-        .iter()
-        .filter(|&object| evaluate_expression(&statement.condition, object).eq("true"))
-        .cloned()
-        .collect();
-
-    main_group.clear();
-
-    for object in result {
-        main_group.push(object);
-    }
-    */
 
     return Ok(());
 }
@@ -310,6 +316,7 @@ fn execute_group_by_statement(
 fn execute_aggregation_function_statement(
     statement: &AggregationFunctionsStatement,
     groups: &mut Vec<Vec<GQLObject>>,
+    alias_table: &HashMap<String, String>,
 ) -> Result<(), String> {
     // Make sure you have at least one aggregation function to calculate
     let aggregations_map = &statement.aggregations;
@@ -330,13 +337,17 @@ fn execute_aggregation_function_statement(
 
             // Execute aggregation function once for group
             let result_column_name = aggregation.0;
-            let result = &aggregation_function(&function.argument, &group);
+            let argument = &function.argument;
+            let result = &aggregation_function(&argument.to_string(), &group);
+
+            // Get alias name if exists or column name by default
+            let column_name = get_column_name(alias_table, result_column_name);
 
             // Insert the calculated value in the group objects
             for object in group.into_iter() {
                 object
                     .attributes
-                    .insert(result_column_name.to_string(), result.to_owned());
+                    .insert(column_name.to_string(), result.to_owned());
             }
         }
 
