@@ -23,7 +23,7 @@ theme:
     code: JetBrains Mono
 
   palette:
-    primary: deep orange
+    primary: black
     accent: deep purple
 
   features:
