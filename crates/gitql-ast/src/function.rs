@@ -25,6 +25,7 @@ lazy_static! {
         map.insert("rtrim", text_right_trim);
         map.insert("len", text_len);
         map.insert("ascii", text_ascii);
+        map.insert("left", text_left);
         map
     };
 }
@@ -102,6 +103,13 @@ lazy_static! {
                 result: DataType::Number,
             },
         );
+        map.insert(
+            "left",
+            Prototype {
+                parameters: vec![DataType::Text, DataType::Number],
+                result: DataType::Text,
+            },
+        );
         map
     };
 }
@@ -151,4 +159,22 @@ fn text_ascii(inputs: Vec<Value>) -> Value {
         return Value::Number(0);
     }
     return Value::Number(text.chars().nth(0).unwrap() as i64);
+}
+
+fn text_left(inputs: Vec<Value>) -> Value {
+    let text = inputs[0].as_text();
+    if text.is_empty() {
+        return Value::Text("".to_string());
+    }
+
+    let number_of_chars = inputs[1].as_number();
+    if number_of_chars > text.len() as i64 {
+        return Value::Text(text);
+    }
+    let substring = text
+        .chars()
+        .take(number_of_chars as usize)
+        .collect::<String>();
+
+    return Value::Text(substring);
 }

@@ -14,6 +14,7 @@ note that all functions names are case-insensitive.
 | REPLICATE | Text, Number | Text   | Return repeated a string a specified number of times.         |
 | SPACE     | Number       | Text   | Returns a string of the specified number of space characters. |
 | ASCII     | Text         | Number | Returns the ASCII value for the specific character.           |
+| LEFT      | Text, Number | Text   | Extracts a number of characters from a string (starting from left). |
 
 ### String functions samples
 
@@ -25,4 +26,5 @@ SELECT * FROM commits where TRIM(name) = ""
 SELECT * FROM commits where LEN(name) > 0
 SELECT * FROM commits where name = SPACE(5)
 SELECT name, ASCII(name) AS firstCharAscii FROM commits
+SELECT LEFT("AmrDeveloper", 3) AS extract
 ```
