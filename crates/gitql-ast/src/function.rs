@@ -146,6 +146,10 @@ fn text_len(inputs: Vec<Value>) -> Value {
 }
 
 fn text_ascii(inputs: Vec<Value>) -> Value {
-    let first_char = inputs[0].as_text().chars().next().unwrap();
-    return Value::Number((first_char as i32).into());
+    let chars = inputs[0].as_text().chars().collect::<Vec<_>>();
+    if chars.is_empty() {
+        return Value::Number(0);
+    } else {
+        return Value::Number((chars.first().unwrap().clone() as i32).into());
+    }
 }
