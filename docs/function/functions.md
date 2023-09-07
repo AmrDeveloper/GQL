@@ -13,7 +13,6 @@ note that all functions names are case-insensitive.
 | LEN       | Text         | Number | Return the length of this string.                             |
 | REPLICATE | Text, Number | Text   | Return repeated a string a specified number of times.         |
 | SPACE     | Number       | Text   | Returns a string of the specified number of space characters. |
-| ASCII     | Text         | Text   | Returns the ASCII value for the specific character.           |
 | CHAR      | Number       | Text   | Returns the character based on the ASCII code.                |
 
 ### String functions samples
@@ -25,6 +24,5 @@ SELECT * FROM commits where REVERSE(name) = "repolevedrma"
 SELECT * FROM commits where TRIM(name) = ""
 SELECT * FROM commits where LEN(name) > 0
 SELECT * FROM commits where name = SPACE(5)
-SELECT name, ASCII(name) AS NumCodeOfFirstChar FROM commits
 SELECT CHAR(564) as code
 ```
