@@ -160,7 +160,6 @@ fn text_ascii(inputs: Vec<Value>) -> Value {
 }
 
 fn text_char(inputs: Vec<Value>) -> Value {
-    let num = inputs[0].as_number();
-    let hi = char::from_u32((num as i32).try_into().unwrap()).unwrap();
-    return Value::Text(hi.to_string());
+    let character = char::from_u32((inputs[0].as_number() as i32).try_into().unwrap()).unwrap();
+    return Value::Text(character.to_string());
 }
