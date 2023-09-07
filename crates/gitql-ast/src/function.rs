@@ -155,7 +155,10 @@ fn text_len(inputs: Vec<Value>) -> Value {
 
 fn text_char(inputs: Vec<Value>) -> Value {
     let code = inputs[0].as_number() as u32;
-    Value::Text(char::from_u32(code).unwrap().to_string())
+    if let Some(character) = char::from_u32(code) {
+        return Value::Text(character.to_string());
+    }
+    return Value::Text("".to_string());
 }
 
 fn text_ascii(inputs: Vec<Value>) -> Value {
