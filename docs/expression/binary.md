@@ -51,3 +51,10 @@ Used to check if value is between range start and end included
 ```SQL
 SELECT commit_count FROM branches WHERE commit_count BETWEEN 2 .. 30000
 ```
+
+### In Expression
+Returns true if any values are equal to the argument
+
+```SQL
+SELECT "One" IN ("One", "Two", "Three")
+```

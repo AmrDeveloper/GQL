@@ -31,6 +31,7 @@ GQL is a query language with a syntax very similar to SQL with a tiny engine to 
 SELECT 1
 SELECT 1 + 2
 SELECT LEN("Git Query Language")
+SELECT "One" IN ("One", "Two", "Three")
 
 SELECT name, COUNT(name) AS commit_num FROM commits GROUP BY name ORDER BY commit_num DESC LIMIT 10
 SELECT commit_count FROM branches WHERE commit_count BETWEEN 0 .. 10

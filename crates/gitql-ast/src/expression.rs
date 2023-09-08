@@ -18,6 +18,7 @@ pub enum ExpressionKind {
     Call,
     Between,
     Case,
+    In,
 }
 
 pub trait Expression {
@@ -330,6 +331,26 @@ pub struct CaseExpression {
 impl Expression for CaseExpression {
     fn get_expression_kind(&self) -> ExpressionKind {
         ExpressionKind::Case
+    }
+
+    fn expr_type(&self, _scope: &Scope) -> DataType {
+        return self.values_type.clone();
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+pub struct InExpression {
+    pub argument: Box<dyn Expression>,
+    pub values: Vec<Box<dyn Expression>>,
+    pub values_type: DataType,
+}
+
+impl Expression for InExpression {
+    fn get_expression_kind(&self) -> ExpressionKind {
+        ExpressionKind::In
     }
 
     fn expr_type(&self, _scope: &Scope) -> DataType {

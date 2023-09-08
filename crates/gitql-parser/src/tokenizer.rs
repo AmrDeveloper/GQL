@@ -9,6 +9,7 @@ pub enum TokenKind {
     Offset,
     Order,
     By,
+    In,
 
     Case,
     When,
@@ -818,6 +819,7 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "else" => TokenKind::Else,
         "end" => TokenKind::End,
         "between" => TokenKind::Between,
+        "in" => TokenKind::In,
 
         // Logical Operators
         "or" => TokenKind::LogicalOr,

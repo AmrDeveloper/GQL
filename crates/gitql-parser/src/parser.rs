@@ -525,7 +525,61 @@ fn parse_expression(
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
-    return parse_between_expression(context, tokens, position);
+    return parse_in_expression(context, tokens, position);
+}
+
+fn parse_in_expression(
+    context: &mut ParserContext,
+    tokens: &Vec<Token>,
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, GQLError> {
+    let expression = parse_between_expression(context, tokens, position)?;
+    if *position < tokens.len() && tokens[*position].kind == TokenKind::In {
+        let in_location = tokens[*position].location;
+
+        // Consume `IN` keyword
+        *position += 1;
+
+        if consume_kind(tokens, *position, TokenKind::LeftParen).is_err() {
+            return Err(GQLError {
+                message: "Expects values between `(` and `)` after `IN` keyword".to_owned(),
+                location: in_location,
+            });
+        }
+
+        // Check that all values has the same type
+        let values = parse_arguments_expressions(context, tokens, position)?;
+        if values.is_empty() {
+            return Err(GQLError {
+                message: "Values of `IN` expression can't be empty".to_owned(),
+                location: in_location,
+            });
+        }
+
+        let values_type_result = check_all_values_are_same_type(context, &values);
+        if values_type_result.is_err() {
+            return Err(GQLError {
+                message: "Expects values between `(` and `)` to have the same type".to_owned(),
+                location: in_location,
+            });
+        }
+
+        // Check that argument and values has the same type
+        let values_type = values_type_result.ok().unwrap();
+        if expression.expr_type(&context.symbol_table) != values_type {
+            return Err(GQLError {
+                message: "Argument and Values of In Expression must have the same type".to_owned(),
+                location: in_location,
+            });
+        }
+
+        return Ok(Box::new(InExpression {
+            argument: expression,
+            values,
+            values_type,
+        }));
+    }
+    return Ok(expression);
 }
 
 fn parse_between_expression(
@@ -538,7 +592,7 @@ fn parse_between_expression(
     if *position < tokens.len() && tokens[*position].kind == TokenKind::Between {
         let between_location = tokens[*position].location;
 
-        // Consume Between keyword
+        // Consume `BETWEEN` keyword
         *position += 1;
 
         if expression.expr_type(&context.symbol_table) != DataType::Number {
@@ -1153,7 +1207,7 @@ fn parse_function_call_expression(
         // Make sure it's valid function name
         let function_name = &symbol_expression.unwrap().value.to_lowercase();
         if FUNCTIONS.contains_key(function_name.as_str()) {
-            let arguments = parse_call_arguments_expressions(context, tokens, position)?;
+            let arguments = parse_arguments_expressions(context, tokens, position)?;
             let prototype = PROTOTYPES.get(function_name.as_str()).unwrap();
             let parameters = &prototype.parameters;
             let return_type = prototype.result.clone();
@@ -1177,7 +1231,7 @@ fn parse_function_call_expression(
                 is_aggregation: false,
             }));
         } else if AGGREGATIONS.contains_key(function_name.as_str()) {
-            let arguments = parse_call_arguments_expressions(context, tokens, position)?;
+            let arguments = parse_arguments_expressions(context, tokens, position)?;
             let prototype = AGGREGATIONS_PROTOS.get(function_name.as_str()).unwrap();
             let parameters = &vec![prototype.parameter.clone()];
             let return_type = prototype.result.clone();
@@ -1220,54 +1274,7 @@ fn parse_function_call_expression(
     return Ok(expression);
 }
 
-fn check_function_call_arguments(
-    context: &mut ParserContext,
-    arguments: &Vec<Box<dyn Expression>>,
-    parameters: &Vec<DataType>,
-    function_name: String,
-    location: Location,
-) -> Result<(), GQLError> {
-    let arguments_len = arguments.len();
-    let parameters_len = parameters.len();
-
-    // Make sure number of arguments and parameters are the same
-    if arguments_len != parameters_len {
-        let message = format!(
-            "Function `{}` expects `{}` arguments but got `{}`",
-            function_name, parameters_len, arguments_len
-        );
-        return Err(GQLError { message, location });
-    }
-
-    // Check each argument vs parameter type
-    for index in 0..arguments_len {
-        let argument_type = arguments
-            .get(index)
-            .unwrap()
-            .expr_type(&context.symbol_table);
-
-        let parameter_type = parameters.get(index).unwrap();
-
-        if argument_type == DataType::Any || *parameter_type == DataType::Any {
-            continue;
-        }
-
-        if argument_type != *parameter_type {
-            let message = format!(
-                "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
-                function_name,
-                index,
-                argument_type.literal(),
-                parameter_type.literal()
-            );
-            return Err(GQLError { message, location });
-        }
-    }
-
-    return Ok(());
-}
-
-fn parse_call_arguments_expressions(
+fn parse_arguments_expressions(
     context: &mut ParserContext,
     tokens: &Vec<Token>,
     position: &mut usize,
@@ -1482,6 +1489,73 @@ fn parse_case_expression(
         default_value,
         values_type,
     }));
+}
+
+fn check_function_call_arguments(
+    context: &mut ParserContext,
+    arguments: &Vec<Box<dyn Expression>>,
+    parameters: &Vec<DataType>,
+    function_name: String,
+    location: Location,
+) -> Result<(), GQLError> {
+    let arguments_len = arguments.len();
+    let parameters_len = parameters.len();
+
+    // Make sure number of arguments and parameters are the same
+    if arguments_len != parameters_len {
+        let message = format!(
+            "Function `{}` expects `{}` arguments but got `{}`",
+            function_name, parameters_len, arguments_len
+        );
+        return Err(GQLError { message, location });
+    }
+
+    // Check each argument vs parameter type
+    for index in 0..arguments_len {
+        let argument_type = arguments
+            .get(index)
+            .unwrap()
+            .expr_type(&context.symbol_table);
+
+        let parameter_type = parameters.get(index).unwrap();
+
+        if argument_type == DataType::Any || *parameter_type == DataType::Any {
+            continue;
+        }
+
+        if argument_type != *parameter_type {
+            let message = format!(
+                "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
+                function_name,
+                index,
+                argument_type.literal(),
+                parameter_type.literal()
+            );
+            return Err(GQLError { message, location });
+        }
+    }
+
+    return Ok(());
+}
+
+fn check_all_values_are_same_type(
+    context: &ParserContext,
+    arguments: &Vec<Box<dyn Expression>>,
+) -> Result<DataType, ()> {
+    let arguments_count = arguments.len();
+    if arguments_count == 0 {
+        return Ok(DataType::Any);
+    }
+
+    let data_type = arguments[0].expr_type(&context.symbol_table);
+    for index in 1..arguments_count {
+        let expr_type = arguments[index].expr_type(&context.symbol_table);
+        if data_type != expr_type {
+            return Err(());
+        }
+    }
+
+    return Ok(data_type);
 }
 
 fn type_check_selected_fields(

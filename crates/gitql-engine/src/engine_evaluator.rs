@@ -12,6 +12,7 @@ use gitql_ast::expression::ComparisonExpression;
 use gitql_ast::expression::ComparisonOperator;
 use gitql_ast::expression::Expression;
 use gitql_ast::expression::ExpressionKind::*;
+use gitql_ast::expression::InExpression;
 use gitql_ast::expression::LogicalExpression;
 use gitql_ast::expression::LogicalOperator;
 use gitql_ast::expression::NumberExpression;
@@ -119,6 +120,10 @@ pub fn evaluate_expression(
                 .downcast_ref::<CaseExpression>()
                 .unwrap();
             return evaluate_case(expr, object);
+        }
+        In => {
+            let expr = expression.as_any().downcast_ref::<InExpression>().unwrap();
+            return evaluate_in(expr, object);
         }
     };
 }
@@ -350,4 +355,15 @@ fn evaluate_case(expr: &CaseExpression, object: &HashMap<String, Value>) -> Resu
         Some(default_value) => evaluate_expression(default_value, object),
         _ => Err("Invalid case statement".to_owned()),
     };
+}
+
+fn evaluate_in(expr: &InExpression, object: &HashMap<String, Value>) -> Result<Value, String> {
+    let argument = evaluate_expression(&expr.argument, object)?;
+    for value_expr in &expr.values {
+        let value = evaluate_expression(value_expr, object)?;
+        if argument.eq(&value) {
+            return Ok(Value::Boolean(true));
+        }
+    }
+    return Ok(Value::Boolean(false));
 }

@@ -117,14 +117,14 @@ lazy_static! {
             Prototype {
                 parameters: vec![DataType::Text],
                 result: DataType::Number,
-          },
+            },
         );
         map.insert(
             "char",
             Prototype {
                 parameters: vec![DataType::Number],
                 result: DataType::Text,
-          },
+            },
         );
         map
     };

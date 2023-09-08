@@ -10,6 +10,22 @@ pub enum Value {
 }
 
 impl Value {
+    pub fn eq(&self, other: &Value) -> bool {
+        if self.data_type() != other.data_type() {
+            return false;
+        }
+
+        return match self.data_type() {
+            DataType::Any => true,
+            DataType::Text => self.as_text() == other.as_text(),
+            DataType::Number => self.as_number() == other.as_number(),
+            DataType::Boolean => self.as_bool() == other.as_bool(),
+            DataType::Date => self.as_date() == other.as_date(),
+            DataType::Undefined => true,
+            DataType::Null => true,
+        };
+    }
+
     pub fn data_type(&self) -> DataType {
         return match self {
             Value::Number(_) => DataType::Number,
