@@ -15,6 +15,7 @@ note that all functions names are case-insensitive.
 | SPACE     | Number       | Text   | Returns a string of the specified number of space characters. |
 | ASCII     | Text         | Number | Returns the ASCII value for the specific character.           |
 | DATALENGTH| Text         | Number | Returns the number of bytes used to represent an expression.  |
+| CHAR      | Number       | Text   | Returns the character based on the ASCII code.                |
 
 ### String functions samples
 
@@ -27,4 +28,5 @@ SELECT * FROM commits where LEN(name) > 0
 SELECT * FROM commits where name = SPACE(5)
 SELECT name, ASCII(name) AS firstCharAscii FROM commits
 SELECT DATALENGTH("AmrDeveloper") as bytelength
+SELECT CHAR(345) AS code
 ```
