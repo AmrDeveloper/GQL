@@ -26,6 +26,8 @@ lazy_static! {
         map.insert("len", text_len);
         map.insert("ascii", text_ascii);
         map.insert("left", text_left);
+        map.insert("datalength", text_datalength);
+        map.insert("char", text_char);
         map
     };
 }
@@ -110,6 +112,20 @@ lazy_static! {
                 result: DataType::Text,
             },
         );
+        map.insert(
+            "datalength",
+            Prototype {
+                parameters: vec![DataType::Text],
+                result: DataType::Number,
+          },
+        );
+        map.insert(
+            "char",
+            Prototype {
+                parameters: vec![DataType::Number],
+                result: DataType::Text,
+          },
+        );
         map
     };
 }
@@ -177,4 +193,17 @@ fn text_left(inputs: Vec<Value>) -> Value {
         .collect::<String>();
 
     return Value::Text(substring);
+}
+
+fn text_datalength(inputs: Vec<Value>) -> Value {
+    let text = inputs[0].as_text();
+    return Value::Number(text.as_bytes().len() as i64);
+}
+
+fn text_char(inputs: Vec<Value>) -> Value {
+    let code = inputs[0].as_number() as u32;
+    if let Some(character) = char::from_u32(code) {
+        return Value::Text(character.to_string());
+    }
+    return Value::Text("".to_string());
 }
