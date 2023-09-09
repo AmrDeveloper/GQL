@@ -29,6 +29,7 @@ lazy_static! {
         map.insert("left", text_left);
         map.insert("datalength", text_datalength);
         map.insert("char", text_char);
+        map.insert("right", text_right);
 
         // Date functions
         map.insert("current_date", date_current_date);
@@ -130,6 +131,13 @@ lazy_static! {
             "char",
             Prototype {
                 parameters: vec![DataType::Number],
+                result: DataType::Text,
+            },
+        );
+        map.insert(
+            "right",
+            Prototype {
+                parameters: vec![DataType::Text, DataType::Number],
                 result: DataType::Text,
             },
         );
@@ -240,6 +248,22 @@ fn text_char(inputs: Vec<Value>) -> Value {
         return Value::Text(character.to_string());
     }
     return Value::Text("".to_string());
+}
+
+fn text_right(inputs: Vec<Value>) -> Value {
+    let text = inputs[0].as_text();
+    if text.is_empty() {
+        return Value::Text("".to_string());
+    }
+
+    let number_of_chars = inputs[1].as_number() as usize;
+    if number_of_chars > text.len() {
+        return Value::Text(text);
+    }
+
+    let text = text.as_str();
+
+    return Value::Text(text[text.len() - number_of_chars..text.len()].to_string());
 }
 
 // Date functions
