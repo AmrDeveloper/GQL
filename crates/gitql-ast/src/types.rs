@@ -8,6 +8,8 @@ pub enum DataType {
     Number,
     Boolean,
     Date,
+    Time,
+    DateTime,
     Undefined,
     Null,
 }
@@ -20,6 +22,8 @@ impl DataType {
             DataType::Number => "Number",
             DataType::Boolean => "Boolean",
             DataType::Date => "Date",
+            DataType::Time => "Time",
+            DataType::DateTime => "DateTime",
             DataType::Undefined => "Undefined",
             DataType::Null => "Null",
         };
@@ -39,7 +43,7 @@ lazy_static! {
         map.insert("files_changed", DataType::Number);
         map.insert("email", DataType::Text);
         map.insert("type", DataType::Text);
-        map.insert("time", DataType::Date);
+        map.insert("time", DataType::DateTime);
         map.insert("is_head", DataType::Boolean);
         map.insert("is_remote", DataType::Boolean);
         map.insert("commit_count", DataType::Number);

@@ -2,6 +2,7 @@ An function in GitQL accept one or more value and return value,
 note that all functions names are case-insensitive.
 
 ### String functions
+
 | Name       | Paramter     | Return | Description                                                         |
 | ---------- | ------------ | ------ | ------------------------------------------------------------------- |
 | LOWER      | Text         | Text   | Return Text in lower case.                                          |
@@ -31,4 +32,21 @@ SELECT name, ASCII(name) AS firstCharAscii FROM commits
 SELECT LEFT("AmrDeveloper", 3) AS extract
 SELECT DATALENGTH("AmrDeveloper") as bytelength
 SELECT CHAR(345) AS code
+```
+
+### Date functions
+
+| Name              | Paramter | Return   | Description                                               |
+| ----------------- | -------- | -------- | --------------------------------------------------------- |
+| CURRENT_TIME      |          | Time     | Return current time in `HH-MM-SS` format.                 |
+| CURRENT_DATE      |          | Date     | Return current date in `YYYY-MM-DD` format.               |
+| CURRENT_TIMESTAMP |          | DateTime | Return current date time in `YYYY-MM-DD HH-MM-SS` format. |
+
+
+### Date functions samples
+
+```sql
+SELECT CURRENT_TIME()
+SELECT CURRENT_DATE()
+SELECT CURRENT_TIMESTAMP()
 ```

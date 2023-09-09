@@ -5,7 +5,9 @@ pub enum Value {
     Number(i64),
     Text(String),
     Boolean(bool),
+    DateTime(i64),
     Date(i64),
+    Time(String),
     Null,
 }
 
@@ -20,7 +22,9 @@ impl Value {
             DataType::Text => self.as_text() == other.as_text(),
             DataType::Number => self.as_number() == other.as_number(),
             DataType::Boolean => self.as_bool() == other.as_bool(),
+            DataType::DateTime => self.as_date() == other.as_date(),
             DataType::Date => self.as_date() == other.as_date(),
+            DataType::Time => self.as_date() == other.as_date(),
             DataType::Undefined => true,
             DataType::Null => true,
         };
@@ -31,7 +35,9 @@ impl Value {
             Value::Number(_) => DataType::Number,
             Value::Text(_) => DataType::Text,
             Value::Boolean(_) => DataType::Boolean,
+            Value::DateTime(_) => DataType::DateTime,
             Value::Date(_) => DataType::Date,
+            Value::Time(_) => DataType::Time,
             Value::Null => DataType::Null,
         };
     }
@@ -41,7 +47,9 @@ impl Value {
             Value::Number(i) => i.to_string(),
             Value::Text(s) => s.to_string(),
             Value::Boolean(b) => b.to_string(),
+            Value::DateTime(dt) => dt.to_string(),
             Value::Date(d) => d.to_string(),
+            Value::Time(t) => t.to_string(),
             Value::Null => "Null".to_string(),
         };
     }
@@ -67,10 +75,24 @@ impl Value {
         return false;
     }
 
+    pub fn as_date_time(&self) -> i64 {
+        if let Value::DateTime(d) = self {
+            return *d;
+        }
+        return 0;
+    }
+
     pub fn as_date(&self) -> i64 {
         if let Value::Date(d) = self {
             return *d;
         }
         return 0;
+    }
+
+    pub fn as_time(&self) -> String {
+        if let Value::Time(d) = self {
+            return d.to_string();
+        }
+        return "".to_owned();
     }
 }

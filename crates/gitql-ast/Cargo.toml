@@ -9,3 +9,4 @@ license = "MIT"
 
 [dependencies]
 lazy_static = "1.4.0"
+chrono = "0.4.28"

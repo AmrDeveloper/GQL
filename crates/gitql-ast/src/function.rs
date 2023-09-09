@@ -1,3 +1,4 @@
+use crate::date_utils;
 use crate::types::DataType;
 use crate::value::Value;
 
@@ -28,6 +29,11 @@ lazy_static! {
         map.insert("left", text_left);
         map.insert("datalength", text_datalength);
         map.insert("char", text_char);
+
+        // Date functions
+        map.insert("current_date", date_current_date);
+        map.insert("current_time", date_current_time);
+        map.insert("current_timestamp", date_current_timestamp);
         map
     };
 }
@@ -35,6 +41,7 @@ lazy_static! {
 lazy_static! {
     pub static ref PROTOTYPES: HashMap<&'static str, Prototype> = {
         let mut map: HashMap<&'static str, Prototype> = HashMap::new();
+        // String functions
         map.insert(
             "lower",
             Prototype {
@@ -126,9 +133,36 @@ lazy_static! {
                 result: DataType::Text,
             },
         );
+
+        // Date functions
+        map.insert(
+            "current_date",
+            Prototype {
+                parameters: vec![],
+                result: DataType::Date,
+            },
+        );
+
+        map.insert(
+            "current_time",
+            Prototype {
+                parameters: vec![],
+                result: DataType::Time,
+            },
+        );
+
+        map.insert(
+            "current_timestamp",
+            Prototype {
+                parameters: vec![],
+                result: DataType::DateTime,
+            },
+        );
         map
     };
 }
+
+// String functions
 
 fn text_lowercase(inputs: Vec<Value>) -> Value {
     return Value::Text(inputs[0].as_text().to_lowercase());
@@ -206,4 +240,24 @@ fn text_char(inputs: Vec<Value>) -> Value {
         return Value::Text(character.to_string());
     }
     return Value::Text("".to_string());
+}
+
+// Date functions
+
+fn date_current_date(_inputs: Vec<Value>) -> Value {
+    let time_stamp = date_utils::get_unix_timestamp_ms();
+    let time = date_utils::time_stamp_to_date(time_stamp);
+    return Value::Text(time);
+}
+
+fn date_current_time(_inputs: Vec<Value>) -> Value {
+    let time_stamp = date_utils::get_unix_timestamp_ms();
+    let date = date_utils::time_stamp_to_time(time_stamp);
+    return Value::Text(date);
+}
+
+fn date_current_timestamp(_inputs: Vec<Value>) -> Value {
+    let time_stamp = date_utils::get_unix_timestamp_ms();
+    let date_time = date_utils::time_stamp_to_date_time(time_stamp);
+    return Value::Text(date_time);
 }
