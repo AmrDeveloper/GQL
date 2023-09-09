@@ -18,6 +18,7 @@ note that all functions names are case-insensitive.
 | LEFT       | Text, Number | Text   | Extracts a number of characters from a string (starting from left). |
 | DATALENGTH | Text         | Number | Returns the number of bytes used to represent an expression.        |
 | CHAR       | Number       | Text   | Returns the character based on the ASCII code.                      |
+| STUFF      | Text, Number, Number, Text | Deletes a part of a string and then inserts another part into the string, starting at a specified position. |
 
 ### String functions samples
 
@@ -32,6 +33,7 @@ SELECT name, ASCII(name) AS firstCharAscii FROM commits
 SELECT LEFT("AmrDeveloper", 3) AS extract
 SELECT DATALENGTH("AmrDeveloper") as bytelength
 SELECT CHAR(345) AS code
+SELECT STUFF("GQL tutorial!", 13, 1, " is fun!")
 ```
 
 ### Date functions
