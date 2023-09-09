@@ -29,6 +29,7 @@ lazy_static! {
         map.insert("left", text_left);
         map.insert("datalength", text_datalength);
         map.insert("char", text_char);
+        map.insert("replace", text_replace);
 
         // Date functions
         map.insert("current_date", date_current_date);
@@ -130,6 +131,13 @@ lazy_static! {
             "char",
             Prototype {
                 parameters: vec![DataType::Number],
+                result: DataType::Text,
+            },
+        );
+        map.insert(
+            "replace",
+            Prototype {
+                parameters: vec![DataType::Text, DataType::Text, DataType::Text],
                 result: DataType::Text,
             },
         );
@@ -240,6 +248,26 @@ fn text_char(inputs: Vec<Value>) -> Value {
         return Value::Text(character.to_string());
     }
     return Value::Text("".to_string());
+}
+
+fn text_replace(inputs: Vec<Value>) -> Value {
+    let text = inputs[0].as_text();
+    let old_string = inputs[1].as_text();
+    let new_string = inputs[2].as_text();
+
+    let mut result = String::new();
+    let mut end = 0;
+    for (begin, matched_part) in text
+        .to_lowercase()
+        .match_indices(&old_string.to_lowercase())
+    {
+        result.push_str(&text.get(end..begin).unwrap());
+        result.push_str(&new_string);
+        end = begin + matched_part.len();
+    }
+    result.push_str(&text.get(end..text.len()).unwrap());
+
+    return Value::Text(result);
 }
 
 // Date functions
