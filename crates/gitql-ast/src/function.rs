@@ -29,6 +29,8 @@ lazy_static! {
         map.insert("left", text_left);
         map.insert("datalength", text_datalength);
         map.insert("char", text_char);
+        map.insert("right", text_right);
+        map.insert("substring", text_substring);
 
         // Date functions
         map.insert("current_date", date_current_date);
@@ -130,6 +132,20 @@ lazy_static! {
             "char",
             Prototype {
                 parameters: vec![DataType::Number],
+                result: DataType::Text,
+            },
+        );
+        map.insert(
+            "substring",
+            Prototype {
+                parameters: vec![DataType::Text, DataType::Number],
+                result: DataType::Text,
+            },
+        );
+        map.insert(
+            "right",
+            Prototype {
+                parameters: vec![DataType::Text, DataType::Number, DataType::Number],
                 result: DataType::Text,
             },
         );
@@ -240,6 +256,39 @@ fn text_char(inputs: Vec<Value>) -> Value {
         return Value::Text(character.to_string());
     }
     return Value::Text("".to_string());
+}
+
+fn text_right(inputs: Vec<Value>) -> Value {
+    let text = inputs[0].as_text();
+    if text.is_empty() {
+        return Value::Text("".to_string());
+    }
+
+    let number_of_chars = inputs[1].as_number() as usize;
+    if number_of_chars > text.len() {
+        return Value::Text(text);
+    }
+
+    let text = text.as_str();
+
+    return Value::Text(text[text.len() - number_of_chars..text.len()].to_string());
+}
+
+fn text_substring(inputs: Vec<Value>) -> Value {
+    let text = inputs[0].as_text();
+    //according to the specs, a stirng starts at position 1.
+    //but in Rust, the index of a string starts from 0
+    let start = inputs[1].as_number() as usize - 1;
+    let length = inputs[2].as_number();
+
+    if start > text.len() || length > text.len() as i64 {
+        return Value::Text(text);
+    }
+    if length < 0 {
+        return Value::Text("".to_string());
+    }
+
+    return Value::Text(text[start..(start + length as usize)].to_string());
 }
 
 // Date functions
