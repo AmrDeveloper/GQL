@@ -21,7 +21,7 @@ use crate::engine_function::select_gql_objects;
 
 pub fn execute_statement(
     statement: &Box<dyn Statement>,
-    repo: &git2::Repository,
+    repo: &gix::Repository,
     groups: &mut Vec<Vec<GQLObject>>,
     alias_table: &mut HashMap<String, String>,
     hidden_selection: &Vec<String>,
@@ -88,7 +88,7 @@ pub fn execute_statement(
 
 fn execute_select_statement(
     statement: &SelectStatement,
-    repo: &git2::Repository,
+    repo: &gix::Repository,
     groups: &mut Vec<Vec<GQLObject>>,
     hidden_selections: &Vec<String>,
 ) -> Result<(), String> {

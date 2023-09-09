@@ -12,11 +12,11 @@ fn main() {
 
     let arguments = arguments::parse_arguments();
     let mut reporter = reporter::DiagnosticReporter::new();
-    let mut git_repositories: Vec<git2::Repository> = vec![];
+    let mut git_repositories: Vec<gix::Repository> = vec![];
     for repsitory in arguments.repos {
-        let git_repository = git2::Repository::open(repsitory);
+        let git_repository = gix::open(repsitory);
         if git_repository.is_err() {
-            reporter.report_error(git_repository.err().unwrap().message());
+            reporter.report_error(&git_repository.err().unwrap().to_string());
             return;
         }
         git_repositories.push(git_repository.ok().unwrap());
