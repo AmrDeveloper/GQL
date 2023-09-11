@@ -30,6 +30,7 @@ lazy_static! {
         map.insert("datalength", text_datalength);
         map.insert("char", text_char);
         map.insert("stuff", text_stuff);
+        map.insert("substring", text_substring);
 
         // Date functions
         map.insert("current_date", date_current_date);
@@ -138,6 +139,11 @@ lazy_static! {
             "stuff",
             Prototype {
                 parameters: vec![DataType::Text, DataType::Number, DataType::Number, DataType::Text],
+          });
+      map.insert(
+            "substring",
+            Prototype {
+                parameters: vec![DataType::Text, DataType::Number, DataType::Number],
                 result: DataType::Text,
             },
         );
@@ -268,6 +274,23 @@ fn text_stuff(inputs: Vec<Value>) -> Value {
     text.splice(start as usize..(start + length), new_string);
 
     return Value::Text(text.into_iter().collect());
+}
+
+fn text_substring(inputs: Vec<Value>) -> Value {
+    let text = inputs[0].as_text();
+    //according to the specs, a stirng starts at position 1.
+    //but in Rust, the index of a string starts from 0
+    let start = inputs[1].as_number() as usize - 1;
+    let length = inputs[2].as_number();
+
+    if start > text.len() || length > text.len() as i64 {
+        return Value::Text(text);
+    }
+    if length < 0 {
+        return Value::Text("".to_string());
+    }
+
+    return Value::Text(text[start..(start + length as usize)].to_string());
 }
 
 // Date functions

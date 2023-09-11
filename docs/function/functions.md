@@ -19,6 +19,7 @@ note that all functions names are case-insensitive.
 | DATALENGTH | Text         | Number | Returns the number of bytes used to represent an expression.        |
 | CHAR       | Number       | Text   | Returns the character based on the ASCII code.                      |
 | STUFF      | Text, Number, Number, Text | Deletes a part of a string and then inserts another part into the string, starting at a specified position. |
+| SUBSTRING  | Text, Number, Number | Text | Extracts some characters from a string.                       |
 
 ### String functions samples
 
@@ -34,6 +35,7 @@ SELECT LEFT("AmrDeveloper", 3) AS extract
 SELECT DATALENGTH("AmrDeveloper") as bytelength
 SELECT CHAR(345) AS code
 SELECT STUFF("GQL tutorial!", 13, 1, " is fun!")
+SELECT name, SUBSTRING(name, 1, 5) AS extract FROM commits
 ```
 
 ### Date functions
