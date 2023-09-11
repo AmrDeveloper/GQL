@@ -19,6 +19,7 @@ note that all functions names are case-insensitive.
 | DATALENGTH | Text         | Number | Returns the number of bytes used to represent an expression.        |
 | CHAR       | Number       | Text   | Returns the character based on the ASCII code.                      |
 | REPLACE    | Text, Text, Text | Text  | Replaces all occurrences of a substring within a string, with a new substring. |
+| SUBSTRING  | Text, Number, Number | Text | Extracts some characters from a string.                       |
 
 ### String functions samples
 
@@ -34,6 +35,7 @@ SELECT LEFT("AmrDeveloper", 3) AS extract
 SELECT DATALENGTH("AmrDeveloper") as bytelength
 SELECT CHAR(345) AS code
 SELECT REPLACE("ABC ABC ABC", "a", "c") as replacedText
+SELECT name, SUBSTRING(name, 1, 5) AS extract FROM commits
 ```
 
 ### Date functions
