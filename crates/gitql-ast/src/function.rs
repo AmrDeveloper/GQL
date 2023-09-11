@@ -29,6 +29,7 @@ lazy_static! {
         map.insert("left", text_left);
         map.insert("datalength", text_datalength);
         map.insert("char", text_char);
+        map.insert("right", text_right);
         map.insert("substring", text_substring);
 
         // Date functions
@@ -134,6 +135,12 @@ lazy_static! {
                 result: DataType::Text,
             },
         );
+        map.insert(
+            "right",
+            Prototype {
+                parameters: vec![DataType::Text, DataType::Number],
+                result: DataType::Text
+        });
         map.insert(
             "substring",
             Prototype {
@@ -248,6 +255,21 @@ fn text_char(inputs: Vec<Value>) -> Value {
         return Value::Text(character.to_string());
     }
     return Value::Text("".to_string());
+}
+
+fn text_right(inputs: Vec<Value>) -> Value {
+    let text = inputs[0].as_text();
+    if text.is_empty() {
+        return Value::Text("".to_string());
+    }
+
+    let number_of_chars = inputs[1].as_number() as usize;
+    if number_of_chars > text.len() {
+        return Value::Text(text);
+    }
+
+    let start = text.len() - number_of_chars;
+    return Value::Text(text[start..text.len()].to_string());
 }
 
 fn text_substring(inputs: Vec<Value>) -> Value {
