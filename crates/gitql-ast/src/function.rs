@@ -29,6 +29,7 @@ lazy_static! {
         map.insert("left", text_left);
         map.insert("datalength", text_datalength);
         map.insert("char", text_char);
+        map.insert("stuff", text_stuff);
         map.insert("substring", text_substring);
 
         // Date functions
@@ -135,6 +136,11 @@ lazy_static! {
             },
         );
         map.insert(
+            "stuff",
+            Prototype {
+                parameters: vec![DataType::Text, DataType::Number, DataType::Number, DataType::Text],
+          });
+      map.insert(
             "substring",
             Prototype {
                 parameters: vec![DataType::Text, DataType::Number, DataType::Number],
@@ -248,6 +254,26 @@ fn text_char(inputs: Vec<Value>) -> Value {
         return Value::Text(character.to_string());
     }
     return Value::Text("".to_string());
+}
+
+fn text_stuff(inputs: Vec<Value>) -> Value {
+    let text = inputs[0].as_text();
+    let start = (inputs[1].as_number() - 1) as usize;
+    let length = inputs[2].as_number() as usize;
+    let new_string = inputs[3].as_text();
+
+    if text.is_empty() {
+        return Value::Text(text);
+    }
+    if start as usize > text.len() || length as usize > text.len() {
+        return Value::Text(text);
+    }
+
+    let mut text = text.chars().collect::<Vec<_>>();
+    let new_string = new_string.chars().collect::<Vec<_>>();
+    text.splice(start as usize..(start + length), new_string);
+
+    return Value::Text(text.into_iter().collect());
 }
 
 fn text_substring(inputs: Vec<Value>) -> Value {
