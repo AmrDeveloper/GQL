@@ -277,7 +277,7 @@ fn text_replace(inputs: Vec<Value>) -> Value {
     return Value::Text(result);
   }
 
-  fn text_substring(inputs: Vec<Value>) -> Value {
+fn text_substring(inputs: Vec<Value>) -> Value {
     let text = inputs[0].as_text();
     //according to the specs, a stirng starts at position 1.
     //but in Rust, the index of a string starts from 0
