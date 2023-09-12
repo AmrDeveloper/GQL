@@ -20,6 +20,7 @@ note that all functions names are case-insensitive.
 | CHAR       | Number       | Text   | Returns the character based on the ASCII code.                      |
 | REPLACE    | Text, Text, Text | Text  | Replaces all occurrences of a substring within a string, with a new substring. |
 | SUBSTRING  | Text, Number, Number | Text | Extracts some characters from a string.                       |
+| RIGHT      | Text, Number | Text   | Extracts a number of characters from a string (starting from right).|
 
 ### String functions samples
 
@@ -36,6 +37,7 @@ SELECT DATALENGTH("AmrDeveloper") as bytelength
 SELECT CHAR(345) AS code
 SELECT REPLACE("ABC ABC ABC", "a", "c") as replacedText
 SELECT name, SUBSTRING(name, 1, 5) AS extract FROM commits
+SELECT RIGHT("AmrDeveloper", 3) AS extract
 ```
 
 ### Date functions
