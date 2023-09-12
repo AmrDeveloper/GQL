@@ -31,7 +31,7 @@ lazy_static! {
         map.insert("char", text_char);
         map.insert("replace", text_replace);
         map.insert("substring", text_substring);
-        map.insert("stuff", text_stuff);
+        map.insert("right", text_right);
 
         // Date functions
         map.insert("current_date", date_current_date);
@@ -140,7 +140,7 @@ lazy_static! {
             "replace",
             Prototype {
                 parameters: vec![DataType::Text, DataType::Text, DataType::Text],
-                result: DataType::Text
+                result: DataType::Text,
           },
         );
         map.insert(
@@ -151,9 +151,9 @@ lazy_static! {
             },
         );
         map.insert(
-            "stuff",
+            "right",
             Prototype {
-                parameters: vec![DataType::Text, DataType::Number, DataType::Number, DataType::Text],
+                parameters: vec![DataType::Text, DataType::Number],
                 result: DataType::Text,
             },
         );
@@ -284,7 +284,7 @@ fn text_replace(inputs: Vec<Value>) -> Value {
     result.push_str(&text.get(end..text.len()).unwrap());
 
     return Value::Text(result);
-  }
+}
 
 fn text_substring(inputs: Vec<Value>) -> Value {
     let text = inputs[0].as_text();
@@ -303,26 +303,21 @@ fn text_substring(inputs: Vec<Value>) -> Value {
     return Value::Text(text[start..(start + length as usize)].to_string());
 }
 
-fn text_stuff(inputs: Vec<Value>) -> Value {
+fn text_right(inputs: Vec<Value>) -> Value {
     let text = inputs[0].as_text();
-    let start = (inputs[1].as_number() - 1) as usize;
-    let length = inputs[2].as_number() as usize;
-    let new_string = inputs[3].as_text();
-
     if text.is_empty() {
-        return Value::Text(text);
+        return Value::Text("".to_string());
     }
-    if start as usize > text.len() || length as usize > text.len() {
+
+    let number_of_chars = inputs[1].as_number() as usize;
+    if number_of_chars > text.len() {
         return Value::Text(text);
     }
 
-    let mut text = text.chars().collect::<Vec<_>>();
-    let new_string = new_string.chars().collect::<Vec<_>>();
-    text.splice(start as usize..(start + length), new_string);
+    let text = text.as_str();
 
-    return Value::Text(text.into_iter().collect());
+    return Value::Text(text[text.len() - number_of_chars..text.len()].to_string());
 }
-
 
 // Date functions
 
