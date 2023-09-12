@@ -31,6 +31,7 @@ lazy_static! {
         map.insert("char", text_char);
         map.insert("replace", text_replace);
         map.insert("substring", text_substring);
+        map.insert("stuff", text_stuff);
 
         // Date functions
         map.insert("current_date", date_current_date);
@@ -139,12 +140,20 @@ lazy_static! {
             "replace",
             Prototype {
                 parameters: vec![DataType::Text, DataType::Text, DataType::Text],
+                result: DataType::Text
           },
         );
-        map.insert({
+        map.insert(
             "substring",
             Prototype {
                 parameters: vec![DataType::Text, DataType::Number, DataType::Number],
+                result: DataType::Text,
+            },
+        );
+        map.insert(
+            "stuff",
+            Prototype {
+                parameters: vec![DataType::Text, DataType::Number, DataType::Number, DataType::Text],
                 result: DataType::Text,
             },
         );
@@ -293,6 +302,27 @@ fn text_substring(inputs: Vec<Value>) -> Value {
 
     return Value::Text(text[start..(start + length as usize)].to_string());
 }
+
+fn text_stuff(inputs: Vec<Value>) -> Value {
+    let text = inputs[0].as_text();
+    let start = (inputs[1].as_number() - 1) as usize;
+    let length = inputs[2].as_number() as usize;
+    let new_string = inputs[3].as_text();
+
+    if text.is_empty() {
+        return Value::Text(text);
+    }
+    if start as usize > text.len() || length as usize > text.len() {
+        return Value::Text(text);
+    }
+
+    let mut text = text.chars().collect::<Vec<_>>();
+    let new_string = new_string.chars().collect::<Vec<_>>();
+    text.splice(start as usize..(start + length), new_string);
+
+    return Value::Text(text.into_iter().collect());
+}
+
 
 // Date functions
 
