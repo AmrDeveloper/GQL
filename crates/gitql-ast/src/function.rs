@@ -33,6 +33,7 @@ lazy_static! {
         map.insert("substring", text_substring);
         map.insert("stuff", text_stuff);
         map.insert("right", text_right);
+        map.insert("translate", text_translate);
 
         // Date functions
         map.insert("current_date", date_current_date);
@@ -162,6 +163,13 @@ lazy_static! {
             "right",
             Prototype {
                 parameters: vec![DataType::Text, DataType::Integer],
+                result: DataType::Text
+             },
+        );
+        map.insert(
+            "translate",
+            Prototype {
+                parameters: vec![DataType::Text, DataType::Text, DataType::Text],
                 result: DataType::Text
              },
         );
@@ -345,6 +353,23 @@ fn text_right(inputs: Vec<Value>) -> Value {
     let text = text.as_str();
 
     return Value::Text(text[text.len() - number_of_chars..text.len()].to_string());
+}
+
+fn text_translate(inputs: Vec<Value>) -> Value {
+    let mut text = inputs[0].as_text();
+    let characters = inputs[1].as_text();
+    let translations = inputs[2].as_text();
+
+    if translations.len() != characters.len() {
+        return Value::Text("".to_string());
+    }
+
+    let translations = translations.chars().collect::<Vec<_>>();
+    for (idx, letter) in characters.char_indices() {
+        text = text.replace(letter, &char::to_string(&translations[idx]));
+    }
+
+    return Value::Text(text);
 }
 
 // Date functions
