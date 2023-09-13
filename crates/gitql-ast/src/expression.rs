@@ -159,8 +159,15 @@ impl Expression for ArithmeticExpression {
         ExpressionKind::Arithmetic
     }
 
-    fn expr_type(&self, _scope: &Scope) -> DataType {
-        return DataType::Integer;
+    fn expr_type(&self, scope: &Scope) -> DataType {
+        let lhs = self.left.expr_type(scope);
+        let rhs = self.left.expr_type(scope);
+
+        if lhs.is_int() && rhs.is_int() {
+            return DataType::Integer;
+        }
+
+        return DataType::Float;
     }
 
     fn as_any(&self) -> &dyn Any {
