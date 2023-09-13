@@ -34,6 +34,7 @@ lazy_static! {
         map.insert("stuff", text_stuff);
         map.insert("right", text_right);
         map.insert("translate", text_translate);
+        map.insert("soundex", text_soundex);
 
         // Date functions
         map.insert("current_date", date_current_date);
@@ -170,6 +171,13 @@ lazy_static! {
             "translate",
             Prototype {
                 parameters: vec![DataType::Text, DataType::Text, DataType::Text],
+                result: DataType::Text
+             },
+        );
+        map.insert(
+            "soundex",
+            Prototype {
+                parameters: vec![DataType::Text],
                 result: DataType::Text
              },
         );
@@ -370,6 +378,50 @@ fn text_translate(inputs: Vec<Value>) -> Value {
     }
 
     return Value::Text(text);
+}
+
+fn text_soundex(inputs: Vec<Value>) -> Value {
+    fn match_letter_to_int(letter: char) -> usize {
+        match letter {
+            'B' | 'F' | 'P' | 'V' => 1,
+            'C' | 'G' | 'J' | 'K' | 'Q' | 'S' | 'X' | 'Z' => 2,
+            'D' | 'T' => 3,
+            'L' => 4,
+            'M' | 'N' => 5,
+            'R' => 6,
+            _ => 0,
+        }
+    }
+
+    let text = inputs[0].as_text();
+    let letters_to_be_ignored = vec!['A', 'E', 'I', 'O', 'U', 'H', 'W', 'Y'];
+    //save the first letter
+    let mut result = String::from(text.chars().nth(0).unwrap());
+
+    for (idx, letter) in text.char_indices() {
+        if idx != 0 {
+            //when the length of the result is already 4, we want to exit because we only need a 4 character code
+            if result.len() == 4 {
+                return Value::Text(result);
+            }
+
+            let letter = letter.to_ascii_uppercase();
+            if !letters_to_be_ignored.contains(&letter) {
+                let int = match_letter_to_int(letter);
+                result.push_str(&int.to_string());
+            }
+        }
+    }
+
+    if result.len() < 4 {
+        let diff = 4 - result.len();
+        for _i in 0..diff {
+            result.push_str(&0.to_string());
+        }
+        return Value::Text(result);
+    } else {
+        return Value::Text(result);
+    }
 }
 
 // Date functions
