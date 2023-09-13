@@ -240,19 +240,19 @@ fn execute_order_by_statement(
     }
 
     if main_group[0].attributes.contains_key(&statement.field_name) {
-        if statement.field_type == DataType::Number {
+        if statement.field_type == DataType::Integer {
             main_group.sort_by(|a, b| {
                 let first_value = a
                     .attributes
                     .get(&statement.field_name.to_string())
                     .unwrap()
-                    .as_number();
+                    .as_int();
 
                 let other = b
                     .attributes
                     .get(&statement.field_name.to_string())
                     .unwrap()
-                    .as_number();
+                    .as_int();
 
                 first_value.partial_cmp(&other).unwrap()
             });

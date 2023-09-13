@@ -1,8 +1,11 @@
+use std::ops::Mul;
+
 use crate::types::DataType;
 
 #[derive(PartialEq, Clone)]
 pub enum Value {
-    Number(i64),
+    Integer(i64),
+    Float(f64),
     Text(String),
     Boolean(bool),
     DateTime(i64),
@@ -20,7 +23,8 @@ impl Value {
         return match self.data_type() {
             DataType::Any => true,
             DataType::Text => self.as_text() == other.as_text(),
-            DataType::Number => self.as_number() == other.as_number(),
+            DataType::Integer => self.as_int() == other.as_int(),
+            DataType::Float => self.as_float() == other.as_float(),
             DataType::Boolean => self.as_bool() == other.as_bool(),
             DataType::DateTime => self.as_date() == other.as_date(),
             DataType::Date => self.as_date() == other.as_date(),
@@ -30,9 +34,151 @@ impl Value {
         };
     }
 
+    pub fn plus(&self, other: &Value) -> Value {
+        let self_type = self.data_type();
+        let other_type = other.data_type();
+
+        if self_type == DataType::Integer && other_type == DataType::Integer {
+            return Value::Integer(self.as_int() + other.as_int());
+        }
+
+        if self_type == DataType::Float && other_type == DataType::Float {
+            return Value::Float(self.as_float() + other.as_float());
+        }
+
+        if self_type == DataType::Integer && other_type == DataType::Float {
+            return Value::Float((self.as_int() as f64) + other.as_float());
+        }
+
+        if self_type == DataType::Float && other_type == DataType::Integer {
+            return Value::Float(self.as_float() + (other.as_int() as f64));
+        }
+
+        return Value::Integer(0);
+    }
+
+    pub fn minus(&self, other: &Value) -> Value {
+        let self_type = self.data_type();
+        let other_type = other.data_type();
+
+        if self_type == DataType::Integer && other_type == DataType::Integer {
+            return Value::Integer(self.as_int() - other.as_int());
+        }
+
+        if self_type == DataType::Float && other_type == DataType::Float {
+            return Value::Float(self.as_float() - other.as_float());
+        }
+
+        if self_type == DataType::Integer && other_type == DataType::Float {
+            return Value::Float((self.as_int() as f64) - other.as_float());
+        }
+
+        if self_type == DataType::Float && other_type == DataType::Integer {
+            return Value::Float(self.as_float() - (other.as_int() as f64));
+        }
+
+        return Value::Integer(0);
+    }
+
+    pub fn mul(&self, other: &Value) -> Result<Value, String> {
+        let self_type = self.data_type();
+        let other_type = other.data_type();
+
+        if self_type == DataType::Integer && other_type == DataType::Integer {
+            let lhs = self.as_int();
+            let rhs = other.as_int();
+            let multi_result = lhs.overflowing_mul(rhs);
+            if multi_result.1 {
+                return Err(format!(
+                    "Attempt to compute `{} * {}`, which would overflow",
+                    lhs, rhs
+                ));
+            }
+            return Ok(Value::Integer(multi_result.0));
+        }
+
+        if self_type == DataType::Float && other_type == DataType::Float {
+            return Ok(Value::Float(self.as_float() * other.as_float()));
+        }
+
+        if self_type == DataType::Integer && other_type == DataType::Float {
+            return Ok(Value::Float(other.as_float().mul(self.as_int() as f64)));
+        }
+
+        if self_type == DataType::Float && other_type == DataType::Integer {
+            return Ok(Value::Float(self.as_float().mul(other.as_int() as f64)));
+        }
+
+        return Ok(Value::Integer(0));
+    }
+
+    pub fn div(&self, other: &Value) -> Result<Value, String> {
+        let self_type = self.data_type();
+        let other_type = other.data_type();
+
+        if other_type == DataType::Integer {
+            let other = other.as_int();
+            if other == 0 {
+                return Err(format!("Attempt to divide `{}` by zero", self.literal()));
+            }
+        }
+
+        if self_type == DataType::Integer && other_type == DataType::Integer {
+            return Ok(Value::Integer(self.as_int() / other.as_int()));
+        }
+
+        if self_type == DataType::Float && other_type == DataType::Float {
+            return Ok(Value::Float(self.as_float() / other.as_float()));
+        }
+
+        if self_type == DataType::Integer && other_type == DataType::Float {
+            return Ok(Value::Float(self.as_int() as f64 / other.as_float()));
+        }
+
+        if self_type == DataType::Float && other_type == DataType::Integer {
+            return Ok(Value::Float(self.as_float() / other.as_int() as f64));
+        }
+
+        return Ok(Value::Integer(0));
+    }
+
+    pub fn modulus(&self, other: &Value) -> Result<Value, String> {
+        let self_type = self.data_type();
+        let other_type = other.data_type();
+
+        if other_type == DataType::Integer {
+            let other = other.as_int();
+            if other == 0 {
+                return Err(format!(
+                    "Attempt to calculate the remainder of `{}` with a divisor of zero",
+                    self.literal()
+                ));
+            }
+        }
+
+        if self_type == DataType::Integer && other_type == DataType::Integer {
+            return Ok(Value::Integer(self.as_int() % other.as_int()));
+        }
+
+        if self_type == DataType::Float && other_type == DataType::Float {
+            return Ok(Value::Float(self.as_float() % other.as_float()));
+        }
+
+        if self_type == DataType::Integer && other_type == DataType::Float {
+            return Ok(Value::Float(self.as_int() as f64 % other.as_float()));
+        }
+
+        if self_type == DataType::Float && other_type == DataType::Integer {
+            return Ok(Value::Float(self.as_float() % other.as_int() as f64));
+        }
+
+        return Ok(Value::Integer(0));
+    }
+
     pub fn data_type(&self) -> DataType {
         return match self {
-            Value::Number(_) => DataType::Number,
+            Value::Integer(_) => DataType::Integer,
+            Value::Float(_) => DataType::Float,
             Value::Text(_) => DataType::Text,
             Value::Boolean(_) => DataType::Boolean,
             Value::DateTime(_) => DataType::DateTime,
@@ -44,7 +190,8 @@ impl Value {
 
     pub fn literal(&self) -> String {
         return match self {
-            Value::Number(i) => i.to_string(),
+            Value::Integer(i) => i.to_string(),
+            Value::Float(f) => f.to_string(),
             Value::Text(s) => s.to_string(),
             Value::Boolean(b) => b.to_string(),
             Value::DateTime(dt) => dt.to_string(),
@@ -54,11 +201,18 @@ impl Value {
         };
     }
 
-    pub fn as_number(&self) -> i64 {
-        if let Value::Number(n) = self {
+    pub fn as_int(&self) -> i64 {
+        if let Value::Integer(n) = self {
             return *n;
         }
         return 0;
+    }
+
+    pub fn as_float(&self) -> f64 {
+        if let Value::Float(n) = self {
+            return *n;
+        }
+        return 0f64;
     }
 
     pub fn as_text(&self) -> String {

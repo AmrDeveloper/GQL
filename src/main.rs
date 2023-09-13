@@ -82,6 +82,7 @@ fn main() {
             println!("Analysis:");
             println!("Frontend : {:?}", front_duration);
             println!("Engine   : {:?}", engine_duration);
+            println!("Total    : {:?}", (front_duration + engine_duration));
             println!("\n");
         }
     }

@@ -3,6 +3,7 @@ use std::any::Any;
 use crate::function::PROTOTYPES;
 use crate::scope::Scope;
 use crate::types::{DataType, TABLES_FIELDS_TYPES};
+use crate::value::Value;
 
 pub enum ExpressionKind {
     String,
@@ -74,7 +75,7 @@ impl Expression for SymbolExpression {
 }
 
 pub struct NumberExpression {
-    pub value: i64,
+    pub value: Value,
 }
 
 impl Expression for NumberExpression {
@@ -83,7 +84,7 @@ impl Expression for NumberExpression {
     }
 
     fn expr_type(&self, _scope: &Scope) -> DataType {
-        return DataType::Number;
+        return self.value.data_type();
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -129,7 +130,7 @@ impl Expression for PrefixUnary {
         return if self.op == PrefixUnaryOperator::Bang {
             DataType::Boolean
         } else {
-            DataType::Number
+            DataType::Integer
         };
     }
 
@@ -159,7 +160,7 @@ impl Expression for ArithmeticExpression {
     }
 
     fn expr_type(&self, _scope: &Scope) -> DataType {
-        return DataType::Number;
+        return DataType::Integer;
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -272,7 +273,7 @@ impl Expression for BitwiseExpression {
     }
 
     fn expr_type(&self, _scope: &Scope) -> DataType {
-        return DataType::Number;
+        return DataType::Integer;
     }
 
     fn as_any(&self) -> &dyn Any {

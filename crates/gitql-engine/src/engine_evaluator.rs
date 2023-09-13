@@ -143,7 +143,7 @@ fn evaluate_symbol(
 }
 
 fn evaluate_number(expr: &NumberExpression) -> Result<Value, String> {
-    return Ok(Value::Number(expr.value));
+    return Ok(expr.value.to_owned());
 }
 
 fn evaluate_boolean(expr: &BooleanExpression) -> Result<Value, String> {
@@ -158,7 +158,7 @@ fn evaluate_prefix_unary(
     return if expr.op == PrefixUnaryOperator::Bang {
         Ok(Value::Boolean(!rhs.as_bool()))
     } else {
-        Ok(Value::Number(-rhs.as_number()))
+        Ok(Value::Integer(-rhs.as_int()))
     };
 }
 
@@ -166,40 +166,15 @@ fn evaluate_arithmetic(
     expr: &ArithmeticExpression,
     object: &HashMap<String, Value>,
 ) -> Result<Value, String> {
-    let lhs = evaluate_expression(&expr.left, object)?.as_number();
-    let rhs = evaluate_expression(&expr.right, object)?.as_number();
+    let lhs = evaluate_expression(&expr.left, object)?;
+    let rhs = evaluate_expression(&expr.right, object)?;
 
     return match expr.operator {
-        ArithmeticOperator::Plus => Ok(Value::Number(lhs + rhs)),
-        ArithmeticOperator::Minus => Ok(Value::Number(lhs - rhs)),
-        ArithmeticOperator::Star => {
-            let mul_result = lhs.overflowing_mul(rhs);
-            if mul_result.1 {
-                Err(format!(
-                    "Attempt to compute `{} * {}`, which would overflow",
-                    lhs, rhs
-                ))
-            } else {
-                Ok(Value::Number(mul_result.0))
-            }
-        }
-        ArithmeticOperator::Slash => {
-            if rhs == 0 {
-                Err(format!("Attempt to divide `{}` by zero", lhs))
-            } else {
-                Ok(Value::Number(lhs / rhs))
-            }
-        }
-        ArithmeticOperator::Modulus => {
-            if rhs == 0 {
-                Err(format!(
-                    "Attempt to calculate the remainder of `{}` with a divisor of zero",
-                    lhs
-                ))
-            } else {
-                Ok(Value::Number(lhs % rhs))
-            }
-        }
+        ArithmeticOperator::Plus => Ok(lhs.plus(&rhs)),
+        ArithmeticOperator::Minus => Ok(lhs.minus(&rhs)),
+        ArithmeticOperator::Star => lhs.mul(&rhs),
+        ArithmeticOperator::Slash => lhs.div(&rhs),
+        ArithmeticOperator::Modulus => lhs.modulus(&rhs),
     };
 }
 
@@ -211,10 +186,14 @@ fn evaluate_comparison(
     let rhs = evaluate_expression(&expr.right, object)?;
 
     let left_type = lhs.data_type();
-    let comparison_result = if left_type == DataType::Number {
-        let ilhs = lhs.as_number();
-        let irhs = rhs.as_number();
+    let comparison_result = if left_type == DataType::Integer {
+        let ilhs = lhs.as_int();
+        let irhs = rhs.as_int();
         ilhs.cmp(&irhs)
+    } else if left_type == DataType::Float {
+        let ilhs = lhs.as_float();
+        let irhs = rhs.as_float();
+        ilhs.total_cmp(&irhs)
     } else if left_type == DataType::Boolean {
         let ilhs = lhs.as_bool();
         let irhs = rhs.as_bool();
@@ -280,24 +259,24 @@ fn evaluate_bitwise(
     expr: &BitwiseExpression,
     object: &HashMap<String, Value>,
 ) -> Result<Value, String> {
-    let lhs = evaluate_expression(&expr.left, object)?.as_number();
-    let rhs = evaluate_expression(&expr.right, object)?.as_number();
+    let lhs = evaluate_expression(&expr.left, object)?.as_int();
+    let rhs = evaluate_expression(&expr.right, object)?.as_int();
 
     return match expr.operator {
-        BitwiseOperator::Or => Ok(Value::Number(lhs | rhs)),
-        BitwiseOperator::And => Ok(Value::Number(lhs & rhs)),
+        BitwiseOperator::Or => Ok(Value::Integer(lhs | rhs)),
+        BitwiseOperator::And => Ok(Value::Integer(lhs & rhs)),
         BitwiseOperator::RightShift => {
             if rhs >= 64 {
                 Err("Attempt to shift right with overflow".to_string())
             } else {
-                Ok(Value::Number(lhs >> rhs))
+                Ok(Value::Integer(lhs >> rhs))
             }
         }
         BitwiseOperator::LeftShift => {
             if rhs >= 64 {
                 Err("Attempt to shift left with overflow".to_string())
             } else {
-                Ok(Value::Number(lhs << rhs))
+                Ok(Value::Integer(lhs << rhs))
             }
         }
     };
@@ -334,9 +313,9 @@ fn evaluate_between(
         return range_end_result;
     }
 
-    let value = value_result.ok().unwrap().as_number();
-    let range_start = range_start_result.ok().unwrap().as_number();
-    let range_end = range_end_result.ok().unwrap().as_number();
+    let value = value_result.ok().unwrap().as_int();
+    let range_start = range_start_result.ok().unwrap().as_int();
+    let range_end = range_end_result.ok().unwrap().as_int();
     return Ok(Value::Boolean(value >= range_start && value <= range_end));
 }
 

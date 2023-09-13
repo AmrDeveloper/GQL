@@ -285,21 +285,21 @@ fn select_diffs(
                 let diff_status = diff.unwrap().stats().unwrap();
 
                 if field_name == "insertions" {
-                    let insertions = Value::Number(diff_status.insertions() as i64);
+                    let insertions = Value::Integer(diff_status.insertions() as i64);
                     let column_name = get_column_name(&alias_table, &"insertions".to_string());
                     attributes.insert(column_name, insertions);
                     continue;
                 }
 
                 if field_name == "deletions" {
-                    let deletations = Value::Number(diff_status.deletions() as i64);
+                    let deletations = Value::Integer(diff_status.deletions() as i64);
                     let column_name = get_column_name(&alias_table, &"deletions".to_string());
                     attributes.insert(column_name, deletations);
                     continue;
                 }
 
                 if field_name == "files_changed" {
-                    let file_changed = Value::Number(diff_status.files_changed() as i64);
+                    let file_changed = Value::Integer(diff_status.files_changed() as i64);
                     let column_name = get_column_name(&alias_table, &"files_changed".to_string());
                     attributes.insert(column_name, file_changed);
                     continue;
@@ -361,7 +361,7 @@ fn select_branches(
                 let mut revwalk = repo.revwalk().unwrap();
                 let _ = revwalk.push(branch_ref.id());
                 let column_name = get_column_name(&alias_table, &"commit_count".to_string());
-                attributes.insert(column_name, Value::Number(revwalk.count() as i64));
+                attributes.insert(column_name, Value::Integer(revwalk.count() as i64));
                 continue;
             }
 

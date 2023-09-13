@@ -1,5 +1,6 @@
 use gitql_ast::scope::Scope;
 use gitql_ast::scope::TABLES_FIELDS_NAMES;
+use gitql_ast::value::Value;
 use std::collections::HashMap;
 use std::vec;
 
@@ -443,7 +444,7 @@ fn parse_limit_statement(
     position: &mut usize,
 ) -> Result<Box<dyn Statement>, GQLError> {
     *position += 1;
-    if *position >= tokens.len() || tokens[*position].kind != TokenKind::Number {
+    if *position >= tokens.len() || tokens[*position].kind != TokenKind::Integer {
         return Err(GQLError {
             message: "Expect number after `LIMIT` keyword".to_owned(),
             location: get_safe_location(tokens, *position - 1),
@@ -461,7 +462,7 @@ fn parse_offset_statement(
     position: &mut usize,
 ) -> Result<Box<dyn Statement>, GQLError> {
     *position += 1;
-    if *position >= tokens.len() || tokens[*position].kind != TokenKind::Number {
+    if *position >= tokens.len() || tokens[*position].kind != TokenKind::Integer {
         return Err(GQLError {
             message: "Expect number after `OFFSET` keyword".to_owned(),
             location: get_safe_location(tokens, *position - 1),
@@ -595,7 +596,7 @@ fn parse_between_expression(
         // Consume `BETWEEN` keyword
         *position += 1;
 
-        if expression.expr_type(&context.symbol_table) != DataType::Number {
+        if expression.expr_type(&context.symbol_table) != DataType::Integer {
             return Err(GQLError {
                 message: format!(
                     "BETWEEN value must to be Number type but got {}",
@@ -613,7 +614,7 @@ fn parse_between_expression(
         }
 
         let range_start = parse_logical_or_expression(context, tokens, position)?;
-        if range_start.expr_type(&context.symbol_table) != DataType::Number {
+        if range_start.expr_type(&context.symbol_table) != DataType::Integer {
             return Err(GQLError {
                 message: format!(
                     "Expect range start to be Number type but got {}",
@@ -634,7 +635,7 @@ fn parse_between_expression(
         *position += 1;
 
         let range_end = parse_logical_or_expression(context, tokens, position)?;
-        if range_end.expr_type(&context.symbol_table) != DataType::Number {
+        if range_end.expr_type(&context.symbol_table) != DataType::Integer {
             return Err(GQLError {
                 message: format!(
                     "Expect range end to be Number type but got {}",
@@ -952,13 +953,14 @@ fn parse_comparison_expression(
         };
 
         let rhs = parse_bitwise_shift_expression(context, tokens, position)?;
+        let rhs_type = rhs.expr_type(&context.symbol_table);
 
         // Make sure right and left hand side types are the same
-        if rhs.expr_type(&context.symbol_table) != lhs.expr_type(&context.symbol_table) {
+        if rhs_type == DataType::Integer && rhs_type != lhs.expr_type(&context.symbol_table) {
             let message = format!(
                 "Can't compare values of different types `{}` and `{}`",
                 lhs.expr_type(&context.symbol_table).literal(),
-                rhs.expr_type(&context.symbol_table).literal()
+                rhs_type.literal()
             );
             return Err(GQLError {
                 message,
@@ -996,7 +998,7 @@ fn parse_bitwise_shift_expression(
         let rhs = parse_term_expression(context, tokens, position)?;
 
         // Make sure right and left hand side types are numbers
-        if rhs.expr_type(&context.symbol_table) == DataType::Number
+        if rhs.expr_type(&context.symbol_table) == DataType::Integer
             && rhs.expr_type(&context.symbol_table) != lhs.expr_type(&context.symbol_table)
         {
             let message = format!(
@@ -1038,25 +1040,29 @@ fn parse_term_expression(
 
         let rhs = parse_factor_expression(context, tokens, position)?;
 
+        let lhs_type = lhs.expr_type(&context.symbol_table);
+        let rhs_type = rhs.expr_type(&context.symbol_table);
+
         // Make sure right and left hand side types are numbers
-        if rhs.expr_type(&context.symbol_table) == DataType::Number
-            && rhs.expr_type(&context.symbol_table) != lhs.expr_type(&context.symbol_table)
-        {
-            let message = format!(
-                "Math operators require number types but got `{}` and `{}`",
-                lhs.expr_type(&context.symbol_table).literal(),
-                rhs.expr_type(&context.symbol_table).literal()
-            );
-            return Err(GQLError {
-                message,
-                location: get_safe_location(tokens, *position - 2),
+        if lhs_type.is_number() && rhs_type.is_number() {
+            lhs = Box::new(ArithmeticExpression {
+                left: lhs,
+                operator: math_operator,
+                right: rhs,
             });
+
+            continue;
         }
 
-        lhs = Box::new(ArithmeticExpression {
-            left: lhs,
-            operator: math_operator,
-            right: rhs,
+        let message = format!(
+            "Math operators require number types but got `{}` and `{}`",
+            lhs_type.literal(),
+            rhs_type.literal()
+        );
+
+        return Err(GQLError {
+            message,
+            location: get_safe_location(tokens, *position - 2),
         });
     }
 
@@ -1086,25 +1092,28 @@ fn parse_factor_expression(
 
         let rhs = parse_check_expression(context, tokens, position)?;
 
+        let lhs_type = lhs.expr_type(&context.symbol_table);
+        let rhs_type = rhs.expr_type(&context.symbol_table);
+
         // Make sure right and left hand side types are numbers
-        if rhs.expr_type(&context.symbol_table) == DataType::Number
-            && rhs.expr_type(&context.symbol_table) != lhs.expr_type(&context.symbol_table)
-        {
-            let message = format!(
-                "Math operators require number types but got `{}` and `{}`",
-                lhs.expr_type(&context.symbol_table).literal(),
-                rhs.expr_type(&context.symbol_table).literal()
-            );
-            return Err(GQLError {
-                message,
-                location: get_safe_location(tokens, *position - 2),
+        if lhs_type.is_number() && rhs_type.is_number() {
+            lhs = Box::new(ArithmeticExpression {
+                left: lhs,
+                operator: factor_operator,
+                right: rhs,
             });
+            continue;
         }
 
-        lhs = Box::new(ArithmeticExpression {
-            left: lhs,
-            operator: factor_operator,
-            right: rhs,
+        let message = format!(
+            "Math operators require number types but got `{}` and `{}`",
+            lhs_type.literal(),
+            rhs_type.literal()
+        );
+
+        return Err(GQLError {
+            message,
+            location: get_safe_location(tokens, *position - 2),
         });
     }
 
@@ -1172,10 +1181,10 @@ fn parse_unary_expression(
                 DataType::Boolean,
                 rhs_type,
             ));
-        } else if op == PrefixUnaryOperator::Minus && rhs_type != DataType::Number {
+        } else if op == PrefixUnaryOperator::Minus && rhs_type != DataType::Integer {
             return Err(type_missmatch_error(
                 get_safe_location(tokens, *position - 1),
-                DataType::Number,
+                DataType::Integer,
                 rhs_type,
             ));
         }
@@ -1334,9 +1343,16 @@ fn parse_primary_expression(
             context.hidden_selections.push(value.to_string());
             return Ok(Box::new(SymbolExpression { value }));
         }
-        TokenKind::Number => {
+        TokenKind::Integer => {
             *position += 1;
-            let value = tokens[*position - 1].literal.parse::<i64>().unwrap();
+            let integer = tokens[*position - 1].literal.parse::<i64>().unwrap();
+            let value = Value::Integer(integer);
+            return Ok(Box::new(NumberExpression { value }));
+        }
+        TokenKind::Float => {
+            *position += 1;
+            let float = tokens[*position - 1].literal.parse::<f64>().unwrap();
+            let value = Value::Float(float);
             return Ok(Box::new(NumberExpression { value }));
         }
         TokenKind::True => {

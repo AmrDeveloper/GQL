@@ -70,14 +70,14 @@ lazy_static! {
         map.insert(
             "replicate",
             Prototype {
-                parameters: vec![DataType::Text, DataType::Number],
+                parameters: vec![DataType::Text, DataType::Integer],
                 result: DataType::Text,
             },
         );
         map.insert(
             "space",
             Prototype {
-                parameters: vec![DataType::Number],
+                parameters: vec![DataType::Integer],
                 result: DataType::Text,
             },
         );
@@ -106,20 +106,20 @@ lazy_static! {
             "len",
             Prototype {
                 parameters: vec![DataType::Text],
-                result: DataType::Number,
+                result: DataType::Integer,
             },
         );
         map.insert(
             "ascii",
             Prototype {
                 parameters: vec![DataType::Text],
-                result: DataType::Number,
+                result: DataType::Integer,
             },
         );
         map.insert(
             "left",
             Prototype {
-                parameters: vec![DataType::Text, DataType::Number],
+                parameters: vec![DataType::Text, DataType::Integer],
                 result: DataType::Text,
             },
         );
@@ -127,13 +127,13 @@ lazy_static! {
             "datalength",
             Prototype {
                 parameters: vec![DataType::Text],
-                result: DataType::Number,
+                result: DataType::Integer,
             },
         );
         map.insert(
             "char",
             Prototype {
-                parameters: vec![DataType::Number],
+                parameters: vec![DataType::Integer],
                 result: DataType::Text,
             },
         );
@@ -147,21 +147,21 @@ lazy_static! {
         map.insert(
             "substring",
             Prototype {
-                parameters: vec![DataType::Text, DataType::Number, DataType::Number],
+                parameters: vec![DataType::Text, DataType::Integer, DataType::Integer],
                 result: DataType::Text,
             },
         );
         map.insert(
             "stuff",
             Prototype {
-                parameters: vec![DataType::Text, DataType::Number, DataType::Number, DataType::Text],
+                parameters: vec![DataType::Text, DataType::Integer, DataType::Integer, DataType::Text],
                 result: DataType::Text,
             },
         );
         map.insert(
             "right",
             Prototype {
-                parameters: vec![DataType::Text, DataType::Number],
+                parameters: vec![DataType::Text, DataType::Integer],
                 result: DataType::Text
              },
         );
@@ -210,12 +210,12 @@ fn text_reverse(inputs: Vec<Value>) -> Value {
 
 fn text_replicate(inputs: Vec<Value>) -> Value {
     let str = inputs[0].as_text();
-    let count = inputs[1].as_number() as usize;
+    let count = inputs[1].as_int() as usize;
     return Value::Text(str.repeat(count));
 }
 
 fn text_space(inputs: Vec<Value>) -> Value {
-    let n = inputs[0].as_number() as usize;
+    let n = inputs[0].as_int() as usize;
     return Value::Text(" ".repeat(n));
 }
 
@@ -232,15 +232,15 @@ fn text_right_trim(inputs: Vec<Value>) -> Value {
 }
 
 fn text_len(inputs: Vec<Value>) -> Value {
-    return Value::Number(inputs[0].as_text().len() as i64);
+    return Value::Integer(inputs[0].as_text().len() as i64);
 }
 
 fn text_ascii(inputs: Vec<Value>) -> Value {
     let text = inputs[0].as_text();
     if text.is_empty() {
-        return Value::Number(0);
+        return Value::Integer(0);
     }
-    return Value::Number(text.chars().nth(0).unwrap() as i64);
+    return Value::Integer(text.chars().nth(0).unwrap() as i64);
 }
 
 fn text_left(inputs: Vec<Value>) -> Value {
@@ -249,7 +249,7 @@ fn text_left(inputs: Vec<Value>) -> Value {
         return Value::Text("".to_string());
     }
 
-    let number_of_chars = inputs[1].as_number();
+    let number_of_chars = inputs[1].as_int();
     if number_of_chars > text.len() as i64 {
         return Value::Text(text);
     }
@@ -263,11 +263,11 @@ fn text_left(inputs: Vec<Value>) -> Value {
 
 fn text_datalength(inputs: Vec<Value>) -> Value {
     let text = inputs[0].as_text();
-    return Value::Number(text.as_bytes().len() as i64);
+    return Value::Integer(text.as_bytes().len() as i64);
 }
 
 fn text_char(inputs: Vec<Value>) -> Value {
-    let code = inputs[0].as_number() as u32;
+    let code = inputs[0].as_int() as u32;
     if let Some(character) = char::from_u32(code) {
         return Value::Text(character.to_string());
     }
@@ -298,8 +298,8 @@ fn text_substring(inputs: Vec<Value>) -> Value {
     let text = inputs[0].as_text();
     //according to the specs, a stirng starts at position 1.
     //but in Rust, the index of a string starts from 0
-    let start = inputs[1].as_number() as usize - 1;
-    let length = inputs[2].as_number();
+    let start = inputs[1].as_int() as usize - 1;
+    let length = inputs[2].as_int();
 
     if start > text.len() || length > text.len() as i64 {
         return Value::Text(text);
@@ -313,8 +313,8 @@ fn text_substring(inputs: Vec<Value>) -> Value {
 
 fn text_stuff(inputs: Vec<Value>) -> Value {
     let text = inputs[0].as_text();
-    let start = (inputs[1].as_number() - 1) as usize;
-    let length = inputs[2].as_number() as usize;
+    let start = (inputs[1].as_int() - 1) as usize;
+    let length = inputs[2].as_int() as usize;
     let new_string = inputs[3].as_text();
 
     if text.is_empty() {
@@ -337,7 +337,7 @@ fn text_right(inputs: Vec<Value>) -> Value {
         return Value::Text("".to_string());
     }
 
-    let number_of_chars = inputs[1].as_number() as usize;
+    let number_of_chars = inputs[1].as_int() as usize;
     if number_of_chars > text.len() {
         return Value::Text(text);
     }

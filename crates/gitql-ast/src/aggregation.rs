@@ -30,36 +30,36 @@ lazy_static! {
         map.insert(
             "max",
             AggregationPrototype {
-                parameter: DataType::Number,
-                result: DataType::Number,
+                parameter: DataType::Integer,
+                result: DataType::Integer,
             },
         );
         map.insert(
             "min",
             AggregationPrototype {
-                parameter: DataType::Number,
-                result: DataType::Number,
+                parameter: DataType::Integer,
+                result: DataType::Integer,
             },
         );
         map.insert(
             "sum",
             AggregationPrototype {
                 parameter: DataType::Any,
-                result: DataType::Number,
+                result: DataType::Integer,
             },
         );
         map.insert(
             "avg",
             AggregationPrototype {
                 parameter: DataType::Any,
-                result: DataType::Number,
+                result: DataType::Integer,
             },
         );
         map.insert(
             "count",
             AggregationPrototype {
                 parameter: DataType::Any,
-                result: DataType::Number,
+                result: DataType::Integer,
             },
         );
         map
@@ -70,33 +70,33 @@ fn aggregation_max(field_name: &String, objects: &Vec<GQLObject>) -> Value {
     let mut max_length: i64 = 0;
     for object in objects {
         let field_value = &object.attributes.get(field_name).unwrap();
-        let int_value = field_value.as_number();
+        let int_value = field_value.as_int();
         if int_value > max_length {
             max_length = int_value;
         }
     }
-    return Value::Number(max_length);
+    return Value::Integer(max_length);
 }
 
 fn aggregation_min(field_name: &String, objects: &Vec<GQLObject>) -> Value {
     let mut min_length: i64 = 0;
     for object in objects {
         let field_value = &object.attributes.get(field_name).unwrap();
-        let int_value = field_value.as_number();
+        let int_value = field_value.as_int();
         if int_value < min_length {
             min_length = int_value;
         }
     }
-    return Value::Number(min_length);
+    return Value::Integer(min_length);
 }
 
 fn aggregation_sum(field_name: &String, objects: &Vec<GQLObject>) -> Value {
     let mut sum: i64 = 0;
     for object in objects {
         let field_value = &object.attributes.get(field_name).unwrap();
-        sum += field_value.as_number();
+        sum += field_value.as_int();
     }
-    return Value::Number(sum);
+    return Value::Integer(sum);
 }
 
 fn aggregation_average(field_name: &String, objects: &Vec<GQLObject>) -> Value {
@@ -104,12 +104,12 @@ fn aggregation_average(field_name: &String, objects: &Vec<GQLObject>) -> Value {
     let count: i64 = objects.len().try_into().unwrap();
     for object in objects {
         let field_value = &object.attributes.get(field_name).unwrap();
-        sum += field_value.as_number();
+        sum += field_value.as_int();
     }
     let avg = sum / count;
-    return Value::Number(avg);
+    return Value::Integer(avg);
 }
 
 fn aggregation_count(_field_name: &String, objects: &Vec<GQLObject>) -> Value {
-    return Value::Number(objects.len() as i64);
+    return Value::Integer(objects.len() as i64);
 }

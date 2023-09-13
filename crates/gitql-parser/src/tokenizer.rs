@@ -48,7 +48,8 @@ pub enum TokenKind {
     BitwiseLeftShift,
 
     Symbol,
-    Number,
+    Integer,
+    Float,
     String,
 
     True,
@@ -108,11 +109,8 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
                 if characters[position + 1] == 'x' {
                     position += 2;
                     column_start += 2;
-                    let result = consume_hex_number(&characters, &mut position, &mut column_start);
-                    if result.is_err() {
-                        return Err(result.err().unwrap());
-                    }
-                    tokens.push(result.ok().unwrap());
+                    let result = consume_hex_number(&characters, &mut position, &mut column_start)?;
+                    tokens.push(result);
                     continue;
                 }
 
@@ -120,11 +118,8 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
                     position += 2;
                     column_start += 2;
                     let result =
-                        consume_binary_number(&characters, &mut position, &mut column_start);
-                    if result.is_err() {
-                        return Err(result.err().unwrap());
-                    }
-                    tokens.push(result.ok().unwrap());
+                        consume_binary_number(&characters, &mut position, &mut column_start)?;
+                    tokens.push(result);
                     continue;
                 }
 
@@ -132,28 +127,21 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
                     position += 2;
                     column_start += 2;
                     let result =
-                        consume_octal_number(&characters, &mut position, &mut column_start);
-                    if result.is_err() {
-                        return Err(result.err().unwrap());
-                    }
-                    tokens.push(result.ok().unwrap());
+                        consume_octal_number(&characters, &mut position, &mut column_start)?;
+                    tokens.push(result);
                     continue;
                 }
             }
 
-            let number = consume_number(&characters, &mut position, &mut column_start);
+            let number = consume_number(&characters, &mut position, &mut column_start)?;
             tokens.push(number);
             continue;
         }
 
         // String literal
         if char == '"' {
-            let result = consume_string(&characters, &mut position, &mut column_start);
-            if result.is_err() {
-                return Err(result.err().unwrap());
-            }
-
-            tokens.push(result.ok().unwrap());
+            let result = consume_string(&characters, &mut position, &mut column_start)?;
+            tokens.push(result);
             continue;
         }
 
@@ -189,7 +177,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             };
 
             let token = Token {
-                location: location,
+                location,
                 kind: TokenKind::Minus,
                 literal: "-".to_owned(),
             };
@@ -565,9 +553,24 @@ fn consume_identifier(chars: &Vec<char>, pos: &mut usize, start: &mut usize) -> 
     };
 }
 
-fn consume_number(chars: &Vec<char>, pos: &mut usize, start: &mut usize) -> Token {
+fn consume_number(
+    chars: &Vec<char>,
+    pos: &mut usize,
+    start: &mut usize,
+) -> Result<Token, GQLError> {
+    let mut kind = TokenKind::Integer;
+
     while *pos < chars.len() && (chars[*pos].is_numeric() || chars[*pos] == '_') {
         *pos += 1;
+    }
+
+    if *pos < chars.len() && chars[*pos] == '.' {
+        *pos += 1;
+
+        kind = TokenKind::Float;
+        while *pos < chars.len() && (chars[*pos].is_numeric() || chars[*pos] == '_') {
+            *pos += 1;
+        }
     }
 
     let literal = &chars[*start..*pos];
@@ -579,11 +582,11 @@ fn consume_number(chars: &Vec<char>, pos: &mut usize, start: &mut usize) -> Toke
         end: *pos,
     };
 
-    return Token {
+    return Ok(Token {
         location,
-        kind: TokenKind::Number,
+        kind,
         literal: literal_num,
-    };
+    });
 }
 
 fn consume_binary_number(
@@ -629,7 +632,7 @@ fn consume_binary_number(
 
     return Ok(Token {
         location,
-        kind: TokenKind::Number,
+        kind: TokenKind::Integer,
         literal: convert_result.ok().unwrap().to_string(),
     });
 }
@@ -677,7 +680,7 @@ fn consume_octal_number(
 
     return Ok(Token {
         location,
-        kind: TokenKind::Number,
+        kind: TokenKind::Integer,
         literal: convert_result.ok().unwrap().to_string(),
     });
 }
@@ -725,7 +728,7 @@ fn consume_hex_number(
 
     return Ok(Token {
         location,
-        kind: TokenKind::Number,
+        kind: TokenKind::Integer,
         literal: convert_result.ok().unwrap().to_string(),
     });
 }

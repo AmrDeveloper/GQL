@@ -5,7 +5,8 @@ use std::collections::HashMap;
 pub enum DataType {
     Any,
     Text,
-    Number,
+    Integer,
+    Float,
     Boolean,
     Date,
     Time,
@@ -15,11 +16,24 @@ pub enum DataType {
 }
 
 impl DataType {
+    pub fn is_int(&self) -> bool {
+        return *self == DataType::Integer;
+    }
+
+    pub fn is_float(&self) -> bool {
+        return *self == DataType::Float;
+    }
+
+    pub fn is_number(&self) -> bool {
+        return self.is_int() || self.is_float();
+    }
+
     pub fn literal(&self) -> &'static str {
         return match self {
             DataType::Any => "Any",
             DataType::Text => "Text",
-            DataType::Number => "Number",
+            DataType::Integer => "Integer",
+            DataType::Float => "Float",
             DataType::Boolean => "Boolean",
             DataType::Date => "Date",
             DataType::Time => "Time",
@@ -38,15 +52,15 @@ lazy_static! {
         map.insert("message", DataType::Text);
         map.insert("name", DataType::Text);
         map.insert("full_name", DataType::Text);
-        map.insert("insertions", DataType::Number);
-        map.insert("deletions", DataType::Number);
-        map.insert("files_changed", DataType::Number);
+        map.insert("insertions", DataType::Integer);
+        map.insert("deletions", DataType::Integer);
+        map.insert("files_changed", DataType::Integer);
         map.insert("email", DataType::Text);
         map.insert("type", DataType::Text);
         map.insert("time", DataType::DateTime);
         map.insert("is_head", DataType::Boolean);
         map.insert("is_remote", DataType::Boolean);
-        map.insert("commit_count", DataType::Number);
+        map.insert("commit_count", DataType::Integer);
         map.insert("repo", DataType::Text);
         map
     };
