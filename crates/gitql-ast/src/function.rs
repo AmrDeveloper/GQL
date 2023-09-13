@@ -394,6 +394,10 @@ fn text_soundex(inputs: Vec<Value>) -> Value {
     }
 
     let text = inputs[0].as_text();
+    if text.is_empty() {
+        return Value::Text("".to_string());
+    }
+    
     let letters_to_be_ignored = vec!['A', 'E', 'I', 'O', 'U', 'H', 'W', 'Y'];
     //save the first letter
     let mut result = String::from(text.chars().nth(0).unwrap());
