@@ -23,7 +23,7 @@ note that all functions names are case-insensitive.
 | STUFF      | Text, Number, Number, Text | Text   | Deletes a part of a string and then inserts another part into the string, starting at a specified position.                                                          |
 | RIGHT      | Text, Number               | Text   | Extracts a number of characters from a string (starting from right).                                                                                                 |
 | TRANSLATE  | Text, Text, Text,          | Text   | Returns the string from the first argument after the characters specified in the second argument are translated into the characters specified in the third argument. |
-| CONCAT     | Text, Text                 | Text   | Add two strings together.                                                   |
+| CONCAT     | Text, Text                 | Text   | Adds two or more strings together.                                          |
 ### String functions samples
 
 ```sql
