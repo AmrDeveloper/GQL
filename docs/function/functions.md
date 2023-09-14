@@ -23,6 +23,7 @@ note that all functions names are case-insensitive.
 | STUFF      | Text, Number, Number, Text | Text   | Deletes a part of a string and then inserts another part into the string, starting at a specified position.                                                          |
 | RIGHT      | Text, Number               | Text   | Extracts a number of characters from a string (starting from right).                                                                                                 |
 | TRANSLATE  | Text, Text, Text,          | Text   | Returns the string from the first argument after the characters specified in the second argument are translated into the characters specified in the third argument. |
+| SOUNDEX    | Text                       | Text   | Returns a four-character code to evaluate the similarity of two expressions. |
 | CONCAT     | Text, Text                 | Text   | Adds two or more strings together.                                          |
 ### String functions samples
 
@@ -42,6 +43,7 @@ SELECT name, SUBSTRING(name, 1, 5) AS extract FROM commits
 SELECT STUFF("GQL tutorial!", 13, 1, " is fun!")
 SELECT RIGHT("AmrDeveloper", 3) AS extract
 SELECT TRANSLATE("Amr[Dev]{eloper}", "[]{}", "()()")
+SELECT SOUNDEX("AmrDeveloper") as code
 SELECT CONCAT("amrdeveloper", ".github.io")
 ```
 

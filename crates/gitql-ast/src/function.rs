@@ -34,6 +34,7 @@ lazy_static! {
         map.insert("stuff", text_stuff);
         map.insert("right", text_right);
         map.insert("translate", text_translate);
+        map.insert("soundex", text_soundex);
         map.insert("concat", text_concat);
 
         // Date functions
@@ -173,6 +174,13 @@ lazy_static! {
                 parameters: vec![DataType::Text, DataType::Text, DataType::Text],
                 result: DataType::Text
              },
+        );
+        map.insert(
+            "soundex",
+            Prototype {
+                parameters: vec![DataType::Text],
+                result: DataType::Text,
+            },
         );
         map.insert(
             "concat",
@@ -378,6 +386,46 @@ fn text_translate(inputs: Vec<Value>) -> Value {
     }
 
     return Value::Text(text);
+}
+
+fn text_soundex(inputs: Vec<Value>) -> Value {
+    let text = inputs[0].as_text();
+    if text.is_empty() {
+        return Value::Text("".to_string());
+    }
+
+    let mut result = String::from(text.chars().nth(0).unwrap());
+
+    for (idx, letter) in text.char_indices() {
+        if idx != 0 {
+            let letter = letter.to_ascii_uppercase();
+            if !matches!(letter, 'A' | 'E' | 'I' | 'O' | 'U' | 'H' | 'W' | 'Y') {
+                let int = match letter {
+                    'B' | 'F' | 'P' | 'V' => 1,
+                    'C' | 'G' | 'J' | 'K' | 'Q' | 'S' | 'X' | 'Z' => 2,
+                    'D' | 'T' => 3,
+                    'L' => 4,
+                    'M' | 'N' => 5,
+                    'R' => 6,
+                    _ => 0,
+                };
+                result.push_str(&int.to_string());
+
+                if result.len() == 4 {
+                    return Value::Text(result);
+                }
+            }
+        }
+    }
+
+    if result.len() < 4 {
+        let diff = 4 - result.len();
+        for _i in 0..diff {
+            result.push_str(&0.to_string());
+        }
+    }
+
+    return Value::Text(result);
 }
 
 fn text_concat(inputs: Vec<Value>) -> Value {
