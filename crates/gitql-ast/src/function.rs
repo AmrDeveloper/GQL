@@ -381,38 +381,31 @@ fn text_translate(inputs: Vec<Value>) -> Value {
 }
 
 fn text_soundex(inputs: Vec<Value>) -> Value {
-    fn match_letter_to_int(letter: char) -> usize {
-        match letter {
-            'B' | 'F' | 'P' | 'V' => 1,
-            'C' | 'G' | 'J' | 'K' | 'Q' | 'S' | 'X' | 'Z' => 2,
-            'D' | 'T' => 3,
-            'L' => 4,
-            'M' | 'N' => 5,
-            'R' => 6,
-            _ => 0,
-        }
-    }
-
     let text = inputs[0].as_text();
     if text.is_empty() {
         return Value::Text("".to_string());
     }
-    
-    let letters_to_be_ignored = vec!['A', 'E', 'I', 'O', 'U', 'H', 'W', 'Y'];
-    //save the first letter
+
     let mut result = String::from(text.chars().nth(0).unwrap());
 
     for (idx, letter) in text.char_indices() {
         if idx != 0 {
-            //when the length of the result is already 4, we want to exit because we only need a 4 character code
-            if result.len() == 4 {
-                return Value::Text(result);
-            }
-
             let letter = letter.to_ascii_uppercase();
-            if !letters_to_be_ignored.contains(&letter) {
-                let int = match_letter_to_int(letter);
+            if !matches!(letter, 'A' | 'E' | 'I' | 'O' | 'U' | 'H' | 'W' | 'Y') {
+                let int = match letter {
+                    'B' | 'F' | 'P' | 'V' => 1,
+                    'C' | 'G' | 'J' | 'K' | 'Q' | 'S' | 'X' | 'Z' => 2,
+                    'D' | 'T' => 3,
+                    'L' => 4,
+                    'M' | 'N' => 5,
+                    'R' => 6,
+                    _ => 0,
+                };
                 result.push_str(&int.to_string());
+
+                if result.len() == 4 {
+                    return Value::Text(result);
+                }
             }
         }
     }
@@ -422,10 +415,9 @@ fn text_soundex(inputs: Vec<Value>) -> Value {
         for _i in 0..diff {
             result.push_str(&0.to_string());
         }
-        return Value::Text(result);
-    } else {
-        return Value::Text(result);
     }
+
+    return Value::Text(result);
 }
 
 // Date functions
