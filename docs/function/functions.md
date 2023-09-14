@@ -45,6 +45,7 @@ SELECT RIGHT("AmrDeveloper", 3) AS extract
 SELECT TRANSLATE("Amr[Dev]{eloper}", "[]{}", "()()")
 SELECT SOUNDEX("AmrDeveloper") as code
 SELECT CONCAT("amrdeveloper", ".github.io")
+SELECT UNICODE("AmrDeveloper")
 ```
 
 ### Date functions
