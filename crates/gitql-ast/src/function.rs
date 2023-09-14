@@ -198,7 +198,6 @@ lazy_static! {
              },
         );
 
-
         // Date functions
         map.insert(
             "current_date",
