@@ -34,6 +34,7 @@ lazy_static! {
         map.insert("stuff", text_stuff);
         map.insert("right", text_right);
         map.insert("translate", text_translate);
+        map.insert("concat", text_concat);
 
         // Date functions
         map.insert("current_date", date_current_date);
@@ -170,6 +171,13 @@ lazy_static! {
             "translate",
             Prototype {
                 parameters: vec![DataType::Text, DataType::Text, DataType::Text],
+                result: DataType::Text
+             },
+        );
+        map.insert(
+            "concat",
+            Prototype {
+                parameters: vec![DataType::Text, DataType::Text],
                 result: DataType::Text
              },
         );
@@ -370,6 +378,11 @@ fn text_translate(inputs: Vec<Value>) -> Value {
     }
 
     return Value::Text(text);
+}
+
+fn text_concat(inputs: Vec<Value>) -> Value {
+    let text: Vec<String> = inputs.iter().map(|v| v.as_text()).collect();
+    return Value::Text(text.concat());
 }
 
 // Date functions
