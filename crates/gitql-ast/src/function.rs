@@ -398,13 +398,10 @@ fn text_translate(inputs: Vec<Value>) -> Value {
 }
 
 fn text_unicode(inputs: Vec<Value>) -> Value {
-    let n = if let Some(c) = inputs[0].as_text().chars().next() {
-        c as u32
-    } else {
-        return Value::Integer(0);
-    };
-
-    return Value::Integer(n.into());
+    if let Some(c) = inputs[0].as_text().chars().next() {
+	return Value::Integer((c as u32).into());
+    }
+    return Value::Integer(0);
 }
 
 fn text_soundex(inputs: Vec<Value>) -> Value {
