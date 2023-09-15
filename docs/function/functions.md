@@ -25,6 +25,8 @@ note that all functions names are case-insensitive.
 | TRANSLATE  | Text, Text, Text,          | Text   | Returns the string from the first argument after the characters specified in the second argument are translated into the characters specified in the third argument. |
 | SOUNDEX    | Text                       | Text   | Returns a four-character code to evaluate the similarity of two expressions. |
 | CONCAT     | Text, Text                 | Text   | Adds two or more strings together.                                          |
+| UNICODE    | Text                       | Number | Return an integer value (the Unicode value), for the first character of the input expression.                                                                        |
+
 ### String functions samples
 
 ```sql
@@ -45,6 +47,7 @@ SELECT RIGHT("AmrDeveloper", 3) AS extract
 SELECT TRANSLATE("Amr[Dev]{eloper}", "[]{}", "()()")
 SELECT SOUNDEX("AmrDeveloper") as code
 SELECT CONCAT("amrdeveloper", ".github.io")
+SELECT UNICODE("AmrDeveloper")
 ```
 
 ### Date functions

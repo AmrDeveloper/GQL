@@ -36,6 +36,7 @@ lazy_static! {
         map.insert("translate", text_translate);
         map.insert("soundex", text_soundex);
         map.insert("concat", text_concat);
+        map.insert("unicode", text_unicode);
 
         // Date functions
         map.insert("current_date", date_current_date);
@@ -187,6 +188,13 @@ lazy_static! {
             Prototype {
                 parameters: vec![DataType::Text, DataType::Text],
                 result: DataType::Text
+             },
+        );
+        map.insert(
+            "unicode",
+            Prototype {
+                parameters: vec![DataType::Text],
+                result: DataType::Integer
              },
         );
 
@@ -386,6 +394,13 @@ fn text_translate(inputs: Vec<Value>) -> Value {
     }
 
     return Value::Text(text);
+}
+
+fn text_unicode(inputs: Vec<Value>) -> Value {
+    if let Some(c) = inputs[0].as_text().chars().next() {
+	return Value::Integer((c as u32).into());
+    }
+    return Value::Integer(0);
 }
 
 fn text_soundex(inputs: Vec<Value>) -> Value {
