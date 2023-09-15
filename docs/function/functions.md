@@ -26,6 +26,7 @@ note that all functions names are case-insensitive.
 | SOUNDEX    | Text                       | Text   | Returns a four-character code to evaluate the similarity of two expressions. |
 | CONCAT     | Text, Text                 | Text   | Adds two or more strings together.                                          |
 | UNICODE    | Text                       | Number | Return an integer value (the Unicode value), for the first character of the input expression.                                                                        |
+
 ### String functions samples
 
 ```sql

@@ -194,7 +194,7 @@ lazy_static! {
             "unicode",
             Prototype {
                 parameters: vec![DataType::Text],
-                result: DataType::Text
+                result: DataType::Integer
              },
         );
 
