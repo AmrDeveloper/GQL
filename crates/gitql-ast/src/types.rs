@@ -16,12 +16,16 @@ pub enum DataType {
 }
 
 impl DataType {
+    pub fn is_type(&self, data_type: DataType) -> bool {
+        return *self == data_type;
+    }
+
     pub fn is_int(&self) -> bool {
-        return *self == DataType::Integer;
+        return self.is_type(DataType::Integer);
     }
 
     pub fn is_float(&self) -> bool {
-        return *self == DataType::Float;
+        return self.is_type(DataType::Float);
     }
 
     pub fn is_number(&self) -> bool {

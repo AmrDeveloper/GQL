@@ -13,7 +13,7 @@ use gitql_ast::statement::SelectStatement;
 use gitql_ast::statement::Statement;
 use gitql_ast::statement::StatementKind::*;
 use gitql_ast::statement::WhereStatement;
-use gitql_ast::types::DataType;
+use gitql_ast::value::Value;
 
 use crate::engine_evaluator::evaluate_expression;
 use crate::engine_function::get_column_name;
@@ -239,37 +239,18 @@ fn execute_order_by_statement(
         return Ok(());
     }
 
-    if main_group[0].attributes.contains_key(&statement.field_name) {
-        if statement.field_type == DataType::Integer {
-            main_group.sort_by(|a, b| {
-                let first_value = a
-                    .attributes
-                    .get(&statement.field_name.to_string())
-                    .unwrap()
-                    .as_int();
+    let expression = &statement.expression;
 
-                let other = b
-                    .attributes
-                    .get(&statement.field_name.to_string())
-                    .unwrap()
-                    .as_int();
-
-                first_value.partial_cmp(&other).unwrap()
-            });
+    main_group.sort_by(|a, b| {
+        let first = &evaluate_expression(expression, &a.attributes).unwrap_or(Value::Null);
+        let other = &evaluate_expression(expression, &b.attributes).unwrap_or(Value::Null);
+        let ordering = first.cmp(other);
+        return if !statement.is_ascending {
+            ordering
         } else {
-            main_group.sort_by_cached_key(|object| {
-                object
-                    .attributes
-                    .get(&statement.field_name.to_string())
-                    .unwrap()
-                    .as_text()
-            });
-        }
-
-        if !statement.is_ascending {
-            main_group.reverse();
-        }
-    }
+            ordering.reverse()
+        };
+    });
 
     return Ok(());
 }

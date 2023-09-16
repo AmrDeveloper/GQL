@@ -146,7 +146,7 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<GQLQuery, GQLError> {
                     });
                 }
 
-                let statement = parse_order_by_statement(&context, &tokens, &mut position)?;
+                let statement = parse_order_by_statement(&mut context, &tokens, &mut position)?;
                 statements.insert("order".to_string(), statement);
             }
             _ => return Err(un_expected_statement_error(&tokens, &mut position)),
@@ -310,7 +310,12 @@ fn parse_select_statement(
 
     // If it `select *` make all table fields selectable
     if is_select_all {
-        select_all_table_fields(table_name, &mut fields_names, &mut fields_values);
+        select_all_table_fields(
+            table_name,
+            &mut context.selected_fields,
+            &mut fields_names,
+            &mut fields_values,
+        );
     }
 
     // Type check all selected fields has type regsited in type table
@@ -476,36 +481,24 @@ fn parse_offset_statement(
 }
 
 fn parse_order_by_statement(
-    context: &ParserContext,
+    context: &mut ParserContext,
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Statement>, GQLError> {
+    // Consume `ORDER` keyword
     *position += 1;
+
     if *position >= tokens.len() || tokens[*position].kind != TokenKind::By {
         return Err(GQLError {
             message: "Expect keyword `BY` after keyword `ORDER`".to_owned(),
             location: get_safe_location(tokens, *position - 1),
         });
     }
+
+    // Consume `by` keyword
     *position += 1;
-    if *position >= tokens.len() || tokens[*position].kind != TokenKind::Symbol {
-        return Err(GQLError {
-            message: "Expect field name after `ORDER by`".to_owned(),
-            location: get_safe_location(tokens, *position - 1),
-        });
-    }
 
-    let field_name = tokens[*position].literal.to_string();
-    if !context.symbol_table.contains(&field_name) {
-        return Err(GQLError {
-            message: "No such field name".to_owned(),
-            location: get_safe_location(tokens, *position),
-        });
-    }
-
-    let field_type = context.symbol_table.env.get(&field_name).unwrap().clone();
-
-    *position += 1;
+    let expression = parse_expression(context, tokens, position)?;
 
     // Consume optional ordering ASC or DES
     let mut is_ascending = true;
@@ -515,9 +508,8 @@ fn parse_order_by_statement(
     }
 
     return Ok(Box::new(OrderByStatement {
-        field_name,
+        expression,
         is_ascending,
-        field_type,
     }));
 }
 
@@ -1704,6 +1696,7 @@ fn register_current_table_fields_types(table_name: &str, symbol_table: &mut Scop
 #[inline(always)]
 fn select_all_table_fields(
     table_name: &str,
+    selected_fields: &mut Vec<String>,
     fields_names: &mut Vec<String>,
     fields_values: &mut Vec<Box<dyn Expression>>,
 ) {
@@ -1713,6 +1706,7 @@ fn select_all_table_fields(
         for field in table_fields {
             if !fields_names.contains(&field.to_string()) {
                 fields_names.push(field.to_string());
+                selected_fields.push(field.to_string());
 
                 let literal_expr = Box::new(SymbolExpression {
                     value: field.to_string(),

@@ -2,7 +2,6 @@ use std::any::Any;
 use std::collections::HashMap;
 
 use crate::expression::Expression;
-use crate::types::DataType;
 
 pub enum StatementKind {
     Select,
@@ -100,9 +99,8 @@ impl Statement for OffsetStatement {
 }
 
 pub struct OrderByStatement {
-    pub field_name: String,
+    pub expression: Box<dyn Expression>,
     pub is_ascending: bool,
-    pub field_type: DataType,
 }
 
 impl Statement for OrderByStatement {

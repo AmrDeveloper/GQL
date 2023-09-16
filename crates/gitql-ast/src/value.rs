@@ -1,8 +1,9 @@
+use std::cmp::Ordering;
 use std::ops::Mul;
 
 use crate::types::DataType;
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialOrd, Clone)]
 pub enum Value {
     Integer(i64),
     Float(f64),
@@ -14,8 +15,8 @@ pub enum Value {
     Null,
 }
 
-impl Value {
-    pub fn eq(&self, other: &Value) -> bool {
+impl PartialEq for Value {
+    fn eq(&self, other: &Self) -> bool {
         if self.data_type() != other.data_type() {
             return false;
         }
@@ -33,7 +34,44 @@ impl Value {
             DataType::Null => true,
         };
     }
+}
 
+impl Ord for Value {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let self_type = self.data_type();
+        let other_type = other.data_type();
+
+        if self_type.is_type(DataType::Integer) && other_type.is_type(DataType::Integer) {
+            return self.as_int().cmp(&other.as_int());
+        }
+
+        if self_type.is_type(DataType::Float) && other_type.is_type(DataType::Float) {
+            return self.as_float().total_cmp(&other.as_float());
+        }
+
+        if self_type.is_type(DataType::Text) && other_type.is_type(DataType::Text) {
+            return self.as_text().cmp(&other.as_text());
+        }
+
+        if self_type.is_type(DataType::DateTime) && other_type.is_type(DataType::DateTime) {
+            return self.as_date_time().cmp(&other.as_date_time());
+        }
+
+        if self_type.is_type(DataType::Date) && other_type.is_type(DataType::Date) {
+            return self.as_date().cmp(&other.as_date());
+        }
+
+        if self_type.is_type(DataType::Time) && other_type.is_type(DataType::Time) {
+            return self.as_time().cmp(&other.as_time());
+        }
+
+        return Ordering::Equal;
+    }
+}
+
+impl Eq for Value {}
+
+impl Value {
     pub fn plus(&self, other: &Value) -> Value {
         let self_type = self.data_type();
         let other_type = other.data_type();
