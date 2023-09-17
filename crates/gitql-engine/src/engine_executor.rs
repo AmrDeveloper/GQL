@@ -241,6 +241,11 @@ fn execute_order_by_statement(
 
     let expression = &statement.expression;
 
+    // No need to sort or reverse if the expression is compile time constants
+    if expression.is_const() {
+        return Ok(());
+    }
+
     main_group.sort_by(|a, b| {
         let first = &evaluate_expression(expression, &a.attributes).unwrap_or(Value::Null);
         let other = &evaluate_expression(expression, &b.attributes).unwrap_or(Value::Null);

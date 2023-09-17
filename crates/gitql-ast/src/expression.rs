@@ -28,6 +28,15 @@ pub trait Expression {
     fn as_any(&self) -> &dyn Any;
 }
 
+impl dyn Expression {
+    pub fn is_const(&self) -> bool {
+        return matches!(
+            self.get_expression_kind(),
+            ExpressionKind::Number | ExpressionKind::Boolean | ExpressionKind::String
+        );
+    }
+}
+
 pub struct StringExpression {
     pub value: String,
 }
