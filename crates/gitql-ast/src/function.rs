@@ -398,7 +398,7 @@ fn text_translate(inputs: Vec<Value>) -> Value {
 
 fn text_unicode(inputs: Vec<Value>) -> Value {
     if let Some(c) = inputs[0].as_text().chars().next() {
-	return Value::Integer((c as u32).into());
+        return Value::Integer((c as u32).into());
     }
     return Value::Integer(0);
 }
@@ -452,18 +452,16 @@ fn text_concat(inputs: Vec<Value>) -> Value {
 
 fn date_current_date(_inputs: Vec<Value>) -> Value {
     let time_stamp = date_utils::get_unix_timestamp_ms();
-    let time = date_utils::time_stamp_to_date(time_stamp);
-    return Value::Text(time);
+    return Value::Date(time_stamp);
 }
 
 fn date_current_time(_inputs: Vec<Value>) -> Value {
     let time_stamp = date_utils::get_unix_timestamp_ms();
-    let date = date_utils::time_stamp_to_time(time_stamp);
-    return Value::Text(date);
+    let time = date_utils::time_stamp_to_time(time_stamp);
+    return Value::Time(time);
 }
 
 fn date_current_timestamp(_inputs: Vec<Value>) -> Value {
     let time_stamp = date_utils::get_unix_timestamp_ms();
-    let date_time = date_utils::time_stamp_to_date_time(time_stamp);
-    return Value::Text(date_time);
+    return Value::DateTime(time_stamp);
 }
