@@ -20,11 +20,13 @@ Used to perform arithmetic operators on number types.
 
 ---
 
-### String checks Expression
-- `contains` used to check that field contains value.
-- `starts_with` used to check that field starts with value.
-- `ends_with` used to check that field ends with value.
-- `matches` used to check that field matches regex format.
+### Like Expression
+The `LIKE`` operator is used for searching for a specified pattern in a string.
+```sql
+SELECT "Git Query Language" LIKE "G%"
+SELECT "Git Query Language" LIKE "%e"
+SELECT "Git Query Language" LIKE "%Query%"
+```
 
 ---
 

@@ -6,13 +6,12 @@ use gitql_ast::expression::BitwiseOperator;
 use gitql_ast::expression::BooleanExpression;
 use gitql_ast::expression::CallExpression;
 use gitql_ast::expression::CaseExpression;
-use gitql_ast::expression::CheckExpression;
-use gitql_ast::expression::CheckOperator;
 use gitql_ast::expression::ComparisonExpression;
 use gitql_ast::expression::ComparisonOperator;
 use gitql_ast::expression::Expression;
 use gitql_ast::expression::ExpressionKind::*;
 use gitql_ast::expression::InExpression;
+use gitql_ast::expression::LikeExpression;
 use gitql_ast::expression::LogicalExpression;
 use gitql_ast::expression::LogicalOperator;
 use gitql_ast::expression::NumberExpression;
@@ -79,12 +78,12 @@ pub fn evaluate_expression(
                 .unwrap();
             return evaluate_comparison(expr, object);
         }
-        Check => {
+        Like => {
             let expr = expression
                 .as_any()
-                .downcast_ref::<CheckExpression>()
+                .downcast_ref::<LikeExpression>()
                 .unwrap();
-            return evaluate_check(expr, object);
+            return evaulate_like(expr, object);
         }
         Logical => {
             let expr = expression
@@ -212,25 +211,18 @@ fn evaluate_comparison(
     }));
 }
 
-fn evaluate_check(
-    expr: &CheckExpression,
-    object: &HashMap<String, Value>,
-) -> Result<Value, String> {
-    let lhs = evaluate_expression(&expr.left, object)?.as_text();
-    let rhs = evaluate_expression(&expr.right, object)?.as_text();
+fn evaulate_like(expr: &LikeExpression, object: &HashMap<String, Value>) -> Result<Value, String> {
+    let lhs = evaluate_expression(&expr.input, object)?.as_text();
+    let rhs = evaluate_expression(&expr.pattern, object)?.as_text();
 
-    return Ok(match expr.operator {
-        CheckOperator::Contains => Value::Boolean(lhs.contains(&rhs)),
-        CheckOperator::StartsWith => Value::Boolean(lhs.starts_with(&rhs)),
-        CheckOperator::EndsWith => Value::Boolean(lhs.ends_with(&rhs)),
-        CheckOperator::Matches => {
-            let regex = Regex::new(&rhs);
-            if regex.is_err() {
-                return Ok(Value::Boolean(false));
-            }
-            Value::Boolean(regex.unwrap().is_match(&lhs))
-        }
-    });
+    let pattern = &format!("^{}$", rhs.replace('%', ".*").replace('_', "."));
+    let regex_result = Regex::new(pattern);
+    if regex_result.is_err() {
+        return Err(regex_result.err().unwrap().to_string());
+    }
+
+    let regex = regex_result.ok().unwrap();
+    return Ok(Value::Boolean(regex.is_match(&lhs)));
 }
 
 fn evaluate_logical(

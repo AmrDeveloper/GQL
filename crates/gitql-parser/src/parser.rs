@@ -1066,7 +1066,7 @@ fn parse_factor_expression(
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
-    let expression = parse_check_expression(context, tokens, position);
+    let expression = parse_like_expression(context, tokens, position);
     if expression.is_err() || *position >= tokens.len() {
         return expression;
     }
@@ -1082,7 +1082,7 @@ fn parse_factor_expression(
             _ => ArithmeticOperator::Modulus,
         };
 
-        let rhs = parse_check_expression(context, tokens, position)?;
+        let rhs = parse_like_expression(context, tokens, position)?;
 
         let lhs_type = lhs.expr_type(&context.symbol_table);
         let rhs_type = rhs.expr_type(&context.symbol_table);
@@ -1112,7 +1112,7 @@ fn parse_factor_expression(
     return Ok(lhs);
 }
 
-fn parse_check_expression(
+fn parse_like_expression(
     context: &mut ParserContext,
     tokens: &Vec<Token>,
     position: &mut usize,
@@ -1123,28 +1123,30 @@ fn parse_check_expression(
     }
 
     let lhs = expression.ok().unwrap();
-
-    let operator = &tokens[*position];
-
-    if operator.kind == TokenKind::Contains
-        || operator.kind == TokenKind::StartsWith
-        || operator.kind == TokenKind::EndsWith
-        || operator.kind == TokenKind::Matches
-    {
+    if tokens[*position].kind == TokenKind::Like {
+        let location = tokens[*position].location;
         *position += 1;
 
-        let check_operator = match operator.kind {
-            TokenKind::Contains => CheckOperator::Contains,
-            TokenKind::StartsWith => CheckOperator::StartsWith,
-            TokenKind::EndsWith => CheckOperator::EndsWith,
-            _ => CheckOperator::Matches,
-        };
+        if !lhs.expr_type(&context.symbol_table).is_text() {
+            let message = format!(
+                "Expect `LIKE` left hand side to be `TEXT` but got {}",
+                lhs.expr_type(&context.symbol_table).literal()
+            );
+            return Err(GQLError { message, location });
+        }
 
-        let rhs = parse_unary_expression(context, tokens, position)?;
-        return Ok(Box::new(CheckExpression {
-            left: lhs,
-            operator: check_operator,
-            right: rhs,
+        let pattern = parse_unary_expression(context, tokens, position)?;
+        if !pattern.expr_type(&context.symbol_table).is_text() {
+            let message = format!(
+                "Expect `LIKE` right hand side to be `TEXT` but got {}",
+                pattern.expr_type(&context.symbol_table).literal()
+            );
+            return Err(GQLError { message, location });
+        }
+
+        return Ok(Box::new(LikeExpression {
+            input: lhs,
+            pattern,
         }));
     }
 

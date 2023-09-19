@@ -10,6 +10,7 @@ pub enum TokenKind {
     Order,
     By,
     In,
+    Like,
 
     Case,
     When,
@@ -27,11 +28,6 @@ pub enum TokenKind {
     Equal,
     Bang,
     BangEqual,
-
-    Contains,
-    StartsWith,
-    EndsWith,
-    Matches,
 
     As,
 
@@ -823,6 +819,7 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "end" => TokenKind::End,
         "between" => TokenKind::Between,
         "in" => TokenKind::In,
+        "like" => TokenKind::Like,
 
         // Logical Operators
         "or" => TokenKind::LogicalOr,
@@ -832,12 +829,6 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         // True and False
         "true" => TokenKind::True,
         "false" => TokenKind::False,
-
-        // String operators
-        "contains" => TokenKind::Contains,
-        "starts_with" => TokenKind::StartsWith,
-        "ends_with" => TokenKind::EndsWith,
-        "matches" => TokenKind::Matches,
 
         "as" => TokenKind::As,
 

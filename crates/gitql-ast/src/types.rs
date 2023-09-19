@@ -32,6 +32,10 @@ impl DataType {
         return self.is_int() || self.is_float();
     }
 
+    pub fn is_text(&self) -> bool {
+        return self.is_type(DataType::Text);
+    }
+
     pub fn literal(&self) -> &'static str {
         return match self {
             DataType::Any => "Any",

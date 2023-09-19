@@ -13,7 +13,7 @@ pub enum ExpressionKind {
     PrefixUnary,
     Arithmetic,
     Comparison,
-    Check,
+    Like,
     Logical,
     Bitwise,
     Call,
@@ -214,23 +214,14 @@ impl Expression for ComparisonExpression {
     }
 }
 
-#[derive(PartialEq)]
-pub enum CheckOperator {
-    Contains,
-    StartsWith,
-    EndsWith,
-    Matches,
+pub struct LikeExpression {
+    pub input: Box<dyn Expression>,
+    pub pattern: Box<dyn Expression>,
 }
 
-pub struct CheckExpression {
-    pub left: Box<dyn Expression>,
-    pub operator: CheckOperator,
-    pub right: Box<dyn Expression>,
-}
-
-impl Expression for CheckExpression {
+impl Expression for LikeExpression {
     fn get_expression_kind(&self) -> ExpressionKind {
-        ExpressionKind::Check
+        ExpressionKind::Like
     }
 
     fn expr_type(&self, _scope: &Scope) -> DataType {
