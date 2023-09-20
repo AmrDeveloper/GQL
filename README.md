@@ -43,7 +43,7 @@ SELECT * FROM refs ORDER BY type
 SELECT * FROM commits
 SELECT name, email FROM commits
 SELECT name, email FROM commits ORDER BY name DESC
-SELECT name, email FROM commits WHERE name contains "gmail" ORDER BY name
+SELECT name, email FROM commits WHERE name LIKE "%gmail%" ORDER BY name
 SELECT * FROM commits WHERE LOWER(name) = "amrdeveloper"
 SELECT name FROM commits GROUP By name
 SELECT name FROM commits GROUP By name having name = "AmrDeveloper"
