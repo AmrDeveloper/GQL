@@ -212,16 +212,19 @@ fn evaluate_comparison(
 }
 
 fn evaulate_like(expr: &LikeExpression, object: &HashMap<String, Value>) -> Result<Value, String> {
-    let lhs = evaluate_expression(&expr.input, object)?.as_text();
     let rhs = evaluate_expression(&expr.pattern, object)?.as_text();
+    if rhs.is_empty() {
+        return Ok(Value::Boolean(false));
+    }
 
     let pattern = &format!("^{}$", rhs.replace('%', ".*").replace('_', "."));
     let regex_result = Regex::new(pattern);
     if regex_result.is_err() {
         return Err(regex_result.err().unwrap().to_string());
     }
-
     let regex = regex_result.ok().unwrap();
+
+    let lhs = evaluate_expression(&expr.input, object)?.as_text();
     return Ok(Value::Boolean(regex.is_match(&lhs)));
 }
 
