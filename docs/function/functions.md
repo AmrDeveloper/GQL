@@ -3,7 +3,7 @@ note that all functions names are case-insensitive.
 
 ### String functions
 
-| Name       | Paramter                   | Return | Description                                                                                                                                                          |
+| Name       | Paramters                  | Return | Description                                                                                                                                                          |
 | ---------- | -------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | LOWER      | Text                       | Text   | Return Text in lower case.                                                                                                                                           |
 | UPPER      | Text                       | Text   | Return Text in upper case.                                                                                                                                           |
@@ -23,8 +23,8 @@ note that all functions names are case-insensitive.
 | STUFF      | Text, Number, Number, Text | Text   | Deletes a part of a string and then inserts another part into the string, starting at a specified position.                                                          |
 | RIGHT      | Text, Number               | Text   | Extracts a number of characters from a string (starting from right).                                                                                                 |
 | TRANSLATE  | Text, Text, Text,          | Text   | Returns the string from the first argument after the characters specified in the second argument are translated into the characters specified in the third argument. |
-| SOUNDEX    | Text                       | Text   | Returns a four-character code to evaluate the similarity of two expressions. |
-| CONCAT     | Text, Text                 | Text   | Adds two or more strings together.                                          |
+| SOUNDEX    | Text                       | Text   | Returns a four-character code to evaluate the similarity of two expressions.                                                                                         |
+| CONCAT     | Text, Text                 | Text   | Adds two or more strings together.                                                                                                                                   |
 | UNICODE    | Text                       | Number | Return an integer value (the Unicode value), for the first character of the input expression.                                                                        |
 
 ### String functions samples
@@ -52,12 +52,12 @@ SELECT UNICODE("AmrDeveloper")
 
 ### Date functions
 
-| Name              | Paramter | Return   | Description                                               |
-| ----------------- | -------- | -------- | --------------------------------------------------------- |
-| CURRENT_TIME      |          | Time     | Return current time in `HH-MM-SS` format.                 |
-| CURRENT_DATE      |          | Date     | Return current date in `YYYY-MM-DD` format.               |
-| CURRENT_TIMESTAMP |          | DateTime | Return current date time in `YYYY-MM-DD HH-MM-SS` format. |
-
+| Name              | Paramters        | Return   | Description                                                     |
+| ----------------- | ---------------- | -------- | --------------------------------------------------------------- |
+| CURRENT_TIME      |                  | Time     | Return current time in `HH-MM-SS` format.                       |
+| CURRENT_DATE      |                  | Date     | Return current date in `YYYY-MM-DD` format.                     |
+| CURRENT_TIMESTAMP |                  | DateTime | Return current date time in `YYYY-MM-DD HH-MM-SS` format.       |
+| MAKEDATE          | Integer, Integer | Date     | Create and return a date based on  a year and a number of days. |
 
 ### Date functions samples
 
@@ -65,4 +65,5 @@ SELECT UNICODE("AmrDeveloper")
 SELECT CURRENT_TIME()
 SELECT CURRENT_DATE()
 SELECT CURRENT_TIMESTAMP()
+SELECT MAKEDATE(2023, 12)
 ```

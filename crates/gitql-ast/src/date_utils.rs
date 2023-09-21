@@ -1,5 +1,6 @@
 extern crate chrono;
 
+use chrono::NaiveDate;
 use chrono::NaiveDateTime;
 use chrono::TimeZone;
 use chrono::Utc;
@@ -40,4 +41,11 @@ pub fn date_time_to_time_stamp(date: &str) -> i64 {
         return 0;
     }
     return date_time.ok().unwrap().timestamp();
+}
+
+pub fn time_stamp_from_year_and_day(year: i32, day_of_year: u32) -> i64 {
+    let date = NaiveDate::from_yo_opt(year, day_of_year).unwrap();
+    let datetime = date.and_hms_opt(0, 0, 0).unwrap();
+    let time_stamp = Utc.from_utc_datetime(&datetime).timestamp();
+    return time_stamp;
 }
