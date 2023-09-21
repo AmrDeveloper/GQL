@@ -34,13 +34,18 @@ fn main() {
             Err(_err) => reporter.report_error("Invalid input"),
         }
 
-        if input.trim() == "exit" {
+        let trimed_input = input.trim();
+        if trimed_input.is_empty() || trimed_input == "\n" {
+            continue;
+        }
+
+        if trimed_input == "exit" {
             println!("Goodbye!");
             break;
         }
 
         let front_start = std::time::Instant::now();
-        let tokenizer_result = tokenizer::tokenize(input.trim().to_string());
+        let tokenizer_result = tokenizer::tokenize(trimed_input.to_string());
         if tokenizer_result.is_err() {
             reporter.report_gql_error(tokenizer_result.err().unwrap());
             input.clear();
