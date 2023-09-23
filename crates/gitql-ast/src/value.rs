@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 use std::ops::Mul;
 
+use crate::date_utils::{time_stamp_to_date, time_stamp_to_date_time};
 use crate::types::DataType;
 
 #[derive(PartialOrd, Clone)]
@@ -232,8 +233,8 @@ impl Value {
             Value::Float(f) => f.to_string(),
             Value::Text(s) => s.to_string(),
             Value::Boolean(b) => b.to_string(),
-            Value::DateTime(dt) => dt.to_string(),
-            Value::Date(d) => d.to_string(),
+            Value::DateTime(dt) => time_stamp_to_date_time(*dt),
+            Value::Date(d) => time_stamp_to_date(*d),
             Value::Time(t) => t.to_string(),
             Value::Null => "Null".to_string(),
         };
