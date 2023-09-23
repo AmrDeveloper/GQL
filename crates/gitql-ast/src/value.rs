@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 use std::ops::Mul;
 
+use crate::date_utils::{time_stamp_to_date, time_stamp_to_date_time};
 use crate::types::DataType;
 
 #[derive(PartialOrd, Clone)]
@@ -42,27 +43,27 @@ impl Ord for Value {
         let other_type = other.data_type();
 
         if self_type.is_type(DataType::Integer) && other_type.is_type(DataType::Integer) {
-            return self.as_int().cmp(&other.as_int());
+            return other.as_int().cmp(&self.as_int());
         }
 
         if self_type.is_type(DataType::Float) && other_type.is_type(DataType::Float) {
-            return self.as_float().total_cmp(&other.as_float());
+            return other.as_float().total_cmp(&self.as_float());
         }
 
         if self_type.is_type(DataType::Text) && other_type.is_type(DataType::Text) {
-            return self.as_text().cmp(&other.as_text());
+            return other.as_text().cmp(&self.as_text());
         }
 
         if self_type.is_type(DataType::DateTime) && other_type.is_type(DataType::DateTime) {
-            return self.as_date_time().cmp(&other.as_date_time());
+            return other.as_date_time().cmp(&self.as_date_time());
         }
 
         if self_type.is_type(DataType::Date) && other_type.is_type(DataType::Date) {
-            return self.as_date().cmp(&other.as_date());
+            return other.as_date().cmp(&self.as_date());
         }
 
         if self_type.is_type(DataType::Time) && other_type.is_type(DataType::Time) {
-            return self.as_time().cmp(&other.as_time());
+            return other.as_time().cmp(&self.as_time());
         }
 
         return Ordering::Equal;
@@ -232,8 +233,8 @@ impl Value {
             Value::Float(f) => f.to_string(),
             Value::Text(s) => s.to_string(),
             Value::Boolean(b) => b.to_string(),
-            Value::DateTime(dt) => dt.to_string(),
-            Value::Date(d) => d.to_string(),
+            Value::DateTime(dt) => time_stamp_to_date_time(*dt),
+            Value::Date(d) => time_stamp_to_date(*d),
             Value::Time(t) => t.to_string(),
             Value::Null => "Null".to_string(),
         };

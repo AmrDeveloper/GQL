@@ -172,6 +172,7 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<GQLQuery, GQLError> {
     return Ok(GQLQuery {
         statements,
         has_aggregation_function: context.is_single_value_query,
+        has_group_by_statement: context.has_group_by_statement,
         hidden_selections,
     });
 }
@@ -252,6 +253,7 @@ fn parse_select_statement(
                     .symbol_table
                     .define(alias_name.to_string(), expr_type.clone());
 
+                context.selected_fields.push(alias_name.clone());
                 alias_table.insert(field_name.to_string(), alias_name);
             }
 
@@ -409,6 +411,7 @@ fn parse_group_by_statement(
         });
     }
 
+    context.has_group_by_statement = true;
     return Ok(Box::new(GroupByStatement { field_name }));
 }
 
@@ -1334,7 +1337,9 @@ fn parse_primary_expression(
         TokenKind::Symbol => {
             *position += 1;
             let value = tokens[*position - 1].literal.to_string();
-            context.hidden_selections.push(value.to_string());
+            if !context.selected_fields.contains(&value) {
+                context.hidden_selections.push(value.to_string());
+            }
             return Ok(Box::new(SymbolExpression { value }));
         }
         TokenKind::Integer => {
