@@ -93,7 +93,7 @@ pub fn evaluate(
     }
     // If it a single group but it select only aggregations function,
     // should return only first element in the group
-    else if groups.len() == 1 && query.has_aggregation_function {
+    else if groups.len() == 1 && !query.has_group_by_statement && query.has_aggregation_function {
         let group: &mut Vec<GQLObject> = groups[0].as_mut();
         if group.len() > 1 {
             group.drain(1..);

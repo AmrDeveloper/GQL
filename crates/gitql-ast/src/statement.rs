@@ -22,6 +22,7 @@ pub trait Statement {
 pub struct GQLQuery {
     pub statements: HashMap<String, Box<dyn Statement>>,
     pub has_aggregation_function: bool,
+    pub has_group_by_statement: bool,
     pub hidden_selections: Vec<String>,
 }
 

@@ -12,6 +12,7 @@ pub struct ParserContext {
 
     pub generated_field_count: i32,
     pub is_single_value_query: bool,
+    pub has_group_by_statement: bool,
 }
 
 impl ParserContext {
@@ -23,6 +24,7 @@ impl ParserContext {
             hidden_selections: Vec::new(),
             generated_field_count: 0,
             is_single_value_query: false,
+            has_group_by_statement: false,
         };
     }
 
