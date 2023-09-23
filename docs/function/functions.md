@@ -58,7 +58,7 @@ SELECT UNICODE("AmrDeveloper")
 | CURRENT_DATE      |                  | Date     | Return current date in `YYYY-MM-DD` format.                     |
 | CURRENT_TIMESTAMP |                  | DateTime | Return current date time in `YYYY-MM-DD HH-MM-SS` format.       |
 | MAKEDATE          | Integer, Integer | Date     | Create and return a date based on  a year and a number of days. |
-| NOW               |                  | DateTime | Return current date and time.                                   |
+| NOW               |                  | DateTime | Return current date time in `YYYY-MM-DD HH-MMSS` format.        |
 
 ### Date functions samples
 

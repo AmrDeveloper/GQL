@@ -42,7 +42,7 @@ lazy_static! {
         map.insert("current_date", date_current_date);
         map.insert("current_time", date_current_time);
         map.insert("current_timestamp", date_current_timestamp);
-        map.insert("now", date_now);
+        map.insert("now", date_current_timestamp);
         map.insert("makedate", date_make_date);
         map
     };
@@ -228,7 +228,7 @@ lazy_static! {
             "now",
             Prototype {
                 parameters: vec![],
-                result: DataType::Text,
+                result: DataType::DateTime,
             },
         );
         map.insert(
@@ -480,12 +480,6 @@ fn date_current_time(_inputs: Vec<Value>) -> Value {
 fn date_current_timestamp(_inputs: Vec<Value>) -> Value {
     let time_stamp = date_utils::get_unix_timestamp_ms();
     return Value::DateTime(time_stamp);
-}
-
-fn date_now(_inputs: Vec<Value>) -> Value {
-    let time_stamp = date_utils::get_unix_timestamp_ms();
-    let date = date_utils::time_stamp_to_date_time(time_stamp);
-    return Value::Text(date);
 }
 
 fn date_make_date(inputs: Vec<Value>) -> Value {
