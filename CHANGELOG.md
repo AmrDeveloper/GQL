@@ -11,7 +11,7 @@ Version 0.7.1 *(2023-09-26)*
 * Update gitql-cli to version `0.5.0`.
 * Update gitql-parser to version `0.4.0`.
 * Update gitql-engine to version `0.5.0`.
-* 
+
 Version 0.7.0 *(2023-09-22)*
 -----------------------------
 
