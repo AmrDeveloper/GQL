@@ -42,6 +42,7 @@ lazy_static! {
         map.insert("current_date", date_current_date);
         map.insert("current_time", date_current_time);
         map.insert("current_timestamp", date_current_timestamp);
+        map.insert("now", date_current_timestamp);
         map.insert("makedate", date_make_date);
         map
     };
@@ -218,6 +219,13 @@ lazy_static! {
 
         map.insert(
             "current_timestamp",
+            Prototype {
+                parameters: vec![],
+                result: DataType::DateTime,
+            },
+        );
+        map.insert(
+            "now",
             Prototype {
                 parameters: vec![],
                 result: DataType::DateTime,
