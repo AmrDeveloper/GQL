@@ -69,3 +69,13 @@ SELECT CURRENT_TIMESTAMP()
 SELECT MAKEDATE(2023, 12)
 SELECT NOW()
 ```
+
+### General functions
+
+| Name   | Paramters | Return  | Description                               |
+| ------ | --------- | ------- | ----------------------------------------- |
+| ISNULL | ANY       | BOOLEAN | Return TRUE if the argument type is null. |
+
+```sql
+SELECT ISNULL(null), ISNULL(1)
+```

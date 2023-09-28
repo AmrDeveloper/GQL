@@ -44,6 +44,9 @@ lazy_static! {
         map.insert("current_timestamp", date_current_timestamp);
         map.insert("now", date_current_timestamp);
         map.insert("makedate", date_make_date);
+
+        // Other Functions
+        map.insert("isnull", general_is_null);
         map
     };
 }
@@ -208,7 +211,6 @@ lazy_static! {
                 result: DataType::Date,
             },
         );
-
         map.insert(
             "current_time",
             Prototype {
@@ -216,7 +218,6 @@ lazy_static! {
                 result: DataType::Time,
             },
         );
-
         map.insert(
             "current_timestamp",
             Prototype {
@@ -236,6 +237,14 @@ lazy_static! {
             Prototype {
                 parameters: vec![DataType::Integer, DataType::Integer],
                 result: DataType::Date,
+            },
+        );
+        // General functions
+        map.insert(
+            "isnull",
+            Prototype {
+                parameters: vec![DataType::Any],
+                result: DataType::Boolean,
             },
         );
         map
@@ -487,4 +496,10 @@ fn date_make_date(inputs: Vec<Value>) -> Value {
     let day_of_year = inputs[1].as_int() as u32;
     let time_stamp = date_utils::time_stamp_from_year_and_day(year, day_of_year);
     return Value::Date(time_stamp);
+}
+
+// General functions
+
+fn general_is_null(inputs: Vec<Value>) -> Value {
+    return Value::Boolean(inputs[0].data_type() == DataType::Null);
 }
