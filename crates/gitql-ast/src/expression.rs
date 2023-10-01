@@ -20,6 +20,7 @@ pub enum ExpressionKind {
     Between,
     Case,
     In,
+    Null,
 }
 
 pub trait Expression {
@@ -363,6 +364,22 @@ impl Expression for InExpression {
 
     fn expr_type(&self, _scope: &Scope) -> DataType {
         return self.values_type.clone();
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+pub struct NullExpression {}
+
+impl Expression for NullExpression {
+    fn get_expression_kind(&self) -> ExpressionKind {
+        ExpressionKind::Null
+    }
+
+    fn expr_type(&self, _scope: &Scope) -> DataType {
+        return DataType::Null;
     }
 
     fn as_any(&self) -> &dyn Any {

@@ -1362,6 +1362,10 @@ fn parse_primary_expression(
             *position += 1;
             return Ok(Box::new(BooleanExpression { is_true: false }));
         }
+        TokenKind::Null => {
+            *position += 1;
+            return Ok(Box::new(NullExpression {}));
+        }
         TokenKind::LeftParen => return parse_group_expression(context, tokens, position),
         TokenKind::Case => return parse_case_expression(context, tokens, position),
         _ => return Err(un_expected_expression_error(tokens, position)),

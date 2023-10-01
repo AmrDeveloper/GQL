@@ -50,6 +50,7 @@ pub enum TokenKind {
 
     True,
     False,
+    Null,
 
     Plus,
     Minus,
@@ -826,9 +827,10 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "and" => TokenKind::LogicalAnd,
         "xor" => TokenKind::LogicalXor,
 
-        // True and False
+        // True, False and Null
         "true" => TokenKind::True,
         "false" => TokenKind::False,
+        "null" => TokenKind::Null,
 
         "as" => TokenKind::As,
 

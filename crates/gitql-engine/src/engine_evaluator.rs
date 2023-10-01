@@ -124,6 +124,9 @@ pub fn evaluate_expression(
             let expr = expression.as_any().downcast_ref::<InExpression>().unwrap();
             return evaluate_in(expr, object);
         }
+        Null => {
+            return Ok(Value::Null);
+        }
     };
 }
 
