@@ -1,7 +1,22 @@
-## Install from crates.io
+## Install from Package managers
+
+## Cargo.io
 
 ```sh
 cargo install gitql
+```
+
+## Winget on Windows
+
+```sh
+winget install gitql
+```
+
+## Scoop on Windows
+
+```sh
+scoop install gitql
+```
 
 # On Single repository
 gitql <repository_path>
