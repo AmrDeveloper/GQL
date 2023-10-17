@@ -29,6 +29,7 @@ lazy_static! {
         map.insert("left", text_left);
         map.insert("datalength", text_datalength);
         map.insert("char", text_char);
+        map.insert("nchar", text_char);
         map.insert("replace", text_replace);
         map.insert("substring", text_substring);
         map.insert("stuff", text_stuff);
@@ -141,6 +142,13 @@ lazy_static! {
         );
         map.insert(
             "char",
+            Prototype {
+                parameters: vec![DataType::Integer],
+                result: DataType::Text,
+            },
+        );
+        map.insert(
+            "nchar",
             Prototype {
                 parameters: vec![DataType::Integer],
                 result: DataType::Text,
