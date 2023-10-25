@@ -48,6 +48,7 @@ lazy_static! {
 
         // Other Functions
         map.insert("isnull", general_is_null);
+        map.insert("isnumeric", general_is_numeric);
         map
     };
 }
@@ -250,6 +251,13 @@ lazy_static! {
         // General functions
         map.insert(
             "isnull",
+            Prototype {
+                parameters: vec![DataType::Any],
+                result: DataType::Boolean,
+            },
+        );
+        map.insert(
+            "isnumeric",
             Prototype {
                 parameters: vec![DataType::Any],
                 result: DataType::Boolean,
@@ -510,4 +518,9 @@ fn date_make_date(inputs: Vec<Value>) -> Value {
 
 fn general_is_null(inputs: Vec<Value>) -> Value {
     return Value::Boolean(inputs[0].data_type() == DataType::Null);
+}
+
+fn general_is_numeric(inputs: Vec<Value>) -> Value {
+    let input_type = inputs[0].data_type();
+    return Value::Boolean(input_type.is_number());
 }

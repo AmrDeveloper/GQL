@@ -73,10 +73,12 @@ SELECT NOW()
 
 ### General functions
 
-| Name   | Paramters | Return  | Description                               |
-| ------ | --------- | ------- | ----------------------------------------- |
-| ISNULL | ANY       | BOOLEAN | Return TRUE if the argument type is null. |
+| Name      | Paramters | Return  | Description                                 |
+| --------- | --------- | ------- | ------------------------------------------- |
+| ISNULL    | ANY       | BOOLEAN | Return TRUE if the argument type is null.   |
+| ISNUMERIC | ANY       | BOOLEAN | Return TRUE if the argument type is number. |
 
 ```sql
 SELECT ISNULL(null), ISNULL(1)
+SELECT ISNUMERIC(null), ISNUMERIC(1), ISNUMERIC(1.1), ISNUMERIC(false)
 ```
