@@ -13,7 +13,7 @@ pub fn select_gql_objects(
     fields_names: &Vec<String>,
     fields_values: &Vec<Box<dyn Expression>>,
     alias_table: &HashMap<String, String>,
-) -> Vec<GQLObject> {
+) -> Result<Vec<GQLObject>, String> {
     return match table.as_str() {
         "refs" => select_references(repo, fields_names, fields_values, alias_table),
         "commits" => select_commits(repo, fields_names, fields_values, alias_table),
@@ -29,12 +29,12 @@ fn select_references(
     fields_names: &Vec<String>,
     fields_values: &Vec<Box<dyn Expression>>,
     alias_table: &HashMap<String, String>,
-) -> Vec<GQLObject> {
+) -> Result<Vec<GQLObject>, String> {
     let repo_path = repo.path().to_str().unwrap().to_string();
     let mut gql_references: Vec<GQLObject> = Vec::new();
     let git_references = repo.references();
     if git_references.is_err() {
-        return gql_references;
+        return Ok(gql_references);
     }
 
     let references = git_references.ok().unwrap();
@@ -56,13 +56,9 @@ fn select_references(
             if (index - padding) >= 0 {
                 let value = &fields_values[(index - padding) as usize];
                 if !value.as_any().downcast_ref::<SymbolExpression>().is_some() {
-                    let evaulated = evaluate_expression(value, &attributes);
+                    let evaulated = evaluate_expression(value, &attributes)?;
                     let column_name = get_column_name(&alias_table, field_name);
-                    if evaulated.is_err() {
-                        println!("Error {}", evaulated.err().unwrap());
-                        continue;
-                    }
-                    attributes.insert(column_name, evaulated.ok().unwrap());
+                    attributes.insert(column_name, evaulated);
                     continue;
                 }
             }
@@ -108,7 +104,7 @@ fn select_references(
         gql_references.push(gql_reference);
     }
 
-    return gql_references;
+    return Ok(gql_references);
 }
 
 fn select_commits(
@@ -116,7 +112,7 @@ fn select_commits(
     fields_names: &Vec<String>,
     fields_values: &Vec<Box<dyn Expression>>,
     alias_table: &HashMap<String, String>,
-) -> Vec<GQLObject> {
+) -> Result<Vec<GQLObject>, String> {
     let repo_path = repo.path().to_str().unwrap().to_string();
 
     let mut commits: Vec<GQLObject> = Vec::new();
@@ -138,13 +134,9 @@ fn select_commits(
             if (index - padding) >= 0 {
                 let value = &fields_values[(index - padding) as usize];
                 if !value.as_any().downcast_ref::<SymbolExpression>().is_some() {
-                    let evaulated = evaluate_expression(value, &attributes);
+                    let evaulated = evaluate_expression(value, &attributes)?;
                     let column_name = get_column_name(&alias_table, field_name);
-                    if evaulated.is_err() {
-                        println!("Error {}", evaulated.err().unwrap());
-                        continue;
-                    }
-                    attributes.insert(column_name, evaulated.ok().unwrap());
+                    attributes.insert(column_name, evaulated);
                     continue;
                 }
             }
@@ -202,7 +194,7 @@ fn select_commits(
         commits.push(gql_commit);
     }
 
-    return commits;
+    return Ok(commits);
 }
 
 fn select_diffs(
@@ -210,7 +202,7 @@ fn select_diffs(
     fields_names: &Vec<String>,
     fields_values: &Vec<Box<dyn Expression>>,
     alias_table: &HashMap<String, String>,
-) -> Vec<GQLObject> {
+) -> Result<Vec<GQLObject>, String> {
     let mut diffs: Vec<GQLObject> = Vec::new();
     let mut revwalk = repo.revwalk().unwrap();
     revwalk.push_head().unwrap();
@@ -231,13 +223,9 @@ fn select_diffs(
             if (index - padding) >= 0 {
                 let value = &fields_values[(index - padding) as usize];
                 if !value.as_any().downcast_ref::<SymbolExpression>().is_some() {
-                    let evaulated = evaluate_expression(value, &attributes);
+                    let evaulated = evaluate_expression(value, &attributes)?;
                     let column_name = get_column_name(&alias_table, field_name);
-                    if evaulated.is_err() {
-                        println!("Error {}", evaulated.err().unwrap());
-                        continue;
-                    }
-                    attributes.insert(column_name, evaulated.ok().unwrap());
+                    attributes.insert(column_name, evaulated);
                     continue;
                 }
             }
@@ -311,7 +299,7 @@ fn select_diffs(
         diffs.push(gql_diff);
     }
 
-    return diffs;
+    return Ok(diffs);
 }
 
 fn select_branches(
@@ -319,7 +307,7 @@ fn select_branches(
     fields_names: &Vec<String>,
     fields_values: &Vec<Box<dyn Expression>>,
     alias_table: &HashMap<String, String>,
-) -> Vec<GQLObject> {
+) -> Result<Vec<GQLObject>, String> {
     let mut branches: Vec<GQLObject> = Vec::new();
     let local_branches = repo.branches(None).unwrap();
     let repo_path = repo.path().to_str().unwrap().to_string();
@@ -338,13 +326,9 @@ fn select_branches(
             if (index - padding) >= 0 {
                 let value = &fields_values[(index - padding) as usize];
                 if !value.as_any().downcast_ref::<SymbolExpression>().is_some() {
-                    let evaulated = evaluate_expression(value, &attributes);
+                    let evaulated = evaluate_expression(value, &attributes)?;
                     let column_name = get_column_name(&alias_table, field_name);
-                    if evaulated.is_err() {
-                        println!("Error {}", evaulated.err().unwrap());
-                        continue;
-                    }
-                    attributes.insert(column_name, evaulated.ok().unwrap());
+                    attributes.insert(column_name, evaulated);
                     continue;
                 }
             }
@@ -388,7 +372,7 @@ fn select_branches(
         branches.push(gql_branch);
     }
 
-    return branches;
+    return Ok(branches);
 }
 
 fn select_tags(
@@ -396,7 +380,7 @@ fn select_tags(
     fields_names: &Vec<String>,
     fields_values: &Vec<Box<dyn Expression>>,
     alias_table: &HashMap<String, String>,
-) -> Vec<GQLObject> {
+) -> Result<Vec<GQLObject>, String> {
     let mut tags: Vec<GQLObject> = Vec::new();
     let tag_names = repo.tag_names(None).unwrap();
     let repo_path = repo.path().to_str().unwrap().to_string();
@@ -416,13 +400,9 @@ fn select_tags(
                         let value = &fields_values[(index - padding) as usize];
 
                         if !value.as_any().downcast_ref::<SymbolExpression>().is_some() {
-                            let evaulated = evaluate_expression(value, &attributes);
+                            let evaulated = evaluate_expression(value, &attributes)?;
                             let column_name = get_column_name(&alias_table, field_name);
-                            if evaulated.is_err() {
-                                println!("Error {}", evaulated.err().unwrap());
-                                continue;
-                            }
-                            attributes.insert(column_name, evaulated.ok().unwrap());
+                            attributes.insert(column_name, evaulated);
                             continue;
                         }
                     }
@@ -446,7 +426,7 @@ fn select_tags(
             None => {}
         }
     }
-    return tags;
+    return Ok(tags);
 }
 
 fn select_values(
@@ -454,7 +434,7 @@ fn select_values(
     fields_names: &Vec<String>,
     fields_values: &Vec<Box<dyn Expression>>,
     alias_table: &HashMap<String, String>,
-) -> Vec<GQLObject> {
+) -> Result<Vec<GQLObject>, String> {
     let mut values: Vec<GQLObject> = Vec::new();
     let mut attributes: HashMap<String, Value> = HashMap::new();
     let len = fields_values.len();
@@ -462,14 +442,14 @@ fn select_values(
     for index in 0..len {
         let field_name = &fields_names[index];
         let value = &fields_values[index];
-        let evaulated = evaluate_expression(value, &attributes);
+        let evaulated = evaluate_expression(value, &attributes)?;
         let column_name = get_column_name(&alias_table, field_name);
-        attributes.insert(column_name, evaulated.ok().unwrap());
+        attributes.insert(column_name, evaulated);
     }
 
     let gql_object = GQLObject { attributes };
     values.push(gql_object);
-    return values;
+    return Ok(values);
 }
 
 #[inline(always)]

@@ -109,7 +109,7 @@ fn execute_select_statement(
         &fields_names,
         &statement.fields_values,
         &statement.alias_table,
-    );
+    )?;
 
     // Push the selected elements as a first group
     if groups.is_empty() {
