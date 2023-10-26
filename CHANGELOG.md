@@ -1,6 +1,19 @@
 Change Log
 ==========
 
+Version 0.7.2 *(2023-10-26)*
+-----------------------------
+
+* Support `NULL` keyword.
+* Implement `ISNULL` function.
+* Implement `ISNUMERIC` function.
+* Handle crash for undefined symbol as argument at runtime.
+* Update gitql-ast to version `0.5.0`.
+* Update gitql-cli to version `0.7.0`.
+* Update gitql-parser to version `0.6.0`.
+* Update gitql-engine to version `0.7.0`.
+* Update git2 to version `0.18.1`.
+
 Version 0.7.1 *(2023-09-26)*
 -----------------------------
 
