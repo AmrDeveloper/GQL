@@ -272,9 +272,9 @@ dependencies = [
 
 [[package]]
 name = "git2"
-version = "0.18.0"
+version = "0.18.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "12ef350ba88a33b4d524b1d1c79096c9ade5ef8c59395df0e60d1e1889414c0e"
+checksum = "fbf97ba92db08df386e10c8ede66a2a0369bd277090afd8710e19e38de9ec0cd"
 dependencies = [
  "bitflags 2.4.0",
  "libc",
@@ -285,7 +285,7 @@ dependencies = [
 
 [[package]]
 name = "gitql"
-version = "0.7.1"
+version = "0.7.2"
 dependencies = [
  "git2",
  "gitql-ast",
@@ -296,7 +296,7 @@ dependencies = [
 
 [[package]]
 name = "gitql-ast"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "chrono",
  "lazy_static",
@@ -304,7 +304,7 @@ dependencies = [
 
 [[package]]
 name = "gitql-cli"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "clap",
  "gitql-ast",
@@ -316,7 +316,7 @@ dependencies = [
 
 [[package]]
 name = "gitql-engine"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "git2",
  "gitql-ast",
@@ -325,7 +325,7 @@ dependencies = [
 
 [[package]]
 name = "gitql-parser"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "gitql-ast",
  "lazy_static",

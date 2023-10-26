@@ -1,13 +1,13 @@
 [package]
 name = "gitql-engine"
 authors = ["AmrDeveloper"]
-version = "0.6.0"
+version = "0.7.0"
 edition = "2021"
 description = "GitQL Engine"
 repository = "https://github.com/amrdeveloper/gql/tree/main/crates/gitql-engine"
 license = "MIT"
 
 [dependencies]
-gitql-ast = { path = "../gitql-ast", version = "0.4.0" }
-git2 = { version = "0.18.0", default-features = false }
+gitql-ast = { path = "../gitql-ast", version = "0.5.0" }
+git2 = { version = "0.18.1", default-features = false }
 regex = "1.8.4"
