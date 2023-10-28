@@ -309,14 +309,14 @@ fn select_branches(
     alias_table: &HashMap<String, String>,
 ) -> Result<Vec<GQLObject>, String> {
     let mut branches: Vec<GQLObject> = Vec::new();
-    let local_branches = repo.branches(None).unwrap();
+    let local_and_remote_branches = repo.branches(None).unwrap();
     let repo_path = repo.path().to_str().unwrap().to_string();
 
     let names_len = fields_names.len() as i64;
     let values_len = fields_values.len() as i64;
     let padding = names_len - values_len;
 
-    for branch in local_branches {
+    for branch in local_and_remote_branches {
         let (branch, _) = branch.unwrap();
 
         let mut attributes: HashMap<String, Value> = HashMap::new();
