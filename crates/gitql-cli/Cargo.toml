@@ -10,7 +10,6 @@ license = "MIT"
 [dependencies]
 gitql-ast = { path = "../gitql-ast", version = "0.5.0" }
 gitql-parser = { path = "../gitql-parser", version = "0.6.0" }
-prettytable-rs = "^0.10"
-textwrap = "0.16.0"
+comfy-table = "7.1.0"
 termcolor = "1.2.0"
 clap = { version = "4.3.23", features = ["derive"] }
