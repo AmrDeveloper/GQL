@@ -9,7 +9,7 @@ pub struct GQLObject {
 
 pub fn flat_gql_groups(groups: &mut Vec<Vec<GQLObject>>) {
     let mut main_group: Vec<GQLObject> = Vec::new();
-    for group in groups.into_iter() {
+    for group in groups.iter_mut() {
         main_group.append(group);
     }
 

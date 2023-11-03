@@ -31,10 +31,10 @@ pub trait Expression {
 
 impl dyn Expression {
     pub fn is_const(&self) -> bool {
-        return matches!(
+        matches!(
             self.get_expression_kind(),
             ExpressionKind::Number | ExpressionKind::Boolean | ExpressionKind::String
-        );
+        )
     }
 }
 
@@ -48,7 +48,7 @@ impl Expression for StringExpression {
     }
 
     fn expr_type(&self, _scope: &Scope) -> DataType {
-        return DataType::Text;
+        DataType::Text
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -76,7 +76,7 @@ impl Expression for SymbolExpression {
             return TABLES_FIELDS_TYPES[&self.value.as_str()].clone();
         }
 
-        return DataType::Undefined;
+        DataType::Undefined
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -94,7 +94,7 @@ impl Expression for NumberExpression {
     }
 
     fn expr_type(&self, _scope: &Scope) -> DataType {
-        return self.value.data_type();
+        self.value.data_type()
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -112,7 +112,7 @@ impl Expression for BooleanExpression {
     }
 
     fn expr_type(&self, _scope: &Scope) -> DataType {
-        return DataType::Boolean;
+        DataType::Boolean
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -137,11 +137,11 @@ impl Expression for PrefixUnary {
     }
 
     fn expr_type(&self, _scope: &Scope) -> DataType {
-        return if self.op == PrefixUnaryOperator::Bang {
+        if self.op == PrefixUnaryOperator::Bang {
             DataType::Boolean
         } else {
             DataType::Integer
-        };
+        }
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -177,7 +177,7 @@ impl Expression for ArithmeticExpression {
             return DataType::Integer;
         }
 
-        return DataType::Float;
+        DataType::Float
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -207,7 +207,7 @@ impl Expression for ComparisonExpression {
     }
 
     fn expr_type(&self, _scope: &Scope) -> DataType {
-        return DataType::Boolean;
+        DataType::Boolean
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -226,7 +226,7 @@ impl Expression for LikeExpression {
     }
 
     fn expr_type(&self, _scope: &Scope) -> DataType {
-        return DataType::Boolean;
+        DataType::Boolean
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -253,7 +253,7 @@ impl Expression for LogicalExpression {
     }
 
     fn expr_type(&self, _scope: &Scope) -> DataType {
-        return DataType::Boolean;
+        DataType::Boolean
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -281,7 +281,7 @@ impl Expression for BitwiseExpression {
     }
 
     fn expr_type(&self, _scope: &Scope) -> DataType {
-        return DataType::Integer;
+        DataType::Integer
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -302,7 +302,7 @@ impl Expression for CallExpression {
 
     fn expr_type(&self, _scope: &Scope) -> DataType {
         let prototype = PROTOTYPES.get(&self.function_name.as_str()).unwrap();
-        return prototype.result.clone();
+        prototype.result.clone()
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -322,7 +322,7 @@ impl Expression for BetweenExpression {
     }
 
     fn expr_type(&self, _scope: &Scope) -> DataType {
-        return DataType::Boolean;
+        DataType::Boolean
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -343,7 +343,7 @@ impl Expression for CaseExpression {
     }
 
     fn expr_type(&self, _scope: &Scope) -> DataType {
-        return self.values_type.clone();
+        self.values_type.clone()
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -363,7 +363,7 @@ impl Expression for InExpression {
     }
 
     fn expr_type(&self, _scope: &Scope) -> DataType {
-        return self.values_type.clone();
+        self.values_type.clone()
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -379,7 +379,7 @@ impl Expression for NullExpression {
     }
 
     fn expr_type(&self, _scope: &Scope) -> DataType {
-        return DataType::Null;
+        DataType::Null
     }
 
     fn as_any(&self) -> &dyn Any {

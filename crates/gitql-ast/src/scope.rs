@@ -46,9 +46,9 @@ pub struct Scope {
 
 impl Scope {
     pub fn new() -> Scope {
-        return Scope {
+        Scope {
             env: HashMap::new(),
-        };
+        }
     }
 
     pub fn define(&mut self, str: String, data_type: DataType) {
@@ -56,6 +56,12 @@ impl Scope {
     }
 
     pub fn contains(&self, str: &String) -> bool {
-        return self.env.contains_key(str);
+        self.env.contains_key(str)
+    }
+}
+
+impl Default for Scope {
+    fn default() -> Self {
+        Self::new()
     }
 }

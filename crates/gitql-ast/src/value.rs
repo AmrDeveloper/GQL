@@ -1,7 +1,8 @@
 use std::cmp::Ordering;
 use std::ops::Mul;
 
-use crate::date_utils::{time_stamp_to_date, time_stamp_to_date_time};
+use crate::date_utils::time_stamp_to_date;
+use crate::date_utils::time_stamp_to_date_time;
 use crate::types::DataType;
 
 #[derive(PartialOrd, Clone)]
@@ -22,7 +23,7 @@ impl PartialEq for Value {
             return false;
         }
 
-        return match self.data_type() {
+        match self.data_type() {
             DataType::Any => true,
             DataType::Text => self.as_text() == other.as_text(),
             DataType::Integer => self.as_int() == other.as_int(),
@@ -33,7 +34,7 @@ impl PartialEq for Value {
             DataType::Time => self.as_date() == other.as_date(),
             DataType::Undefined => true,
             DataType::Null => true,
-        };
+        }
     }
 }
 
@@ -66,7 +67,7 @@ impl Ord for Value {
             return other.as_time().cmp(&self.as_time());
         }
 
-        return Ordering::Equal;
+        Ordering::Equal
     }
 }
 
@@ -93,7 +94,7 @@ impl Value {
             return Value::Float(self.as_float() + (other.as_int() as f64));
         }
 
-        return Value::Integer(0);
+        Value::Integer(0)
     }
 
     pub fn minus(&self, other: &Value) -> Value {
@@ -116,7 +117,7 @@ impl Value {
             return Value::Float(self.as_float() - (other.as_int() as f64));
         }
 
-        return Value::Integer(0);
+        Value::Integer(0)
     }
 
     pub fn mul(&self, other: &Value) -> Result<Value, String> {
@@ -148,7 +149,7 @@ impl Value {
             return Ok(Value::Float(self.as_float().mul(other.as_int() as f64)));
         }
 
-        return Ok(Value::Integer(0));
+        Ok(Value::Integer(0))
     }
 
     pub fn div(&self, other: &Value) -> Result<Value, String> {
@@ -178,7 +179,7 @@ impl Value {
             return Ok(Value::Float(self.as_float() / other.as_int() as f64));
         }
 
-        return Ok(Value::Integer(0));
+        Ok(Value::Integer(0))
     }
 
     pub fn modulus(&self, other: &Value) -> Result<Value, String> {
@@ -211,11 +212,11 @@ impl Value {
             return Ok(Value::Float(self.as_float() % other.as_int() as f64));
         }
 
-        return Ok(Value::Integer(0));
+        Ok(Value::Integer(0))
     }
 
     pub fn data_type(&self) -> DataType {
-        return match self {
+        match self {
             Value::Integer(_) => DataType::Integer,
             Value::Float(_) => DataType::Float,
             Value::Text(_) => DataType::Text,
@@ -224,11 +225,11 @@ impl Value {
             Value::Date(_) => DataType::Date,
             Value::Time(_) => DataType::Time,
             Value::Null => DataType::Null,
-        };
+        }
     }
 
     pub fn literal(&self) -> String {
-        return match self {
+        match self {
             Value::Integer(i) => i.to_string(),
             Value::Float(f) => f.to_string(),
             Value::Text(s) => s.to_string(),
@@ -237,55 +238,55 @@ impl Value {
             Value::Date(d) => time_stamp_to_date(*d),
             Value::Time(t) => t.to_string(),
             Value::Null => "Null".to_string(),
-        };
+        }
     }
 
     pub fn as_int(&self) -> i64 {
         if let Value::Integer(n) = self {
             return *n;
         }
-        return 0;
+        0
     }
 
     pub fn as_float(&self) -> f64 {
         if let Value::Float(n) = self {
             return *n;
         }
-        return 0f64;
+        0f64
     }
 
     pub fn as_text(&self) -> String {
         if let Value::Text(s) = self {
             return s.to_string();
         }
-        return "".to_owned();
+        "".to_owned()
     }
 
     pub fn as_bool(&self) -> bool {
         if let Value::Boolean(b) = self {
             return *b;
         }
-        return false;
+        false
     }
 
     pub fn as_date_time(&self) -> i64 {
         if let Value::DateTime(d) = self {
             return *d;
         }
-        return 0;
+        0
     }
 
     pub fn as_date(&self) -> i64 {
         if let Value::Date(d) = self {
             return *d;
         }
-        return 0;
+        0
     }
 
     pub fn as_time(&self) -> String {
         if let Value::Time(d) = self {
             return d.to_string();
         }
-        return "".to_owned();
+        "".to_owned()
     }
 }

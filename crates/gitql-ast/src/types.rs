@@ -17,27 +17,27 @@ pub enum DataType {
 
 impl DataType {
     pub fn is_type(&self, data_type: DataType) -> bool {
-        return *self == data_type;
+        *self == data_type
     }
 
     pub fn is_int(&self) -> bool {
-        return self.is_type(DataType::Integer);
+        self.is_type(DataType::Integer)
     }
 
     pub fn is_float(&self) -> bool {
-        return self.is_type(DataType::Float);
+        self.is_type(DataType::Float)
     }
 
     pub fn is_number(&self) -> bool {
-        return self.is_int() || self.is_float();
+        self.is_int() || self.is_float()
     }
 
     pub fn is_text(&self) -> bool {
-        return self.is_type(DataType::Text);
+        self.is_type(DataType::Text)
     }
 
     pub fn literal(&self) -> &'static str {
-        return match self {
+        match self {
             DataType::Any => "Any",
             DataType::Text => "Text",
             DataType::Integer => "Integer",
@@ -48,7 +48,7 @@ impl DataType {
             DataType::DateTime => "DateTime",
             DataType::Undefined => "Undefined",
             DataType::Null => "Null",
-        };
+        }
     }
 }
 

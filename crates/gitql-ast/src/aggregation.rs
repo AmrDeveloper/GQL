@@ -75,7 +75,7 @@ fn aggregation_max(field_name: &String, objects: &Vec<GQLObject>) -> Value {
             max_length = int_value;
         }
     }
-    return Value::Integer(max_length);
+    Value::Integer(max_length)
 }
 
 fn aggregation_min(field_name: &String, objects: &Vec<GQLObject>) -> Value {
@@ -87,7 +87,7 @@ fn aggregation_min(field_name: &String, objects: &Vec<GQLObject>) -> Value {
             min_length = int_value;
         }
     }
-    return Value::Integer(min_length);
+    Value::Integer(min_length)
 }
 
 fn aggregation_sum(field_name: &String, objects: &Vec<GQLObject>) -> Value {
@@ -96,7 +96,7 @@ fn aggregation_sum(field_name: &String, objects: &Vec<GQLObject>) -> Value {
         let field_value = &object.attributes.get(field_name).unwrap();
         sum += field_value.as_int();
     }
-    return Value::Integer(sum);
+    Value::Integer(sum)
 }
 
 fn aggregation_average(field_name: &String, objects: &Vec<GQLObject>) -> Value {
@@ -107,9 +107,9 @@ fn aggregation_average(field_name: &String, objects: &Vec<GQLObject>) -> Value {
         sum += field_value.as_int();
     }
     let avg = sum / count;
-    return Value::Integer(avg);
+    Value::Integer(avg)
 }
 
 fn aggregation_count(_field_name: &String, objects: &Vec<GQLObject>) -> Value {
-    return Value::Integer(objects.len() as i64);
+    Value::Integer(objects.len() as i64)
 }
