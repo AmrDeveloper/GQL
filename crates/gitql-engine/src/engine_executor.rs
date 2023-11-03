@@ -2,6 +2,7 @@ use std::cmp;
 use std::collections::HashMap;
 
 use gitql_ast::aggregation::AGGREGATIONS;
+use gitql_ast::object::flat_gql_groups;
 use gitql_ast::object::GQLObject;
 use gitql_ast::statement::AggregationFunctionsStatement;
 use gitql_ast::statement::GroupByStatement;
@@ -160,7 +161,7 @@ fn execute_having_statement(
     }
 
     if groups.len() > 1 {
-        flat_groups(groups);
+        flat_gql_groups(groups);
     }
 
     // Perform where command only on the first group
@@ -194,7 +195,7 @@ fn execute_limit_statement(
     }
 
     if groups.len() > 1 {
-        flat_groups(groups);
+        flat_gql_groups(groups);
     }
 
     let main_group: &mut Vec<GQLObject> = groups[0].as_mut();
@@ -214,7 +215,7 @@ fn execute_offset_statement(
     }
 
     if groups.len() > 1 {
-        flat_groups(groups);
+        flat_gql_groups(groups);
     }
     let main_group: &mut Vec<GQLObject> = groups[0].as_mut();
     main_group.drain(0..cmp::min(statement.count, main_group.len()));
@@ -231,7 +232,7 @@ fn execute_order_by_statement(
     }
 
     if groups.len() > 1 {
-        flat_groups(groups);
+        flat_gql_groups(groups);
     }
 
     let main_group: &mut Vec<GQLObject> = groups[0].as_mut();
@@ -345,14 +346,4 @@ fn execute_aggregation_function_statement(
     }
 
     return Ok(());
-}
-
-fn flat_groups(groups: &mut Vec<Vec<GQLObject>>) {
-    let mut main_group: Vec<GQLObject> = Vec::new();
-    for group in groups.into_iter() {
-        main_group.append(group);
-    }
-
-    groups.clear();
-    groups.push(main_group);
 }

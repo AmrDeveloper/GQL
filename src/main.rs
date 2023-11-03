@@ -73,10 +73,12 @@ fn main() {
             continue;
         }
 
-        let evaluation_values = evaluation_result.ok().unwrap();
+        let mut evaluation_values = evaluation_result.ok().unwrap();
         render::render_objects(
-            &evaluation_values.groups,
+            &mut evaluation_values.groups,
             &evaluation_values.hidden_selections,
+            arguments.pagination,
+            arguments.size_per_page,
         );
 
         let engine_duration = engine_start.elapsed();
