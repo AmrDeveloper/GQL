@@ -5,7 +5,7 @@ use crate::date_utils::time_stamp_to_date;
 use crate::date_utils::time_stamp_to_date_time;
 use crate::types::DataType;
 
-#[derive(PartialOrd, Clone)]
+#[derive(Clone)]
 pub enum Value {
     Integer(i64),
     Float(f64),
@@ -17,8 +17,8 @@ pub enum Value {
     Null,
 }
 
-impl PartialEq for Value {
-    fn eq(&self, other: &Self) -> bool {
+impl Value {
+    pub fn equals(&self, other: &Self) -> bool {
         if self.data_type() != other.data_type() {
             return false;
         }
@@ -36,10 +36,8 @@ impl PartialEq for Value {
             DataType::Null => true,
         }
     }
-}
 
-impl Ord for Value {
-    fn cmp(&self, other: &Self) -> Ordering {
+    pub fn compare(&self, other: &Self) -> Ordering {
         let self_type = self.data_type();
         let other_type = other.data_type();
 
@@ -69,11 +67,7 @@ impl Ord for Value {
 
         Ordering::Equal
     }
-}
 
-impl Eq for Value {}
-
-impl Value {
     pub fn plus(&self, other: &Value) -> Value {
         let self_type = self.data_type();
         let other_type = other.data_type();

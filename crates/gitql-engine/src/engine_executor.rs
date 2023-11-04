@@ -39,52 +39,52 @@ pub fn execute_statement(
                 alias_table.insert(alias.0.to_string(), alias.1.to_string());
             }
 
-            return execute_select_statement(statement, repo, groups, hidden_selection);
+            execute_select_statement(statement, repo, groups, hidden_selection)
         }
         Where => {
             let statement = statement.as_any().downcast_ref::<WhereStatement>().unwrap();
-            return execute_where_statement(statement, groups);
+            execute_where_statement(statement, groups)
         }
         Having => {
             let statement = statement
                 .as_any()
                 .downcast_ref::<HavingStatement>()
                 .unwrap();
-            return execute_having_statement(statement, groups);
+            execute_having_statement(statement, groups)
         }
         Limit => {
             let statement = statement.as_any().downcast_ref::<LimitStatement>().unwrap();
-            return execute_limit_statement(statement, groups);
+            execute_limit_statement(statement, groups)
         }
         Offset => {
             let statement = statement
                 .as_any()
                 .downcast_ref::<OffsetStatement>()
                 .unwrap();
-            return execute_offset_statement(statement, groups);
+            execute_offset_statement(statement, groups)
         }
         OrderBy => {
             let statement = statement
                 .as_any()
                 .downcast_ref::<OrderByStatement>()
                 .unwrap();
-            return execute_order_by_statement(statement, groups);
+            execute_order_by_statement(statement, groups)
         }
         GroupBy => {
             let statement = statement
                 .as_any()
                 .downcast_ref::<GroupByStatement>()
                 .unwrap();
-            return execute_group_by_statement(statement, groups);
+            execute_group_by_statement(statement, groups)
         }
         AggregateFunction => {
             let statement = statement
                 .as_any()
                 .downcast_ref::<AggregationFunctionsStatement>()
                 .unwrap();
-            return execute_aggregation_function_statement(statement, groups, &alias_table);
+            execute_aggregation_function_statement(statement, groups, alias_table)
         }
-    };
+    }
 }
 
 fn execute_select_statement(
@@ -119,7 +119,7 @@ fn execute_select_statement(
         groups[0].append(&mut objects);
     }
 
-    return Ok(());
+    Ok(())
 }
 
 fn execute_where_statement(
@@ -149,7 +149,7 @@ fn execute_where_statement(
     groups.remove(0);
     groups.push(filtered_group);
 
-    return Ok(());
+    Ok(())
 }
 
 fn execute_having_statement(
@@ -183,7 +183,7 @@ fn execute_having_statement(
     groups.remove(0);
     groups.push(filtered_group);
 
-    return Ok(());
+    Ok(())
 }
 
 fn execute_limit_statement(
@@ -203,7 +203,7 @@ fn execute_limit_statement(
         main_group.drain(statement.count..main_group.len());
     }
 
-    return Ok(());
+    Ok(())
 }
 
 fn execute_offset_statement(
@@ -220,7 +220,7 @@ fn execute_offset_statement(
     let main_group: &mut Vec<GQLObject> = groups[0].as_mut();
     main_group.drain(0..cmp::min(statement.count, main_group.len()));
 
-    return Ok(());
+    Ok(())
 }
 
 fn execute_order_by_statement(
@@ -250,15 +250,15 @@ fn execute_order_by_statement(
     main_group.sort_by(|a, b| {
         let first = &evaluate_expression(expression, &a.attributes).unwrap_or(Value::Null);
         let other = &evaluate_expression(expression, &b.attributes).unwrap_or(Value::Null);
-        let ordering = first.cmp(other);
-        return if !statement.is_ascending {
+        let ordering = first.compare(other);
+        if !statement.is_ascending {
             ordering
         } else {
             ordering.reverse()
-        };
+        }
     });
 
-    return Ok(());
+    Ok(())
 }
 
 fn execute_group_by_statement(
@@ -284,20 +284,22 @@ fn execute_group_by_statement(
         let field_value = object.attributes.get(&statement.field_name).unwrap();
 
         // If there is an existing group for this value, append current object to it
-        if groups_map.contains_key(&field_value.as_text()) {
+        if let std::collections::hash_map::Entry::Vacant(e) =
+            groups_map.entry(field_value.as_text())
+        {
+            e.insert(next_group_index);
+            next_group_index += 1;
+            groups.push(vec![object.to_owned()]);
+        }
+        // Push a new group for this unique value and update the next index
+        else {
             let index = *groups_map.get(&field_value.as_text()).unwrap();
             let target_group = &mut groups[index];
             target_group.push(object.to_owned());
         }
-        // Push a new group for this unique value and update the next index
-        else {
-            groups_map.insert(field_value.as_text(), next_group_index);
-            next_group_index += 1;
-            groups.push(vec![object.to_owned()]);
-        }
     }
 
-    return Ok(());
+    Ok(())
 }
 
 fn execute_aggregation_function_statement(
@@ -325,13 +327,13 @@ fn execute_aggregation_function_statement(
             // Execute aggregation function once for group
             let result_column_name = aggregation.0;
             let argument = &function.argument;
-            let result = &aggregation_function(&argument.to_string(), &group);
+            let result = &aggregation_function(&argument.to_string(), group);
 
             // Get alias name if exists or column name by default
             let column_name = get_column_name(alias_table, result_column_name);
 
             // Insert the calculated value in the group objects
-            for object in group.into_iter() {
+            for object in group.iter_mut() {
                 object
                     .attributes
                     .insert(column_name.to_string(), result.to_owned());
@@ -345,5 +347,5 @@ fn execute_aggregation_function_statement(
         }
     }
 
-    return Ok(());
+    Ok(())
 }

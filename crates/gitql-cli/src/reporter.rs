@@ -6,17 +6,12 @@ use crate::colored_stream::ColoredStream;
 
 const PORPOT_LENGTH: usize = 6;
 
+#[derive(Default)]
 pub struct DiagnosticReporter {
     stdout: ColoredStream,
 }
 
 impl DiagnosticReporter {
-    pub fn new() -> Self {
-        Self {
-            stdout: ColoredStream::new(),
-        }
-    }
-
     pub fn report_error(&mut self, message: &str) {
         self.stdout.set_color(Some(Color::Red));
         self.stdout.print("ERROR: ");

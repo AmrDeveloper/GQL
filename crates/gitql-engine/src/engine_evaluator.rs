@@ -37,101 +37,99 @@ pub fn evaluate_expression(
                 .as_any()
                 .downcast_ref::<StringExpression>()
                 .unwrap();
-            return evaluate_string(expr);
+            evaluate_string(expr)
         }
         Symbol => {
             let expr = expression
                 .as_any()
                 .downcast_ref::<SymbolExpression>()
                 .unwrap();
-            return evaluate_symbol(expr, object);
+            evaluate_symbol(expr, object)
         }
         Number => {
             let expr = expression
                 .as_any()
                 .downcast_ref::<NumberExpression>()
                 .unwrap();
-            return evaluate_number(expr);
+            evaluate_number(expr)
         }
         Boolean => {
             let expr = expression
                 .as_any()
                 .downcast_ref::<BooleanExpression>()
                 .unwrap();
-            return evaluate_boolean(expr);
+            evaluate_boolean(expr)
         }
         PrefixUnary => {
             let expr = expression.as_any().downcast_ref::<PrefixUnary>().unwrap();
-            return evaluate_prefix_unary(expr, object);
+            evaluate_prefix_unary(expr, object)
         }
         Arithmetic => {
             let expr = expression
                 .as_any()
                 .downcast_ref::<ArithmeticExpression>()
                 .unwrap();
-            return evaluate_arithmetic(expr, object);
+            evaluate_arithmetic(expr, object)
         }
         Comparison => {
             let expr = expression
                 .as_any()
                 .downcast_ref::<ComparisonExpression>()
                 .unwrap();
-            return evaluate_comparison(expr, object);
+            evaluate_comparison(expr, object)
         }
         Like => {
             let expr = expression
                 .as_any()
                 .downcast_ref::<LikeExpression>()
                 .unwrap();
-            return evaulate_like(expr, object);
+            evaulate_like(expr, object)
         }
         Logical => {
             let expr = expression
                 .as_any()
                 .downcast_ref::<LogicalExpression>()
                 .unwrap();
-            return evaluate_logical(expr, object);
+            evaluate_logical(expr, object)
         }
         Bitwise => {
             let expr = expression
                 .as_any()
                 .downcast_ref::<BitwiseExpression>()
                 .unwrap();
-            return evaluate_bitwise(expr, object);
+            evaluate_bitwise(expr, object)
         }
         Call => {
             let expr = expression
                 .as_any()
                 .downcast_ref::<CallExpression>()
                 .unwrap();
-            return evaluate_call(expr, object);
+            evaluate_call(expr, object)
         }
         Between => {
             let expr = expression
                 .as_any()
                 .downcast_ref::<BetweenExpression>()
                 .unwrap();
-            return evaluate_between(expr, object);
+            evaluate_between(expr, object)
         }
         Case => {
             let expr = expression
                 .as_any()
                 .downcast_ref::<CaseExpression>()
                 .unwrap();
-            return evaluate_case(expr, object);
+            evaluate_case(expr, object)
         }
         In => {
             let expr = expression.as_any().downcast_ref::<InExpression>().unwrap();
-            return evaluate_in(expr, object);
+            evaluate_in(expr, object)
         }
-        Null => {
-            return Ok(Value::Null);
-        }
-    };
+        Null => Ok(Value::Null),
+    }
 }
 
 fn evaluate_string(expr: &StringExpression) -> Result<Value, String> {
-    return Ok(Value::Text(expr.value.to_owned()));
+    Ok(Value::Text(expr.value.to_owned()))
 }
 
 fn evaluate_symbol(
@@ -141,15 +139,15 @@ fn evaluate_symbol(
     if object.contains_key(&expr.value) {
         return Ok(object.get(&expr.value).unwrap().clone());
     }
-    return Err(format!("Invalid column name `{}`", &expr.value));
+    Err(format!("Invalid column name `{}`", &expr.value))
 }
 
 fn evaluate_number(expr: &NumberExpression) -> Result<Value, String> {
-    return Ok(expr.value.to_owned());
+    Ok(expr.value.to_owned())
 }
 
 fn evaluate_boolean(expr: &BooleanExpression) -> Result<Value, String> {
-    return Ok(Value::Boolean(expr.is_true));
+    Ok(Value::Boolean(expr.is_true))
 }
 
 fn evaluate_prefix_unary(
@@ -157,11 +155,11 @@ fn evaluate_prefix_unary(
     object: &HashMap<String, Value>,
 ) -> Result<Value, String> {
     let rhs = evaluate_expression(&expr.right, object)?;
-    return if expr.op == PrefixUnaryOperator::Bang {
+    if expr.op == PrefixUnaryOperator::Bang {
         Ok(Value::Boolean(!rhs.as_bool()))
     } else {
         Ok(Value::Integer(-rhs.as_int()))
-    };
+    }
 }
 
 fn evaluate_arithmetic(
@@ -171,13 +169,13 @@ fn evaluate_arithmetic(
     let lhs = evaluate_expression(&expr.left, object)?;
     let rhs = evaluate_expression(&expr.right, object)?;
 
-    return match expr.operator {
+    match expr.operator {
         ArithmeticOperator::Plus => Ok(lhs.plus(&rhs)),
         ArithmeticOperator::Minus => Ok(lhs.minus(&rhs)),
         ArithmeticOperator::Star => lhs.mul(&rhs),
         ArithmeticOperator::Slash => lhs.div(&rhs),
         ArithmeticOperator::Modulus => lhs.modulus(&rhs),
-    };
+    }
 }
 
 fn evaluate_comparison(
@@ -204,14 +202,14 @@ fn evaluate_comparison(
         lhs.as_text().cmp(&rhs.as_text())
     };
 
-    return Ok(Value::Boolean(match expr.operator {
+    Ok(Value::Boolean(match expr.operator {
         ComparisonOperator::Greater => comparison_result.is_gt(),
         ComparisonOperator::GreaterEqual => comparison_result.is_ge(),
         ComparisonOperator::Less => comparison_result.is_lt(),
         ComparisonOperator::LessEqual => comparison_result.is_le(),
         ComparisonOperator::Equal => comparison_result.is_eq(),
         ComparisonOperator::NotEqual => !comparison_result.is_eq(),
-    }));
+    }))
 }
 
 fn evaulate_like(expr: &LikeExpression, object: &HashMap<String, Value>) -> Result<Value, String> {
@@ -228,7 +226,7 @@ fn evaulate_like(expr: &LikeExpression, object: &HashMap<String, Value>) -> Resu
     let regex = regex_result.ok().unwrap();
 
     let lhs = evaluate_expression(&expr.input, object)?.as_text();
-    return Ok(Value::Boolean(regex.is_match(&lhs)));
+    Ok(Value::Boolean(regex.is_match(&lhs)))
 }
 
 fn evaluate_logical(
@@ -246,11 +244,11 @@ fn evaluate_logical(
 
     let rhs = evaluate_expression(&expr.right, object)?.as_bool();
 
-    return Ok(Value::Boolean(match expr.operator {
+    Ok(Value::Boolean(match expr.operator {
         LogicalOperator::And => lhs && rhs,
         LogicalOperator::Or => lhs || rhs,
         LogicalOperator::Xor => lhs ^ rhs,
-    }));
+    }))
 }
 
 fn evaluate_bitwise(
@@ -260,7 +258,7 @@ fn evaluate_bitwise(
     let lhs = evaluate_expression(&expr.left, object)?.as_int();
     let rhs = evaluate_expression(&expr.right, object)?.as_int();
 
-    return match expr.operator {
+    match expr.operator {
         BitwiseOperator::Or => Ok(Value::Integer(lhs | rhs)),
         BitwiseOperator::And => Ok(Value::Integer(lhs & rhs)),
         BitwiseOperator::RightShift => {
@@ -277,7 +275,7 @@ fn evaluate_bitwise(
                 Ok(Value::Integer(lhs << rhs))
             }
         }
-    };
+    }
 }
 
 fn evaluate_call(expr: &CallExpression, object: &HashMap<String, Value>) -> Result<Value, String> {
@@ -289,32 +287,20 @@ fn evaluate_call(expr: &CallExpression, object: &HashMap<String, Value>) -> Resu
         arguments.push(evaluate_expression(arg, object)?);
     }
 
-    return Ok(function(arguments));
+    Ok(function(arguments))
 }
 
 fn evaluate_between(
     expr: &BetweenExpression,
     object: &HashMap<String, Value>,
 ) -> Result<Value, String> {
-    let value_result = evaluate_expression(&expr.value, object);
-    if value_result.is_err() {
-        return value_result;
-    }
-
-    let range_start_result = evaluate_expression(&expr.range_start, object);
-    if range_start_result.is_err() {
-        return range_start_result;
-    }
-
-    let range_end_result = evaluate_expression(&expr.range_end, object);
-    if range_end_result.is_err() {
-        return range_end_result;
-    }
-
-    let value = value_result.ok().unwrap().as_int();
-    let range_start = range_start_result.ok().unwrap().as_int();
-    let range_end = range_end_result.ok().unwrap().as_int();
-    return Ok(Value::Boolean(value >= range_start && value <= range_end));
+    let value_result = evaluate_expression(&expr.value, object)?;
+    let range_start_result = evaluate_expression(&expr.range_start, object)?;
+    let range_end_result = evaluate_expression(&expr.range_end, object)?;
+    let value = value_result.as_int();
+    let range_start = range_start_result.as_int();
+    let range_end = range_end_result.as_int();
+    Ok(Value::Boolean(value >= range_start && value <= range_end))
 }
 
 fn evaluate_case(expr: &CaseExpression, object: &HashMap<String, Value>) -> Result<Value, String> {
@@ -328,19 +314,19 @@ fn evaluate_case(expr: &CaseExpression, object: &HashMap<String, Value>) -> Resu
         }
     }
 
-    return match &expr.default_value {
+    match &expr.default_value {
         Some(default_value) => evaluate_expression(default_value, object),
         _ => Err("Invalid case statement".to_owned()),
-    };
+    }
 }
 
 fn evaluate_in(expr: &InExpression, object: &HashMap<String, Value>) -> Result<Value, String> {
     let argument = evaluate_expression(&expr.argument, object)?;
     for value_expr in &expr.values {
         let value = evaluate_expression(value_expr, object)?;
-        if argument.eq(&value) {
+        if argument.equals(&value) {
             return Ok(Value::Boolean(true));
         }
     }
-    return Ok(Value::Boolean(false));
+    Ok(Value::Boolean(false))
 }

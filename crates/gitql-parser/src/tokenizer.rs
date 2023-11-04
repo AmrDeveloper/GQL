@@ -150,7 +150,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             };
 
             let token = Token {
-                location: location,
+                location,
                 kind: TokenKind::Plus,
                 literal: "+".to_owned(),
             };
@@ -192,7 +192,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             };
 
             let token = Token {
-                location: location,
+                location,
                 kind: TokenKind::Star,
                 literal: "*".to_owned(),
             };
@@ -237,7 +237,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             };
 
             let token = Token {
-                location: location,
+                location,
                 kind: TokenKind::Percentage,
                 literal: "%".to_owned(),
             };
@@ -310,7 +310,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             };
 
             let token = Token {
-                location: location,
+                location,
                 kind: TokenKind::LogicalXor,
                 literal: "^".to_owned(),
             };
@@ -328,7 +328,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             };
 
             let token = Token {
-                location: location,
+                location,
                 kind: TokenKind::Comma,
                 literal: ",".to_owned(),
             };
@@ -357,7 +357,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             }
 
             let token = Token {
-                location: location,
+                location,
                 kind,
                 literal: literal.to_string(),
             };
@@ -389,8 +389,8 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             }
 
             let token = Token {
-                location: location,
-                kind: kind,
+                location,
+                kind,
                 literal: literal.to_string(),
             };
 
@@ -421,8 +421,8 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             }
 
             let token = Token {
-                location: location,
-                kind: kind,
+                location,
+                kind,
                 literal: literal.to_owned(),
             };
 
@@ -438,7 +438,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             };
 
             let token = Token {
-                location: location,
+                location,
                 kind: TokenKind::Equal,
                 literal: "=".to_owned(),
             };
@@ -467,8 +467,8 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             }
 
             let token = Token {
-                location: location,
-                kind: kind,
+                location,
+                kind,
                 literal: literal.to_owned(),
             };
 
@@ -484,7 +484,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             };
 
             let token = Token {
-                location: location,
+                location,
                 kind: TokenKind::LeftParen,
                 literal: "(".to_owned(),
             };
@@ -502,7 +502,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             };
 
             let token = Token {
-                location: location,
+                location,
                 kind: TokenKind::RightParen,
                 literal: ")".to_owned(),
             };
@@ -527,7 +527,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
         });
     }
 
-    return Ok(tokens);
+    Ok(tokens)
 }
 
 fn consume_identifier(chars: &Vec<char>, pos: &mut usize, start: &mut usize) -> Token {
@@ -543,11 +543,11 @@ fn consume_identifier(chars: &Vec<char>, pos: &mut usize, start: &mut usize) -> 
         end: *pos,
     };
 
-    return Token {
+    Token {
         location,
         kind: resolve_symbol_kind(string.to_string()),
-        literal: string.to_string(),
-    };
+        literal: string,
+    }
 }
 
 fn consume_number(
@@ -572,18 +572,18 @@ fn consume_number(
 
     let literal = &chars[*start..*pos];
     let string = String::from_utf8(literal.iter().map(|&c| c as u8).collect()).unwrap();
-    let literal_num = string.to_string().replace("_", "");
+    let literal_num = string.replace('_', "");
 
     let location = Location {
         start: *start,
         end: *pos,
     };
 
-    return Ok(Token {
+    Ok(Token {
         location,
         kind,
         literal: literal_num,
-    });
+    })
 }
 
 fn consume_binary_number(
@@ -609,7 +609,7 @@ fn consume_binary_number(
 
     let literal = &chars[*start..*pos];
     let string = String::from_utf8(literal.iter().map(|&c| c as u8).collect()).unwrap();
-    let literal_num = string.to_string().replace("_", "");
+    let literal_num = string.replace('_', "");
     let convert_result = i64::from_str_radix(&literal_num, 2);
 
     if convert_result.is_err() {
@@ -627,11 +627,11 @@ fn consume_binary_number(
         end: *pos,
     };
 
-    return Ok(Token {
+    Ok(Token {
         location,
         kind: TokenKind::Integer,
         literal: convert_result.ok().unwrap().to_string(),
-    });
+    })
 }
 
 fn consume_octal_number(
@@ -657,7 +657,7 @@ fn consume_octal_number(
 
     let literal = &chars[*start..*pos];
     let string = String::from_utf8(literal.iter().map(|&c| c as u8).collect()).unwrap();
-    let literal_num = string.to_string().replace("_", "");
+    let literal_num = string.replace('_', "");
     let convert_result = i64::from_str_radix(&literal_num, 8);
 
     if convert_result.is_err() {
@@ -675,11 +675,11 @@ fn consume_octal_number(
         end: *pos,
     };
 
-    return Ok(Token {
+    Ok(Token {
         location,
         kind: TokenKind::Integer,
         literal: convert_result.ok().unwrap().to_string(),
-    });
+    })
 }
 
 fn consume_hex_number(
@@ -705,7 +705,7 @@ fn consume_hex_number(
 
     let literal = &chars[*start..*pos];
     let string = String::from_utf8(literal.iter().map(|&c| c as u8).collect()).unwrap();
-    let literal_num = string.to_string().replace("_", "");
+    let literal_num = string.replace('_', "");
     let convert_result = i64::from_str_radix(&literal_num, 16);
 
     if convert_result.is_err() {
@@ -723,11 +723,11 @@ fn consume_hex_number(
         end: *pos,
     };
 
-    return Ok(Token {
+    Ok(Token {
         location,
         kind: TokenKind::Integer,
         literal: convert_result.ok().unwrap().to_string(),
-    });
+    })
 }
 
 fn consume_string(
@@ -764,10 +764,10 @@ fn consume_string(
     let string_literal = Token {
         location,
         kind: TokenKind::String,
-        literal: string.to_string(),
+        literal: string,
     };
 
-    return Ok(string_literal);
+    Ok(string_literal)
 }
 
 fn ignore_single_line_comment(chars: &Vec<char>, pos: &mut usize) {
@@ -798,11 +798,11 @@ fn ignore_c_style_comment(chars: &Vec<char>, pos: &mut usize) -> Result<(), GQLE
     }
 
     *pos += 2;
-    return Ok(());
+    Ok(())
 }
 
 fn resolve_symbol_kind(literal: String) -> TokenKind {
-    return match literal.to_lowercase().as_str() {
+    match literal.to_lowercase().as_str() {
         // Reserved keywords
         "select" => TokenKind::Select,
         "from" => TokenKind::From,
@@ -840,5 +840,5 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
 
         // Identifier
         _ => TokenKind::Symbol,
-    };
+    }
 }

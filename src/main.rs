@@ -11,7 +11,7 @@ fn main() {
     }
 
     let arguments = arguments::parse_arguments();
-    let mut reporter = reporter::DiagnosticReporter::new();
+    let mut reporter = reporter::DiagnosticReporter::default();
     let mut git_repositories: Vec<git2::Repository> = vec![];
     for repsitory in arguments.repos {
         let git_repository = git2::Repository::open(repsitory);

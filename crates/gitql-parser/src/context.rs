@@ -15,9 +15,9 @@ pub struct ParserContext {
     pub has_group_by_statement: bool,
 }
 
-impl ParserContext {
-    pub fn new() -> ParserContext {
-        return ParserContext {
+impl Default for ParserContext {
+    fn default() -> Self {
+        ParserContext {
             symbol_table: Scope::new(),
             aggregations: HashMap::new(),
             selected_fields: Vec::new(),
@@ -25,11 +25,13 @@ impl ParserContext {
             generated_field_count: 0,
             is_single_value_query: false,
             has_group_by_statement: false,
-        };
+        }
     }
+}
 
+impl ParserContext {
     pub fn generate_column_name(&mut self) -> String {
         self.generated_field_count += 1;
-        return format!("column_{}", self.generated_field_count);
+        format!("column_{}", self.generated_field_count)
     }
 }

@@ -84,7 +84,7 @@ fn print_group_as_table(
     for object in group {
         let mut table_row: Vec<comfy_table::Cell> = vec![];
         for key in titles {
-            let value = &object.attributes.get(&key as &str).clone().unwrap();
+            let value = object.attributes.get(key as &str).unwrap();
             let value_literal = value.literal();
             table_row.push(comfy_table::Cell::new(value_literal.as_str()));
         }

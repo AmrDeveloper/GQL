@@ -23,7 +23,7 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<GQLQuery, GQLError> {
     let len = tokens.len();
     let mut position = 0;
 
-    let mut context = ParserContext::new();
+    let mut context = ParserContext::default();
     let mut statements: HashMap<String, Box<dyn Statement>> = HashMap::new();
 
     while position < len {
@@ -169,12 +169,12 @@ pub fn parse_gql(tokens: Vec<Token>) -> Result<GQLQuery, GQLError> {
         .cloned()
         .collect();
 
-    return Ok(GQLQuery {
+    Ok(GQLQuery {
         statements,
         has_aggregation_function: context.is_single_value_query,
         has_group_by_statement: context.has_group_by_statement,
         hidden_selections,
-    });
+    })
 }
 
 fn parse_select_statement(
@@ -336,7 +336,7 @@ fn parse_select_statement(
         alias_table,
     };
 
-    return Ok(Box::new(statement));
+    Ok(Box::new(statement))
 }
 
 fn parse_where_statement(
@@ -356,7 +356,7 @@ fn parse_where_statement(
 
     // Make sure WHERE condition expression has boolean type
     let condition_location = tokens[*position].location;
-    let condition = parse_expression(context, &tokens, position)?;
+    let condition = parse_expression(context, tokens, position)?;
     let condition_type = condition.expr_type(&context.symbol_table);
     if condition_type != DataType::Boolean {
         let message = format!(
@@ -378,7 +378,7 @@ fn parse_where_statement(
         });
     }
 
-    return Ok(Box::new(WhereStatement { condition }));
+    Ok(Box::new(WhereStatement { condition }))
 }
 
 fn parse_group_by_statement(
@@ -412,7 +412,7 @@ fn parse_group_by_statement(
     }
 
     context.has_group_by_statement = true;
-    return Ok(Box::new(GroupByStatement { field_name }));
+    Ok(Box::new(GroupByStatement { field_name }))
 }
 
 fn parse_having_statement(
@@ -430,7 +430,7 @@ fn parse_having_statement(
 
     // Make sure HAVING condition expression has boolean type
     let condition_location = tokens[*position].location;
-    let condition = parse_expression(context, &tokens, position)?;
+    let condition = parse_expression(context, tokens, position)?;
     let condition_type = condition.expr_type(&context.symbol_table);
     if condition_type != DataType::Boolean {
         let message = format!(
@@ -444,7 +444,7 @@ fn parse_having_statement(
         });
     }
 
-    return Ok(Box::new(HavingStatement { condition }));
+    Ok(Box::new(HavingStatement { condition }))
 }
 
 fn parse_limit_statement(
@@ -462,7 +462,7 @@ fn parse_limit_statement(
     let count_str = tokens[*position].literal.to_string();
     let count: usize = count_str.parse().unwrap();
     *position += 1;
-    return Ok(Box::new(LimitStatement { count }));
+    Ok(Box::new(LimitStatement { count }))
 }
 
 fn parse_offset_statement(
@@ -480,7 +480,7 @@ fn parse_offset_statement(
     let count_str = tokens[*position].literal.to_string();
     let count: usize = count_str.parse().unwrap();
     *position += 1;
-    return Ok(Box::new(OffsetStatement { count }));
+    Ok(Box::new(OffsetStatement { count }))
 }
 
 fn parse_order_by_statement(
@@ -510,10 +510,10 @@ fn parse_order_by_statement(
         *position += 1;
     }
 
-    return Ok(Box::new(OrderByStatement {
+    Ok(Box::new(OrderByStatement {
         expression,
         is_ascending,
-    }));
+    }))
 }
 
 fn parse_expression(
@@ -521,7 +521,7 @@ fn parse_expression(
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
-    return parse_in_expression(context, tokens, position);
+    parse_in_expression(context, tokens, position)
 }
 
 fn parse_in_expression(
@@ -575,7 +575,7 @@ fn parse_in_expression(
             values_type,
         }));
     }
-    return Ok(expression);
+    Ok(expression)
 }
 
 fn parse_between_expression(
@@ -647,7 +647,7 @@ fn parse_between_expression(
         }));
     }
 
-    return Ok(expression);
+    Ok(expression)
 }
 
 fn parse_logical_or_expression(
@@ -691,7 +691,7 @@ fn parse_logical_or_expression(
         }));
     }
 
-    return Ok(lhs);
+    Ok(lhs)
 }
 
 fn parse_logical_and_expression(
@@ -735,7 +735,7 @@ fn parse_logical_and_expression(
         }));
     }
 
-    return Ok(lhs);
+    Ok(lhs)
 }
 
 fn parse_bitwise_or_expression(
@@ -780,7 +780,7 @@ fn parse_bitwise_or_expression(
         }));
     }
 
-    return Ok(lhs);
+    Ok(lhs)
 }
 
 fn parse_logical_xor_expression(
@@ -824,7 +824,7 @@ fn parse_logical_xor_expression(
         }));
     }
 
-    return Ok(lhs);
+    Ok(lhs)
 }
 
 fn parse_bitwise_and_expression(
@@ -876,7 +876,7 @@ fn parse_bitwise_and_expression(
         }));
     }
 
-    return Ok(lhs);
+    Ok(lhs)
 }
 
 fn parse_equality_expression(
@@ -923,7 +923,7 @@ fn parse_equality_expression(
         }));
     }
 
-    return Ok(lhs);
+    Ok(lhs)
 }
 
 fn parse_comparison_expression(
@@ -970,7 +970,7 @@ fn parse_comparison_expression(
         }));
     }
 
-    return Ok(lhs);
+    Ok(lhs)
 }
 
 fn parse_bitwise_shift_expression(
@@ -1014,7 +1014,7 @@ fn parse_bitwise_shift_expression(
         });
     }
 
-    return Ok(lhs);
+    Ok(lhs)
 }
 
 fn parse_term_expression(
@@ -1061,7 +1061,7 @@ fn parse_term_expression(
         });
     }
 
-    return Ok(lhs);
+    Ok(lhs)
 }
 
 fn parse_factor_expression(
@@ -1112,7 +1112,7 @@ fn parse_factor_expression(
         });
     }
 
-    return Ok(lhs);
+    Ok(lhs)
 }
 
 fn parse_like_expression(
@@ -1153,7 +1153,7 @@ fn parse_like_expression(
         }));
     }
 
-    return Ok(lhs);
+    Ok(lhs)
 }
 
 fn parse_unary_expression(
@@ -1189,7 +1189,7 @@ fn parse_unary_expression(
         return Ok(Box::new(PrefixUnary { right: rhs, op }));
     }
 
-    return parse_function_call_expression(context, tokens, position);
+    parse_function_call_expression(context, tokens, position)
 }
 
 fn parse_function_call_expression(
@@ -1229,7 +1229,7 @@ fn parse_function_call_expression(
             // Register function name with return type
             context
                 .symbol_table
-                .define(function_name.to_string().to_string(), return_type);
+                .define(function_name.to_string(), return_type);
 
             return Ok(Box::new(CallExpression {
                 function_name: function_name.to_string(),
@@ -1277,7 +1277,7 @@ fn parse_function_call_expression(
             });
         }
     }
-    return Ok(expression);
+    Ok(expression)
 }
 
 fn parse_arguments_expressions(
@@ -1315,7 +1315,7 @@ fn parse_arguments_expressions(
             });
         }
     }
-    return Ok(arguments);
+    Ok(arguments)
 }
 
 fn parse_primary_expression(
@@ -1330,9 +1330,9 @@ fn parse_primary_expression(
     match tokens[*position].kind {
         TokenKind::String => {
             *position += 1;
-            return Ok(Box::new(StringExpression {
+            Ok(Box::new(StringExpression {
                 value: tokens[*position - 1].literal.to_string(),
-            }));
+            }))
         }
         TokenKind::Symbol => {
             *position += 1;
@@ -1340,36 +1340,36 @@ fn parse_primary_expression(
             if !context.selected_fields.contains(&value) {
                 context.hidden_selections.push(value.to_string());
             }
-            return Ok(Box::new(SymbolExpression { value }));
+            Ok(Box::new(SymbolExpression { value }))
         }
         TokenKind::Integer => {
             *position += 1;
             let integer = tokens[*position - 1].literal.parse::<i64>().unwrap();
             let value = Value::Integer(integer);
-            return Ok(Box::new(NumberExpression { value }));
+            Ok(Box::new(NumberExpression { value }))
         }
         TokenKind::Float => {
             *position += 1;
             let float = tokens[*position - 1].literal.parse::<f64>().unwrap();
             let value = Value::Float(float);
-            return Ok(Box::new(NumberExpression { value }));
+            Ok(Box::new(NumberExpression { value }))
         }
         TokenKind::True => {
             *position += 1;
-            return Ok(Box::new(BooleanExpression { is_true: true }));
+            Ok(Box::new(BooleanExpression { is_true: true }))
         }
         TokenKind::False => {
             *position += 1;
-            return Ok(Box::new(BooleanExpression { is_true: false }));
+            Ok(Box::new(BooleanExpression { is_true: false }))
         }
         TokenKind::Null => {
             *position += 1;
-            return Ok(Box::new(NullExpression {}));
+            Ok(Box::new(NullExpression {}))
         }
-        TokenKind::LeftParen => return parse_group_expression(context, tokens, position),
-        TokenKind::Case => return parse_case_expression(context, tokens, position),
-        _ => return Err(un_expected_expression_error(tokens, position)),
-    };
+        TokenKind::LeftParen => parse_group_expression(context, tokens, position),
+        TokenKind::Case => parse_case_expression(context, tokens, position),
+        _ => Err(un_expected_expression_error(tokens, position)),
+    }
 }
 
 fn parse_group_expression(
@@ -1386,7 +1386,7 @@ fn parse_group_expression(
         });
     }
     *position += 1;
-    return Ok(expression);
+    Ok(expression)
 }
 
 fn parse_case_expression(
@@ -1489,25 +1489,24 @@ fn parse_case_expression(
 
     // Assert that all values has the same type
     let values_type: DataType = values[0].expr_type(&context.symbol_table);
-    for i in 1..values.len() {
-        if values_type != values[i].expr_type(&context.symbol_table) {
+    for (i, value) in values.iter().enumerate().skip(1) {
+        if values_type != value.expr_type(&context.symbol_table) {
             return Err(GQLError {
                 message: format!(
                     "Case value in branch {} has different type than the last branch",
                     i + 1
-                )
-                .to_owned(),
+                ),
                 location: case_location,
             });
         }
     }
 
-    return Ok(Box::new(CaseExpression {
+    Ok(Box::new(CaseExpression {
         conditions,
         values,
         default_value,
         values_type,
-    }));
+    }))
 }
 
 fn check_function_call_arguments(
@@ -1554,7 +1553,7 @@ fn check_function_call_arguments(
         }
     }
 
-    return Ok(());
+    Ok(())
 }
 
 fn check_all_values_are_same_type(
@@ -1567,14 +1566,14 @@ fn check_all_values_are_same_type(
     }
 
     let data_type = arguments[0].expr_type(&context.symbol_table);
-    for index in 1..arguments_count {
-        let expr_type = arguments[index].expr_type(&context.symbol_table);
+    for argument in arguments.iter().take(arguments_count).skip(1) {
+        let expr_type = argument.expr_type(&context.symbol_table);
         if data_type != expr_type {
             return Err(());
         }
     }
 
-    return Ok(data_type);
+    Ok(data_type)
 }
 
 fn type_check_selected_fields(
@@ -1585,11 +1584,11 @@ fn type_check_selected_fields(
     position: usize,
 ) -> Result<(), GQLError> {
     for field_name in fields_names {
-        if symbol_table.contains(&field_name) {
+        if symbol_table.contains(field_name) {
             let field_type = symbol_table.env.get(field_name);
             if field_type.is_none() || *field_type.unwrap() == DataType::Undefined {
                 return Err(GQLError {
-                    message: format!("No field with name `{}`", field_name).to_owned(),
+                    message: format!("No field with name `{}`", field_name),
                     location: get_safe_location(tokens, position),
                 });
             }
@@ -1599,24 +1598,22 @@ fn type_check_selected_fields(
         let message = format!(
             "Table `{}` has no field with name `{}`",
             table_name, field_name
-        )
-        .to_owned();
+        );
 
         return Err(GQLError {
             message,
             location: get_safe_location(tokens, position),
         });
     }
-    return Ok(());
+    Ok(())
 }
 
 fn un_expected_statement_error(tokens: &Vec<Token>, position: &mut usize) -> GQLError {
     let location = get_safe_location(tokens, *position);
-
-    return GQLError {
+    GQLError {
         message: "Unexpected statement".to_owned(),
         location,
-    };
+    }
 }
 
 fn un_expected_expression_error(tokens: &Vec<Token>, position: &usize) -> GQLError {
@@ -1681,18 +1678,18 @@ fn un_expected_expression_error(tokens: &Vec<Token>, position: &usize) -> GQLErr
     }
 
     // Default error message
-    return GQLError {
+    GQLError {
         message: "Can't complete parsing this expression".to_owned(),
         location,
-    };
+    }
 }
 
 fn get_expression_name(expression: &Box<dyn Expression>) -> Result<String, ()> {
     let expr = expression.as_any().downcast_ref::<SymbolExpression>();
-    if expr.is_some() {
+    if let Some(..) = expr {
         return Ok(expr.unwrap().value.to_string());
     }
-    return Err(());
+    Err(())
 }
 
 #[inline(always)]
@@ -1734,7 +1731,7 @@ fn consume_kind(tokens: &Vec<Token>, position: usize, kind: TokenKind) -> Result
     if position < tokens.len() && tokens[position].kind == kind {
         return Ok(&tokens[position]);
     }
-    return Err(());
+    Err(())
 }
 
 #[inline(always)]
@@ -1742,42 +1739,42 @@ fn get_safe_location(tokens: &Vec<Token>, position: usize) -> Location {
     if position < tokens.len() {
         return tokens[position].location;
     }
-    return tokens[tokens.len() - 1].location;
+    tokens[tokens.len() - 1].location
 }
 
 #[inline(always)]
 fn is_term_operator(token: &Token) -> bool {
-    return token.kind == TokenKind::Plus || token.kind == TokenKind::Minus;
+    token.kind == TokenKind::Plus || token.kind == TokenKind::Minus
 }
 
 #[inline(always)]
 fn is_bitwise_shift_operator(token: &Token) -> bool {
-    return token.kind == TokenKind::BitwiseLeftShift || token.kind == TokenKind::BitwiseRightShift;
+    token.kind == TokenKind::BitwiseLeftShift || token.kind == TokenKind::BitwiseRightShift
 }
 
 #[inline(always)]
 fn is_prefix_unary_operator(token: &Token) -> bool {
-    return token.kind == TokenKind::Bang || token.kind == TokenKind::Minus;
+    token.kind == TokenKind::Bang || token.kind == TokenKind::Minus
 }
 
 #[inline(always)]
 fn is_comparison_operator(token: &Token) -> bool {
-    return token.kind == TokenKind::Greater
+    token.kind == TokenKind::Greater
         || token.kind == TokenKind::GreaterEqual
         || token.kind == TokenKind::Less
-        || token.kind == TokenKind::LessEqual;
+        || token.kind == TokenKind::LessEqual
 }
 
 #[inline(always)]
 fn is_factor_operator(token: &Token) -> bool {
-    return token.kind == TokenKind::Star
+    token.kind == TokenKind::Star
         || token.kind == TokenKind::Slash
-        || token.kind == TokenKind::Percentage;
+        || token.kind == TokenKind::Percentage
 }
 
 #[inline(always)]
 fn is_asc_or_desc(token: &Token) -> bool {
-    return token.kind == TokenKind::Ascending || token.kind == TokenKind::Descending;
+    token.kind == TokenKind::Ascending || token.kind == TokenKind::Descending
 }
 
 #[inline(always)]
@@ -1787,5 +1784,5 @@ fn type_missmatch_error(location: Location, expected: DataType, actual: DataType
         expected.literal(),
         actual.literal()
     );
-    return GQLError { message, location };
+    GQLError { message, location }
 }

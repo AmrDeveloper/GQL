@@ -4,12 +4,9 @@ fn valid_page_size(input: &str) -> Result<usize, String> {
     let page_size_result = input.parse::<usize>();
     if page_size_result.is_ok() {
         let page_size = page_size_result.ok().unwrap();
-        if page_size <= 0 {
-            return Err("Page size must be a positive number larger than 0".to_string());
-        }
         return Ok(page_size);
     }
-    return Err("Invalid page size".to_string());
+    Err("Invalid page size".to_string())
 }
 
 /// GitQL is a SQL like query language to run on local repositories
@@ -35,5 +32,5 @@ pub struct Arguments {
 }
 
 pub fn parse_arguments() -> Arguments {
-    return Arguments::parse();
+    Arguments::parse()
 }

@@ -5,13 +5,15 @@ pub struct ColoredStream {
     stdout: StandardStream,
 }
 
-impl ColoredStream {
-    pub fn new() -> Self {
+impl Default for ColoredStream {
+    fn default() -> Self {
         Self {
             stdout: StandardStream::stdout(ColorChoice::Always),
         }
     }
+}
 
+impl ColoredStream {
     pub fn print(&mut self, input: &str) {
         _ = write!(&mut self.stdout, "{}", input);
     }

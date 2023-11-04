@@ -48,7 +48,7 @@ pub fn evaluate(
                     // If table name is empty no need to perform it on each repository
                     if select_statement.table_name.is_empty() {
                         execute_statement(
-                            &statement,
+                            statement,
                             &repos[0],
                             &mut groups,
                             &mut alias_table,
@@ -60,7 +60,7 @@ pub fn evaluate(
                     // If table name is not empty, must perform it on each repository
                     for repo in repos {
                         execute_statement(
-                            &statement,
+                            statement,
                             repo,
                             &mut groups,
                             &mut alias_table,
@@ -71,7 +71,7 @@ pub fn evaluate(
                 _ => {
                     // Any other statement can be performend on first or non repository
                     execute_statement(
-                        &statement,
+                        statement,
                         first_repo,
                         &mut groups,
                         &mut alias_table,
@@ -101,8 +101,8 @@ pub fn evaluate(
     }
 
     // Return the groups and hidden selections to be used later in GUI or TUI ...etc
-    return Ok(EvaluationValues {
+    Ok(EvaluationValues {
         groups: groups.to_owned(),
         hidden_selections,
-    });
+    })
 }
