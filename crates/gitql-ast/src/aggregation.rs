@@ -5,7 +5,7 @@ use crate::value::Value;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 
-type Aggregation = fn(&String, &Vec<GQLObject>) -> Value;
+type Aggregation = fn(&str, &Vec<GQLObject>) -> Value;
 
 pub struct AggregationPrototype {
     pub parameter: DataType,
@@ -66,7 +66,7 @@ lazy_static! {
     };
 }
 
-fn aggregation_max(field_name: &String, objects: &Vec<GQLObject>) -> Value {
+fn aggregation_max(field_name: &str, objects: &Vec<GQLObject>) -> Value {
     let mut max_length: i64 = 0;
     for object in objects {
         let field_value = &object.attributes.get(field_name).unwrap();
@@ -78,7 +78,7 @@ fn aggregation_max(field_name: &String, objects: &Vec<GQLObject>) -> Value {
     Value::Integer(max_length)
 }
 
-fn aggregation_min(field_name: &String, objects: &Vec<GQLObject>) -> Value {
+fn aggregation_min(field_name: &str, objects: &Vec<GQLObject>) -> Value {
     let mut min_length: i64 = 0;
     for object in objects {
         let field_value = &object.attributes.get(field_name).unwrap();
@@ -90,7 +90,7 @@ fn aggregation_min(field_name: &String, objects: &Vec<GQLObject>) -> Value {
     Value::Integer(min_length)
 }
 
-fn aggregation_sum(field_name: &String, objects: &Vec<GQLObject>) -> Value {
+fn aggregation_sum(field_name: &str, objects: &Vec<GQLObject>) -> Value {
     let mut sum: i64 = 0;
     for object in objects {
         let field_value = &object.attributes.get(field_name).unwrap();
@@ -99,7 +99,7 @@ fn aggregation_sum(field_name: &String, objects: &Vec<GQLObject>) -> Value {
     Value::Integer(sum)
 }
 
-fn aggregation_average(field_name: &String, objects: &Vec<GQLObject>) -> Value {
+fn aggregation_average(field_name: &str, objects: &Vec<GQLObject>) -> Value {
     let mut sum: i64 = 0;
     let count: i64 = objects.len().try_into().unwrap();
     for object in objects {
@@ -110,6 +110,6 @@ fn aggregation_average(field_name: &String, objects: &Vec<GQLObject>) -> Value {
     Value::Integer(avg)
 }
 
-fn aggregation_count(_field_name: &String, objects: &Vec<GQLObject>) -> Value {
+fn aggregation_count(_field_name: &str, objects: &Vec<GQLObject>) -> Value {
     Value::Integer(objects.len() as i64)
 }
