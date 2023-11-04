@@ -6,7 +6,7 @@ use gitql_ast::statement::SelectStatement;
 
 use crate::engine_executor::execute_statement;
 
-const GQL_COMMANDS_IN_ORDER: [&'static str; 8] = [
+const GQL_COMMANDS_IN_ORDER: [&str; 8] = [
     "select",
     "where",
     "group",

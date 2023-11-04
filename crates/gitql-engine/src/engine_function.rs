@@ -427,7 +427,7 @@ fn select_tags(
 
 fn select_values(
     _repo: &git2::Repository,
-    fields_names: &Vec<String>,
+    fields_names: &[String],
     fields_values: &Vec<Box<dyn Expression>>,
     alias_table: &HashMap<String, String>,
 ) -> Result<Vec<GQLObject>, String> {

@@ -9,7 +9,7 @@ enum PaginationInput {
 
 pub fn render_objects(
     groups: &mut Vec<Vec<GQLObject>>,
-    hidden_selections: &Vec<String>,
+    hidden_selections: &[String],
     pagination: bool,
     page_size: usize,
 ) {
