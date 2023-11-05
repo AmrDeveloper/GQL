@@ -11,12 +11,12 @@ Used to perform arithmetic operators on number types.
 - `%` Modulus.
 
 ### Comparison Expression
-- `=` used to check if field equal to expected value.
-- `!=` used to check if field not equal to expected value.
-- `>` used to check if field greater than expected value.
-- `>=` used to check if field greater than or equals expected value.
-- `<` used to check if field less than expected value.
-- `<=` used to check if field less than or equals expected value.
+- `=` used to check if two values are equals.
+- `!=` or `<>` used to check if two values are not equals.
+- `>` used to check value greater than other value.
+- `>=` used to check if value is greater than or equals than other value
+- `<` used to check if value is less than than other value.
+- `<=` used to check if value is less than or equals than other value.
 
 ---
 

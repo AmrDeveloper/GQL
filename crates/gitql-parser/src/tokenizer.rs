@@ -257,13 +257,13 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             position += 1;
 
             let mut kind = TokenKind::BitwiseOr;
-            let mut literal = "|";
-
-            if position < len && characters[position] == '|' {
+            let literal = if position < len && characters[position] == '|' {
                 position += 1;
                 kind = TokenKind::LogicalOr;
-                literal = "||";
-            }
+                "||"
+            } else {
+                "|"
+            };
 
             let token = Token {
                 location,
@@ -284,13 +284,13 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
 
             position += 1;
             let mut kind = TokenKind::BitwiseAnd;
-            let mut literal = "&";
-
-            if position < len && characters[position] == '&' {
+            let literal = if position < len && characters[position] == '&' {
                 position += 1;
                 kind = TokenKind::LogicalAnd;
-                literal = "&&";
-            }
+                "&&"
+            } else {
+                "&"
+            };
 
             let token = Token {
                 location,
@@ -348,13 +348,13 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             position += 1;
 
             let mut kind = TokenKind::Dot;
-            let mut literal = ".";
-
-            if position < len && characters[position] == '.' {
+            let literal = if position < len && characters[position] == '.' {
                 position += 1;
                 kind = TokenKind::DotDot;
-                literal = "..";
-            }
+                ".."
+            } else {
+                "."
+            };
 
             let token = Token {
                 location,
@@ -376,17 +376,17 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             position += 1;
 
             let mut kind = TokenKind::Greater;
-            let mut literal = ">";
-
-            if position < len && characters[position] == '=' {
+            let literal = if position < len && characters[position] == '=' {
                 position += 1;
                 kind = TokenKind::GreaterEqual;
-                literal = ">=";
+                ">="
             } else if position < len && characters[position] == '>' {
                 position += 1;
                 kind = TokenKind::BitwiseRightShift;
-                literal = ">>";
-            }
+                ">>"
+            } else {
+                ">"
+            };
 
             let token = Token {
                 location,
@@ -408,17 +408,21 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             position += 1;
 
             let mut kind = TokenKind::Less;
-            let mut literal = "<";
-
-            if position < len && characters[position] == '=' {
+            let literal = if position < len && characters[position] == '=' {
                 position += 1;
                 kind = TokenKind::LessEqual;
-                literal = "<=";
+                "<="
             } else if position < len && characters[position] == '<' {
                 position += 1;
                 kind = TokenKind::BitwiseLeftShift;
-                literal = "<<";
-            }
+                "<<"
+            } else if position < len && characters[position] == '>' {
+                position += 1;
+                kind = TokenKind::BangEqual;
+                "<>"
+            } else {
+                "<"
+            };
 
             let token = Token {
                 location,
@@ -458,13 +462,13 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             position += 1;
 
             let mut kind = TokenKind::Bang;
-            let mut literal = "!";
-
-            if position < len && characters[position] == '=' {
+            let literal = if position < len && characters[position] == '=' {
                 position += 1;
                 kind = TokenKind::BangEqual;
-                literal = "!=";
-            }
+                "!="
+            } else {
+                "!"
+            };
 
             let token = Token {
                 location,

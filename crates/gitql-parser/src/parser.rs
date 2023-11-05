@@ -1677,6 +1677,14 @@ fn un_expected_expression_error(tokens: &Vec<Token>, position: &usize) -> GQLErr
         };
     }
 
+    // `< >` the user may mean to write `<>`
+    if previous.kind == TokenKind::Less && current.kind == TokenKind::Greater {
+        return GQLError {
+            message: "Unexpected `< >`, do you mean `<>`?".to_owned(),
+            location,
+        };
+    }
+
     // Default error message
     GQLError {
         message: "Can't complete parsing this expression".to_owned(),
