@@ -46,6 +46,9 @@ lazy_static! {
         map.insert("now", date_current_timestamp);
         map.insert("makedate", date_make_date);
 
+        // Numeric functions
+        map.insert("pi", numeric_pi);
+
         // Other Functions
         map.insert("isnull", general_is_null);
         map.insert("isnumeric", general_is_numeric);
@@ -246,6 +249,14 @@ lazy_static! {
             Prototype {
                 parameters: vec![DataType::Integer, DataType::Integer],
                 result: DataType::Date,
+            },
+        );
+        // Numeric functions
+        map.insert(
+            "pi",
+            Prototype {
+                parameters: vec![],
+                result: DataType::Float,
             },
         );
         // General functions
@@ -511,6 +522,13 @@ fn date_make_date(inputs: Vec<Value>) -> Value {
     let day_of_year = inputs[1].as_int() as u32;
     let time_stamp = date_utils::time_stamp_from_year_and_day(year, day_of_year);
     Value::Date(time_stamp)
+}
+
+// Numeric functions
+
+fn numeric_pi(_inputs: Vec<Value>) -> Value {
+    let pi = std::f64::consts::PI;
+    Value::Float(pi)
 }
 
 // General functions

@@ -71,6 +71,20 @@ SELECT MAKEDATE(2023, 12)
 SELECT NOW()
 ```
 
+### Numeric Functions
+
+| Name | Paramters | Return | Description             |
+| ---- | --------- | ------ | ----------------------- |
+| PI   |           | Float  | Return the value of PI. |
+
+### Numeric functions samples
+
+```sql
+
+SELECT PI()
+
+``````
+
 ### General functions
 
 | Name      | Paramters | Return  | Description                                 |
