@@ -48,6 +48,7 @@ lazy_static! {
 
         // Numeric functions
         map.insert("pi", numeric_pi);
+        map.insert("floor", numeric_floor);
 
         // Other Functions
         map.insert("isnull", general_is_null);
@@ -257,6 +258,13 @@ lazy_static! {
             Prototype {
                 parameters: vec![],
                 result: DataType::Float,
+            },
+        );
+        map.insert(
+            "floor",
+            Prototype {
+                parameters: vec![DataType::Float],
+                result: DataType::Integer,
             },
         );
         // General functions
@@ -529,6 +537,11 @@ fn date_make_date(inputs: Vec<Value>) -> Value {
 fn numeric_pi(_inputs: Vec<Value>) -> Value {
     let pi = std::f64::consts::PI;
     Value::Float(pi)
+}
+
+fn numeric_floor(inputs: Vec<Value>) -> Value {
+    let float_value = inputs[0].as_float();
+    Value::Integer(float_value.floor() as i64)
 }
 
 // General functions

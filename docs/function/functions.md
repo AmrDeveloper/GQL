@@ -3,30 +3,30 @@ note that all functions names are case-insensitive.
 
 ### String functions
 
-| Name       | Paramters                  | Return | Description                                                                                                                                                          |
-| ---------- | -------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| LOWER      | Text                       | Text   | Return Text in lower case.                                                                                                                                           |
-| UPPER      | Text                       | Text   | Return Text in upper case.                                                                                                                                           |
-| REVERSE    | Text                       | Text   | Return a reversed string.                                                                                                                                            |
-| TRIM       | Text                       | Text   | Removes leading and trailing spaces from a string.                                                                                                                   |
-| LTRIM      | Text                       | Text   | Removes leading spaces from a string.                                                                                                                                |
-| RTRIM      | Text                       | Text   | Removes trailing spaces from a string.                                                                                                                               |
-| LEN        | Text                       | Number | Return the length of this string.                                                                                                                                    |
-| REPLICATE  | Text, Number               | Text   | Return repeated a string a specified number of times.                                                                                                                |
-| SPACE      | Number                     | Text   | Returns a string of the specified number of space characters.                                                                                                        |
-| ASCII      | Text                       | Number | Returns the ASCII value for the specific character.                                                                                                                  |
-| LEFT       | Text, Number               | Text   | Extracts a number of characters from a string (starting from left).                                                                                                  |
-| DATALENGTH | Text                       | Number | Returns the number of bytes used to represent an expression.                                                                                                         |
-| CHAR       | Number                     | Text   | Returns the character based on the ASCII code.                                                                                                                       |
-| NCHAR      | Number                     | Text   | Returns the character based on the ASCII code.                                                                                                                       |
-| REPLACE    | Text, Text, Text           | Text   | Replaces all occurrences of a substring within a string, with a new substring.                                                                                       |
-| SUBSTRING  | Text, Number, Number       | Text   | Extracts some characters from a string.                                                                                                                              |
-| STUFF      | Text, Number, Number, Text | Text   | Deletes a part of a string and then inserts another part into the string, starting at a specified position.                                                          |
-| RIGHT      | Text, Number               | Text   | Extracts a number of characters from a string (starting from right).                                                                                                 |
-| TRANSLATE  | Text, Text, Text,          | Text   | Returns the string from the first argument after the characters specified in the second argument are translated into the characters specified in the third argument. |
-| SOUNDEX    | Text                       | Text   | Returns a four-character code to evaluate the similarity of two expressions.                                                                                         |
-| CONCAT     | Text, Text                 | Text   | Adds two or more strings together.                                                                                                                                   |
-| UNICODE    | Text                       | Number | Return an integer value (the Unicode value), for the first character of the input expression.                                                                        |
+| Name       | Paramters                    | Return  | Description                                                                                                                                                          |
+| ---------- | ---------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| LOWER      | Text                         | Text    | Return Text in lower case.                                                                                                                                           |
+| UPPER      | Text                         | Text    | Return Text in upper case.                                                                                                                                           |
+| REVERSE    | Text                         | Text    | Return a reversed string.                                                                                                                                            |
+| TRIM       | Text                         | Text    | Removes leading and trailing spaces from a string.                                                                                                                   |
+| LTRIM      | Text                         | Text    | Removes leading spaces from a string.                                                                                                                                |
+| RTRIM      | Text                         | Text    | Removes trailing spaces from a string.                                                                                                                               |
+| LEN        | Text                         | Integer | Return the length of this string.                                                                                                                                    |
+| REPLICATE  | Text, Integer                | Text    | Return repeated a string a specified number of times.                                                                                                                |
+| SPACE      | Integer                      | Text    | Returns a string of the specified number of space characters.                                                                                                        |
+| ASCII      | Text                         | Integer | Returns the ASCII value for the specific character.                                                                                                                  |
+| LEFT       | Text, Integer                | Text    | Extracts a number of characters from a string (starting from left).                                                                                                  |
+| DATALENGTH | Text                         | Integer | Returns the number of bytes used to represent an expression.                                                                                                         |
+| CHAR       | Integer                      | Text    | Returns the character based on the ASCII code.                                                                                                                       |
+| NCHAR      | Integer                      | Text    | Returns the character based on the ASCII code.                                                                                                                       |
+| REPLACE    | Text, Text, Text             | Text    | Replaces all occurrences of a substring within a string, with a new substring.                                                                                       |
+| SUBSTRING  | Text, Integer, Integer       | Text    | Extracts some characters from a string.                                                                                                                              |
+| STUFF      | Text, Integer, Integer, Text | Text    | Deletes a part of a string and then inserts another part into the string, starting at a specified position.                                                          |
+| RIGHT      | Text, Integer                | Text    | Extracts a number of characters from a string (starting from right).                                                                                                 |
+| TRANSLATE  | Text, Text, Text,            | Text    | Returns the string from the first argument after the characters specified in the second argument are translated into the characters specified in the third argument. |
+| SOUNDEX    | Text                         | Text    | Returns a four-character code to evaluate the similarity of two expressions.                                                                                         |
+| CONCAT     | Text, Text                   | Text    | Adds two or more strings together.                                                                                                                                   |
+| UNICODE    | Text                         | Integer | Return an integer value (the Unicode value), for the first character of the input expression.                                                                        |
 
 ### String functions samples
 
@@ -87,12 +87,14 @@ SELECT PI()
 
 ### General functions
 
-| Name      | Paramters | Return  | Description                                 |
-| --------- | --------- | ------- | ------------------------------------------- |
-| ISNULL    | ANY       | BOOLEAN | Return TRUE if the argument type is null.   |
-| ISNUMERIC | ANY       | BOOLEAN | Return TRUE if the argument type is number. |
+| Name      | Paramters | Return  | Description                                                                  |
+| --------- | --------- | ------- | ---------------------------------------------------------------------------- |
+| ISNULL    | ANY       | Boolean | Return TRUE if the argument type is null.                                    |
+| ISNUMERIC | ANY       | Boolean | Return TRUE if the argument type is number.                                  |
+| FLOOR     | Float     | Integer | Returns the largest integer value that is smaller than or equal to a number. |
 
 ```sql
 SELECT ISNULL(null), ISNULL(1)
 SELECT ISNUMERIC(null), ISNUMERIC(1), ISNUMERIC(1.1), ISNUMERIC(false)
+SELECT FLOOR(1.6)
 ```
