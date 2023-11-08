@@ -14,6 +14,7 @@ pub enum ExpressionKind {
     Arithmetic,
     Comparison,
     Like,
+    Glob,
     Logical,
     Bitwise,
     Call,
@@ -223,6 +224,25 @@ pub struct LikeExpression {
 impl Expression for LikeExpression {
     fn get_expression_kind(&self) -> ExpressionKind {
         ExpressionKind::Like
+    }
+
+    fn expr_type(&self, _scope: &Scope) -> DataType {
+        DataType::Boolean
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+pub struct GlobExpression {
+    pub input: Box<dyn Expression>,
+    pub pattern: Box<dyn Expression>,
+}
+
+impl Expression for GlobExpression {
+    fn get_expression_kind(&self) -> ExpressionKind {
+        ExpressionKind::Glob
     }
 
     fn expr_type(&self, _scope: &Scope) -> DataType {

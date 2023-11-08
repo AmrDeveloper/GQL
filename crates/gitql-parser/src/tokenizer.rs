@@ -11,6 +11,7 @@ pub enum TokenKind {
     By,
     In,
     Like,
+    Glob,
 
     Case,
     When,
@@ -825,6 +826,7 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "between" => TokenKind::Between,
         "in" => TokenKind::In,
         "like" => TokenKind::Like,
+        "glob" => TokenKind::Glob,
 
         // Logical Operators
         "or" => TokenKind::LogicalOr,

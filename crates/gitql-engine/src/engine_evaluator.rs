@@ -10,6 +10,7 @@ use gitql_ast::expression::ComparisonExpression;
 use gitql_ast::expression::ComparisonOperator;
 use gitql_ast::expression::Expression;
 use gitql_ast::expression::ExpressionKind::*;
+use gitql_ast::expression::GlobExpression;
 use gitql_ast::expression::InExpression;
 use gitql_ast::expression::LikeExpression;
 use gitql_ast::expression::LogicalExpression;
@@ -84,6 +85,13 @@ pub fn evaluate_expression(
                 .downcast_ref::<LikeExpression>()
                 .unwrap();
             evaulate_like(expr, object)
+        }
+        Glob => {
+            let expr = expression
+                .as_any()
+                .downcast_ref::<GlobExpression>()
+                .unwrap();
+            evaulate_glob(expr, object)
         }
         Logical => {
             let expr = expression
@@ -214,17 +222,32 @@ fn evaluate_comparison(
 
 fn evaulate_like(expr: &LikeExpression, object: &HashMap<String, Value>) -> Result<Value, String> {
     let rhs = evaluate_expression(&expr.pattern, object)?.as_text();
-    if rhs.is_empty() {
-        return Ok(Value::Boolean(false));
-    }
-
-    let pattern = &format!("^{}$", rhs.replace('%', ".*").replace('_', "."));
+    let pattern = &format!(
+        "^{}$",
+        rhs.to_lowercase().replace('%', ".*").replace('_', ".")
+    );
     let regex_result = Regex::new(pattern);
     if regex_result.is_err() {
         return Err(regex_result.err().unwrap().to_string());
     }
     let regex = regex_result.ok().unwrap();
+    let lhs = evaluate_expression(&expr.input, object)?
+        .as_text()
+        .to_lowercase();
+    Ok(Value::Boolean(regex.is_match(&lhs)))
+}
 
+fn evaulate_glob(expr: &GlobExpression, object: &HashMap<String, Value>) -> Result<Value, String> {
+    let rhs = evaluate_expression(&expr.pattern, object)?.as_text();
+    let pattern = &format!(
+        "^{}$",
+        rhs.replace(".", "\\.").replace("*", ".*").replace("?", ".")
+    );
+    let regex_result = Regex::new(&pattern);
+    if regex_result.is_err() {
+        return Err(regex_result.err().unwrap().to_string());
+    }
+    let regex = regex_result.ok().unwrap();
     let lhs = evaluate_expression(&expr.input, object)?.as_text();
     Ok(Value::Boolean(regex.is_match(&lhs)))
 }

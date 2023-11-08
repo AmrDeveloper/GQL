@@ -198,8 +198,9 @@ fn parse_select_statement(
     let mut alias_table: HashMap<String, String> = HashMap::new();
     let mut is_select_all = false;
 
+
     // Select all option
-    if tokens[*position].kind == TokenKind::Star {
+    if *position < tokens.len() && tokens[*position].kind == TokenKind::Star {
         // Consume `*`
         *position += 1;
         is_select_all = true;
@@ -302,6 +303,14 @@ fn parse_select_statement(
         register_current_table_fields_types(table_name, &mut context.symbol_table);
     }
 
+    // Make sure `SELECT *` used with specific table
+    if is_select_all && table_name.is_empty() {
+        return Err(GQLError {
+            message: "Expect `FROM` and table name after `SELECT *`".to_owned(),
+            location: get_safe_location(tokens, *position),
+        });
+    }
+
     // Select input validations
     if !is_select_all && fields_names.is_empty() {
         return Err(GQLError {
@@ -329,14 +338,13 @@ fn parse_select_statement(
         *position,
     )?;
 
-    let statement = SelectStatement {
+    Ok(Box::new(SelectStatement {
         table_name: table_name.to_string(),
         fields_names,
         fields_values,
         alias_table,
-    };
-
-    Ok(Box::new(statement))
+        is_distinct,
+    }))
 }
 
 fn parse_where_statement(
@@ -359,13 +367,12 @@ fn parse_where_statement(
     let condition = parse_expression(context, tokens, position)?;
     let condition_type = condition.expr_type(&context.symbol_table);
     if condition_type != DataType::Boolean {
-        let message = format!(
-            "Expect `WHERE` condition bo be type {} but got {}",
-            DataType::Boolean.literal(),
-            condition_type.literal()
-        );
         return Err(GQLError {
-            message,
+            message: format!(
+                "Expect `WHERE` condition bo be type {} but got {}",
+                DataType::Boolean.literal(),
+                condition_type.literal()
+            ),
             location: condition_location,
         });
     }
@@ -433,13 +440,12 @@ fn parse_having_statement(
     let condition = parse_expression(context, tokens, position)?;
     let condition_type = condition.expr_type(&context.symbol_table);
     if condition_type != DataType::Boolean {
-        let message = format!(
-            "Expect `HAVING` condition bo be type {} but got {}",
-            DataType::Boolean.literal(),
-            condition_type.literal()
-        );
         return Err(GQLError {
-            message,
+            message: format!(
+                "Expect `HAVING` condition bo be type {} but got {}",
+                DataType::Boolean.literal(),
+                condition_type.literal()
+            ),
             location: condition_location,
         });
     }
@@ -1120,7 +1126,7 @@ fn parse_like_expression(
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
-    let expression = parse_unary_expression(context, tokens, position);
+    let expression = parse_glob_expression(context, tokens, position);
     if expression.is_err() || *position >= tokens.len() {
         return expression;
     }
@@ -1138,7 +1144,7 @@ fn parse_like_expression(
             return Err(GQLError { message, location });
         }
 
-        let pattern = parse_unary_expression(context, tokens, position)?;
+        let pattern = parse_glob_expression(context, tokens, position)?;
         if !pattern.expr_type(&context.symbol_table).is_text() {
             let message = format!(
                 "Expect `LIKE` right hand side to be `TEXT` but got {}",
@@ -1148,6 +1154,47 @@ fn parse_like_expression(
         }
 
         return Ok(Box::new(LikeExpression {
+            input: lhs,
+            pattern,
+        }));
+    }
+
+    Ok(lhs)
+}
+
+fn parse_glob_expression(
+    context: &mut ParserContext,
+    tokens: &Vec<Token>,
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, GQLError> {
+    let expression = parse_unary_expression(context, tokens, position);
+    if expression.is_err() || *position >= tokens.len() {
+        return expression;
+    }
+
+    let lhs = expression.ok().unwrap();
+    if tokens[*position].kind == TokenKind::Glob {
+        let location = tokens[*position].location;
+        *position += 1;
+
+        if !lhs.expr_type(&context.symbol_table).is_text() {
+            let message = format!(
+                "Expect `GLOB` left hand side to be `TEXT` but got {}",
+                lhs.expr_type(&context.symbol_table).literal()
+            );
+            return Err(GQLError { message, location });
+        }
+
+        let pattern = parse_unary_expression(context, tokens, position)?;
+        if !pattern.expr_type(&context.symbol_table).is_text() {
+            let message = format!(
+                "Expect `GLOB` right hand side to be `TEXT` but got {}",
+                pattern.expr_type(&context.symbol_table).literal()
+            );
+            return Err(GQLError { message, location });
+        }
+
+        return Ok(Box::new(GlobExpression {
             input: lhs,
             pattern,
         }));
