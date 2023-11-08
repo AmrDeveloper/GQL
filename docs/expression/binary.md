@@ -21,11 +21,20 @@ Used to perform arithmetic operators on number types.
 ---
 
 ### Like Expression
-The `LIKE`` operator is used for searching for a specified pattern in a string.
+The `LIKE` operator is used for searching for a specified pattern in a string.
+
 ```sql
 SELECT "Git Query Language" LIKE "G%"
 SELECT "Git Query Language" LIKE "%e"
 SELECT "Git Query Language" LIKE "%Query%"
+SELECT "10 usd" LIKE "[0-9]* usd"
+```
+
+### Glob Expression
+The `GLOB` operator is similar to `LIKE` but uses the Unix file globbing syntax for its wildcards. Also, `GLOB` is case sensitive, unlike `LIKE`.
+
+```sql
+SELECT "Git Query Language" GLOB "Git*"
 ```
 
 ---
