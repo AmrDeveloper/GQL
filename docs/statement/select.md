@@ -24,3 +24,9 @@ You can alias the column name only in this query by using `as` keyword for examp
 SELECT title as tt message FROM commits
 SELECT name, commit_count, max(commit_count) AS max_count message FROM branches
 ```
+
+You can select unique rows only using the `distinct` keyword for example,
+
+```sql
+SELECT DISTINCT title AS tt message FROM commits
+```

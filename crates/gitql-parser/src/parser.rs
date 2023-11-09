@@ -197,7 +197,13 @@ fn parse_select_statement(
     let mut fields_values: Vec<Box<dyn Expression>> = Vec::new();
     let mut alias_table: HashMap<String, String> = HashMap::new();
     let mut is_select_all = false;
+    let mut is_distinct = false;
 
+    // Check if select has distinct keyword after it
+    if tokens[*position].kind == TokenKind::Distinct {
+        is_distinct = true;
+        *position += 1;
+    }
 
     // Select all option
     if *position < tokens.len() && tokens[*position].kind == TokenKind::Star {

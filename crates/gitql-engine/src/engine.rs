@@ -1,4 +1,9 @@
+use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
+use std::collections::HashSet;
+use std::hash::Hash;
+use std::hash::Hasher;
+use std::vec;
 
 use gitql_ast::object::GQLObject;
 use gitql_ast::statement::GQLQuery;
@@ -67,6 +72,19 @@ pub fn evaluate(
                             &hidden_selections,
                         )?;
                     }
+
+                    // If the main group is empty, no need to perform other statements
+                    if groups.is_empty() || groups[0].is_empty() {
+                        return Ok(EvaluationValues {
+                            groups: vec![],
+                            hidden_selections,
+                        });
+                    }
+
+                    // If Select statement has distinct flag, keep only unique values
+                    if select_statement.is_distinct {
+                        apply_distinct_on_objects_group(&mut groups, &hidden_selections);
+                    }
                 }
                 _ => {
                     // Any other statement can be performend on first or non repository
@@ -105,4 +123,47 @@ pub fn evaluate(
         groups: groups.to_owned(),
         hidden_selections,
     })
+}
+
+fn apply_distinct_on_objects_group(groups: &mut Vec<Vec<GQLObject>>, hidden_selections: &[String]) {
+    if groups.is_empty() {
+        return;
+    }
+
+    let titles: Vec<&str> = groups[0][0]
+        .attributes
+        .keys()
+        .filter(|s| !hidden_selections.contains(s))
+        .map(|k| k.as_ref())
+        .collect();
+
+    let titles_count = titles.len();
+
+    let objects = &groups[0];
+    let mut new_objects: Vec<GQLObject> = vec![];
+    let mut values_set: HashSet<u64> = HashSet::new();
+
+    for object in objects {
+        // Build row of the selected only values
+        let mut row_values: Vec<String> = Vec::with_capacity(titles_count);
+        for key in &titles {
+            row_values.push(object.attributes.get(key as &str).unwrap().literal());
+        }
+
+        // Compute the hash for row of values
+        let mut hash = DefaultHasher::new();
+        row_values.hash(&mut hash);
+        let values_hash = hash.finish();
+
+        // If this hash is unique, insert the row
+        if values_set.insert(values_hash) {
+            new_objects.push(object.to_owned());
+        }
+    }
+
+    // If number of total rows is changed, update the main group rows
+    if objects.len() != new_objects.len() {
+        groups[0].clear();
+        groups[0].append(&mut new_objects);
+    }
 }

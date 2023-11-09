@@ -1,6 +1,7 @@
 #[derive(PartialEq)]
 pub enum TokenKind {
     Select,
+    Distinct,
     From,
     Group,
     Where,
@@ -810,6 +811,7 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
     match literal.to_lowercase().as_str() {
         // Reserved keywords
         "select" => TokenKind::Select,
+        "distinct" => TokenKind::Distinct,
         "from" => TokenKind::From,
         "group" => TokenKind::Group,
         "where" => TokenKind::Where,

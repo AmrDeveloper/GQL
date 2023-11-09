@@ -31,6 +31,7 @@ pub struct SelectStatement {
     pub fields_names: Vec<String>,
     pub fields_values: Vec<Box<dyn Expression>>,
     pub alias_table: HashMap<String, String>,
+    pub is_distinct: bool,
 }
 
 impl Statement for SelectStatement {
