@@ -241,9 +241,9 @@ fn evaulate_glob(expr: &GlobExpression, object: &HashMap<String, Value>) -> Resu
     let rhs = evaluate_expression(&expr.pattern, object)?.as_text();
     let pattern = &format!(
         "^{}$",
-        rhs.replace(".", "\\.").replace("*", ".*").replace("?", ".")
+        rhs.replace('.', "\\.").replace('*', ".*").replace('?', ".")
     );
-    let regex_result = Regex::new(&pattern);
+    let regex_result = Regex::new(pattern);
     if regex_result.is_err() {
         return Err(regex_result.err().unwrap().to_string());
     }

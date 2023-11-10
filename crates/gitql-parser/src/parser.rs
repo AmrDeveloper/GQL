@@ -1747,10 +1747,11 @@ fn un_expected_expression_error(tokens: &Vec<Token>, position: &usize) -> GQLErr
 
 fn get_expression_name(expression: &Box<dyn Expression>) -> Result<String, ()> {
     let expr = expression.as_any().downcast_ref::<SymbolExpression>();
-    if let Some(..) = expr {
-        return Ok(expr.unwrap().value.to_string());
+    if let Some(symbol) = expr {
+        Ok(symbol.value.to_string())
+    } else {
+        Err(())
     }
-    Err(())
 }
 
 #[inline(always)]
