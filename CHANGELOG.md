@@ -1,6 +1,22 @@
 Change Log
 ==========
 
+Version 0.8.0 *(2023-11-10)*
+-----------------------------
+
+* Support `GLOB` keyword.
+* Support `DISTINCT` keyword.
+* Make sure `SELECT *` used with specific table
+* Migrate from Prettytables-rs to comfy-table for render tables.
+* Support optional Pagination with user custom page size.
+* Support `<>` Operator.
+* Implement `PI` function.
+* Implement `FLOOR` function.
+* Update gitql-ast to version `0.6.0`.
+* Update gitql-cli to version `0.8.0`.
+* Update gitql-parser to version `0.7.0`.
+* Update gitql-engine to version `0.8.0`.
+
 Version 0.7.2 *(2023-10-26)*
 -----------------------------
 
