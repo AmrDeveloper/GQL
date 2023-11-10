@@ -237,7 +237,7 @@ dependencies = [
 
 [[package]]
 name = "gitql"
-version = "0.7.2"
+version = "0.8.0"
 dependencies = [
  "git2",
  "gitql-ast",
@@ -248,7 +248,7 @@ dependencies = [
 
 [[package]]
 name = "gitql-ast"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "chrono",
  "lazy_static",
@@ -256,7 +256,7 @@ dependencies = [
 
 [[package]]
 name = "gitql-cli"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "clap",
  "comfy-table",
@@ -267,7 +267,7 @@ dependencies = [
 
 [[package]]
 name = "gitql-engine"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "git2",
  "gitql-ast",
@@ -276,7 +276,7 @@ dependencies = [
 
 [[package]]
 name = "gitql-parser"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "gitql-ast",
  "lazy_static",
