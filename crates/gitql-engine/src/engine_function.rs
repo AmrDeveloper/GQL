@@ -48,7 +48,7 @@ fn select_references(
         }
 
         let reference = reference_result.ok().unwrap();
-        let mut attributes: HashMap<String, Value> = HashMap::new();
+        let mut attributes: HashMap<String, Value> = HashMap::with_capacity(fields_names.len());
 
         for index in 0..names_len {
             let field_name = &fields_names[index as usize];
@@ -126,7 +126,7 @@ fn select_commits(
     for commit_id in revwalk {
         let commit = repo.find_commit(commit_id.unwrap()).unwrap();
 
-        let mut attributes: HashMap<String, Value> = HashMap::new();
+        let mut attributes: HashMap<String, Value> = HashMap::with_capacity(fields_names.len());
 
         for index in 0..names_len {
             let field_name = &fields_names[index as usize];
@@ -215,7 +215,7 @@ fn select_diffs(
 
     for commit_id in revwalk {
         let commit = repo.find_commit(commit_id.unwrap()).unwrap();
-        let mut attributes: HashMap<String, Value> = HashMap::new();
+        let mut attributes: HashMap<String, Value> = HashMap::with_capacity(fields_names.len());
 
         for index in 0..names_len {
             let field_name = &fields_names[index as usize];
@@ -319,7 +319,7 @@ fn select_branches(
     for branch in local_and_remote_branches {
         let (branch, _) = branch.unwrap();
 
-        let mut attributes: HashMap<String, Value> = HashMap::new();
+        let mut attributes: HashMap<String, Value> = HashMap::with_capacity(fields_names.len());
         for index in 0..names_len {
             let field_name = &fields_names[index as usize];
 
@@ -390,7 +390,7 @@ fn select_tags(
     let padding = names_len - values_len;
 
     for tag_name in tag_names.iter().flatten() {
-        let mut attributes: HashMap<String, Value> = HashMap::new();
+        let mut attributes: HashMap<String, Value> = HashMap::with_capacity(fields_names.len());
 
         for index in 0..names_len {
             let field_name = &fields_names[index as usize];
