@@ -20,6 +20,7 @@ use crate::engine_evaluator::evaluate_expression;
 use crate::engine_function::get_column_name;
 use crate::engine_function::select_gql_objects;
 
+#[allow(clippy::borrowed_box)]
 pub fn execute_statement(
     statement: &Box<dyn Statement>,
     repo: &git2::Repository,

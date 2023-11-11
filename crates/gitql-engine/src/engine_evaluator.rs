@@ -28,6 +28,7 @@ use regex::Regex;
 use std::collections::HashMap;
 use std::string::String;
 
+#[allow(clippy::borrowed_box)]
 pub fn evaluate_expression(
     expression: &Box<dyn Expression>,
     object: &HashMap<String, Value>,

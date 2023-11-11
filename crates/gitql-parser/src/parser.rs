@@ -1745,6 +1745,7 @@ fn un_expected_expression_error(tokens: &Vec<Token>, position: &usize) -> GQLErr
     }
 }
 
+#[allow(clippy::borrowed_box)]
 fn get_expression_name(expression: &Box<dyn Expression>) -> Result<String, ()> {
     let expr = expression.as_any().downcast_ref::<SymbolExpression>();
     if let Some(symbol) = expr {
