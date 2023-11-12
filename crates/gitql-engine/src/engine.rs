@@ -81,8 +81,8 @@ pub fn evaluate(
                         });
                     }
 
-                    // If Select statement has distinct flag, keep only unique values
-                    if select_statement.is_distinct {
+                    // If Select statement has table name and distinct flag, keep only unique values
+                    if !select_statement.table_name.is_empty() && select_statement.is_distinct {
                         apply_distinct_on_objects_group(&mut groups, &hidden_selections);
                     }
                 }
