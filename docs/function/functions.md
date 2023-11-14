@@ -73,28 +73,28 @@ SELECT NOW()
 
 ### Numeric Functions
 
-| Name | Paramters | Return | Description             |
-| ---- | --------- | ------ | ----------------------- |
-| PI   |           | Float  | Return the value of PI. |
+| Name  | Paramters | Return  | Description                                                                  |
+| ----- | --------- | ------- | ---------------------------------------------------------------------------- |
+| PI    |           | Float   | Return the value of PI.                                                      |
+| FLOOR | Float     | Integer | Returns the largest integer value that is smaller than or equal to a number. |
 
 ### Numeric functions samples
 
 ```sql
-
 SELECT PI()
-
-``````
+SELECT FLOOR(1.6)
+```
 
 ### General functions
 
-| Name      | Paramters | Return  | Description                                                                  |
-| --------- | --------- | ------- | ---------------------------------------------------------------------------- |
-| ISNULL    | ANY       | Boolean | Return TRUE if the argument type is null.                                    |
-| ISNUMERIC | ANY       | Boolean | Return TRUE if the argument type is number.                                  |
-| FLOOR     | Float     | Integer | Returns the largest integer value that is smaller than or equal to a number. |
+| Name      | Paramters | Return  | Description                                 |
+| --------- | --------- | ------- | ------------------------------------------- |
+| ISNULL    | ANY       | Boolean | Return TRUE if the argument type is null.   |
+| ISNUMERIC | ANY       | Boolean | Return TRUE if the argument type is number. |
+| TYPEOF    | ANY       | Text    | Return the argument type name.              |
 
 ```sql
 SELECT ISNULL(null), ISNULL(1)
 SELECT ISNUMERIC(null), ISNUMERIC(1), ISNUMERIC(1.1), ISNUMERIC(false)
-SELECT FLOOR(1.6)
+SELECT TYPEOF(""), TYPEOF(1), TYPEOF(null)
 ```

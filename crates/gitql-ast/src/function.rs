@@ -53,6 +53,7 @@ lazy_static! {
         // Other Functions
         map.insert("isnull", general_is_null);
         map.insert("isnumeric", general_is_numeric);
+        map.insert("typeof", general_type_of);
         map
     };
 }
@@ -280,6 +281,13 @@ lazy_static! {
             Prototype {
                 parameters: vec![DataType::Any],
                 result: DataType::Boolean,
+            },
+        );
+        map.insert(
+            "typeof",
+            Prototype {
+                parameters: vec![DataType::Any],
+                result: DataType::Text,
             },
         );
         map
@@ -553,4 +561,9 @@ fn general_is_null(inputs: Vec<Value>) -> Value {
 fn general_is_numeric(inputs: Vec<Value>) -> Value {
     let input_type = inputs[0].data_type();
     Value::Boolean(input_type.is_number())
+}
+
+fn general_type_of(inputs: Vec<Value>) -> Value {
+    let input_type = inputs[0].data_type();
+    Value::Text(input_type.literal().to_string())
 }
