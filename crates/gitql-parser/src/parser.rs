@@ -594,15 +594,7 @@ fn parse_in_expression(
             });
         }
 
-        // Check that all values has the same type
         let values = parse_arguments_expressions(context, tokens, position)?;
-        if values.is_empty() {
-            return Err(GQLError {
-                message: "Values of `IN` expression can't be empty".to_owned(),
-                location: in_location,
-            });
-        }
-
         let values_type_result = check_all_values_are_same_type(context, &values);
         if values_type_result.is_err() {
             return Err(GQLError {
@@ -613,7 +605,9 @@ fn parse_in_expression(
 
         // Check that argument and values has the same type
         let values_type = values_type_result.ok().unwrap();
-        if expression.expr_type(&context.symbol_table) != values_type {
+        if values_type != DataType::Any
+            && expression.expr_type(&context.symbol_table) != values_type
+        {
             return Err(GQLError {
                 message: "Argument and Values of In Expression must have the same type".to_owned(),
                 location: in_location,

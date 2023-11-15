@@ -80,7 +80,7 @@ SELECT 1 IS NOT NULL
 ---
 
 ### In Expression
-Returns true if any values are equal to the argument
+Returns true if any one or more values are equal to the argument
 
 ```SQL
 SELECT "One" IN ("One", "Two", "Three")
