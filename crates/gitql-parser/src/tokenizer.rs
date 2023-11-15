@@ -11,6 +11,8 @@ pub enum TokenKind {
     Order,
     By,
     In,
+    Is,
+    Not,
     Like,
     Glob,
 
@@ -827,6 +829,8 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "end" => TokenKind::End,
         "between" => TokenKind::Between,
         "in" => TokenKind::In,
+        "is" => TokenKind::Is,
+        "not" => TokenKind::Not,
         "like" => TokenKind::Like,
         "glob" => TokenKind::Glob,
 

@@ -12,6 +12,7 @@ use gitql_ast::expression::Expression;
 use gitql_ast::expression::ExpressionKind::*;
 use gitql_ast::expression::GlobExpression;
 use gitql_ast::expression::InExpression;
+use gitql_ast::expression::IsNullExpression;
 use gitql_ast::expression::LikeExpression;
 use gitql_ast::expression::LogicalExpression;
 use gitql_ast::expression::LogicalOperator;
@@ -132,6 +133,13 @@ pub fn evaluate_expression(
         In => {
             let expr = expression.as_any().downcast_ref::<InExpression>().unwrap();
             evaluate_in(expr, object)
+        }
+        IsNull => {
+            let expr = expression
+                .as_any()
+                .downcast_ref::<IsNullExpression>()
+                .unwrap();
+            evaluate_is_null(expr, object)
         }
         Null => Ok(Value::Null),
     }
@@ -353,4 +361,17 @@ fn evaluate_in(expr: &InExpression, object: &HashMap<String, Value>) -> Result<V
         }
     }
     Ok(Value::Boolean(false))
+}
+
+fn evaluate_is_null(
+    expr: &IsNullExpression,
+    object: &HashMap<String, Value>,
+) -> Result<Value, String> {
+    let argument = evaluate_expression(&expr.argument, object)?;
+    let is_null = argument.data_type().is_type(DataType::Null);
+    Ok(Value::Boolean(if expr.has_not {
+        !is_null
+    } else {
+        is_null
+    }))
 }

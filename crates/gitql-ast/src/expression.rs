@@ -21,6 +21,7 @@ pub enum ExpressionKind {
     Between,
     Case,
     In,
+    IsNull,
     Null,
 }
 
@@ -384,6 +385,25 @@ impl Expression for InExpression {
 
     fn expr_type(&self, _scope: &Scope) -> DataType {
         self.values_type.clone()
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+pub struct IsNullExpression {
+    pub argument: Box<dyn Expression>,
+    pub has_not: bool,
+}
+
+impl Expression for IsNullExpression {
+    fn get_expression_kind(&self) -> ExpressionKind {
+        ExpressionKind::IsNull
+    }
+
+    fn expr_type(&self, _scope: &Scope) -> DataType {
+        DataType::Boolean
     }
 
     fn as_any(&self) -> &dyn Any {

@@ -10,6 +10,8 @@ Used to perform arithmetic operators on number types.
 - `/` Division.
 - `%` Modulus.
 
+---
+
 ### Comparison Expression
 - `=` used to check if two values are equals.
 - `!=` or `<>` used to check if two values are not equals.
@@ -29,6 +31,8 @@ SELECT "Git Query Language" LIKE "%e"
 SELECT "Git Query Language" LIKE "%Query%"
 SELECT "10 usd" LIKE "[0-9]* usd"
 ```
+
+---
 
 ### Glob Expression
 The `GLOB` operator is similar to `LIKE` but uses the Unix file globbing syntax for its wildcards. Also, `GLOB` is case sensitive, unlike `LIKE`.
@@ -53,7 +57,7 @@ SELECT "Git Query Language" GLOB "Git*"
 - `&`: used to calculate bitwise and between two numbers,
 - `<<`: used to calculate bitwise right shift between two numbers,
 - `>>`: used to calculate bitwise left shift between two numbers,
-- 
+ 
 ---
 
 ### Between Expression
@@ -62,6 +66,18 @@ Used to check if value is between range start and end included
 ```SQL
 SELECT commit_count FROM branches WHERE commit_count BETWEEN 2 .. 30000
 ```
+
+---
+
+### Is Null Expression
+Returns true if value is null, can uesd with `NOT` keyword to return if true if not null
+
+```SQL
+SELECT 1 IS NULL
+SELECT 1 IS NOT NULL
+```
+
+---
 
 ### In Expression
 Returns true if any values are equal to the argument

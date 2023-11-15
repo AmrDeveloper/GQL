@@ -533,7 +533,46 @@ fn parse_expression(
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
-    parse_in_expression(context, tokens, position)
+    parse_is_null_expression(context, tokens, position)
+}
+
+fn parse_is_null_expression(
+    context: &mut ParserContext,
+    tokens: &Vec<Token>,
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, GQLError> {
+    let expression = parse_in_expression(context, tokens, position)?;
+    if *position < tokens.len() && tokens[*position].kind == TokenKind::Is {
+        let is_location = tokens[*position].location;
+
+        // Consume `IS` keyword
+        *position += 1;
+
+        let has_not_keyword =
+            if *position < tokens.len() && tokens[*position].kind == TokenKind::Not {
+                // Consume `NOT` keyword
+                *position += 1;
+                true
+            } else {
+                false
+            };
+
+        if *position < tokens.len() && tokens[*position].kind == TokenKind::Null {
+            // Consume `Null` keyword
+            *position += 1;
+        } else {
+            return Err(GQLError {
+                message: "Expects `NULL` Keyword after `IS` or `IS NOT`".to_owned(),
+                location: is_location,
+            });
+        }
+
+        return Ok(Box::new(IsNullExpression {
+            argument: expression,
+            has_not: has_not_keyword,
+        }));
+    }
+    Ok(expression)
 }
 
 fn parse_in_expression(
