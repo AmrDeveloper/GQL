@@ -1,4 +1,5 @@
 use std::cmp;
+use std::cmp::Ordering;
 use std::collections::HashMap;
 
 use gitql_ast::aggregation::AGGREGATIONS;
@@ -11,6 +12,7 @@ use gitql_ast::statement::LimitStatement;
 use gitql_ast::statement::OffsetStatement;
 use gitql_ast::statement::OrderByStatement;
 use gitql_ast::statement::SelectStatement;
+use gitql_ast::statement::SortingOrder;
 use gitql_ast::statement::Statement;
 use gitql_ast::statement::StatementKind::*;
 use gitql_ast::statement::WhereStatement;
@@ -241,22 +243,37 @@ fn execute_order_by_statement(
         return Ok(());
     }
 
-    let expression = &statement.expression;
-
-    // No need to sort or reverse if the expression is compile time constants
-    if expression.is_const() {
-        return Ok(());
-    }
-
     main_group.sort_by(|a, b| {
-        let first = &evaluate_expression(expression, &a.attributes).unwrap_or(Value::Null);
-        let other = &evaluate_expression(expression, &b.attributes).unwrap_or(Value::Null);
-        let ordering = first.compare(other);
-        if !statement.is_ascending {
-            ordering
-        } else {
-            ordering.reverse()
+        // The default ordering
+        let mut ordering = Ordering::Equal;
+
+        for i in 0..statement.arguments.len() {
+            let argument = &statement.arguments[i];
+            // No need to compare if the ordering argument is constants
+            if argument.is_const() {
+                continue;
+            }
+
+            // Compare the two set of attributes using the current argument
+            let first = &evaluate_expression(argument, &a.attributes).unwrap_or(Value::Null);
+            let other = &evaluate_expression(argument, &b.attributes).unwrap_or(Value::Null);
+            let current_ordering = first.compare(other);
+
+            // If comparing result still equal, check the next argument
+            if current_ordering == Ordering::Equal {
+                continue;
+            }
+
+            // Reverse the order if its not ASC order
+            ordering = if statement.sorting_orders[i] == SortingOrder::Descending {
+                current_ordering
+            } else {
+                current_ordering.reverse()
+            };
+            break;
         }
+
+        ordering
     });
 
     Ok(())

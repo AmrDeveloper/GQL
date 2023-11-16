@@ -510,21 +510,38 @@ fn parse_order_by_statement(
         });
     }
 
-    // Consume `by` keyword
+    // Consume `BY` keyword
     *position += 1;
 
-    let expression = parse_expression(context, tokens, position)?;
+    let mut arguments: Vec<Box<dyn Expression>> = vec![];
+    let mut sorting_orders: Vec<SortingOrder> = vec![];
 
-    // Consume optional ordering ASC or DES
-    let mut is_ascending = true;
-    if *position < tokens.len() && is_asc_or_desc(&tokens[*position]) {
-        is_ascending = tokens[*position].kind == TokenKind::Ascending;
-        *position += 1;
+    loop {
+        let argument = parse_expression(context, tokens, position)?;
+        arguments.push(argument);
+
+        let mut order = SortingOrder::Ascending;
+        if *position < tokens.len() && is_asc_or_desc(&tokens[*position]) {
+            if tokens[*position].kind == TokenKind::Descending {
+                order = SortingOrder::Descending;
+            }
+
+            // Consume `ASC or DESC` keyword
+            *position += 1;
+        }
+
+        sorting_orders.push(order);
+        if *position < tokens.len() && tokens[*position].kind == TokenKind::Comma {
+            // Consume `,` keyword
+            *position += 1;
+        } else {
+            break;
+        }
     }
 
     Ok(Box::new(OrderByStatement {
-        expression,
-        is_ascending,
+        arguments,
+        sorting_orders,
     }))
 }
 

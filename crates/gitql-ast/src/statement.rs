@@ -100,9 +100,15 @@ impl Statement for OffsetStatement {
     }
 }
 
+#[derive(PartialEq)]
+pub enum SortingOrder {
+    Ascending,
+    Descending,
+}
+
 pub struct OrderByStatement {
-    pub expression: Box<dyn Expression>,
-    pub is_ascending: bool,
+    pub arguments: Vec<Box<dyn Expression>>,
+    pub sorting_orders: Vec<SortingOrder>,
 }
 
 impl Statement for OrderByStatement {
