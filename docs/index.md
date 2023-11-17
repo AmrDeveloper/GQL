@@ -19,7 +19,14 @@ GQL is a query language with a syntax very similar to SQL with a tiny engine to 
 ### Samples
 
 ``` sql
-SELECT name, count(name) AS commit_num FROM commits GROUP BY name ORDER BY commit_num DES LIMIT 10
+SELECT 1
+SELECT 1 + 2
+SELECT LEN("Git Query Language")
+SELECT "One" IN ("One", "Two", "Three")
+SELECT "Git Query Language" LIKE "%Query%"
+
+SELECT DISTINCT title AS tt message FROM commits
+SELECT name, COUNT(name) AS commit_num FROM commits GROUP BY name ORDER BY commit_num DESC LIMIT 10
 SELECT commit_count FROM branches WHERE commit_count BETWEEN 0 .. 10
 
 SELECT * FROM refs WHERE type = "branch"
@@ -27,16 +34,15 @@ SELECT * FROM refs ORDER BY type
 
 SELECT * FROM commits
 SELECT name, email FROM commits
-SELECT name, email FROM commits ORDER BY name DES
-SELECT name, email FROM commits WHERE name contains "gmail" ORDER BY name
+SELECT name, email FROM commits ORDER BY name DESC, email ASC
+SELECT name, email FROM commits WHERE name LIKE "%gmail%" ORDER BY name
 SELECT * FROM commits WHERE LOWER(name) = "amrdeveloper"
 SELECT name FROM commits GROUP By name
 SELECT name FROM commits GROUP By name having name = "AmrDeveloper"
 
 SELECT * FROM branches
 SELECT * FROM branches WHERE is_head = true
-SELECT * FROM branches WHERE name ends_with "master"
-SELECT * FROM branches WHERE name contains "origin"
+SELECT name, LEN(name) FROM branches
 
 SELECT * FROM tags
 SELECT * FROM tags OFFSET 1 LIMIT 1

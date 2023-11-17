@@ -543,8 +543,11 @@ fn consume_identifier(chars: &Vec<char>, pos: &mut usize, start: &mut usize) -> 
         *pos += 1;
     }
 
+    // Idntifier is be case-insensitive by default, convert to lowercase to be easy to compare and lookup
     let literal = &chars[*start..*pos];
-    let string = String::from_utf8(literal.iter().map(|&c| c as u8).collect()).unwrap();
+    let string = String::from_utf8(literal.iter().map(|&c| c as u8).collect())
+        .unwrap()
+        .to_lowercase();
 
     let location = Location {
         start: *start,

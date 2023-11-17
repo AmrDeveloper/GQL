@@ -1314,7 +1314,7 @@ fn parse_function_call_expression(
         }
 
         // Make sure it's valid function name
-        let function_name = &symbol_expression.unwrap().value.to_lowercase();
+        let function_name = &symbol_expression.unwrap().value;
         if FUNCTIONS.contains_key(function_name.as_str()) {
             let arguments = parse_arguments_expressions(context, tokens, position)?;
             let prototype = PROTOTYPES.get(function_name.as_str()).unwrap();
