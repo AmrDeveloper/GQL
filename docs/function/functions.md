@@ -77,12 +77,14 @@ SELECT NOW()
 | ----- | --------- | ------- | ---------------------------------------------------------------------------- |
 | PI    |           | Float   | Return the value of PI.                                                      |
 | FLOOR | Float     | Integer | Returns the largest integer value that is smaller than or equal to a number. |
+| ROUND | Float     | Integer | Returns the nearest integer value.                                           |
 
 ### Numeric functions samples
 
 ```sql
 SELECT PI()
 SELECT FLOOR(1.6)
+SELECT ROUND(1.5)
 ```
 
 ### General functions

@@ -49,6 +49,7 @@ lazy_static! {
         // Numeric functions
         map.insert("pi", numeric_pi);
         map.insert("floor", numeric_floor);
+        map.insert("round", numeric_round);
 
         // Other Functions
         map.insert("isnull", general_is_null);
@@ -263,6 +264,13 @@ lazy_static! {
         );
         map.insert(
             "floor",
+            Prototype {
+                parameters: vec![DataType::Float],
+                result: DataType::Integer,
+            },
+        );
+        map.insert(
+            "round",
             Prototype {
                 parameters: vec![DataType::Float],
                 result: DataType::Integer,
@@ -550,6 +558,11 @@ fn numeric_pi(_inputs: Vec<Value>) -> Value {
 fn numeric_floor(inputs: Vec<Value>) -> Value {
     let float_value = inputs[0].as_float();
     Value::Integer(float_value.floor() as i64)
+}
+
+fn numeric_round(inputs: Vec<Value>) -> Value {
+    let float_value = inputs[0].as_float();
+    Value::Integer(float_value.round() as i64)
 }
 
 // General functions
