@@ -47,6 +47,7 @@ lazy_static! {
         map.insert("makedate", date_make_date);
 
         // Numeric functions
+        map.insert("abs", numeric_abs);
         map.insert("pi", numeric_pi);
         map.insert("floor", numeric_floor);
         map.insert("round", numeric_round);
@@ -256,6 +257,13 @@ lazy_static! {
             },
         );
         // Numeric functions
+        map.insert(
+            "abs",
+            Prototype {
+                parameters: vec![DataType::Integer],
+                result: DataType::Integer,
+            },
+        );
         map.insert(
             "pi",
             Prototype {
@@ -558,6 +566,11 @@ fn date_make_date(inputs: Vec<Value>) -> Value {
 
 // Numeric functions
 
+fn numeric_abs(inputs: Vec<Value>) -> Value {
+    let value = inputs[0].as_int();
+    Value::Integer(value.abs())
+}
+
 fn numeric_pi(_inputs: Vec<Value>) -> Value {
     let pi = std::f64::consts::PI;
     Value::Float(pi)
@@ -575,7 +588,7 @@ fn numeric_round(inputs: Vec<Value>) -> Value {
 
 fn numeric_square(inputs: Vec<Value>) -> Value {
     let int_value = inputs[0].as_int();
-    Value::Integer((int_value * int_value) as i64)
+    Value::Integer(int_value * int_value)
 }
 
 // General functions
