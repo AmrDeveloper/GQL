@@ -219,6 +219,27 @@ fn evaluate_comparison(
         lhs.as_text().cmp(&rhs.as_text())
     };
 
+    if expr.operator == ComparisonOperator::NullSafeEqual {
+        return Ok(Value::Integer(
+            // Return 1 of both sides are null
+            if left_type == DataType::Null && rhs.data_type() == DataType::Null {
+                1
+            }
+            // Return 0 if one side is null
+            else if left_type == DataType::Null || rhs.data_type() == DataType::Null {
+                0
+            }
+            // Return 1 if both non null sides are equals
+            else if comparison_result.is_eq() {
+                1
+            }
+            // Return 0 if both non null sides are not equals
+            else {
+                0
+            },
+        ));
+    }
+
     Ok(Value::Boolean(match expr.operator {
         ComparisonOperator::Greater => comparison_result.is_gt(),
         ComparisonOperator::GreaterEqual => comparison_result.is_ge(),
@@ -226,6 +247,7 @@ fn evaluate_comparison(
         ComparisonOperator::LessEqual => comparison_result.is_le(),
         ComparisonOperator::Equal => comparison_result.is_eq(),
         ComparisonOperator::NotEqual => !comparison_result.is_eq(),
+        ComparisonOperator::NullSafeEqual => false,
     }))
 }
 

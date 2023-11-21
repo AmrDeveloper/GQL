@@ -1006,7 +1006,8 @@ fn parse_comparison_expression(
             TokenKind::Greater => ComparisonOperator::Greater,
             TokenKind::GreaterEqual => ComparisonOperator::GreaterEqual,
             TokenKind::Less => ComparisonOperator::Less,
-            _ => ComparisonOperator::LessEqual,
+            TokenKind::LessEqual => ComparisonOperator::LessEqual,
+            _ => ComparisonOperator::NullSafeEqual,
         };
 
         let rhs = parse_bitwise_shift_expression(context, tokens, position)?;
@@ -1876,6 +1877,7 @@ fn is_comparison_operator(token: &Token) -> bool {
         || token.kind == TokenKind::GreaterEqual
         || token.kind == TokenKind::Less
         || token.kind == TokenKind::LessEqual
+        || token.kind == TokenKind::NullSafeEqual
 }
 
 #[inline(always)]

@@ -195,6 +195,7 @@ pub enum ComparisonOperator {
     LessEqual,
     Equal,
     NotEqual,
+    NullSafeEqual,
 }
 
 pub struct ComparisonExpression {
@@ -209,7 +210,11 @@ impl Expression for ComparisonExpression {
     }
 
     fn expr_type(&self, _scope: &Scope) -> DataType {
-        DataType::Boolean
+        if self.operator == ComparisonOperator::NullSafeEqual {
+            DataType::Integer
+        } else {
+            DataType::Boolean
+        }
     }
 
     fn as_any(&self) -> &dyn Any {

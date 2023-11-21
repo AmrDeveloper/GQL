@@ -32,6 +32,7 @@ pub enum TokenKind {
     Equal,
     Bang,
     BangEqual,
+    NullSafeEqual,
 
     As,
 
@@ -402,7 +403,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             continue;
         }
 
-        // Less or LessEqual
+        // Less, LessEqual or NULL-safe equal
         if char == '<' {
             let location = Location {
                 start: column_start,
@@ -414,8 +415,14 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             let mut kind = TokenKind::Less;
             let literal = if position < len && characters[position] == '=' {
                 position += 1;
-                kind = TokenKind::LessEqual;
-                "<="
+                if position < len && characters[position] == '>' {
+                    position += 1;
+                    kind = TokenKind::NullSafeEqual;
+                    "<=>"
+                } else {
+                    kind = TokenKind::LessEqual;
+                    "<="
+                }
             } else if position < len && characters[position] == '<' {
                 position += 1;
                 kind = TokenKind::BitwiseLeftShift;
