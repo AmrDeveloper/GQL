@@ -80,6 +80,7 @@ SELECT NOW()
 | ROUND  | Float     | Integer | Returns the nearest integer value.                                           |
 | SQUARE | Integer   | Integer | Returns the square of an integer value.                                      |
 | ABS    | Integer   | Integer | Returns the absolute value of an integer value.                              |
+| SIN    | Float     | Float   | Returns the sine of a number.                                                |
 
 ### Numeric functions samples
 
@@ -89,6 +90,7 @@ SELECT FLOOR(1.6)
 SELECT ROUND(1.5)
 SELECT SQUARE(64)
 SELECT ABS(-1)
+SELECT SIN(2.0)
 ```
 
 ### General functions

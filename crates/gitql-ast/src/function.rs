@@ -52,6 +52,7 @@ lazy_static! {
         map.insert("floor", numeric_floor);
         map.insert("round", numeric_round);
         map.insert("square", numeric_square);
+        map.insert("sin", numeric_sin);
 
         // Other Functions
         map.insert("isnull", general_is_null);
@@ -292,6 +293,14 @@ lazy_static! {
                 result: DataType::Integer,
             },
         );
+        map.insert(
+            "sin",
+            Prototype {
+                parameters: vec![DataType::Float],
+                result: DataType::Float,
+            },
+        );
+
         // General functions
         map.insert(
             "isnull",
@@ -589,6 +598,11 @@ fn numeric_round(inputs: Vec<Value>) -> Value {
 fn numeric_square(inputs: Vec<Value>) -> Value {
     let int_value = inputs[0].as_int();
     Value::Integer(int_value * int_value)
+}
+
+fn numeric_sin(inputs: Vec<Value>) -> Value {
+    let float_value = inputs[0].as_float();
+    Value::Float(f64::sin(float_value))
 }
 
 // General functions
