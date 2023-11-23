@@ -1014,7 +1014,7 @@ fn parse_comparison_expression(
         let rhs_type = rhs.expr_type(&context.symbol_table);
 
         // Make sure right and left hand side types are the same
-        if rhs_type == DataType::Integer && rhs_type != lhs.expr_type(&context.symbol_table) {
+        if rhs_type != lhs.expr_type(&context.symbol_table) {
             let message = format!(
                 "Can't compare values of different types `{}` and `{}`",
                 lhs.expr_type(&context.symbol_table).literal(),
