@@ -21,7 +21,7 @@
 | message   | Text | Commit full message  |
 | name      | Text | Author name          |
 | email     | Text | Author email         |
-| time      | Date | Commit date          |
+| datetime  | Date | Commit date time     |
 | repo      | Text | Repository full path |
 
 ---

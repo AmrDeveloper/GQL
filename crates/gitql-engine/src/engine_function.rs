@@ -176,8 +176,8 @@ fn select_commits(
                 continue;
             }
 
-            if field_name == "time" {
-                let column_name = get_column_name(alias_table, &"time".to_string());
+            if field_name == "datetime" {
+                let column_name = get_column_name(alias_table, &"datetime".to_string());
                 let time_stamp = commit.time().seconds();
                 attributes.insert(column_name, Value::DateTime(time_stamp));
                 continue;

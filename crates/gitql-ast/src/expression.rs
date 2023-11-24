@@ -45,6 +45,7 @@ pub enum StringValueType {
     Text,
     Time,
     Date,
+    DateTime,
 }
 
 pub struct StringExpression {
@@ -62,6 +63,7 @@ impl Expression for StringExpression {
             StringValueType::Text => DataType::Text,
             StringValueType::Time => DataType::Time,
             StringValueType::Date => DataType::Date,
+            StringValueType::DateTime => DataType::DateTime,
         }
     }
 

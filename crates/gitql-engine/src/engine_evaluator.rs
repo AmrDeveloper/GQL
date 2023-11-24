@@ -1,3 +1,4 @@
+use gitql_ast::date_utils::date_time_to_time_stamp;
 use gitql_ast::date_utils::date_to_time_stamp;
 use gitql_ast::expression::ArithmeticExpression;
 use gitql_ast::expression::ArithmeticOperator;
@@ -154,6 +155,10 @@ fn evaluate_string(expr: &StringExpression) -> Result<Value, String> {
         StringValueType::Date => {
             let timestamp = date_to_time_stamp(&expr.value);
             Ok(Value::Date(timestamp))
+        }
+        StringValueType::DateTime => {
+            let timestamp = date_time_to_time_stamp(&expr.value);
+            Ok(Value::DateTime(timestamp))
         }
     }
 }

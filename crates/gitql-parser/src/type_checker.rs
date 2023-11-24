@@ -1,5 +1,5 @@
 use gitql_ast::{
-    date_utils::{is_valid_date_format, is_valid_time_format},
+    date_utils::{is_valid_date_format, is_valid_datetime_format, is_valid_time_format},
     expression::{Expression, ExpressionKind, StringExpression, StringValueType},
     scope::Scope,
 };
@@ -83,6 +83,40 @@ pub fn are_types_equals(
         return TypeCheckResult::LeftSideCasted(Box::new(StringExpression {
             value: string_literal_value.to_owned(),
             value_type: StringValueType::Date,
+        }));
+    }
+
+    // Cast right hand side type from Text literal to DateTime
+    if lhs_type.is_datetime()
+        && rhs_type.is_text()
+        && rhs.expression_kind() == ExpressionKind::String
+    {
+        let expr = rhs.as_any().downcast_ref::<StringExpression>().unwrap();
+        let string_literal_value = &expr.value;
+        if !is_valid_datetime_format(string_literal_value) {
+            return TypeCheckResult::NotEqualAndCantImplicitCast;
+        }
+
+        return TypeCheckResult::RightSideCasted(Box::new(StringExpression {
+            value: string_literal_value.to_owned(),
+            value_type: StringValueType::DateTime,
+        }));
+    }
+
+    // Cast Left hand side type from Text literal to DateTime
+    if lhs_type.is_text()
+        && rhs_type.is_datetime()
+        && lhs.expression_kind() == ExpressionKind::String
+    {
+        let expr = lhs.as_any().downcast_ref::<StringExpression>().unwrap();
+        let string_literal_value = &expr.value;
+        if !is_valid_datetime_format(string_literal_value) {
+            return TypeCheckResult::NotEqualAndCantImplicitCast;
+        }
+
+        return TypeCheckResult::LeftSideCasted(Box::new(StringExpression {
+            value: string_literal_value.to_owned(),
+            value_type: StringValueType::DateTime,
         }));
     }
 

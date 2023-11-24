@@ -15,7 +15,7 @@ lazy_static! {
                 "message",
                 "name",
                 "email",
-                "time",
+                "datetime",
                 "repo",
             ],
         );

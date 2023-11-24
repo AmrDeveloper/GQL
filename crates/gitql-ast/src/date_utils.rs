@@ -9,6 +9,7 @@ use chrono::Utc;
 static CHRONO_TIME_FORMAT: &str = "%H:%M:%S";
 static CHRONO_DATE_FORMAT: &str = "%Y-%m-%d";
 static CHRONO_DATE_TIME_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
+static CHRONO_DATE_TIME_FULL_FORMAT: &str = "%Y-%m-%d %H:%M:%S%.3f";
 
 pub fn get_unix_timestamp_ms() -> i64 {
     Utc::now().timestamp()
@@ -29,7 +30,7 @@ pub fn time_stamp_to_time(time_stamp: i64) -> String {
 pub fn time_stamp_to_date_time(time_stamp: i64) -> String {
     let utc = NaiveDateTime::from_timestamp_opt(time_stamp, 0).unwrap();
     let datetime = Utc.from_utc_datetime(&utc);
-    datetime.format(CHRONO_DATE_TIME_FORMAT).to_string()
+    datetime.format(CHRONO_DATE_TIME_FULL_FORMAT).to_string()
 }
 
 pub fn date_to_time_stamp(date: &str) -> i64 {
@@ -42,7 +43,13 @@ pub fn date_to_time_stamp(date: &str) -> i64 {
 }
 
 pub fn date_time_to_time_stamp(date: &str) -> i64 {
-    let date_time = NaiveDateTime::parse_from_str(date, CHRONO_DATE_TIME_FORMAT);
+    let date_time_format = if date.contains('.') {
+        CHRONO_DATE_TIME_FULL_FORMAT
+    } else {
+        CHRONO_DATE_TIME_FORMAT
+    };
+
+    let date_time = NaiveDateTime::parse_from_str(date, date_time_format);
     if date_time.is_err() {
         return 0;
     }
@@ -117,4 +124,21 @@ pub fn is_valid_date_format(date_str: &str) -> bool {
         && month.unwrap() <= 12
         && day.unwrap() >= 1
         && day.unwrap() <= 31
+}
+
+/// Check if String literal is matching SQL Date format: YYYY-MM-DD HH:MM:SS or YYYY-MM-DD HH:MM:SS.SSS
+pub fn is_valid_datetime_format(datetime_str: &str) -> bool {
+    // Check length of the string
+    if !(19..=23).contains(&datetime_str.len()) {
+        return false;
+    }
+
+    // Split the string into date and time components
+    let parts: Vec<&str> = datetime_str.split_whitespace().collect();
+    if parts.len() != 2 {
+        return false;
+    }
+
+    // Check the validity of date and time components
+    is_valid_date_format(parts[0]) && is_valid_time_format(parts[1])
 }

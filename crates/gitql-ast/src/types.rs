@@ -44,6 +44,10 @@ impl DataType {
         self.is_type(DataType::Date)
     }
 
+    pub fn is_datetime(&self) -> bool {
+        self.is_type(DataType::DateTime)
+    }
+
     pub fn literal(&self) -> &'static str {
         match self {
             DataType::Any => "Any",
@@ -73,7 +77,7 @@ lazy_static! {
         map.insert("files_changed", DataType::Integer);
         map.insert("email", DataType::Text);
         map.insert("type", DataType::Text);
-        map.insert("time", DataType::DateTime);
+        map.insert("datetime", DataType::DateTime);
         map.insert("is_head", DataType::Boolean);
         map.insert("is_remote", DataType::Boolean);
         map.insert("commit_count", DataType::Integer);
