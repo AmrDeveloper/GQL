@@ -36,6 +36,10 @@ impl DataType {
         self.is_type(DataType::Text)
     }
 
+    pub fn is_time(&self) -> bool {
+        self.is_type(DataType::Time)
+    }
+
     pub fn literal(&self) -> &'static str {
         match self {
             DataType::Any => "Any",

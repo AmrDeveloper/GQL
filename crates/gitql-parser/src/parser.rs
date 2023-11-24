@@ -9,6 +9,8 @@ use crate::diagnostic::GQLError;
 use crate::tokenizer::Location;
 use crate::tokenizer::Token;
 use crate::tokenizer::TokenKind;
+use crate::type_checker::are_types_equals;
+use crate::type_checker::TypeCheckResult;
 
 use gitql_ast::aggregation::AGGREGATIONS;
 use gitql_ast::aggregation::AGGREGATIONS_PROTOS;
@@ -952,7 +954,7 @@ fn parse_equality_expression(
         return expression;
     }
 
-    let lhs = expression.ok().unwrap();
+    let mut lhs = expression.ok().unwrap();
 
     let operator = &tokens[*position];
     if operator.kind == TokenKind::Equal || operator.kind == TokenKind::BangEqual {
@@ -963,20 +965,24 @@ fn parse_equality_expression(
             ComparisonOperator::NotEqual
         };
 
-        let rhs = parse_comparison_expression(context, tokens, position)?;
+        let mut rhs = parse_comparison_expression(context, tokens, position)?;
 
-        // Make sure right and left hand side types are the same
-        if rhs.expr_type(&context.symbol_table) != lhs.expr_type(&context.symbol_table) {
-            let message = format!(
-                "Can't compare values of different types `{}` and `{}`",
-                lhs.expr_type(&context.symbol_table).literal(),
-                rhs.expr_type(&context.symbol_table).literal()
-            );
-            return Err(GQLError {
-                message,
-                location: get_safe_location(tokens, *position - 2),
-            });
-        }
+        match are_types_equals(&context.symbol_table, &lhs, &rhs) {
+            TypeCheckResult::Equals => {}
+            TypeCheckResult::RightSideCasted(expr) => rhs = expr,
+            TypeCheckResult::LeftSideCasted(expr) => lhs = expr,
+            TypeCheckResult::NotEqualAndCantImplicitCast => {
+                let message = format!(
+                    "Can't compare values of different types `{}` and `{}`",
+                    lhs.expr_type(&context.symbol_table).literal(),
+                    rhs.expr_type(&context.symbol_table).literal()
+                );
+                return Err(GQLError {
+                    message,
+                    location: get_safe_location(tokens, *position - 2),
+                });
+            }
+        };
 
         return Ok(Box::new(ComparisonExpression {
             left: lhs,
@@ -998,7 +1004,7 @@ fn parse_comparison_expression(
         return expression;
     }
 
-    let lhs = expression.ok().unwrap();
+    let mut lhs = expression.ok().unwrap();
     if is_comparison_operator(&tokens[*position]) {
         let operator = &tokens[*position];
         *position += 1;
@@ -1010,21 +1016,24 @@ fn parse_comparison_expression(
             _ => ComparisonOperator::NullSafeEqual,
         };
 
-        let rhs = parse_bitwise_shift_expression(context, tokens, position)?;
-        let rhs_type = rhs.expr_type(&context.symbol_table);
+        let mut rhs = parse_bitwise_shift_expression(context, tokens, position)?;
 
-        // Make sure right and left hand side types are the same
-        if rhs_type != lhs.expr_type(&context.symbol_table) {
-            let message = format!(
-                "Can't compare values of different types `{}` and `{}`",
-                lhs.expr_type(&context.symbol_table).literal(),
-                rhs_type.literal()
-            );
-            return Err(GQLError {
-                message,
-                location: get_safe_location(tokens, *position - 2),
-            });
-        }
+        match are_types_equals(&context.symbol_table, &lhs, &rhs) {
+            TypeCheckResult::Equals => {}
+            TypeCheckResult::RightSideCasted(expr) => rhs = expr,
+            TypeCheckResult::LeftSideCasted(expr) => lhs = expr,
+            TypeCheckResult::NotEqualAndCantImplicitCast => {
+                let message = format!(
+                    "Can't compare values of different types `{}` and `{}`",
+                    lhs.expr_type(&context.symbol_table).literal(),
+                    rhs.expr_type(&context.symbol_table).literal()
+                );
+                return Err(GQLError {
+                    message,
+                    location: get_safe_location(tokens, *position - 2),
+                });
+            }
+        };
 
         return Ok(Box::new(ComparisonExpression {
             left: lhs,
@@ -1436,6 +1445,7 @@ fn parse_primary_expression(
             *position += 1;
             Ok(Box::new(StringExpression {
                 value: tokens[*position - 1].literal.to_string(),
+                value_type: StringValueType::Text,
             }))
         }
         TokenKind::Symbol => {

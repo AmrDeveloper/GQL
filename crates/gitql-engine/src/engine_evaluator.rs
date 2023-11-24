@@ -20,6 +20,7 @@ use gitql_ast::expression::NumberExpression;
 use gitql_ast::expression::PrefixUnary;
 use gitql_ast::expression::PrefixUnaryOperator;
 use gitql_ast::expression::StringExpression;
+use gitql_ast::expression::StringValueType;
 use gitql_ast::expression::SymbolExpression;
 use gitql_ast::function::FUNCTIONS;
 use gitql_ast::types::DataType;
@@ -34,7 +35,7 @@ pub fn evaluate_expression(
     expression: &Box<dyn Expression>,
     object: &HashMap<String, Value>,
 ) -> Result<Value, String> {
-    match expression.get_expression_kind() {
+    match expression.expression_kind() {
         String => {
             let expr = expression
                 .as_any()
@@ -146,7 +147,10 @@ pub fn evaluate_expression(
 }
 
 fn evaluate_string(expr: &StringExpression) -> Result<Value, String> {
-    Ok(Value::Text(expr.value.to_owned()))
+    match expr.value_type {
+        StringValueType::Text => Ok(Value::Text(expr.value.to_owned())),
+        StringValueType::Time => Ok(Value::Time(expr.value.to_owned())),
+    }
 }
 
 fn evaluate_symbol(
@@ -216,7 +220,7 @@ fn evaluate_comparison(
         let irhs = rhs.as_bool();
         ilhs.cmp(&irhs)
     } else {
-        lhs.as_text().cmp(&rhs.as_text())
+        lhs.literal().cmp(&rhs.literal())
     };
 
     if expr.operator == ComparisonOperator::NullSafeEqual {
