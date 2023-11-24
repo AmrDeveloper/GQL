@@ -2,6 +2,7 @@ extern crate chrono;
 
 use chrono::NaiveDate;
 use chrono::NaiveDateTime;
+use chrono::NaiveTime;
 use chrono::TimeZone;
 use chrono::Utc;
 
@@ -29,6 +30,15 @@ pub fn time_stamp_to_date_time(time_stamp: i64) -> String {
     let utc = NaiveDateTime::from_timestamp_opt(time_stamp, 0).unwrap();
     let datetime = Utc.from_utc_datetime(&utc);
     datetime.format(CHRONO_DATE_TIME_FORMAT).to_string()
+}
+
+pub fn date_to_time_stamp(date: &str) -> i64 {
+    let date_time = NaiveDate::parse_from_str(date, CHRONO_DATE_FORMAT).ok();
+    if let Some(date) = date_time {
+        let zero_time = NaiveTime::from_hms_opt(0, 0, 0).unwrap();
+        return date.and_time(zero_time).timestamp();
+    }
+    0
 }
 
 pub fn date_time_to_time_stamp(date: &str) -> i64 {
@@ -78,4 +88,33 @@ pub fn is_valid_time_format(time_str: &str) -> bool {
         && minutes.unwrap() < 60
         && seconds.unwrap() < 60
         && milliseconds.unwrap() < 1000
+}
+
+/// Check if String literal is matching SQL Date format: YYYY-MM-DD
+pub fn is_valid_date_format(date_str: &str) -> bool {
+    // Check length of the string
+    if date_str.len() != 10 {
+        return false;
+    }
+
+    // Split the string into year, month, and day
+    let parts: Vec<&str> = date_str.split('-').collect();
+    if parts.len() != 3 {
+        return false;
+    }
+
+    // Extract year, month, and day
+    let year = parts[0].parse::<u32>().ok();
+    let month = parts[1].parse::<u32>().ok();
+    let day = parts[2].parse::<u32>().ok();
+
+    // Validate the parsed values
+    year.is_some()
+        && month.is_some()
+        && day.is_some()
+        && year.unwrap() >= 1
+        && month.unwrap() >= 1
+        && month.unwrap() <= 12
+        && day.unwrap() >= 1
+        && day.unwrap() <= 31
 }

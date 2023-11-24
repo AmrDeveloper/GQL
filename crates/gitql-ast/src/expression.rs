@@ -44,6 +44,7 @@ impl dyn Expression {
 pub enum StringValueType {
     Text,
     Time,
+    Date,
 }
 
 pub struct StringExpression {
@@ -60,6 +61,7 @@ impl Expression for StringExpression {
         match self.value_type {
             StringValueType::Text => DataType::Text,
             StringValueType::Time => DataType::Time,
+            StringValueType::Date => DataType::Date,
         }
     }
 
