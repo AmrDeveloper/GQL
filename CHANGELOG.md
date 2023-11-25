@@ -1,6 +1,21 @@
 Change Log
 ==========
 
+Version 0.9.0 *(2023-11-25)*
+-----------------------------
+
+* Preallocate the attributes hash with row length.
+* Fix Clippy comments and setup CI for Lint and Format.
+* Implement `typeof` function.
+* Implement `ROUND` function
+* Make Identifiers case-insensitive.
+* Support `<=>` operator.
+* Implement `SIN` function.
+* Implement `COS` function.
+* Support Implicit casting Text to Time.
+* Support Implicit casting Text to Date.
+* Support Implicit casting DateTime to Text.
+
 Version 0.8.0 *(2023-11-10)*
 -----------------------------
 
@@ -12,10 +27,6 @@ Version 0.8.0 *(2023-11-10)*
 * Support `<>` Operator.
 * Implement `PI` function.
 * Implement `FLOOR` function.
-* Update gitql-ast to version `0.6.0`.
-* Update gitql-cli to version `0.8.0`.
-* Update gitql-parser to version `0.7.0`.
-* Update gitql-engine to version `0.8.0`.
 
 Version 0.7.2 *(2023-10-26)*
 -----------------------------
@@ -24,11 +35,6 @@ Version 0.7.2 *(2023-10-26)*
 * Implement `ISNULL` function.
 * Implement `ISNUMERIC` function.
 * Handle crash for undefined symbol as argument at runtime.
-* Update gitql-ast to version `0.5.0`.
-* Update gitql-cli to version `0.7.0`.
-* Update gitql-parser to version `0.6.0`.
-* Update gitql-engine to version `0.7.0`.
-* Update git2 to version `0.18.1`.
 
 Version 0.7.1 *(2023-09-26)*
 -----------------------------
@@ -36,10 +42,6 @@ Version 0.7.1 *(2023-09-26)*
 * Implement `NOW` function.
 * Fix handling grouping with aggregations.
 * Print Date and DateTime with formats.
-* Update gitql-ast to version `0.4.0`.
-* Update gitql-cli to version `0.5.0`.
-* Update gitql-parser to version `0.4.0`.
-* Update gitql-engine to version `0.5.0`.
 
 Version 0.7.0 *(2023-09-22)*
 -----------------------------
@@ -50,10 +52,6 @@ Version 0.7.0 *(2023-09-22)*
 * Ignore input if its empty or new line.
 * Update Git2 version from `0.17.1` to `0.18.0`.
 * Implement 20 Text Functions #13 by @Lilit0x and @tbro.
-* Update gitql-ast to version `0.3.0`.
-* Update gitql-cli to version `0.5.0`.
-* Update gitql-parser to version `0.4.0`.
-* Update gitql-engine to version `0.5.0`.
 
 Version 0.6.0 *(2023-09-06)*
 -----------------------------
