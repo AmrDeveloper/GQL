@@ -28,7 +28,7 @@ pub struct EvaluationValues {
 }
 
 pub fn evaluate(
-    repos: &Vec<git2::Repository>,
+    repos: &Vec<gix::Repository>,
     query: GQLQuery,
 ) -> Result<EvaluationValues, String> {
     let mut groups: Vec<Vec<GQLObject>> = Vec::new();

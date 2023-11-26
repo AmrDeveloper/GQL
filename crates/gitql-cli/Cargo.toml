@@ -12,4 +12,4 @@ gitql-ast = { path = "../gitql-ast", version = "0.7.0" }
 gitql-parser = { path = "../gitql-parser", version = "0.8.0" }
 comfy-table = "7.1.0"
 termcolor = "1.2.0"
-clap = { version = "4.3.23", features = ["derive"] }
+clap = { version = "4.4.8", features = ["derive"] }

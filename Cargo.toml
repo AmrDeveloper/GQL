@@ -25,4 +25,6 @@ gitql-ast = { path = "./crates/gitql-ast", version = "0.7.0" }
 gitql-parser = { path = "./crates/gitql-parser", version = "0.8.0" }
 gitql-engine = { path = "./crates/gitql-engine", version = "0.9.0" }
 gitql-cli = { path = "./crates/gitql-cli", version = "0.9.0" }
-git2 = { version = "0.18.1", default-features = false }
+gix = { version = "0.55.2", default-features = false, features = [
+    "max-performance",
+] }
