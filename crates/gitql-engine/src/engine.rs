@@ -27,10 +27,7 @@ pub struct EvaluationValues {
     pub hidden_selections: Vec<std::string::String>,
 }
 
-pub fn evaluate(
-    repos: &Vec<gix::Repository>,
-    query: GQLQuery,
-) -> Result<EvaluationValues, String> {
+pub fn evaluate(repos: &[gix::Repository], query: GQLQuery) -> Result<EvaluationValues, String> {
     let mut groups: Vec<Vec<GQLObject>> = Vec::new();
     let mut alias_table: HashMap<String, String> = HashMap::new();
 
