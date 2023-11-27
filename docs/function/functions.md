@@ -82,6 +82,7 @@ SELECT NOW()
 | ABS    | Integer   | Integer | Returns the absolute value of an integer value.                              |
 | SIN    | Float     | Float   | Returns the sine of a number.                                                |
 | COS    | FLOAT     | FLOAT   | Returns the cosine of a number.                                              |
+| TAN    | FLOAT     | FLOAT   | Returns the tangent of a number.                                             |
 
 ### Numeric functions samples
 
