@@ -1,3 +1,4 @@
+use atty::Stream;
 use gitql_cli::arguments;
 use gitql_cli::arguments::Arguments;
 use gitql_cli::arguments::Command;
@@ -36,8 +37,7 @@ fn main() {
             arguments::print_help_list();
         }
         Command::Version => {
-            let version = env!("CARGO_PKG_VERSION");
-            println!("GitQL version {}", version);
+            println!("GitQL version {}", env!("CARGO_PKG_VERSION"));
         }
         Command::Error(error_mssage) => {
             println!("{}", error_mssage);
@@ -56,13 +56,24 @@ fn launch_gitql_repl(arguments: Arguments) {
     let git_repositories = git_repos_result.ok().unwrap();
 
     let mut input = String::new();
-    loop {
-        print!("gql > ");
-        std::io::Write::flush(&mut std::io::stdout()).expect("flush failed!");
 
+    loop {
+        // Render Promot only if input is received from terminal
+        if atty::is(Stream::Stdin) {
+            print!("gql > ");
+        }
+
+        std::io::Write::flush(&mut std::io::stdout()).expect("flush failed!");
         match std::io::stdin().read_line(&mut input) {
-            Ok(_) => (),
-            Err(_err) => reporter.report_error("Invalid input"),
+            Ok(buffer_length) => {
+                if buffer_length == 0 {
+                    break;
+                }
+            }
+            Err(error) => {
+                let error_message = format!("Error: {}", error);
+                reporter.report_error(&error_message)
+            }
         }
 
         let trimed_input = input.trim();
