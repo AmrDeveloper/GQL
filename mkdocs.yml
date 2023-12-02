@@ -55,7 +55,7 @@ nav:
       - Where: statement/where.md
       - Group by: statement/group_by.md
       - Having: statement/having.md
-      - Ordre by: statement/order_by.md
+      - Order by: statement/order_by.md
       - Limit & Offset: statement/limit_and_offset.md
   - Expression:
       - Unary: expression/unary.md
