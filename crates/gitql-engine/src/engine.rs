@@ -6,9 +6,12 @@ use std::hash::Hasher;
 use std::vec;
 
 use gitql_ast::object::GQLObject;
+use gitql_ast::enviroment::Enviroment;
 use gitql_ast::statement::GQLQuery;
+use gitql_ast::statement::Query;
 use gitql_ast::statement::SelectStatement;
 
+use crate::engine_executor::execute_global_variable_statement;
 use crate::engine_executor::execute_statement;
 
 const GQL_COMMANDS_IN_ORDER: [&str; 8] = [
@@ -22,12 +25,30 @@ const GQL_COMMANDS_IN_ORDER: [&str; 8] = [
     "limit",
 ];
 
-pub struct EvaluationValues {
-    pub groups: Vec<Vec<GQLObject>>,
-    pub hidden_selections: Vec<std::string::String>,
+pub enum EvaluationResult {
+    SelectedGroups(Vec<Vec<GQLObject>>, Vec<std::string::String>),
+    SetGlobalVariable,
 }
 
-pub fn evaluate(repos: &[gix::Repository], query: GQLQuery) -> Result<EvaluationValues, String> {
+pub fn evaluate(
+    env: &mut Enviroment,
+    repos: &[gix::Repository],
+    query: Query,
+) -> Result<EvaluationResult, String> {
+    match query {
+        Query::Select(gql_query) => evaluate_select_query(env, repos, gql_query),
+        Query::GlobalVariableDeclaration(global_variable) => {
+            execute_global_variable_statement(env, &global_variable)?;
+            Ok(EvaluationResult::SetGlobalVariable)
+        }
+    }
+}
+
+pub fn evaluate_select_query(
+    env: &mut Enviroment,
+    repos: &[gix::Repository],
+    query: GQLQuery,
+) -> Result<EvaluationResult, String> {
     let mut groups: Vec<Vec<GQLObject>> = Vec::new();
     let mut alias_table: HashMap<String, String> = HashMap::new();
 
@@ -50,6 +71,7 @@ pub fn evaluate(repos: &[gix::Repository], query: GQLQuery) -> Result<Evaluation
                     // If table name is empty no need to perform it on each repository
                     if select_statement.table_name.is_empty() {
                         execute_statement(
+                            env,
                             statement,
                             &repos[0],
                             &mut groups,
@@ -62,6 +84,7 @@ pub fn evaluate(repos: &[gix::Repository], query: GQLQuery) -> Result<Evaluation
                     // If table name is not empty, must perform it on each repository
                     for repo in repos {
                         execute_statement(
+                            env,
                             statement,
                             repo,
                             &mut groups,
@@ -72,10 +95,7 @@ pub fn evaluate(repos: &[gix::Repository], query: GQLQuery) -> Result<Evaluation
 
                     // If the main group is empty, no need to perform other statements
                     if groups.is_empty() || groups[0].is_empty() {
-                        return Ok(EvaluationValues {
-                            groups: vec![],
-                            hidden_selections,
-                        });
+                        return Ok(EvaluationResult::SelectedGroups(vec![], hidden_selections));
                     }
 
                     // If Select statement has table name and distinct flag, keep only unique values
@@ -86,6 +106,7 @@ pub fn evaluate(repos: &[gix::Repository], query: GQLQuery) -> Result<Evaluation
                 _ => {
                     // Any other statement can be performend on first or non repository
                     execute_statement(
+                        env,
                         statement,
                         first_repo,
                         &mut groups,
@@ -116,10 +137,10 @@ pub fn evaluate(repos: &[gix::Repository], query: GQLQuery) -> Result<Evaluation
     }
 
     // Return the groups and hidden selections to be used later in GUI or TUI ...etc
-    Ok(EvaluationValues {
-        groups: groups.to_owned(),
+    Ok(EvaluationResult::SelectedGroups(
+        groups.to_owned(),
         hidden_selections,
-    })
+    ))
 }
 
 fn apply_distinct_on_objects_group(groups: &mut Vec<Vec<GQLObject>>, hidden_selections: &[String]) {

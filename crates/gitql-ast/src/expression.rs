@@ -1,7 +1,7 @@
 use std::any::Any;
 
 use crate::function::PROTOTYPES;
-use crate::scope::Scope;
+use crate::enviroment::Enviroment;
 use crate::types::{DataType, TABLES_FIELDS_TYPES};
 use crate::value::Value;
 
@@ -9,6 +9,7 @@ use crate::value::Value;
 pub enum ExpressionKind {
     String,
     Symbol,
+    GlobalVariable,
     Number,
     Boolean,
     PrefixUnary,
@@ -28,7 +29,7 @@ pub enum ExpressionKind {
 
 pub trait Expression {
     fn expression_kind(&self) -> ExpressionKind;
-    fn expr_type(&self, scope: &Scope) -> DataType;
+    fn expr_type(&self, scope: &Enviroment) -> DataType;
     fn as_any(&self) -> &dyn Any;
 }
 
@@ -58,7 +59,7 @@ impl Expression for StringExpression {
         ExpressionKind::String
     }
 
-    fn expr_type(&self, _scope: &Scope) -> DataType {
+    fn expr_type(&self, _scope: &Enviroment) -> DataType {
         match self.value_type {
             StringValueType::Text => DataType::Text,
             StringValueType::Time => DataType::Time,
@@ -81,10 +82,10 @@ impl Expression for SymbolExpression {
         ExpressionKind::Symbol
     }
 
-    fn expr_type(&self, scope: &Scope) -> DataType {
+    fn expr_type(&self, scope: &Enviroment) -> DataType {
         // Search in symbol table
         if scope.contains(&self.value) {
-            return scope.env[self.value.as_str()].clone();
+            return scope.scopes[self.value.as_str()].clone();
         }
 
         // Search in static table fields types
@@ -92,6 +93,27 @@ impl Expression for SymbolExpression {
             return TABLES_FIELDS_TYPES[&self.value.as_str()].clone();
         }
 
+        DataType::Undefined
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+pub struct GlobalVariableExpression {
+    pub name: String,
+}
+
+impl Expression for GlobalVariableExpression {
+    fn expression_kind(&self) -> ExpressionKind {
+        ExpressionKind::GlobalVariable
+    }
+
+    fn expr_type(&self, scope: &Enviroment) -> DataType {
+        if scope.globals_types.contains_key(&self.name) {
+            return scope.globals_types[self.name.as_str()].clone();
+        }
         DataType::Undefined
     }
 
@@ -109,7 +131,7 @@ impl Expression for NumberExpression {
         ExpressionKind::Number
     }
 
-    fn expr_type(&self, _scope: &Scope) -> DataType {
+    fn expr_type(&self, _scope: &Enviroment) -> DataType {
         self.value.data_type()
     }
 
@@ -127,7 +149,7 @@ impl Expression for BooleanExpression {
         ExpressionKind::Boolean
     }
 
-    fn expr_type(&self, _scope: &Scope) -> DataType {
+    fn expr_type(&self, _scope: &Enviroment) -> DataType {
         DataType::Boolean
     }
 
@@ -152,7 +174,7 @@ impl Expression for PrefixUnary {
         ExpressionKind::PrefixUnary
     }
 
-    fn expr_type(&self, _scope: &Scope) -> DataType {
+    fn expr_type(&self, _scope: &Enviroment) -> DataType {
         if self.op == PrefixUnaryOperator::Bang {
             DataType::Boolean
         } else {
@@ -185,7 +207,7 @@ impl Expression for ArithmeticExpression {
         ExpressionKind::Arithmetic
     }
 
-    fn expr_type(&self, scope: &Scope) -> DataType {
+    fn expr_type(&self, scope: &Enviroment) -> DataType {
         let lhs = self.left.expr_type(scope);
         let rhs = self.left.expr_type(scope);
 
@@ -223,7 +245,7 @@ impl Expression for ComparisonExpression {
         ExpressionKind::Comparison
     }
 
-    fn expr_type(&self, _scope: &Scope) -> DataType {
+    fn expr_type(&self, _scope: &Enviroment) -> DataType {
         if self.operator == ComparisonOperator::NullSafeEqual {
             DataType::Integer
         } else {
@@ -246,7 +268,7 @@ impl Expression for LikeExpression {
         ExpressionKind::Like
     }
 
-    fn expr_type(&self, _scope: &Scope) -> DataType {
+    fn expr_type(&self, _scope: &Enviroment) -> DataType {
         DataType::Boolean
     }
 
@@ -265,7 +287,7 @@ impl Expression for GlobExpression {
         ExpressionKind::Glob
     }
 
-    fn expr_type(&self, _scope: &Scope) -> DataType {
+    fn expr_type(&self, _scope: &Enviroment) -> DataType {
         DataType::Boolean
     }
 
@@ -292,7 +314,7 @@ impl Expression for LogicalExpression {
         ExpressionKind::Logical
     }
 
-    fn expr_type(&self, _scope: &Scope) -> DataType {
+    fn expr_type(&self, _scope: &Enviroment) -> DataType {
         DataType::Boolean
     }
 
@@ -320,7 +342,7 @@ impl Expression for BitwiseExpression {
         ExpressionKind::Bitwise
     }
 
-    fn expr_type(&self, _scope: &Scope) -> DataType {
+    fn expr_type(&self, _scope: &Enviroment) -> DataType {
         DataType::Integer
     }
 
@@ -340,7 +362,7 @@ impl Expression for CallExpression {
         ExpressionKind::Call
     }
 
-    fn expr_type(&self, _scope: &Scope) -> DataType {
+    fn expr_type(&self, _scope: &Enviroment) -> DataType {
         let prototype = PROTOTYPES.get(&self.function_name.as_str()).unwrap();
         prototype.result.clone()
     }
@@ -361,7 +383,7 @@ impl Expression for BetweenExpression {
         ExpressionKind::Between
     }
 
-    fn expr_type(&self, _scope: &Scope) -> DataType {
+    fn expr_type(&self, _scope: &Enviroment) -> DataType {
         DataType::Boolean
     }
 
@@ -382,7 +404,7 @@ impl Expression for CaseExpression {
         ExpressionKind::Case
     }
 
-    fn expr_type(&self, _scope: &Scope) -> DataType {
+    fn expr_type(&self, _scope: &Enviroment) -> DataType {
         self.values_type.clone()
     }
 
@@ -402,7 +424,7 @@ impl Expression for InExpression {
         ExpressionKind::In
     }
 
-    fn expr_type(&self, _scope: &Scope) -> DataType {
+    fn expr_type(&self, _scope: &Enviroment) -> DataType {
         self.values_type.clone()
     }
 
@@ -421,7 +443,7 @@ impl Expression for IsNullExpression {
         ExpressionKind::IsNull
     }
 
-    fn expr_type(&self, _scope: &Scope) -> DataType {
+    fn expr_type(&self, _scope: &Enviroment) -> DataType {
         DataType::Boolean
     }
 
@@ -437,7 +459,7 @@ impl Expression for NullExpression {
         ExpressionKind::Null
     }
 
-    fn expr_type(&self, _scope: &Scope) -> DataType {
+    fn expr_type(&self, _scope: &Enviroment) -> DataType {
         DataType::Null
     }
 

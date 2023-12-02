@@ -1,5 +1,6 @@
 #[derive(PartialEq)]
 pub enum TokenKind {
+    Set,
     Select,
     Distinct,
     From,
@@ -49,6 +50,7 @@ pub enum TokenKind {
     BitwiseLeftShift,
 
     Symbol,
+    GlobalVariable,
     Integer,
     Float,
     String,
@@ -101,6 +103,14 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
         // Symbol
         if char.is_alphabetic() {
             let identifier = consume_identifier(&characters, &mut position, &mut column_start);
+            tokens.push(identifier);
+            continue;
+        }
+
+        // Global Variable Symbol
+        if char == '@' {
+            let identifier =
+                consume_global_variable_name(&characters, &mut position, &mut column_start);
             tokens.push(identifier);
             continue;
         }
@@ -545,6 +555,32 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
     Ok(tokens)
 }
 
+fn consume_global_variable_name(chars: &Vec<char>, pos: &mut usize, start: &mut usize) -> Token {
+    // Consume `@`
+    *pos += 1;
+
+    while *pos < chars.len() && (chars[*pos] == '_' || chars[*pos].is_alphabetic()) {
+        *pos += 1;
+    }
+
+    // Idntifier is be case-insensitive by default, convert to lowercase to be easy to compare and lookup
+    let literal = &chars[*start..*pos];
+    let string = String::from_utf8(literal.iter().map(|&c| c as u8).collect())
+        .unwrap()
+        .to_lowercase();
+
+    let location = Location {
+        start: *start,
+        end: *pos,
+    };
+
+    Token {
+        location,
+        kind: TokenKind::GlobalVariable,
+        literal: string,
+    }
+}
+
 fn consume_identifier(chars: &Vec<char>, pos: &mut usize, start: &mut usize) -> Token {
     while *pos < chars.len() && (chars[*pos] == '_' || chars[*pos].is_alphabetic()) {
         *pos += 1;
@@ -822,6 +858,7 @@ fn ignore_c_style_comment(chars: &Vec<char>, pos: &mut usize) -> Result<(), GQLE
 fn resolve_symbol_kind(literal: String) -> TokenKind {
     match literal.to_lowercase().as_str() {
         // Reserved keywords
+        "set" => TokenKind::Set,
         "select" => TokenKind::Select,
         "distinct" => TokenKind::Distinct,
         "from" => TokenKind::From,

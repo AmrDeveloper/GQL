@@ -48,6 +48,10 @@ impl DataType {
         self.is_type(DataType::DateTime)
     }
 
+    pub fn is_undefined(&self) -> bool {
+        self.is_type(DataType::Undefined)
+    }
+
     pub fn literal(&self) -> &'static str {
         match self {
             DataType::Any => "Any",

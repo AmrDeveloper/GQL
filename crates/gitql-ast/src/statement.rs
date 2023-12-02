@@ -12,11 +12,17 @@ pub enum StatementKind {
     OrderBy,
     GroupBy,
     AggregateFunction,
+    GlobalVariable,
 }
 
 pub trait Statement {
     fn get_statement_kind(&self) -> StatementKind;
     fn as_any(&self) -> &dyn Any;
+}
+
+pub enum Query {
+    Select(GQLQuery),
+    GlobalVariableDeclaration(GlobalVariableStatement),
 }
 
 pub struct GQLQuery {
@@ -151,5 +157,20 @@ impl Statement for AggregationFunctionsStatement {
 
     fn get_statement_kind(&self) -> StatementKind {
         StatementKind::AggregateFunction
+    }
+}
+
+pub struct GlobalVariableStatement {
+    pub name: String,
+    pub value: Box<dyn Expression>,
+}
+
+impl Statement for GlobalVariableStatement {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn get_statement_kind(&self) -> StatementKind {
+        StatementKind::GlobalVariable
     }
 }

@@ -1,7 +1,7 @@
 use gitql_ast::{
     date_utils::{is_valid_date_format, is_valid_datetime_format, is_valid_time_format},
     expression::{Expression, ExpressionKind, StringExpression, StringValueType},
-    scope::Scope,
+    enviroment::Enviroment,
 };
 
 /// The return result after performing types checking
@@ -18,7 +18,7 @@ pub enum TypeCheckResult {
 
 #[allow(clippy::borrowed_box)]
 pub fn are_types_equals(
-    scope: &Scope,
+    scope: &Enviroment,
     lhs: &Box<dyn Expression>,
     rhs: &Box<dyn Expression>,
 ) -> TypeCheckResult {

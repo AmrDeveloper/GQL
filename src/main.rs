@@ -1,4 +1,5 @@
 use atty::Stream;
+use gitql_ast::enviroment::Enviroment;
 use gitql_cli::arguments;
 use gitql_cli::arguments::Arguments;
 use gitql_cli::arguments::Command;
@@ -6,6 +7,7 @@ use gitql_cli::render;
 use gitql_cli::reporter;
 use gitql_cli::reporter::DiagnosticReporter;
 use gitql_engine::engine;
+use gitql_engine::engine::EvaluationResult::SelectedGroups;
 use gitql_parser::parser;
 use gitql_parser::tokenizer;
 
@@ -31,7 +33,8 @@ fn main() {
             }
 
             let repos = git_repos_result.ok().unwrap();
-            execute_gitql_query(query, &arguments, &repos, &mut reporter);
+            let mut env = Enviroment::default();
+            execute_gitql_query(query, &arguments, &repos, &mut env, &mut reporter);
         }
         Command::Help => {
             arguments::print_help_list();
@@ -53,6 +56,7 @@ fn launch_gitql_repl(arguments: Arguments) {
         return;
     }
 
+    let mut global_env = Enviroment::default();
     let git_repositories = git_repos_result.ok().unwrap();
 
     let mut input = String::new();
@@ -90,10 +94,12 @@ fn launch_gitql_repl(arguments: Arguments) {
             trimed_input.to_owned(),
             &arguments,
             &git_repositories,
+            &mut global_env,
             &mut reporter,
         );
 
         input.clear();
+        global_env.clear_session();
     }
 }
 
@@ -101,6 +107,7 @@ fn execute_gitql_query(
     query: String,
     arguments: &Arguments,
     repos: &[gix::Repository],
+    env: &mut Enviroment,
     reporter: &mut DiagnosticReporter,
 ) {
     let front_start = std::time::Instant::now();
@@ -111,17 +118,17 @@ fn execute_gitql_query(
     }
 
     let tokens = tokenizer_result.ok().unwrap();
-    let parser_result = parser::parse_gql(tokens);
+    let parser_result = parser::parse_gql(tokens, env);
     if parser_result.is_err() {
         reporter.report_gql_error(parser_result.err().unwrap());
         return;
     }
 
-    let statements = parser_result.ok().unwrap();
+    let query = parser_result.ok().unwrap();
     let front_duration = front_start.elapsed();
 
     let engine_start = std::time::Instant::now();
-    let evaluation_result = engine::evaluate(repos, statements);
+    let evaluation_result = engine::evaluate(env, repos, query);
 
     // Report Runtime exceptions if they exists
     if evaluation_result.is_err() {
@@ -129,13 +136,16 @@ fn execute_gitql_query(
         return;
     }
 
-    let mut evaluation_values = evaluation_result.ok().unwrap();
-    render::render_objects(
-        &mut evaluation_values.groups,
-        &evaluation_values.hidden_selections,
-        arguments.pagination,
-        arguments.page_size,
-    );
+    // Render the result only if they are selected groups not any other statement
+    let engine_result = evaluation_result.ok().unwrap();
+    if let SelectedGroups(mut groups, hidden_selection) = engine_result {
+        render::render_objects(
+            &mut groups,
+            &hidden_selection,
+            arguments.pagination,
+            arguments.page_size,
+        );
+    }
 
     let engine_duration = engine_start.elapsed();
 

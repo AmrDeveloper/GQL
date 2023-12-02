@@ -1,3 +1,4 @@
+use gitql_ast::enviroment::Enviroment;
 use gix::reference::Category;
 use std::collections::HashMap;
 
@@ -9,6 +10,7 @@ use gitql_ast::value::Value;
 use crate::engine_evaluator::evaluate_expression;
 
 pub fn select_gql_objects(
+    env: &mut Enviroment,
     repo: &gix::Repository,
     table: String,
     fields_names: &Vec<String>,
@@ -16,16 +18,17 @@ pub fn select_gql_objects(
     alias_table: &HashMap<String, String>,
 ) -> Result<Vec<GQLObject>, String> {
     match table.as_str() {
-        "refs" => select_references(repo, fields_names, fields_values, alias_table),
-        "commits" => select_commits(repo, fields_names, fields_values, alias_table),
-        "branches" => select_branches(repo, fields_names, fields_values, alias_table),
-        "diffs" => select_diffs(repo, fields_names, fields_values, alias_table),
-        "tags" => select_tags(repo, fields_names, fields_values, alias_table),
-        _ => select_values(repo, fields_names, fields_values, alias_table),
+        "refs" => select_references(env, repo, fields_names, fields_values, alias_table),
+        "commits" => select_commits(env, repo, fields_names, fields_values, alias_table),
+        "branches" => select_branches(env, repo, fields_names, fields_values, alias_table),
+        "diffs" => select_diffs(env, repo, fields_names, fields_values, alias_table),
+        "tags" => select_tags(env, repo, fields_names, fields_values, alias_table),
+        _ => select_values(env, fields_names, fields_values, alias_table),
     }
 }
 
 fn select_references(
+    env: &mut Enviroment,
     repo: &gix::Repository,
     fields_names: &Vec<String>,
     fields_values: &Vec<Box<dyn Expression>>,
@@ -52,7 +55,7 @@ fn select_references(
             if (index - padding) >= 0 {
                 let value = &fields_values[(index - padding) as usize];
                 if value.as_any().downcast_ref::<SymbolExpression>().is_none() {
-                    let evaulated = evaluate_expression(value, &attributes)?;
+                    let evaulated = evaluate_expression(env, value, &attributes)?;
                     let column_name = get_column_name(alias_table, field_name);
                     attributes.insert(column_name, evaulated);
                     continue;
@@ -110,6 +113,7 @@ fn select_references(
 }
 
 fn select_commits(
+    env: &mut Enviroment,
     repo: &gix::Repository,
     fields_names: &Vec<String>,
     fields_values: &Vec<Box<dyn Expression>>,
@@ -137,7 +141,7 @@ fn select_commits(
             if (index - padding) >= 0 {
                 let value = &fields_values[(index - padding) as usize];
                 if value.as_any().downcast_ref::<SymbolExpression>().is_none() {
-                    let evaulated = evaluate_expression(value, &attributes)?;
+                    let evaulated = evaluate_expression(env, value, &attributes)?;
                     let column_name = get_column_name(alias_table, field_name);
                     attributes.insert(column_name, evaulated);
                     continue;
@@ -203,6 +207,7 @@ fn select_commits(
 }
 
 fn select_diffs(
+    env: &mut Enviroment,
     repo: &gix::Repository,
     fields_names: &Vec<String>,
     fields_values: &Vec<Box<dyn Expression>>,
@@ -233,7 +238,7 @@ fn select_diffs(
             if (index - padding) >= 0 {
                 let value = &fields_values[(index - padding) as usize];
                 if value.as_any().downcast_ref::<SymbolExpression>().is_none() {
-                    let evaulated = evaluate_expression(value, &attributes)?;
+                    let evaulated = evaluate_expression(env, value, &attributes)?;
                     let column_name = get_column_name(alias_table, field_name);
                     attributes.insert(column_name, evaulated);
                     continue;
@@ -326,6 +331,7 @@ fn select_diffs(
 }
 
 fn select_branches(
+    env: &mut Enviroment,
     repo: &gix::Repository,
     fields_names: &Vec<String>,
     fields_values: &Vec<Box<dyn Expression>>,
@@ -351,7 +357,7 @@ fn select_branches(
             if (index - padding) >= 0 {
                 let value = &fields_values[(index - padding) as usize];
                 if value.as_any().downcast_ref::<SymbolExpression>().is_none() {
-                    let evaulated = evaluate_expression(value, &attributes)?;
+                    let evaulated = evaluate_expression(env, value, &attributes)?;
                     let column_name = get_column_name(alias_table, field_name);
                     attributes.insert(column_name, evaulated);
                     continue;
@@ -412,6 +418,7 @@ fn select_branches(
 }
 
 fn select_tags(
+    env: &mut Enviroment,
     repo: &gix::Repository,
     fields_names: &Vec<String>,
     fields_values: &Vec<Box<dyn Expression>>,
@@ -435,7 +442,7 @@ fn select_tags(
                 let value = &fields_values[(index - padding) as usize];
 
                 if value.as_any().downcast_ref::<SymbolExpression>().is_none() {
-                    let evaulated = evaluate_expression(value, &attributes)?;
+                    let evaulated = evaluate_expression(env, value, &attributes)?;
                     let column_name = get_column_name(alias_table, field_name);
                     attributes.insert(column_name, evaulated);
                     continue;
@@ -467,7 +474,7 @@ fn select_tags(
 }
 
 fn select_values(
-    _repo: &gix::Repository,
+    env: &mut Enviroment,
     fields_names: &[String],
     fields_values: &Vec<Box<dyn Expression>>,
     alias_table: &HashMap<String, String>,
@@ -479,7 +486,7 @@ fn select_values(
     for index in 0..len {
         let field_name = &fields_names[index];
         let value = &fields_values[index];
-        let evaulated = evaluate_expression(value, &attributes)?;
+        let evaulated = evaluate_expression(env, value, &attributes)?;
         let column_name = get_column_name(alias_table, field_name);
         attributes.insert(column_name, evaulated);
     }

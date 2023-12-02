@@ -5,7 +5,9 @@ use std::collections::HashMap;
 use gitql_ast::aggregation::AGGREGATIONS;
 use gitql_ast::object::flat_gql_groups;
 use gitql_ast::object::GQLObject;
+use gitql_ast::enviroment::Enviroment;
 use gitql_ast::statement::AggregationFunctionsStatement;
+use gitql_ast::statement::GlobalVariableStatement;
 use gitql_ast::statement::GroupByStatement;
 use gitql_ast::statement::HavingStatement;
 use gitql_ast::statement::LimitStatement;
@@ -24,6 +26,7 @@ use crate::engine_function::select_gql_objects;
 
 #[allow(clippy::borrowed_box)]
 pub fn execute_statement(
+    env: &mut Enviroment,
     statement: &Box<dyn Statement>,
     repo: &gix::Repository,
     groups: &mut Vec<Vec<GQLObject>>,
@@ -42,18 +45,18 @@ pub fn execute_statement(
                 alias_table.insert(alias.0.to_string(), alias.1.to_string());
             }
 
-            execute_select_statement(statement, repo, groups, hidden_selection)
+            execute_select_statement(env, statement, repo, groups, hidden_selection)
         }
         Where => {
             let statement = statement.as_any().downcast_ref::<WhereStatement>().unwrap();
-            execute_where_statement(statement, groups)
+            execute_where_statement(env, statement, groups)
         }
         Having => {
             let statement = statement
                 .as_any()
                 .downcast_ref::<HavingStatement>()
                 .unwrap();
-            execute_having_statement(statement, groups)
+            execute_having_statement(env, statement, groups)
         }
         Limit => {
             let statement = statement.as_any().downcast_ref::<LimitStatement>().unwrap();
@@ -71,7 +74,7 @@ pub fn execute_statement(
                 .as_any()
                 .downcast_ref::<OrderByStatement>()
                 .unwrap();
-            execute_order_by_statement(statement, groups)
+            execute_order_by_statement(env, statement, groups)
         }
         GroupBy => {
             let statement = statement
@@ -87,10 +90,18 @@ pub fn execute_statement(
                 .unwrap();
             execute_aggregation_function_statement(statement, groups, alias_table)
         }
+        GlobalVariable => {
+            let statement = statement
+                .as_any()
+                .downcast_ref::<GlobalVariableStatement>()
+                .unwrap();
+            execute_global_variable_statement(env, statement)
+        }
     }
 }
 
 fn execute_select_statement(
+    env: &mut Enviroment,
     statement: &SelectStatement,
     repo: &gix::Repository,
     groups: &mut Vec<Vec<GQLObject>>,
@@ -108,6 +119,7 @@ fn execute_select_statement(
 
     // Select obects from the target table
     let mut objects = select_gql_objects(
+        env,
         repo,
         statement.table_name.to_string(),
         &fields_names,
@@ -126,6 +138,7 @@ fn execute_select_statement(
 }
 
 fn execute_where_statement(
+    env: &mut Enviroment,
     statement: &WhereStatement,
     groups: &mut Vec<Vec<GQLObject>>,
 ) -> Result<(), String> {
@@ -138,7 +151,7 @@ fn execute_where_statement(
     let mut filtered_group: Vec<GQLObject> = vec![];
     let first_group = groups.first().unwrap().iter();
     for object in first_group {
-        let eval_result = evaluate_expression(&statement.condition, &object.attributes);
+        let eval_result = evaluate_expression(env, &statement.condition, &object.attributes);
         if eval_result.is_err() {
             return Err(eval_result.err().unwrap());
         }
@@ -156,6 +169,7 @@ fn execute_where_statement(
 }
 
 fn execute_having_statement(
+    env: &mut Enviroment,
     statement: &HavingStatement,
     groups: &mut Vec<Vec<GQLObject>>,
 ) -> Result<(), String> {
@@ -172,7 +186,7 @@ fn execute_having_statement(
     let mut filtered_group: Vec<GQLObject> = vec![];
     let first_group = groups.first().unwrap().iter();
     for object in first_group {
-        let eval_result = evaluate_expression(&statement.condition, &object.attributes);
+        let eval_result = evaluate_expression(env, &statement.condition, &object.attributes);
         if eval_result.is_err() {
             return Err(eval_result.err().unwrap());
         }
@@ -227,6 +241,7 @@ fn execute_offset_statement(
 }
 
 fn execute_order_by_statement(
+    env: &mut Enviroment,
     statement: &OrderByStatement,
     groups: &mut Vec<Vec<GQLObject>>,
 ) -> Result<(), String> {
@@ -255,8 +270,8 @@ fn execute_order_by_statement(
             }
 
             // Compare the two set of attributes using the current argument
-            let first = &evaluate_expression(argument, &a.attributes).unwrap_or(Value::Null);
-            let other = &evaluate_expression(argument, &b.attributes).unwrap_or(Value::Null);
+            let first = &evaluate_expression(env, argument, &a.attributes).unwrap_or(Value::Null);
+            let other = &evaluate_expression(env, argument, &b.attributes).unwrap_or(Value::Null);
             let current_ordering = first.compare(other);
 
             // If comparing result still equal, check the next argument
@@ -365,5 +380,14 @@ fn execute_aggregation_function_statement(
         }
     }
 
+    Ok(())
+}
+
+pub fn execute_global_variable_statement(
+    env: &mut Enviroment,
+    statement: &GlobalVariableStatement,
+) -> Result<(), String> {
+    let value = evaluate_expression(env, &statement.value, &HashMap::default())?;
+    env.globals.insert(statement.name.to_string(), value);
     Ok(())
 }
