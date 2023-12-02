@@ -3,9 +3,9 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 
 use gitql_ast::aggregation::AGGREGATIONS;
+use gitql_ast::enviroment::Enviroment;
 use gitql_ast::object::flat_gql_groups;
 use gitql_ast::object::GQLObject;
-use gitql_ast::enviroment::Enviroment;
 use gitql_ast::statement::AggregationFunctionsStatement;
 use gitql_ast::statement::GlobalVariableStatement;
 use gitql_ast::statement::GroupByStatement;

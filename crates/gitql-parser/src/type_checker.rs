@@ -1,7 +1,7 @@
 use gitql_ast::{
     date_utils::{is_valid_date_format, is_valid_datetime_format, is_valid_time_format},
-    expression::{Expression, ExpressionKind, StringExpression, StringValueType},
     enviroment::Enviroment,
+    expression::{Expression, ExpressionKind, StringExpression, StringValueType},
 };
 
 /// The return result after performing types checking

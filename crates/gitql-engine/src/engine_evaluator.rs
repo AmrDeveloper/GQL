@@ -1,5 +1,6 @@
 use gitql_ast::date_utils::date_time_to_time_stamp;
 use gitql_ast::date_utils::date_to_time_stamp;
+use gitql_ast::enviroment::Enviroment;
 use gitql_ast::expression::ArithmeticExpression;
 use gitql_ast::expression::ArithmeticOperator;
 use gitql_ast::expression::BetweenExpression;
@@ -26,7 +27,6 @@ use gitql_ast::expression::StringExpression;
 use gitql_ast::expression::StringValueType;
 use gitql_ast::expression::SymbolExpression;
 use gitql_ast::function::FUNCTIONS;
-use gitql_ast::enviroment::Enviroment;
 use gitql_ast::types::DataType;
 use gitql_ast::value::Value;
 

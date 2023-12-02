@@ -5,8 +5,8 @@ use std::hash::Hash;
 use std::hash::Hasher;
 use std::vec;
 
-use gitql_ast::object::GQLObject;
 use gitql_ast::enviroment::Enviroment;
+use gitql_ast::object::GQLObject;
 use gitql_ast::statement::GQLQuery;
 use gitql_ast::statement::Query;
 use gitql_ast::statement::SelectStatement;
