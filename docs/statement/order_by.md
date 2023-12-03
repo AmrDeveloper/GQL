@@ -1,4 +1,4 @@
-The `ORDER BY` Statement used to order the result-set in ascending or descending order by one or more argument.
+The `ORDER BY` Statement used to order the result-set in ascending or descending order by one or more arguments.
 
 ```sql
 SELECT name, email FROM commits ORDER BY name
