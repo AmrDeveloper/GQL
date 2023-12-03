@@ -34,7 +34,7 @@ SELECT LEN("Git Query Language")
 SELECT "One" IN ("One", "Two", "Three")
 SELECT "Git Query Language" LIKE "%Query%"
 
-SELECT DISTINCT title AS tt message FROM commits
+SELECT DISTINCT title AS tt FROM commits
 SELECT name, COUNT(name) AS commit_num FROM commits GROUP BY name ORDER BY commit_num DESC LIMIT 10
 SELECT commit_count FROM branches WHERE commit_count BETWEEN 0 .. 10
 
