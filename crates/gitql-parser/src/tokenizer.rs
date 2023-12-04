@@ -67,6 +67,7 @@ pub enum TokenKind {
 
     Comma,
     Dot,
+    Semicolon,
 
     Ascending,
     Descending,
@@ -530,6 +531,24 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
                 location,
                 kind: TokenKind::RightParen,
                 literal: ")".to_owned(),
+            };
+
+            tokens.push(token);
+            position += 1;
+            continue;
+        }
+
+        // Semicolon
+        if char == ';' {
+            let location = Location {
+                start: column_start,
+                end: position,
+            };
+
+            let token = Token {
+                location,
+                kind: TokenKind::Semicolon,
+                literal: ";".to_owned(),
             };
 
             tokens.push(token);

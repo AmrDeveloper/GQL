@@ -21,7 +21,9 @@ use gitql_ast::statement::*;
 use gitql_ast::types::DataType;
 use gitql_ast::types::TABLES_FIELDS_TYPES;
 
-pub fn parse_gql(tokens: Vec<Token>, env: &mut Enviroment) -> Result<Query, GQLError> {
+pub fn parse_gql(mut tokens: Vec<Token>, env: &mut Enviroment) -> Result<Query, GQLError> {
+    consume_optional_semicolon_if_exists(&mut tokens);
+
     let mut position = 0;
     let first_token = &tokens[position];
     match &first_token.kind {
@@ -1863,6 +1865,19 @@ fn un_expected_expression_error(tokens: &Vec<Token>, position: &usize) -> GQLErr
     GQLError {
         message: "Can't complete parsing this expression".to_owned(),
         location,
+    }
+}
+
+/// Remove last token if it semicolon, because it's optional
+fn consume_optional_semicolon_if_exists(tokens: &mut Vec<Token>) {
+    if tokens.is_empty() {
+        return;
+    }
+
+    if let Some(last_token) = tokens.last() {
+        if last_token.kind == TokenKind::Semicolon {
+            tokens.remove(tokens.len() - 1);
+        }
     }
 }
 
