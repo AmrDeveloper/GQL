@@ -21,7 +21,7 @@ scoop install gitql
 # On Single repository
 gitql <repository_path>
 
-# On multi repositoies
+# On multi repositories
 gitql --repo <repository_path> <repository_path> ...etc
 
 # Or
