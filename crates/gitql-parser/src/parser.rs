@@ -53,9 +53,12 @@ fn parse_set_query(env: &mut Enviroment, tokens: &Vec<Token>) -> Result<Query, G
     // Consume variable name
     position += 1;
 
-    if position >= len || tokens[position].kind != TokenKind::Equal {
+    if position >= len
+        || (tokens[position].kind != TokenKind::Equal
+            && tokens[position].kind != TokenKind::ColonEqual)
+    {
         return Err(GQLError {
-            message: "Expect = and Value after Variable name".to_owned(),
+            message: "Expect `=` or `:=` and Value after Variable name".to_owned(),
             location: get_safe_location(tokens, position - 1),
         });
     }

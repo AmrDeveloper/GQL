@@ -59,6 +59,8 @@ pub enum TokenKind {
     False,
     Null,
 
+    ColonEqual,
+
     Plus,
     Minus,
     Star,
@@ -472,6 +474,34 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             tokens.push(token);
             position += 1;
             continue;
+        }
+
+        // Colon Equal
+        if char == ':' {
+            if position + 1 < len && characters[position + 1] == '=' {
+                let location = Location {
+                    start: column_start,
+                    end: position,
+                };
+
+                let token = Token {
+                    location,
+                    kind: TokenKind::ColonEqual,
+                    literal: ":=".to_owned(),
+                };
+
+                tokens.push(token);
+                position += 2;
+                continue;
+            }
+
+            return Err(GQLError {
+                message: "Expect `=` after `:`".to_owned(),
+                location: Location {
+                    start: column_start,
+                    end: position,
+                },
+            });
         }
 
         // Bang or Bang Equal
