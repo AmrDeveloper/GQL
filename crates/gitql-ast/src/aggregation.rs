@@ -3,9 +3,10 @@ use crate::types::DataType;
 use crate::value::Value;
 
 use lazy_static::lazy_static;
+use std::cmp::Ordering;
 use std::collections::HashMap;
 
-type Aggregation = fn(&str, &Vec<GQLObject>) -> Value;
+type Aggregation = fn(&str, &[GQLObject]) -> Value;
 
 pub struct AggregationPrototype {
     pub parameter: DataType,
@@ -66,31 +67,29 @@ lazy_static! {
     };
 }
 
-fn aggregation_max(field_name: &str, objects: &Vec<GQLObject>) -> Value {
-    let mut max_length: i64 = 0;
-    for object in objects {
-        let field_value = &object.attributes.get(field_name).unwrap();
-        let int_value = field_value.as_int();
-        if int_value > max_length {
-            max_length = int_value;
+fn aggregation_max(field_name: &str, objects: &[GQLObject]) -> Value {
+    let mut max_value = objects[0].attributes.get(field_name).unwrap();
+    for object in objects.iter().skip(1) {
+        let field_value = object.attributes.get(field_name).unwrap();
+        if max_value.compare(field_value) == Ordering::Greater {
+            max_value = field_value;
         }
     }
-    Value::Integer(max_length)
+    max_value.clone()
 }
 
-fn aggregation_min(field_name: &str, objects: &Vec<GQLObject>) -> Value {
-    let mut min_length: i64 = 0;
-    for object in objects {
-        let field_value = &object.attributes.get(field_name).unwrap();
-        let int_value = field_value.as_int();
-        if int_value < min_length {
-            min_length = int_value;
+fn aggregation_min(field_name: &str, objects: &[GQLObject]) -> Value {
+    let mut min_value = objects[0].attributes.get(field_name).unwrap();
+    for object in objects.iter().skip(1) {
+        let field_value = object.attributes.get(field_name).unwrap();
+        if min_value.compare(field_value) == Ordering::Less {
+            min_value = field_value;
         }
     }
-    Value::Integer(min_length)
+    min_value.clone()
 }
 
-fn aggregation_sum(field_name: &str, objects: &Vec<GQLObject>) -> Value {
+fn aggregation_sum(field_name: &str, objects: &[GQLObject]) -> Value {
     let mut sum: i64 = 0;
     for object in objects {
         let field_value = &object.attributes.get(field_name).unwrap();
@@ -99,7 +98,7 @@ fn aggregation_sum(field_name: &str, objects: &Vec<GQLObject>) -> Value {
     Value::Integer(sum)
 }
 
-fn aggregation_average(field_name: &str, objects: &Vec<GQLObject>) -> Value {
+fn aggregation_average(field_name: &str, objects: &[GQLObject]) -> Value {
     let mut sum: i64 = 0;
     let count: i64 = objects.len().try_into().unwrap();
     for object in objects {
@@ -110,6 +109,6 @@ fn aggregation_average(field_name: &str, objects: &Vec<GQLObject>) -> Value {
     Value::Integer(avg)
 }
 
-fn aggregation_count(_field_name: &str, objects: &Vec<GQLObject>) -> Value {
+fn aggregation_count(_field_name: &str, objects: &[GQLObject]) -> Value {
     Value::Integer(objects.len() as i64)
 }

@@ -78,6 +78,12 @@ pub fn evaluate_select_query(
                             &mut alias_table,
                             &hidden_selections,
                         )?;
+
+                        // If the main group is empty, no need to perform other statements
+                        if groups.is_empty() || groups[0].is_empty() {
+                            return Ok(EvaluationResult::SelectedGroups(vec![], hidden_selections));
+                        }
+
                         continue;
                     }
 

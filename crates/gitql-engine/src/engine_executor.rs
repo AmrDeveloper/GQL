@@ -351,6 +351,11 @@ fn execute_aggregation_function_statement(
 
     // We should run aggregation function for each group
     for group in groups {
+        // No need to apply all aggregation if there is no selected elements
+        if group.is_empty() {
+            continue;
+        }
+
         for aggregation in aggregations_map {
             let function = aggregation.1;
 
