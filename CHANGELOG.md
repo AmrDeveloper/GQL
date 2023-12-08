@@ -1,6 +1,19 @@
 Change Log
 ==========
 
+Version 0.10.0 *(2023-12-08)*
+-----------------------------
+
+* Migrate from `git2` to `gix`.
+* Implement `ASIN` function.
+* Implement `TAN` function.
+* Use current directory as repository path if no path is passed.
+* Implement `--query | -q` flat to run a single query without repl mode.
+* Support receiving input from a pipe or file redirection.
+* Support consuming `;` at the end of query main statement.
+* Support User defined variables.
+* Suppoer `:=` operator.
+
 Version 0.9.0 *(2023-11-25)*
 -----------------------------
 
