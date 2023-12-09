@@ -55,6 +55,7 @@ lazy_static! {
         map.insert("sin", numeric_sin);
         map.insert("asin", numeric_asin);
         map.insert("cos", numeric_cos);
+        map.insert("acos", numeric_acos);
         map.insert("tan", numeric_tan);
 
         // Other Functions
@@ -312,6 +313,13 @@ lazy_static! {
         );
         map.insert(
             "cos",
+            Prototype {
+                parameters: vec![DataType::Float],
+                result: DataType::Float,
+            },
+        );
+        map.insert(
+            "acos",
             Prototype {
                 parameters: vec![DataType::Float],
                 result: DataType::Float,
@@ -636,6 +644,11 @@ fn numeric_asin(inputs: Vec<Value>) -> Value {
 fn numeric_cos(inputs: Vec<Value>) -> Value {
     let float_value = inputs[0].as_float();
     Value::Float(f64::cos(float_value))
+}
+
+fn numeric_acos(inputs: Vec<Value>) -> Value {
+    let float_value = inputs[0].as_float();
+    Value::Float(f64::acos(float_value))
 }
 
 fn numeric_tan(inputs: Vec<Value>) -> Value {

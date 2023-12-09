@@ -83,6 +83,7 @@ SELECT NOW()
 | SIN    | Float     | Float   | Returns the sine of a number.                                                |
 | ASIN   | Float     | Float   | Returns the arc sine of a number.                                            |
 | COS    | FLOAT     | FLOAT   | Returns the cosine of a number.                                              |
+| ACOS   | FLOAT     | FLOAT   | Returns the arc cosine of a number.                                          |
 | TAN    | FLOAT     | FLOAT   | Returns the tangent of a number.                                             |
 
 ### Numeric functions samples
