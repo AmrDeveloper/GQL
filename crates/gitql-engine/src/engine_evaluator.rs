@@ -3,6 +3,7 @@ use gitql_ast::date_utils::date_to_time_stamp;
 use gitql_ast::enviroment::Enviroment;
 use gitql_ast::expression::ArithmeticExpression;
 use gitql_ast::expression::ArithmeticOperator;
+use gitql_ast::expression::AssignmentExpression;
 use gitql_ast::expression::BetweenExpression;
 use gitql_ast::expression::BitwiseExpression;
 use gitql_ast::expression::BitwiseOperator;
@@ -41,6 +42,13 @@ pub fn evaluate_expression(
     object: &HashMap<String, Value>,
 ) -> Result<Value, String> {
     match expression.expression_kind() {
+        Assignment => {
+            let expr = expression
+                .as_any()
+                .downcast_ref::<AssignmentExpression>()
+                .unwrap();
+            evaluate_assignemnt(env, expr, object)
+        }
         String => {
             let expr = expression
                 .as_any()
@@ -156,6 +164,16 @@ pub fn evaluate_expression(
         }
         Null => Ok(Value::Null),
     }
+}
+
+fn evaluate_assignemnt(
+    env: &mut Enviroment,
+    expr: &AssignmentExpression,
+    object: &HashMap<String, Value>,
+) -> Result<Value, String> {
+    let value = evaluate_expression(env, &expr.value, object)?;
+    env.globals.insert(expr.symbol.to_string(), value.clone());
+    Ok(value)
 }
 
 fn evaluate_string(expr: &StringExpression) -> Result<Value, String> {

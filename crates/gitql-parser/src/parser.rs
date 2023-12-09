@@ -606,7 +606,43 @@ fn parse_expression(
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
-    parse_is_null_expression(context, env, tokens, position)
+    parse_assignment_expression(context, env, tokens, position)
+}
+
+fn parse_assignment_expression(
+    context: &mut ParserContext,
+    env: &mut Enviroment,
+    tokens: &Vec<Token>,
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, GQLError> {
+    let expression = parse_is_null_expression(context, env, tokens, position)?;
+    if *position < tokens.len() && tokens[*position].kind == TokenKind::ColonEqual {
+        if expression.expression_kind() != ExpressionKind::GlobalVariable {
+            let location = tokens[*position].location;
+            let message =
+                "Assignment expressions expect global variable name before `:=`".to_string();
+            return Err(GQLError { message, location });
+        }
+
+        let expr = expression
+            .as_any()
+            .downcast_ref::<GlobalVariableExpression>()
+            .unwrap();
+
+        let variable_name = expr.name.to_string();
+
+        // Consume `:=` operator
+        *position += 1;
+
+        let value = parse_is_null_expression(context, env, tokens, position)?;
+        env.define_global(variable_name.clone(), value.expr_type(env));
+
+        return Ok(Box::new(AssignmentExpression {
+            symbol: variable_name,
+            value,
+        }));
+    }
+    Ok(expression)
 }
 
 fn parse_is_null_expression(
@@ -1425,8 +1461,15 @@ fn parse_function_call_expression(
                 function_name_location,
             )?;
 
-            let argument_str = get_expression_name(&arguments[0]);
-            let argument = argument_str.ok().unwrap();
+            let argument_result = get_expression_name(&arguments[0]);
+            if argument_result.is_err() {
+                return Err(GQLError {
+                    message: "Invalid Aggregation function argument".to_owned(),
+                    location: function_name_location,
+                });
+            }
+
+            let argument = argument_result.ok().unwrap();
             let column_name = context.generate_column_name();
 
             context.hidden_selections.push(column_name.to_string());

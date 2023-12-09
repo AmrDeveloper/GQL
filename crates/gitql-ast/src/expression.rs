@@ -7,6 +7,7 @@ use crate::value::Value;
 
 #[derive(PartialEq)]
 pub enum ExpressionKind {
+    Assignment,
     String,
     Symbol,
     GlobalVariable,
@@ -39,6 +40,25 @@ impl dyn Expression {
             self.expression_kind(),
             ExpressionKind::Number | ExpressionKind::Boolean | ExpressionKind::String
         )
+    }
+}
+
+pub struct AssignmentExpression {
+    pub symbol: String,
+    pub value: Box<dyn Expression>,
+}
+
+impl Expression for AssignmentExpression {
+    fn expression_kind(&self) -> ExpressionKind {
+        ExpressionKind::Assignment
+    }
+
+    fn expr_type(&self, scope: &Enviroment) -> DataType {
+        self.value.expr_type(scope)
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }
 
