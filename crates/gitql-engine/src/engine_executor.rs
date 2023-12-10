@@ -6,7 +6,8 @@ use gitql_ast::aggregation::AGGREGATIONS;
 use gitql_ast::enviroment::Enviroment;
 use gitql_ast::object::flat_gql_groups;
 use gitql_ast::object::GQLObject;
-use gitql_ast::statement::AggregationFunctionsStatement;
+use gitql_ast::statement::AggregateValue;
+use gitql_ast::statement::AggregationsStatement;
 use gitql_ast::statement::GlobalVariableStatement;
 use gitql_ast::statement::GroupByStatement;
 use gitql_ast::statement::HavingStatement;
@@ -86,9 +87,9 @@ pub fn execute_statement(
         AggregateFunction => {
             let statement = statement
                 .as_any()
-                .downcast_ref::<AggregationFunctionsStatement>()
+                .downcast_ref::<AggregationsStatement>()
                 .unwrap();
-            execute_aggregation_function_statement(statement, groups, alias_table)
+            execute_aggregation_function_statement(env, statement, groups, alias_table)
         }
         GlobalVariable => {
             let statement = statement
@@ -336,7 +337,8 @@ fn execute_group_by_statement(
 }
 
 fn execute_aggregation_function_statement(
-    statement: &AggregationFunctionsStatement,
+    env: &mut Enviroment,
+    statement: &AggregationsStatement,
     groups: &mut Vec<Vec<GQLObject>>,
     alias_table: &HashMap<String, String>,
 ) -> Result<(), String> {
@@ -356,25 +358,50 @@ fn execute_aggregation_function_statement(
             continue;
         }
 
+        // Resolve all aggregations functions first
         for aggregation in aggregations_map {
-            let function = aggregation.1;
+            if let AggregateValue::Function(function, argument) = aggregation.1 {
+                // Get alias name if exists or column name by default
+                let result_column_name = aggregation.0;
+                let column_name = get_column_name(alias_table, result_column_name);
 
-            // Get the target aggregation function
-            let aggregation_function = AGGREGATIONS.get(function.function_name.as_str()).unwrap();
+                // Get the target aggregation function
+                let aggregation_function = AGGREGATIONS.get(function.as_str()).unwrap();
+                let result = &aggregation_function(&argument.to_string(), group);
 
-            // Execute aggregation function once for group
-            let result_column_name = aggregation.0;
-            let argument = &function.argument;
-            let result = &aggregation_function(&argument.to_string(), group);
+                // Insert the calculated value in the group objects
+                for object in group.iter_mut() {
+                    object
+                        .attributes
+                        .insert(column_name.to_string(), result.to_owned());
+                } // Get the target aggregation function
+                let aggregation_function = AGGREGATIONS.get(function.as_str()).unwrap();
+                let result = &aggregation_function(&argument.to_string(), group);
 
-            // Get alias name if exists or column name by default
-            let column_name = get_column_name(alias_table, result_column_name);
+                // Insert the calculated value in the group objects
+                for object in group.iter_mut() {
+                    object
+                        .attributes
+                        .insert(column_name.to_string(), result.to_owned());
+                }
+            }
+        }
 
-            // Insert the calculated value in the group objects
-            for object in group.iter_mut() {
-                object
-                    .attributes
-                    .insert(column_name.to_string(), result.to_owned());
+        // Resolve aggregations expressions
+        for aggregation in aggregations_map {
+            if let AggregateValue::Expression(expr) = aggregation.1 {
+                // Get alias name if exists or column name by default
+                let result_column_name = aggregation.0;
+                let column_name = get_column_name(alias_table, result_column_name);
+
+                // Insert the calculated value in the group objects
+                for object in group.iter_mut() {
+                    let result = evaluate_expression(env, expr, &object.attributes)?;
+
+                    object
+                        .attributes
+                        .insert(column_name.to_string(), result.to_owned());
+                }
             }
         }
 

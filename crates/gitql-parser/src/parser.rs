@@ -53,30 +53,34 @@ fn parse_set_query(env: &mut Enviroment, tokens: &Vec<Token>) -> Result<Query, G
     // Consume variable name
     position += 1;
 
-    if position >= len
-        || (tokens[position].kind != TokenKind::Equal
-            && tokens[position].kind != TokenKind::ColonEqual)
-    {
+    if position >= len || !is_assignment_operator(&tokens[position]) {
         return Err(GQLError {
             message: "Expect `=` or `:=` and Value after Variable name".to_owned(),
             location: get_safe_location(tokens, position - 1),
         });
     }
 
-    // Consume `=` token
+    // Consume `=` or `:=` token
     position += 1;
 
-    let expression = parse_expression(&mut context, env, tokens, &mut position)?;
-    let expression_type = expression.expr_type(env);
+    let aggregations_count_before = context.aggregations.len();
+    let value = parse_expression(&mut context, env, tokens, &mut position)?;
+    let has_aggregations = context.aggregations.len() != aggregations_count_before;
 
-    env.define_global(name.to_string(), expression_type);
+    // Until supports sub queries, aggregation value can't be stored in variables
+    if has_aggregations {
+        return Err(GQLError {
+            message: "Aggregation value can't be assigned to global variable".to_owned(),
+            location: get_safe_location(tokens, position - 1),
+        });
+    }
 
-    let global_variable = GlobalVariableStatement {
+    env.define_global(name.to_string(), value.expr_type(env));
+
+    Ok(Query::GlobalVariableDeclaration(GlobalVariableStatement {
         name: name.to_string(),
-        value: expression,
-    };
-
-    Ok(Query::GlobalVariableDeclaration(global_variable))
+        value,
+    }))
 }
 
 fn parse_select_query(env: &mut Enviroment, tokens: &Vec<Token>) -> Result<Query, GQLError> {
@@ -215,7 +219,7 @@ fn parse_select_query(env: &mut Enviroment, tokens: &Vec<Token>) -> Result<Query
 
     // If any aggregation function is used, add Aggregation Functions Node to the GQL Query
     if !context.aggregations.is_empty() {
-        let aggregation_functions = AggregationFunctionsStatement {
+        let aggregation_functions = AggregationsStatement {
             aggregations: context.aggregations,
         };
         statements.insert("aggregation".to_string(), Box::new(aggregation_functions));
@@ -606,7 +610,22 @@ fn parse_expression(
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
-    parse_assignment_expression(context, env, tokens, position)
+    let aggregations_count_before = context.aggregations.len();
+    let expression = parse_assignment_expression(context, env, tokens, position)?;
+    let has_aggregations = context.aggregations.len() != aggregations_count_before;
+
+    if has_aggregations {
+        let column_name = context.generate_column_name();
+        env.define(column_name.to_string(), expression.expr_type(env));
+
+        context
+            .aggregations
+            .insert(column_name.clone(), AggregateValue::Expression(expression));
+
+        return Ok(Box::new(SymbolExpression { value: column_name }));
+    }
+
+    Ok(expression)
 }
 
 fn parse_assignment_expression(
@@ -638,7 +657,7 @@ fn parse_assignment_expression(
         env.define_global(variable_name.clone(), value.expr_type(env));
 
         return Ok(Box::new(AssignmentExpression {
-            symbol: variable_name,
+            symbol: variable_name.clone(),
             value,
         }));
     }
@@ -1479,10 +1498,7 @@ fn parse_function_call_expression(
 
             context.aggregations.insert(
                 column_name.clone(),
-                AggregateFunction {
-                    function_name: function_name.to_string(),
-                    argument,
-                },
+                AggregateValue::Function(function_name.to_string(), argument),
             );
 
             return Ok(Box::new(SymbolExpression { value: column_name }));
@@ -1991,6 +2007,11 @@ fn get_safe_location(tokens: &Vec<Token>, position: usize) -> Location {
         return tokens[position].location;
     }
     tokens[tokens.len() - 1].location
+}
+
+#[inline(always)]
+fn is_assignment_operator(token: &Token) -> bool {
+    token.kind == TokenKind::Equal || token.kind == TokenKind::ColonEqual
 }
 
 #[inline(always)]

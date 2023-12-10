@@ -205,7 +205,15 @@ fn evaulate_global_variable(
     env: &mut Enviroment,
     expr: &GlobalVariableExpression,
 ) -> Result<Value, String> {
-    Ok(env.globals[&expr.name].clone())
+    let name = &expr.name;
+    if env.globals.contains_key(name) {
+        return Ok(env.globals[name].clone());
+    }
+
+    Err(format!(
+        "The value of `{}` may be not exists or calculated yet",
+        name
+    ))
 }
 
 fn evaluate_number(expr: &NumberExpression) -> Result<Value, String> {

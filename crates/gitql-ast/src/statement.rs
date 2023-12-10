@@ -141,16 +141,16 @@ impl Statement for GroupByStatement {
     }
 }
 
-pub struct AggregateFunction {
-    pub function_name: String,
-    pub argument: String,
+pub enum AggregateValue {
+    Expression(Box<dyn Expression>),
+    Function(String, String),
 }
 
-pub struct AggregationFunctionsStatement {
-    pub aggregations: HashMap<String, AggregateFunction>,
+pub struct AggregationsStatement {
+    pub aggregations: HashMap<String, AggregateValue>,
 }
 
-impl Statement for AggregationFunctionsStatement {
+impl Statement for AggregationsStatement {
     fn as_any(&self) -> &dyn Any {
         self
     }

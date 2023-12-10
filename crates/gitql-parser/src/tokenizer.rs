@@ -105,16 +105,21 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
 
         // Symbol
         if char.is_alphabetic() {
-            let identifier = consume_identifier(&characters, &mut position, &mut column_start);
-            tokens.push(identifier);
+            tokens.push(consume_identifier(
+                &characters,
+                &mut position,
+                &mut column_start,
+            ));
             continue;
         }
 
         // Global Variable Symbol
         if char == '@' {
-            let identifier =
-                consume_global_variable_name(&characters, &mut position, &mut column_start);
-            tokens.push(identifier);
+            tokens.push(consume_global_variable_name(
+                &characters,
+                &mut position,
+                &mut column_start,
+            )?);
             continue;
         }
 
@@ -604,11 +609,28 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
     Ok(tokens)
 }
 
-fn consume_global_variable_name(chars: &Vec<char>, pos: &mut usize, start: &mut usize) -> Token {
+fn consume_global_variable_name(
+    chars: &Vec<char>,
+    pos: &mut usize,
+    start: &mut usize,
+) -> Result<Token, GQLError> {
     // Consume `@`
     *pos += 1;
 
-    while *pos < chars.len() && (chars[*pos] == '_' || chars[*pos].is_alphabetic()) {
+    // Make sure first character is  alphabetic
+    if *pos < chars.len() && !chars[*pos].is_alphabetic() {
+        let location = Location {
+            start: *start,
+            end: *pos,
+        };
+
+        return Err(GQLError {
+            message: "Global variable name must start with alphabetic character".to_owned(),
+            location,
+        });
+    }
+
+    while *pos < chars.len() && (chars[*pos] == '_' || chars[*pos].is_alphanumeric()) {
         *pos += 1;
     }
 
@@ -623,15 +645,15 @@ fn consume_global_variable_name(chars: &Vec<char>, pos: &mut usize, start: &mut 
         end: *pos,
     };
 
-    Token {
+    Ok(Token {
         location,
         kind: TokenKind::GlobalVariable,
         literal: string,
-    }
+    })
 }
 
 fn consume_identifier(chars: &Vec<char>, pos: &mut usize, start: &mut usize) -> Token {
-    while *pos < chars.len() && (chars[*pos] == '_' || chars[*pos].is_alphabetic()) {
+    while *pos < chars.len() && (chars[*pos] == '_' || chars[*pos].is_alphanumeric()) {
         *pos += 1;
     }
 

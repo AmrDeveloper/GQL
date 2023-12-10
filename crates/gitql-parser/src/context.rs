@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
-use gitql_ast::statement::AggregateFunction;
+use gitql_ast::statement::AggregateValue;
 
 #[derive(Default)]
 pub struct ParserContext {
-    pub aggregations: HashMap<String, AggregateFunction>,
+    pub aggregations: HashMap<String, AggregateValue>,
 
     pub selected_fields: Vec<String>,
     pub hidden_selections: Vec<String>,
