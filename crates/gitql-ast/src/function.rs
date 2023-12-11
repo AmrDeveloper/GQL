@@ -57,6 +57,7 @@ lazy_static! {
         map.insert("cos", numeric_cos);
         map.insert("acos", numeric_acos);
         map.insert("tan", numeric_tan);
+        map.insert("atan", numeric_atan);
 
         // Other Functions
         map.insert("isnull", general_is_null);
@@ -327,6 +328,13 @@ lazy_static! {
         );
         map.insert(
             "tan",
+            Prototype {
+                parameters: vec![DataType::Float],
+                result: DataType::Float,
+            },
+        );
+        map.insert(
+            "atan",
             Prototype {
                 parameters: vec![DataType::Float],
                 result: DataType::Float,
@@ -654,6 +662,11 @@ fn numeric_acos(inputs: Vec<Value>) -> Value {
 fn numeric_tan(inputs: Vec<Value>) -> Value {
     let float_value = inputs[0].as_float();
     Value::Float(f64::tan(float_value))
+}
+
+fn numeric_atan(inputs: Vec<Value>) -> Value {
+    let float_value = inputs[0].as_float();
+    Value::Float(f64::atan(float_value))
 }
 
 // General functions

@@ -85,6 +85,7 @@ SELECT NOW()
 | COS    | FLOAT     | FLOAT   | Returns the cosine of a number.                                              |
 | ACOS   | FLOAT     | FLOAT   | Returns the arc cosine of a number.                                          |
 | TAN    | FLOAT     | FLOAT   | Returns the tangent of a number.                                             |
+| ATAN   | FLOAT     | FLOAT   | Returns the arc tangent of a number.                                         |
 
 ### Numeric functions samples
 
