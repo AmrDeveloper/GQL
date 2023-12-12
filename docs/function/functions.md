@@ -73,19 +73,20 @@ SELECT NOW()
 
 ### Numeric Functions
 
-| Name   | Paramters | Return  | Description                                                                  |
-| ------ | --------- | ------- | ---------------------------------------------------------------------------- |
-| PI     |           | Float   | Return the value of PI.                                                      |
-| FLOOR  | Float     | Integer | Returns the largest integer value that is smaller than or equal to a number. |
-| ROUND  | Float     | Integer | Returns the nearest integer value.                                           |
-| SQUARE | Integer   | Integer | Returns the square of an integer value.                                      |
-| ABS    | Integer   | Integer | Returns the absolute value of an integer value.                              |
-| SIN    | Float     | Float   | Returns the sine of a number.                                                |
-| ASIN   | Float     | Float   | Returns the arc sine of a number.                                            |
-| COS    | FLOAT     | FLOAT   | Returns the cosine of a number.                                              |
-| ACOS   | FLOAT     | FLOAT   | Returns the arc cosine of a number.                                          |
-| TAN    | FLOAT     | FLOAT   | Returns the tangent of a number.                                             |
-| ATAN   | FLOAT     | FLOAT   | Returns the arc tangent of a number.                                         |
+| Name   | Paramters    | Return  | Description                                                                  |
+| ------ | ------------ | ------- | ---------------------------------------------------------------------------- |
+| PI     |              | Float   | Return the value of PI.                                                      |
+| FLOOR  | Float        | Integer | Returns the largest integer value that is smaller than or equal to a number. |
+| ROUND  | Float        | Integer | Returns the nearest integer value.                                           |
+| SQUARE | Integer      | Integer | Returns the square of an integer value.                                      |
+| ABS    | Integer      | Integer | Returns the absolute value of an integer value.                              |
+| SIN    | Float        | Float   | Returns the sine of a number.                                                |
+| ASIN   | Float        | Float   | Returns the arc sine of a number.                                            |
+| COS    | FLOAT        | FLOAT   | Returns the cosine of a number.                                              |
+| ACOS   | FLOAT        | FLOAT   | Returns the arc cosine of a number.                                          |
+| TAN    | FLOAT        | FLOAT   | Returns the tangent of a number.                                             |
+| ATAN   | FLOAT        | FLOAT   | Returns the arc tangent of a number.                                         |
+| ATN2   | FLOAT, FLOAT | FLOAT   | Returns the arc tangent of two values.                                       |
 
 ### Numeric functions samples
 
@@ -96,6 +97,7 @@ SELECT ROUND(1.5)
 SELECT SQUARE(64)
 SELECT ABS(-1)
 SELECT SIN(2.0)
+SELECT ATN2(0.50, 1.0)
 ```
 
 ### General functions

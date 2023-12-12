@@ -58,6 +58,7 @@ lazy_static! {
         map.insert("acos", numeric_acos);
         map.insert("tan", numeric_tan);
         map.insert("atan", numeric_atan);
+        map.insert("atn2", numeric_atn2);
 
         // Other Functions
         map.insert("isnull", general_is_null);
@@ -337,6 +338,13 @@ lazy_static! {
             "atan",
             Prototype {
                 parameters: vec![DataType::Float],
+                result: DataType::Float,
+            },
+        );
+        map.insert(
+            "atn2",
+            Prototype {
+                parameters: vec![DataType::Float, DataType::Float],
                 result: DataType::Float,
             },
         );
@@ -667,6 +675,12 @@ fn numeric_tan(inputs: Vec<Value>) -> Value {
 fn numeric_atan(inputs: Vec<Value>) -> Value {
     let float_value = inputs[0].as_float();
     Value::Float(f64::atan(float_value))
+}
+
+fn numeric_atn2(inputs: Vec<Value>) -> Value {
+    let first = inputs[0].as_float();
+    let other = inputs[1].as_float();
+    Value::Float(f64::atan2(first, other))
 }
 
 // General functions
