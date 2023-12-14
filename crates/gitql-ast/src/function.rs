@@ -693,13 +693,13 @@ fn numeric_atn2(inputs: Vec<Value>) -> Value {
 
 fn numeric_sign(inputs: Vec<Value>) -> Value {
     let float_value = inputs[0].as_float();
-    return if float_value == 0.0 {
+    if float_value == 0.0 {
         Value::Integer(0)
     } else if float_value > 0.0 {
         Value::Integer(1)
     } else {
         Value::Integer(-1)
-    };
+    }
 }
 
 // General functions
