@@ -87,6 +87,7 @@ SELECT NOW()
 | TAN    | FLOAT        | FLOAT   | Returns the tangent of a number.                                             |
 | ATAN   | FLOAT        | FLOAT   | Returns the arc tangent of a number.                                         |
 | ATN2   | FLOAT, FLOAT | FLOAT   | Returns the arc tangent of two values.                                       |
+| SIGN   | FLOAT        | Integer | Returns the sign of a number.                                                |
 
 ### Numeric functions samples
 
