@@ -494,9 +494,8 @@ fn select_values(
     fields_values: &Vec<Box<dyn Expression>>,
     alias_table: &HashMap<String, String>,
 ) -> Result<Vec<GQLObject>, String> {
-    let mut values: Vec<GQLObject> = Vec::new();
-    let mut attributes: HashMap<String, Value> = HashMap::new();
     let len = fields_values.len();
+    let mut attributes: HashMap<String, Value> = HashMap::with_capacity(len);
 
     for index in 0..len {
         let field_name = &fields_names[index];
@@ -506,9 +505,7 @@ fn select_values(
         attributes.insert(column_name, evaulated);
     }
 
-    let gql_object = GQLObject { attributes };
-    values.push(gql_object);
-    Ok(values)
+    Ok(vec![GQLObject { attributes }])
 }
 
 #[inline(always)]
