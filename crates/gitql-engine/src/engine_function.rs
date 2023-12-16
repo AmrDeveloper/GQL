@@ -122,7 +122,12 @@ fn select_commits(
     let repo_path = repo.path().to_str().unwrap().to_string();
 
     let mut commits: Vec<GQLObject> = Vec::new();
-    let revwalk = repo.head_id().unwrap().ancestors().all().unwrap();
+    let head_id = repo.head_id();
+    if head_id.is_err() {
+        return Ok(commits);
+    }
+
+    let revwalk = head_id.unwrap().ancestors().all().unwrap();
 
     let names_len = fields_names.len() as i64;
     let values_len = fields_values.len() as i64;
@@ -343,7 +348,17 @@ fn select_branches(
     let local_branches = platform.local_branches().unwrap();
     let remote_branches = platform.remote_branches().unwrap();
     let local_and_remote_branches = local_branches.chain(remote_branches);
-    let head_ref = repo.head_ref().unwrap().unwrap();
+    let head_ref_result = repo.head_ref();
+    if head_ref_result.is_err() {
+        return Ok(branches);
+    }
+
+    let head_ref_option = head_ref_result.unwrap();
+    if head_ref_option.is_none() {
+        return Ok(branches);
+    }
+
+    let head_ref = head_ref_option.unwrap();
 
     let names_len = fields_names.len() as i64;
     let values_len = fields_values.len() as i64;
