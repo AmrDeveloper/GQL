@@ -160,8 +160,21 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
 
         // String literal
         if char == '"' {
-            let result = consume_string(&characters, &mut position, &mut column_start)?;
-            tokens.push(result);
+            tokens.push(consume_string(
+                &characters,
+                &mut position,
+                &mut column_start,
+            )?);
+            continue;
+        }
+
+        // All chars between two backticks should be consumed as identifier
+        if char == '`' {
+            tokens.push(consume_backticks_identifier(
+                &characters,
+                &mut position,
+                &mut column_start,
+            )?);
             continue;
         }
 
@@ -709,6 +722,46 @@ fn consume_number(
         kind,
         literal: literal_num,
     })
+}
+
+fn consume_backticks_identifier(
+    chars: &Vec<char>,
+    pos: &mut usize,
+    start: &mut usize,
+) -> Result<Token, GQLError> {
+    *pos += 1;
+
+    while *pos < chars.len() && chars[*pos] != '`' {
+        *pos += 1;
+    }
+
+    if *pos >= chars.len() {
+        return Err(GQLError {
+            message: "Unterminated backticks".to_owned(),
+            location: Location {
+                start: *start,
+                end: *pos,
+            },
+        });
+    }
+
+    *pos += 1;
+
+    let literal = &chars[*start + 1..*pos - 1];
+    let identifier = String::from_utf8(literal.iter().map(|&c| c as u8).collect()).unwrap();
+
+    let location = Location {
+        start: *start,
+        end: *pos,
+    };
+
+    let string_literal = Token {
+        location,
+        kind: TokenKind::Symbol,
+        literal: identifier,
+    };
+
+    Ok(string_literal)
 }
 
 fn consume_binary_number(
