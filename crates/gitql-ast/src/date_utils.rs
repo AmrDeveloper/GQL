@@ -1,12 +1,12 @@
 extern crate chrono;
 
+use chrono::Datelike;
 use chrono::NaiveDate;
 use chrono::NaiveDateTime;
 use chrono::NaiveTime;
 use chrono::TimeZone;
-use chrono::Weekday;
-use chrono::Datelike;
 use chrono::Utc;
+use chrono::Weekday;
 
 static CHRONO_TIME_FORMAT: &str = "%H:%M:%S";
 static CHRONO_DATE_FORMAT: &str = "%Y-%m-%d";
@@ -59,8 +59,8 @@ pub fn date_time_to_time_stamp(date: &str) -> i64 {
 }
 
 pub fn date_to_day_name(date: &str) -> String {
-    let parsed_date = NaiveDate::parse_from_str(date, CHRONO_DATE_FORMAT)
-        .expect("Error while parsing date");
+    let parsed_date =
+        NaiveDate::parse_from_str(date, CHRONO_DATE_FORMAT).expect("Error while parsing date");
 
     let day_name = match parsed_date.weekday() {
         Weekday::Mon => "Monday",

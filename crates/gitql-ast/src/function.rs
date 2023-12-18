@@ -265,6 +265,13 @@ lazy_static! {
                 result: DataType::Date,
             },
         );
+        map.insert(
+            "dayname",
+            Prototype {
+                parameters: vec![DataType::Text],
+                result: DataType::Text,
+            }
+        );
         // Numeric functions
         map.insert(
             "abs",
