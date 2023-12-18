@@ -268,7 +268,7 @@ lazy_static! {
         map.insert(
             "dayname",
             Prototype {
-                parameters: vec![DataType::Text],
+                parameters: vec![DataType::Date],
                 result: DataType::Text,
             }
         );
@@ -637,8 +637,8 @@ fn date_make_date(inputs: Vec<Value>) -> Value {
 }
 
 fn date_dayname(inputs: Vec<Value>) -> Value {
-    let date = inputs[0].as_text();
-    let date_str = date_utils::date_to_day_name(&date);
+    let date = inputs[0].as_date();
+    let date_str = date_utils::date_to_day_name(date);
     Value::Text(date_str)
 }
 

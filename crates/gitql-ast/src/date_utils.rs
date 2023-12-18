@@ -58,9 +58,8 @@ pub fn date_time_to_time_stamp(date: &str) -> i64 {
     date_time.ok().unwrap().timestamp()
 }
 
-pub fn date_to_day_name(date: &str) -> String {
-    let parsed_date =
-        NaiveDate::parse_from_str(date, CHRONO_DATE_FORMAT).expect("Error while parsing date");
+pub fn date_to_day_name(date: i64) -> String {
+    let parsed_date = NaiveDateTime::from_timestamp_opt(date, 0).unwrap();
 
     let day_name = match parsed_date.weekday() {
         Weekday::Mon => "Monday",
