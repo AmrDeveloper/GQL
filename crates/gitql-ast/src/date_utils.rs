@@ -4,6 +4,8 @@ use chrono::NaiveDate;
 use chrono::NaiveDateTime;
 use chrono::NaiveTime;
 use chrono::TimeZone;
+use chrono::Weekday;
+use chrono::Datelike;
 use chrono::Utc;
 
 static CHRONO_TIME_FORMAT: &str = "%H:%M:%S";
@@ -54,6 +56,23 @@ pub fn date_time_to_time_stamp(date: &str) -> i64 {
         return 0;
     }
     date_time.ok().unwrap().timestamp()
+}
+
+pub fn date_to_day_name(date: &str) -> String {
+    let parsed_date = NaiveDate::parse_from_str(date, CHRONO_DATE_FORMAT)
+        .expect("Error while parsing date");
+
+    let day_name = match parsed_date.weekday() {
+        Weekday::Mon => "Monday",
+        Weekday::Tue => "Tuesday",
+        Weekday::Wed => "Wednesday",
+        Weekday::Thu => "Thursday",
+        Weekday::Fri => "Friday",
+        Weekday::Sat => "Saturday",
+        Weekday::Sun => "Sunday",
+    };
+
+    day_name.to_string()
 }
 
 pub fn time_stamp_from_year_and_day(year: i32, day_of_year: u32) -> i64 {
