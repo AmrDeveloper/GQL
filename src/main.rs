@@ -42,8 +42,8 @@ fn main() {
         Command::Version => {
             println!("GitQL version {}", env!("CARGO_PKG_VERSION"));
         }
-        Command::Error(error_mssage) => {
-            println!("{}", error_mssage);
+        Command::Error(error_message) => {
+            println!("{}", error_message);
         }
     }
 }
