@@ -61,6 +61,7 @@ SELECT UNICODE("AmrDeveloper")
 | MAKEDATE          | Integer, Integer | Date     | Create and return a date based on a year and a number of days. |
 | NOW               |                  | DateTime | Return current date time in `YYYY-MM-DD HH:MM:SS` format.      |
 | DAYNAME           | Date             | Text     | Returns the name of the day given a timestamp.                 |
+| MONTHNAME         | Date             | Text     | Returns the name of the month given a timestamp.               |
 
 ### Date functions samples
 
@@ -71,6 +72,7 @@ SELECT CURRENT_TIMESTAMP()
 SELECT MAKEDATE(2023, 12)
 SELECT NOW()
 SELECT DAYNAME(CURRENT_DATE())
+SELECT MONTHNAME(CURRENT_DATE())
 ```
 
 ### Numeric Functions
