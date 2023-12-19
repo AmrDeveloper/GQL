@@ -31,28 +31,42 @@ lazy_static! {
         map.insert(
             "max",
             AggregationPrototype {
-                parameter: DataType::Integer,
+                parameter: DataType::Variant(vec![
+                    DataType::Integer,
+                    DataType::Float,
+                    DataType::Text,
+                    DataType::Date,
+                    DataType::Time,
+                    DataType::DateTime,
+                ]),
                 result: DataType::Integer,
             },
         );
         map.insert(
             "min",
             AggregationPrototype {
-                parameter: DataType::Integer,
+                parameter: DataType::Variant(vec![
+                    DataType::Integer,
+                    DataType::Float,
+                    DataType::Text,
+                    DataType::Date,
+                    DataType::Time,
+                    DataType::DateTime,
+                ]),
                 result: DataType::Integer,
             },
         );
         map.insert(
             "sum",
             AggregationPrototype {
-                parameter: DataType::Any,
+                parameter: DataType::Integer,
                 result: DataType::Integer,
             },
         );
         map.insert(
             "avg",
             AggregationPrototype {
-                parameter: DataType::Any,
+                parameter: DataType::Integer,
                 result: DataType::Integer,
             },
         );
