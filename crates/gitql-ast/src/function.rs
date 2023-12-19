@@ -46,6 +46,7 @@ lazy_static! {
         map.insert("now", date_current_timestamp);
         map.insert("makedate", date_make_date);
         map.insert("dayname", date_dayname);
+        map.insert("monthname", date_monthname);
 
         // Numeric functions
         map.insert("abs", numeric_abs);
@@ -267,6 +268,13 @@ lazy_static! {
         );
         map.insert(
             "dayname",
+            Prototype {
+                parameters: vec![DataType::Date],
+                result: DataType::Text,
+            }
+        );
+        map.insert(
+            "monthname",
             Prototype {
                 parameters: vec![DataType::Date],
                 result: DataType::Text,
@@ -640,6 +648,12 @@ fn date_dayname(inputs: Vec<Value>) -> Value {
     let date = inputs[0].as_date();
     let date_str = date_utils::date_to_day_name(date);
     Value::Text(date_str)
+}
+
+fn date_monthname(inputs: Vec<Value>) -> Value {
+    let date = inputs[0].as_date();
+    let month_str = date_utils::date_to_month_name(date);
+    Value::Text(month_str)
 }
 
 // Numeric functions

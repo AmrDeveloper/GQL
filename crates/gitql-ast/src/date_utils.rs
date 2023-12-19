@@ -74,6 +74,28 @@ pub fn date_to_day_name(date: i64) -> String {
     day_name.to_string()
 }
 
+pub fn date_to_month_name(date: i64) -> String {
+    let parsed_date = NaiveDateTime::from_timestamp_opt(date, 0).unwrap();
+
+    let month_name = match parsed_date.month() {
+        1 => "January",
+        2 => "February",
+        3 => "March",
+        4 => "April",
+        5 => "May",
+        6 => "June",
+        7 => "July",
+        8 => "Auguest",
+        9 => "September",
+        10 => "October",
+        11 => "November",
+        12 => "December",
+        _ => "",
+    };
+
+    month_name.to_string()
+}
+
 pub fn time_stamp_from_year_and_day(year: i32, day_of_year: u32) -> i64 {
     let date = NaiveDate::from_yo_opt(year, day_of_year).unwrap();
     let datetime = date.and_hms_opt(0, 0, 0).unwrap();
