@@ -432,8 +432,8 @@ fn parse_where_statement(
         return Err(GQLError {
             message: format!(
                 "Expect `WHERE` condition bo be type {} but got {}",
-                DataType::Boolean.literal(),
-                condition_type.literal()
+                DataType::Boolean,
+                condition_type
             ),
             location: condition_location,
         });
@@ -507,8 +507,8 @@ fn parse_having_statement(
         return Err(GQLError {
             message: format!(
                 "Expect `HAVING` condition bo be type {} but got {}",
-                DataType::Boolean.literal(),
-                condition_type.literal()
+                DataType::Boolean,
+                condition_type
             ),
             location: condition_location,
         });
@@ -769,7 +769,7 @@ fn parse_between_expression(
             return Err(GQLError {
                 message: format!(
                     "BETWEEN value must to be Number type but got {}",
-                    expression.expr_type(env).literal()
+                    expression.expr_type(env)
                 ),
                 location: between_location,
             });
@@ -787,7 +787,7 @@ fn parse_between_expression(
             return Err(GQLError {
                 message: format!(
                     "Expect range start to be Number type but got {}",
-                    range_start.expr_type(env).literal()
+                    range_start.expr_type(env)
                 ),
                 location: between_location,
             });
@@ -808,7 +808,7 @@ fn parse_between_expression(
             return Err(GQLError {
                 message: format!(
                     "Expect range end to be Number type but got {}",
-                    range_end.expr_type(env).literal()
+                    range_end.expr_type(env)
                 ),
                 location: between_location,
             });
@@ -1088,8 +1088,8 @@ fn parse_equality_expression(
             TypeCheckResult::NotEqualAndCantImplicitCast => {
                 let message = format!(
                     "Can't compare values of different types `{}` and `{}`",
-                    lhs.expr_type(env).literal(),
-                    rhs.expr_type(env).literal()
+                    lhs.expr_type(env),
+                    rhs.expr_type(env)
                 );
                 return Err(GQLError {
                     message,
@@ -1140,8 +1140,8 @@ fn parse_comparison_expression(
             TypeCheckResult::NotEqualAndCantImplicitCast => {
                 let message = format!(
                     "Can't compare values of different types `{}` and `{}`",
-                    lhs.expr_type(env).literal(),
-                    rhs.expr_type(env).literal()
+                    lhs.expr_type(env),
+                    rhs.expr_type(env)
                 );
                 return Err(GQLError {
                     message,
@@ -1183,8 +1183,8 @@ fn parse_bitwise_shift_expression(
         if rhs.expr_type(env) == DataType::Integer && rhs.expr_type(env) != lhs.expr_type(env) {
             let message = format!(
                 "Bitwise operators require number types but got `{}` and `{}`",
-                lhs.expr_type(env).literal(),
-                rhs.expr_type(env).literal()
+                lhs.expr_type(env),
+                rhs.expr_type(env)
             );
             return Err(GQLError {
                 message,
@@ -1237,8 +1237,7 @@ fn parse_term_expression(
 
         let message = format!(
             "Math operators require number types but got `{}` and `{}`",
-            lhs_type.literal(),
-            rhs_type.literal()
+            lhs_type, rhs_type
         );
 
         return Err(GQLError {
@@ -1289,8 +1288,7 @@ fn parse_factor_expression(
 
         let message = format!(
             "Math operators require number types but got `{}` and `{}`",
-            lhs_type.literal(),
-            rhs_type.literal()
+            lhs_type, rhs_type
         );
 
         return Err(GQLError {
@@ -1321,7 +1319,7 @@ fn parse_like_expression(
         if !lhs.expr_type(env).is_text() {
             let message = format!(
                 "Expect `LIKE` left hand side to be `TEXT` but got {}",
-                lhs.expr_type(env).literal()
+                lhs.expr_type(env)
             );
             return Err(GQLError { message, location });
         }
@@ -1330,7 +1328,7 @@ fn parse_like_expression(
         if !pattern.expr_type(env).is_text() {
             let message = format!(
                 "Expect `LIKE` right hand side to be `TEXT` but got {}",
-                pattern.expr_type(env).literal()
+                pattern.expr_type(env)
             );
             return Err(GQLError { message, location });
         }
@@ -1363,7 +1361,7 @@ fn parse_glob_expression(
         if !lhs.expr_type(env).is_text() {
             let message = format!(
                 "Expect `GLOB` left hand side to be `TEXT` but got {}",
-                lhs.expr_type(env).literal()
+                lhs.expr_type(env)
             );
             return Err(GQLError { message, location });
         }
@@ -1372,7 +1370,7 @@ fn parse_glob_expression(
         if !pattern.expr_type(env).is_text() {
             let message = format!(
                 "Expect `GLOB` right hand side to be `TEXT` but got {}",
-                pattern.expr_type(env).literal()
+                pattern.expr_type(env)
             );
             return Err(GQLError { message, location });
         }
@@ -1773,20 +1771,12 @@ fn check_function_call_arguments(
     // Check each argument vs parameter type
     for index in 0..arguments_len {
         let argument_type = arguments.get(index).unwrap().expr_type(env);
-
         let parameter_type = parameters.get(index).unwrap();
 
-        if argument_type == DataType::Any || *parameter_type == DataType::Any {
-            continue;
-        }
-
-        if argument_type != *parameter_type {
+        if !argument_type.eq(parameter_type) {
             let message = format!(
                 "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
-                function_name,
-                index,
-                argument_type.literal(),
-                parameter_type.literal()
+                function_name, index, argument_type, parameter_type
             );
             return Err(GQLError { message, location });
         }
@@ -2052,10 +2042,6 @@ fn is_asc_or_desc(token: &Token) -> bool {
 
 #[inline(always)]
 fn type_missmatch_error(location: Location, expected: DataType, actual: DataType) -> GQLError {
-    let message = format!(
-        "Type mismatch expected `{}`, got `{}`",
-        expected.literal(),
-        actual.literal()
-    );
+    let message = format!("Type mismatch expected `{}`, got `{}`", expected, actual);
     GQLError { message, location }
 }

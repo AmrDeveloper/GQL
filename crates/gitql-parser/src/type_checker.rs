@@ -25,7 +25,7 @@ pub fn are_types_equals(
     let lhs_type = lhs.expr_type(scope);
     let rhs_type = rhs.expr_type(scope);
 
-    // Both types are already equals wihout need for implicit casting
+    // Both types are already equals without need for implicit casting
     if lhs_type == rhs_type {
         return TypeCheckResult::Equals;
     }

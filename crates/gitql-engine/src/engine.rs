@@ -171,7 +171,7 @@ fn apply_distinct_on_objects_group(groups: &mut Vec<Vec<GQLObject>>, hidden_sele
         // Build row of the selected only values
         let mut row_values: Vec<String> = Vec::with_capacity(titles_count);
         for key in &titles {
-            row_values.push(object.attributes.get(key as &str).unwrap().literal());
+            row_values.push(object.attributes.get(key as &str).unwrap().to_string());
         }
 
         // Compute the hash for row of values

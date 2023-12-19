@@ -276,7 +276,7 @@ fn evaluate_comparison(
         let irhs = rhs.as_bool();
         ilhs.cmp(&irhs)
     } else {
-        lhs.literal().cmp(&rhs.literal())
+        lhs.to_string().cmp(&rhs.to_string())
     };
 
     if expr.operator == ComparisonOperator::NullSafeEqual {
@@ -474,7 +474,7 @@ fn evaluate_is_null(
     object: &HashMap<String, Value>,
 ) -> Result<Value, String> {
     let argument = evaluate_expression(env, &expr.argument, object)?;
-    let is_null = argument.data_type().is_type(DataType::Null);
+    let is_null = argument.data_type().is_null();
     Ok(Value::Boolean(if expr.has_not {
         !is_null
     } else {

@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::fmt;
 use std::ops::Mul;
 
 use crate::date_utils::time_stamp_to_date;
@@ -15,6 +16,21 @@ pub enum Value {
     Date(i64),
     Time(String),
     Null,
+}
+
+impl fmt::Display for Value {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Value::Integer(i64) => write!(f, "{}", i64),
+            Value::Float(f64) => write!(f, "{}", f64),
+            Value::Text(s) => write!(f, "{}", s),
+            Value::Boolean(b) => write!(f, "{}", b),
+            Value::DateTime(dt) => write!(f, "{}", time_stamp_to_date_time(*dt)),
+            Value::Date(d) => write!(f, "{}", time_stamp_to_date(*d)),
+            Value::Time(t) => write!(f, "{}", t),
+            Value::Null => write!(f, "Null"),
+        }
+    }
 }
 
 impl Value {
@@ -34,6 +50,7 @@ impl Value {
             DataType::Time => self.as_date() == other.as_date(),
             DataType::Undefined => true,
             DataType::Null => true,
+            _ => false,
         }
     }
 
@@ -41,27 +58,27 @@ impl Value {
         let self_type = self.data_type();
         let other_type = other.data_type();
 
-        if self_type.is_type(DataType::Integer) && other_type.is_type(DataType::Integer) {
+        if self_type.is_int() && other_type.is_int() {
             return other.as_int().cmp(&self.as_int());
         }
 
-        if self_type.is_type(DataType::Float) && other_type.is_type(DataType::Float) {
+        if self_type.is_float() && other_type.is_float() {
             return other.as_float().total_cmp(&self.as_float());
         }
 
-        if self_type.is_type(DataType::Text) && other_type.is_type(DataType::Text) {
+        if self_type.is_text() && other_type.is_text() {
             return other.as_text().cmp(&self.as_text());
         }
 
-        if self_type.is_type(DataType::DateTime) && other_type.is_type(DataType::DateTime) {
+        if self_type.is_datetime() && other_type.is_datetime() {
             return other.as_date_time().cmp(&self.as_date_time());
         }
 
-        if self_type.is_type(DataType::Date) && other_type.is_type(DataType::Date) {
+        if self_type.is_date() && other_type.is_date() {
             return other.as_date().cmp(&self.as_date());
         }
 
-        if self_type.is_type(DataType::Time) && other_type.is_type(DataType::Time) {
+        if self_type.is_time() && other_type.is_time() {
             return other.as_time().cmp(&self.as_time());
         }
 
@@ -153,7 +170,7 @@ impl Value {
         if other_type == DataType::Integer {
             let other = other.as_int();
             if other == 0 {
-                return Err(format!("Attempt to divide `{}` by zero", self.literal()));
+                return Err(format!("Attempt to divide `{}` by zero", self));
             }
         }
 
@@ -185,7 +202,7 @@ impl Value {
             if other == 0 {
                 return Err(format!(
                     "Attempt to calculate the remainder of `{}` with a divisor of zero",
-                    self.literal()
+                    self
                 ));
             }
         }
@@ -219,19 +236,6 @@ impl Value {
             Value::Date(_) => DataType::Date,
             Value::Time(_) => DataType::Time,
             Value::Null => DataType::Null,
-        }
-    }
-
-    pub fn literal(&self) -> String {
-        match self {
-            Value::Integer(i) => i.to_string(),
-            Value::Float(f) => f.to_string(),
-            Value::Text(s) => s.to_string(),
-            Value::Boolean(b) => b.to_string(),
-            Value::DateTime(dt) => time_stamp_to_date_time(*dt),
-            Value::Date(d) => time_stamp_to_date(*d),
-            Value::Time(t) => t.to_string(),
-            Value::Null => "Null".to_string(),
         }
     }
 

@@ -743,5 +743,5 @@ fn general_is_numeric(inputs: Vec<Value>) -> Value {
 
 fn general_type_of(inputs: Vec<Value>) -> Value {
     let input_type = inputs[0].data_type();
-    Value::Text(input_type.literal().to_string())
+    Value::Text(input_type.to_string())
 }
