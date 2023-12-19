@@ -1,10 +1,12 @@
 extern crate chrono;
 
+use chrono::Datelike;
 use chrono::NaiveDate;
 use chrono::NaiveDateTime;
 use chrono::NaiveTime;
 use chrono::TimeZone;
 use chrono::Utc;
+use chrono::Weekday;
 
 static CHRONO_TIME_FORMAT: &str = "%H:%M:%S";
 static CHRONO_DATE_FORMAT: &str = "%Y-%m-%d";
@@ -54,6 +56,22 @@ pub fn date_time_to_time_stamp(date: &str) -> i64 {
         return 0;
     }
     date_time.ok().unwrap().timestamp()
+}
+
+pub fn date_to_day_name(date: i64) -> String {
+    let parsed_date = NaiveDateTime::from_timestamp_opt(date, 0).unwrap();
+
+    let day_name = match parsed_date.weekday() {
+        Weekday::Mon => "Monday",
+        Weekday::Tue => "Tuesday",
+        Weekday::Wed => "Wednesday",
+        Weekday::Thu => "Thursday",
+        Weekday::Fri => "Friday",
+        Weekday::Sat => "Saturday",
+        Weekday::Sun => "Sunday",
+    };
+
+    day_name.to_string()
 }
 
 pub fn time_stamp_from_year_and_day(year: i32, day_of_year: u32) -> i64 {
