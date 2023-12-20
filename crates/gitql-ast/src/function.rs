@@ -30,6 +30,7 @@ lazy_static! {
         map.insert("datalength", text_datalength);
         map.insert("char", text_char);
         map.insert("nchar", text_char);
+        map.insert("charindex", text_charindex);
         map.insert("replace", text_replace);
         map.insert("substring", text_substring);
         map.insert("stuff", text_stuff);
@@ -172,6 +173,13 @@ lazy_static! {
                 parameters: vec![DataType::Integer],
                 result: DataType::Text,
             },
+        );
+        map.insert(
+            "charindex",
+            Prototype {
+                parameters: vec![DataType::Text, DataType::Text],
+                result: DataType::Integer,
+            }
         );
         map.insert(
             "replace",
@@ -476,6 +484,17 @@ fn text_char(inputs: Vec<Value>) -> Value {
         return Value::Text(character.to_string());
     }
     Value::Text("".to_string())
+}
+
+fn text_charindex(inputs: Vec<Value>) -> Value {
+    let substr = inputs[0].as_text();
+    let input = inputs[1].as_text();
+
+    if let Some(index) = input.to_lowercase().find(&substr.to_lowercase()) {
+        Value::Integer(index as i64 + 1)
+    } else {
+        Value::Integer(0)
+    }
 }
 
 fn text_replace(inputs: Vec<Value>) -> Value {
