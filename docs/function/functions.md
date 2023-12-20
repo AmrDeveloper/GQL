@@ -18,6 +18,7 @@ note that all functions names are case-insensitive.
 | LEFT       | Text, Integer                | Text    | Extracts a number of characters from a string (starting from left).                                                                                                  |
 | DATALENGTH | Text                         | Integer | Returns the number of bytes used to represent an expression.                                                                                                         |
 | CHAR       | Integer                      | Text    | Returns the character based on the ASCII code.                                                                                                                       |
+| CHARINDEX  | Text, Text                   | Integer | Returns the starting position of the first occurrence of a string in another string.                                                                                 |
 | NCHAR      | Integer                      | Text    | Returns the character based on the ASCII code.                                                                                                                       |
 | REPLACE    | Text, Text, Text             | Text    | Replaces all occurrences of a substring within a string, with a new substring.                                                                                       |
 | SUBSTRING  | Text, Integer, Integer       | Text    | Extracts some characters from a string.                                                                                                                              |
@@ -41,6 +42,7 @@ SELECT name, ASCII(name) AS firstCharAscii FROM commits
 SELECT LEFT("AmrDeveloper", 3) AS extract
 SELECT DATALENGTH("AmrDeveloper") as bytelength
 SELECT CHAR(345) AS code
+SELECT CHARINDEX("DEV", "AmrDeveloper") AS position
 SELECT REPLACE("ABC ABC ABC", "a", "c") as replacedText
 SELECT name, SUBSTRING(name, 1, 5) AS extract FROM commits
 SELECT STUFF("GQL tutorial!", 13, 1, " is fun!")
