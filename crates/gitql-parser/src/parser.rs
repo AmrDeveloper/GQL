@@ -1756,11 +1756,38 @@ fn check_function_call_arguments(
     function_name: String,
     location: Location,
 ) -> Result<(), GQLError> {
-    let arguments_len = arguments.len();
     let parameters_len = parameters.len();
+    let has_optional_parameter = if parameters.is_empty() {
+        false
+    } else {
+        parameters.last().unwrap().is_optional()
+    };
+
+    let arguments_len = arguments.len();
+
+    // If function last parameter is optional make sure it at least has
+    // parameters.len - 1 parameters
+    if has_optional_parameter && arguments_len < parameters_len - 1 {
+        let message = format!(
+            "Function `{}` expects at least `{}` arguments but got `{}`",
+            function_name,
+            parameters_len - 1,
+            arguments_len
+        );
+        return Err(GQLError { message, location });
+    }
+
+    // Make sure function with optional parameter not called with too much arguments
+    if has_optional_parameter && arguments_len > parameters_len {
+        let message = format!(
+            "Function `{}` expects at most `{}` arguments but got `{}`",
+            function_name, parameters_len, arguments_len
+        );
+        return Err(GQLError { message, location });
+    }
 
     // Make sure number of arguments and parameters are the same
-    if arguments_len != parameters_len {
+    if !has_optional_parameter && arguments_len != parameters_len {
         let message = format!(
             "Function `{}` expects `{}` arguments but got `{}`",
             function_name, parameters_len, arguments_len
@@ -1768,8 +1795,14 @@ fn check_function_call_arguments(
         return Err(GQLError { message, location });
     }
 
+    let required_parameters_len = if has_optional_parameter {
+        parameters_len - 1
+    } else {
+        parameters_len
+    };
+
     // Check each argument vs parameter type
-    for index in 0..arguments_len {
+    for index in 0..required_parameters_len {
         let argument_type = arguments.get(index).unwrap().expr_type(env);
         let parameter_type = parameters.get(index).unwrap();
 
@@ -1777,6 +1810,20 @@ fn check_function_call_arguments(
             let message = format!(
                 "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
                 function_name, index, argument_type, parameter_type
+            );
+            return Err(GQLError { message, location });
+        }
+    }
+
+    // Check the optional parameter if exists
+    if has_optional_parameter && arguments_len == parameters_len {
+        let index = parameters_len - 1;
+        let last_parameter_type = parameters.get(index).unwrap();
+        let last_argument_type = arguments.get(index).unwrap().expr_type(env);
+        if !last_argument_type.eq(last_parameter_type) {
+            let message = format!(
+                "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
+                function_name, index, last_argument_type, last_parameter_type
             );
             return Err(GQLError { message, location });
         }

@@ -41,7 +41,7 @@ cd gql
 # On Single repository
 cargo run <repository_path>
 
-# On multi repositoies
+# On multi repositories
 cargo run -- --repo <repository_path> <repository_path> ...etc
 cargo run -- -r <repository_path> <repository_path> ...etc
 ```

@@ -24,19 +24,33 @@ lazy_static! {
     };
 }
 
-#[derive(Debug, Clone)]
+/// Represent the data types for values to be used in type checker
+#[derive(Clone)]
 pub enum DataType {
+    /// Represent general type so can be equal to any other type
     Any,
+    /// Represent String Type
     Text,
+    /// Represent Integer 64 bit type
     Integer,
+    /// Represent Float 64 bit type
     Float,
+    /// Represent Boolean (true | false) type
     Boolean,
+    /// Represent Date type
     Date,
+    /// Represent Time type
     Time,
+    /// Represent Date with Time type
     DateTime,
+    /// Represent `Undefined` value
     Undefined,
+    /// Represent `NULL` value
     Null,
+    /// Represent a set of valid variant of types
     Variant(Vec<DataType>),
+    /// Represent an optional type so it can passed or not
+    Optional(Box<DataType>),
 }
 
 impl PartialEq for DataType {
@@ -61,6 +75,14 @@ impl PartialEq for DataType {
                 }
             }
             return false;
+        }
+
+        if let DataType::Optional(optional_type) = self {
+            return optional_type.as_ref() == other;
+        }
+
+        if let DataType::Optional(optional_type) = other {
+            return optional_type.as_ref() == self;
         }
 
         if self.is_bool() && other.is_bool() {
@@ -130,37 +152,28 @@ impl fmt::Display for DataType {
                 }
                 write!(f, "]")
             }
+            DataType::Optional(data_type) => {
+                write!(f, "{}?", data_type)
+            }
         }
     }
 }
 
 impl DataType {
     pub fn is_any(&self) -> bool {
-        if let DataType::Any = self {
-            return true;
-        }
-        false
+        matches!(self, DataType::Any)
     }
 
     pub fn is_bool(&self) -> bool {
-        if let DataType::Boolean = self {
-            return true;
-        }
-        false
+        matches!(self, DataType::Boolean)
     }
 
     pub fn is_int(&self) -> bool {
-        if let DataType::Integer = self {
-            return true;
-        }
-        false
+        matches!(self, DataType::Integer)
     }
 
     pub fn is_float(&self) -> bool {
-        if let DataType::Float = self {
-            return true;
-        }
-        false
+        matches!(self, DataType::Float)
     }
 
     pub fn is_number(&self) -> bool {
@@ -168,48 +181,34 @@ impl DataType {
     }
 
     pub fn is_text(&self) -> bool {
-        if let DataType::Text = self {
-            return true;
-        }
-        false
+        matches!(self, DataType::Text)
     }
 
     pub fn is_time(&self) -> bool {
-        if let DataType::Time = self {
-            return true;
-        }
-        false
+        matches!(self, DataType::Time)
     }
 
     pub fn is_date(&self) -> bool {
-        if let DataType::Date = self {
-            return true;
-        }
-        false
+        matches!(self, DataType::Date)
     }
 
     pub fn is_datetime(&self) -> bool {
-        if let DataType::DateTime = self {
-            return true;
-        }
-        false
+        matches!(self, DataType::DateTime)
     }
 
     pub fn is_null(&self) -> bool {
-        if let DataType::Null = self {
-            return true;
-        }
-        false
+        matches!(self, DataType::Null)
     }
 
     pub fn is_undefined(&self) -> bool {
-        if let DataType::Undefined = self {
-            return true;
-        }
-        false
+        matches!(self, DataType::Undefined)
     }
 
     pub fn is_variant(&self) -> bool {
         matches!(self, DataType::Variant(_))
+    }
+
+    pub fn is_optional(&self) -> bool {
+        matches!(self, DataType::Optional(_))
     }
 }
