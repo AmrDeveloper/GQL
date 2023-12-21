@@ -49,9 +49,9 @@ pub enum DataType {
     Null,
     /// Represent a set of valid variant of types
     Variant(Vec<DataType>),
-    /// Represent an optional type so it can passed or not
+    /// Represent an optional type so it can passed or not, must be last parameter
     Optional(Box<DataType>),
-    /// Represent variable arguments so can pass 0 or more value with spastic type
+    /// Represent variable arguments so can pass 0 or more value with spastic type, must be last parameter
     Varargs(Box<DataType>),
 }
 
