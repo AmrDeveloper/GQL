@@ -1,4 +1,4 @@
-use gitql_ast::enviroment::Enviroment;
+use gitql_ast::environment::Environment;
 use gix::reference::Category;
 use std::collections::HashMap;
 
@@ -10,7 +10,7 @@ use gitql_ast::value::Value;
 use crate::engine_evaluator::evaluate_expression;
 
 pub fn select_gql_objects(
-    env: &mut Enviroment,
+    env: &mut Environment,
     repo: &gix::Repository,
     table: String,
     fields_names: &Vec<String>,
@@ -28,7 +28,7 @@ pub fn select_gql_objects(
 }
 
 fn select_references(
-    env: &mut Enviroment,
+    env: &mut Environment,
     repo: &gix::Repository,
     fields_names: &Vec<String>,
     fields_values: &Vec<Box<dyn Expression>>,
@@ -113,7 +113,7 @@ fn select_references(
 }
 
 fn select_commits(
-    env: &mut Enviroment,
+    env: &mut Environment,
     repo: &gix::Repository,
     fields_names: &Vec<String>,
     fields_values: &Vec<Box<dyn Expression>>,
@@ -212,7 +212,7 @@ fn select_commits(
 }
 
 fn select_diffs(
-    env: &mut Enviroment,
+    env: &mut Environment,
     repo: &gix::Repository,
     fields_names: &Vec<String>,
     fields_values: &Vec<Box<dyn Expression>>,
@@ -336,7 +336,7 @@ fn select_diffs(
 }
 
 fn select_branches(
-    env: &mut Enviroment,
+    env: &mut Environment,
     repo: &gix::Repository,
     fields_names: &Vec<String>,
     fields_values: &Vec<Box<dyn Expression>>,
@@ -433,7 +433,7 @@ fn select_branches(
 }
 
 fn select_tags(
-    env: &mut Enviroment,
+    env: &mut Environment,
     repo: &gix::Repository,
     fields_names: &Vec<String>,
     fields_values: &Vec<Box<dyn Expression>>,
@@ -489,7 +489,7 @@ fn select_tags(
 }
 
 fn select_values(
-    env: &mut Enviroment,
+    env: &mut Environment,
     fields_names: &[String],
     fields_values: &Vec<Box<dyn Expression>>,
     alias_table: &HashMap<String, String>,

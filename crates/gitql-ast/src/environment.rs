@@ -1,7 +1,8 @@
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 
-use crate::{types::DataType, value::Value};
+use crate::types::DataType;
+use crate::value::Value;
 
 lazy_static! {
     pub static ref TABLES_FIELDS_NAMES: HashMap<&'static str, Vec<&'static str>> = {
@@ -41,7 +42,7 @@ lazy_static! {
 }
 
 #[derive(Default)]
-pub struct Enviroment {
+pub struct Environment {
     /// All Global Variables values that can life for this program session
     pub globals: HashMap<String, Value>,
     /// All Global Variables Types that can life for this program session
@@ -50,7 +51,7 @@ pub struct Enviroment {
     pub scopes: HashMap<String, DataType>,
 }
 
-impl Enviroment {
+impl Environment {
     /// Define in the current scope
     pub fn define(&mut self, str: String, data_type: DataType) {
         self.scopes.insert(str, data_type);

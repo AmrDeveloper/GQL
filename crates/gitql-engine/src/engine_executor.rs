@@ -3,7 +3,7 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 
 use gitql_ast::aggregation::AGGREGATIONS;
-use gitql_ast::enviroment::Enviroment;
+use gitql_ast::environment::Environment;
 use gitql_ast::object::flat_gql_groups;
 use gitql_ast::object::GQLObject;
 use gitql_ast::statement::AggregateValue;
@@ -27,7 +27,7 @@ use crate::engine_function::select_gql_objects;
 
 #[allow(clippy::borrowed_box)]
 pub fn execute_statement(
-    env: &mut Enviroment,
+    env: &mut Environment,
     statement: &Box<dyn Statement>,
     repo: &gix::Repository,
     groups: &mut Vec<Vec<GQLObject>>,
@@ -102,7 +102,7 @@ pub fn execute_statement(
 }
 
 fn execute_select_statement(
-    env: &mut Enviroment,
+    env: &mut Environment,
     statement: &SelectStatement,
     repo: &gix::Repository,
     groups: &mut Vec<Vec<GQLObject>>,
@@ -139,7 +139,7 @@ fn execute_select_statement(
 }
 
 fn execute_where_statement(
-    env: &mut Enviroment,
+    env: &mut Environment,
     statement: &WhereStatement,
     groups: &mut Vec<Vec<GQLObject>>,
 ) -> Result<(), String> {
@@ -170,7 +170,7 @@ fn execute_where_statement(
 }
 
 fn execute_having_statement(
-    env: &mut Enviroment,
+    env: &mut Environment,
     statement: &HavingStatement,
     groups: &mut Vec<Vec<GQLObject>>,
 ) -> Result<(), String> {
@@ -242,7 +242,7 @@ fn execute_offset_statement(
 }
 
 fn execute_order_by_statement(
-    env: &mut Enviroment,
+    env: &mut Environment,
     statement: &OrderByStatement,
     groups: &mut Vec<Vec<GQLObject>>,
 ) -> Result<(), String> {
@@ -337,7 +337,7 @@ fn execute_group_by_statement(
 }
 
 fn execute_aggregation_function_statement(
-    env: &mut Enviroment,
+    env: &mut Environment,
     statement: &AggregationsStatement,
     groups: &mut Vec<Vec<GQLObject>>,
     alias_table: &HashMap<String, String>,
@@ -416,7 +416,7 @@ fn execute_aggregation_function_statement(
 }
 
 pub fn execute_global_variable_statement(
-    env: &mut Enviroment,
+    env: &mut Environment,
     statement: &GlobalVariableStatement,
 ) -> Result<(), String> {
     let value = evaluate_expression(env, &statement.value, &HashMap::default())?;

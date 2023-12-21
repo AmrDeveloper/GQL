@@ -1,5 +1,5 @@
-use gitql_ast::enviroment::Enviroment;
-use gitql_ast::enviroment::TABLES_FIELDS_NAMES;
+use gitql_ast::environment::Environment;
+use gitql_ast::environment::TABLES_FIELDS_NAMES;
 use gitql_ast::value::Value;
 use std::collections::HashMap;
 use std::vec;
@@ -21,7 +21,7 @@ use gitql_ast::statement::*;
 use gitql_ast::types::DataType;
 use gitql_ast::types::TABLES_FIELDS_TYPES;
 
-pub fn parse_gql(mut tokens: Vec<Token>, env: &mut Enviroment) -> Result<Query, GQLError> {
+pub fn parse_gql(mut tokens: Vec<Token>, env: &mut Environment) -> Result<Query, GQLError> {
     consume_optional_semicolon_if_exists(&mut tokens);
 
     let mut position = 0;
@@ -33,7 +33,7 @@ pub fn parse_gql(mut tokens: Vec<Token>, env: &mut Enviroment) -> Result<Query, 
     }
 }
 
-fn parse_set_query(env: &mut Enviroment, tokens: &Vec<Token>) -> Result<Query, GQLError> {
+fn parse_set_query(env: &mut Environment, tokens: &Vec<Token>) -> Result<Query, GQLError> {
     let len = tokens.len();
     let mut position = 0;
     let mut context = ParserContext::default();
@@ -83,7 +83,7 @@ fn parse_set_query(env: &mut Enviroment, tokens: &Vec<Token>) -> Result<Query, G
     }))
 }
 
-fn parse_select_query(env: &mut Enviroment, tokens: &Vec<Token>) -> Result<Query, GQLError> {
+fn parse_select_query(env: &mut Environment, tokens: &Vec<Token>) -> Result<Query, GQLError> {
     let len = tokens.len();
     let mut position = 0;
 
@@ -243,7 +243,7 @@ fn parse_select_query(env: &mut Enviroment, tokens: &Vec<Token>) -> Result<Query
 
 fn parse_select_statement(
     context: &mut ParserContext,
-    env: &mut Enviroment,
+    env: &mut Environment,
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Statement>, GQLError> {
@@ -410,7 +410,7 @@ fn parse_select_statement(
 
 fn parse_where_statement(
     context: &mut ParserContext,
-    env: &mut Enviroment,
+    env: &mut Environment,
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Statement>, GQLError> {
@@ -452,7 +452,7 @@ fn parse_where_statement(
 
 fn parse_group_by_statement(
     context: &mut ParserContext,
-    env: &mut Enviroment,
+    env: &mut Environment,
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Statement>, GQLError> {
@@ -487,7 +487,7 @@ fn parse_group_by_statement(
 
 fn parse_having_statement(
     context: &mut ParserContext,
-    env: &mut Enviroment,
+    env: &mut Environment,
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Statement>, GQLError> {
@@ -555,7 +555,7 @@ fn parse_offset_statement(
 
 fn parse_order_by_statement(
     context: &mut ParserContext,
-    env: &mut Enviroment,
+    env: &mut Environment,
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Statement>, GQLError> {
@@ -606,7 +606,7 @@ fn parse_order_by_statement(
 
 fn parse_expression(
     context: &mut ParserContext,
-    env: &mut Enviroment,
+    env: &mut Environment,
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
@@ -630,7 +630,7 @@ fn parse_expression(
 
 fn parse_assignment_expression(
     context: &mut ParserContext,
-    env: &mut Enviroment,
+    env: &mut Environment,
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
@@ -666,7 +666,7 @@ fn parse_assignment_expression(
 
 fn parse_is_null_expression(
     context: &mut ParserContext,
-    env: &mut Enviroment,
+    env: &mut Environment,
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
@@ -706,7 +706,7 @@ fn parse_is_null_expression(
 
 fn parse_in_expression(
     context: &mut ParserContext,
-    env: &mut Enviroment,
+    env: &mut Environment,
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
@@ -753,7 +753,7 @@ fn parse_in_expression(
 
 fn parse_between_expression(
     context: &mut ParserContext,
-    env: &mut Enviroment,
+    env: &mut Environment,
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
@@ -826,7 +826,7 @@ fn parse_between_expression(
 
 fn parse_logical_or_expression(
     context: &mut ParserContext,
-    env: &mut Enviroment,
+    env: &mut Environment,
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
@@ -871,7 +871,7 @@ fn parse_logical_or_expression(
 
 fn parse_logical_and_expression(
     context: &mut ParserContext,
-    env: &mut Enviroment,
+    env: &mut Environment,
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
@@ -916,7 +916,7 @@ fn parse_logical_and_expression(
 
 fn parse_bitwise_or_expression(
     context: &mut ParserContext,
-    env: &mut Enviroment,
+    env: &mut Environment,
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
@@ -961,7 +961,7 @@ fn parse_bitwise_or_expression(
 
 fn parse_logical_xor_expression(
     context: &mut ParserContext,
-    env: &mut Enviroment,
+    env: &mut Environment,
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
@@ -1006,7 +1006,7 @@ fn parse_logical_xor_expression(
 
 fn parse_bitwise_and_expression(
     context: &mut ParserContext,
-    env: &mut Enviroment,
+    env: &mut Environment,
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
@@ -1059,7 +1059,7 @@ fn parse_bitwise_and_expression(
 
 fn parse_equality_expression(
     context: &mut ParserContext,
-    env: &mut Enviroment,
+    env: &mut Environment,
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
@@ -1110,7 +1110,7 @@ fn parse_equality_expression(
 
 fn parse_comparison_expression(
     context: &mut ParserContext,
-    env: &mut Enviroment,
+    env: &mut Environment,
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
@@ -1162,7 +1162,7 @@ fn parse_comparison_expression(
 
 fn parse_bitwise_shift_expression(
     context: &mut ParserContext,
-    env: &mut Enviroment,
+    env: &mut Environment,
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
@@ -1204,7 +1204,7 @@ fn parse_bitwise_shift_expression(
 
 fn parse_term_expression(
     context: &mut ParserContext,
-    env: &mut Enviroment,
+    env: &mut Environment,
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
@@ -1251,7 +1251,7 @@ fn parse_term_expression(
 
 fn parse_factor_expression(
     context: &mut ParserContext,
-    env: &mut Enviroment,
+    env: &mut Environment,
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
@@ -1302,7 +1302,7 @@ fn parse_factor_expression(
 
 fn parse_like_expression(
     context: &mut ParserContext,
-    env: &mut Enviroment,
+    env: &mut Environment,
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
@@ -1344,7 +1344,7 @@ fn parse_like_expression(
 
 fn parse_glob_expression(
     context: &mut ParserContext,
-    env: &mut Enviroment,
+    env: &mut Environment,
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
@@ -1386,7 +1386,7 @@ fn parse_glob_expression(
 
 fn parse_unary_expression(
     context: &mut ParserContext,
-    env: &mut Enviroment,
+    env: &mut Environment,
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
@@ -1423,7 +1423,7 @@ fn parse_unary_expression(
 
 fn parse_function_call_expression(
     context: &mut ParserContext,
-    env: &mut Enviroment,
+    env: &mut Environment,
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
@@ -1512,7 +1512,7 @@ fn parse_function_call_expression(
 
 fn parse_arguments_expressions(
     context: &mut ParserContext,
-    env: &mut Enviroment,
+    env: &mut Environment,
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Vec<Box<dyn Expression>>, GQLError> {
@@ -1551,7 +1551,7 @@ fn parse_arguments_expressions(
 
 fn parse_primary_expression(
     context: &mut ParserContext,
-    env: &mut Enviroment,
+    env: &mut Environment,
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
@@ -1612,7 +1612,7 @@ fn parse_primary_expression(
 
 fn parse_group_expression(
     context: &mut ParserContext,
-    env: &mut Enviroment,
+    env: &mut Environment,
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
@@ -1630,7 +1630,7 @@ fn parse_group_expression(
 
 fn parse_case_expression(
     context: &mut ParserContext,
-    env: &mut Enviroment,
+    env: &mut Environment,
     tokens: &Vec<Token>,
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, GQLError> {
@@ -1750,44 +1750,60 @@ fn parse_case_expression(
 }
 
 fn check_function_call_arguments(
-    env: &mut Enviroment,
+    env: &mut Environment,
     arguments: &Vec<Box<dyn Expression>>,
     parameters: &Vec<DataType>,
     function_name: String,
     location: Location,
 ) -> Result<(), GQLError> {
     let parameters_len = parameters.len();
-    let has_optional_parameter = if parameters.is_empty() {
-        false
-    } else {
-        parameters.last().unwrap().is_optional()
-    };
-
     let arguments_len = arguments.len();
 
-    // If function last parameter is optional make sure it at least has
-    // parameters.len - 1 parameters
-    if has_optional_parameter && arguments_len < parameters_len - 1 {
-        let message = format!(
-            "Function `{}` expects at least `{}` arguments but got `{}`",
-            function_name,
-            parameters_len - 1,
-            arguments_len
-        );
-        return Err(GQLError { message, location });
+    let mut has_optional_parameter = false;
+    let mut has_varargs_parameter = false;
+    if !parameters.is_empty() {
+        let last_parameter = parameters.last().unwrap();
+        has_optional_parameter = last_parameter.is_optional();
+        has_varargs_parameter = last_parameter.is_varargs();
     }
 
-    // Make sure function with optional parameter not called with too much arguments
-    if has_optional_parameter && arguments_len > parameters_len {
-        let message = format!(
-            "Function `{}` expects at most `{}` arguments but got `{}`",
-            function_name, parameters_len, arguments_len
-        );
-        return Err(GQLError { message, location });
-    }
+    // Has Optional parameter type at the end
+    if has_optional_parameter {
+        // If function last parameter is optional make sure it at least has
+        if arguments_len < parameters_len - 1 {
+            let message = format!(
+                "Function `{}` expects at least `{}` arguments but got `{}`",
+                function_name,
+                parameters_len - 1,
+                arguments_len
+            );
+            return Err(GQLError { message, location });
+        }
 
-    // Make sure number of arguments and parameters are the same
-    if !has_optional_parameter && arguments_len != parameters_len {
+        // Make sure function with optional parameter not called with too much arguments
+        if arguments_len > parameters_len {
+            let message = format!(
+                "Function `{}` expects at most `{}` arguments but got `{}`",
+                function_name, parameters_len, arguments_len
+            );
+            return Err(GQLError { message, location });
+        }
+    }
+    // Has Varargs parameter type at the end
+    else if has_varargs_parameter {
+        // If function last parameter is optional make sure it at least has
+        if arguments_len < parameters_len - 1 {
+            let message = format!(
+                "Function `{}` expects at least `{}` arguments but got `{}`",
+                function_name,
+                parameters_len - 1,
+                arguments_len
+            );
+            return Err(GQLError { message, location });
+        }
+    }
+    // No Optional or Varargs but has invalid number of arguments passed
+    else if arguments_len != parameters_len {
         let message = format!(
             "Function `{}` expects `{}` arguments but got `{}`",
             function_name, parameters_len, arguments_len
@@ -1795,14 +1811,13 @@ fn check_function_call_arguments(
         return Err(GQLError { message, location });
     }
 
-    let required_parameters_len = if has_optional_parameter {
-        parameters_len - 1
-    } else {
-        parameters_len
-    };
+    let mut last_required_parameter_index = parameters_len;
+    if has_optional_parameter || has_varargs_parameter {
+        last_required_parameter_index -= 1;
+    }
 
     // Check each argument vs parameter type
-    for index in 0..required_parameters_len {
+    for index in 0..last_required_parameter_index {
         let argument_type = arguments.get(index).unwrap().expr_type(env);
         let parameter_type = parameters.get(index).unwrap();
 
@@ -1815,17 +1830,19 @@ fn check_function_call_arguments(
         }
     }
 
-    // Check the optional parameter if exists
-    if has_optional_parameter && arguments_len == parameters_len {
-        let index = parameters_len - 1;
-        let last_parameter_type = parameters.get(index).unwrap();
-        let last_argument_type = arguments.get(index).unwrap().expr_type(env);
-        if !last_argument_type.eq(last_parameter_type) {
-            let message = format!(
-                "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
-                function_name, index, last_argument_type, last_parameter_type
-            );
-            return Err(GQLError { message, location });
+    // Check the optional or varargs parameters if exists
+    if has_optional_parameter || has_varargs_parameter {
+        let last_parameter_type = parameters.get(last_required_parameter_index).unwrap();
+
+        for index in last_required_parameter_index..arguments_len {
+            let argument_type = arguments.get(index).unwrap().expr_type(env);
+            if !last_parameter_type.eq(&argument_type) {
+                let message = format!(
+                    "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
+                    function_name, index, argument_type, last_parameter_type
+                );
+                return Err(GQLError { message, location });
+            }
         }
     }
 
@@ -1833,7 +1850,7 @@ fn check_function_call_arguments(
 }
 
 fn check_all_values_are_same_type(
-    env: &mut Enviroment,
+    env: &mut Environment,
     arguments: &Vec<Box<dyn Expression>>,
 ) -> Result<DataType, ()> {
     let arguments_count = arguments.len();
@@ -1853,7 +1870,7 @@ fn check_all_values_are_same_type(
 }
 
 fn type_check_selected_fields(
-    env: &mut Enviroment,
+    env: &mut Environment,
     table_name: &str,
     fields_names: &Vec<String>,
     tokens: &Vec<Token>,
@@ -1997,7 +2014,7 @@ fn get_expression_name(expression: &Box<dyn Expression>) -> Result<String, ()> {
 }
 
 #[inline(always)]
-fn register_current_table_fields_types(table_name: &str, symbol_table: &mut Enviroment) {
+fn register_current_table_fields_types(table_name: &str, symbol_table: &mut Environment) {
     let table_fields_names = &TABLES_FIELDS_NAMES[table_name];
     for field_name in table_fields_names {
         let field_type = TABLES_FIELDS_TYPES[field_name].clone();

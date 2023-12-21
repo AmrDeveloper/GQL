@@ -1,6 +1,6 @@
 use gitql_ast::date_utils::date_time_to_time_stamp;
 use gitql_ast::date_utils::date_to_time_stamp;
-use gitql_ast::enviroment::Enviroment;
+use gitql_ast::environment::Environment;
 use gitql_ast::expression::ArithmeticExpression;
 use gitql_ast::expression::ArithmeticOperator;
 use gitql_ast::expression::AssignmentExpression;
@@ -37,7 +37,7 @@ use std::string::String;
 
 #[allow(clippy::borrowed_box)]
 pub fn evaluate_expression(
-    env: &mut Enviroment,
+    env: &mut Environment,
     expression: &Box<dyn Expression>,
     object: &HashMap<String, Value>,
 ) -> Result<Value, String> {
@@ -167,7 +167,7 @@ pub fn evaluate_expression(
 }
 
 fn evaluate_assignemnt(
-    env: &mut Enviroment,
+    env: &mut Environment,
     expr: &AssignmentExpression,
     object: &HashMap<String, Value>,
 ) -> Result<Value, String> {
@@ -202,7 +202,7 @@ fn evaluate_symbol(
 }
 
 fn evaulate_global_variable(
-    env: &mut Enviroment,
+    env: &mut Environment,
     expr: &GlobalVariableExpression,
 ) -> Result<Value, String> {
     let name = &expr.name;
@@ -225,7 +225,7 @@ fn evaluate_boolean(expr: &BooleanExpression) -> Result<Value, String> {
 }
 
 fn evaluate_prefix_unary(
-    env: &mut Enviroment,
+    env: &mut Environment,
     expr: &PrefixUnary,
     object: &HashMap<String, Value>,
 ) -> Result<Value, String> {
@@ -238,7 +238,7 @@ fn evaluate_prefix_unary(
 }
 
 fn evaluate_arithmetic(
-    env: &mut Enviroment,
+    env: &mut Environment,
     expr: &ArithmeticExpression,
     object: &HashMap<String, Value>,
 ) -> Result<Value, String> {
@@ -255,7 +255,7 @@ fn evaluate_arithmetic(
 }
 
 fn evaluate_comparison(
-    env: &mut Enviroment,
+    env: &mut Environment,
     expr: &ComparisonExpression,
     object: &HashMap<String, Value>,
 ) -> Result<Value, String> {
@@ -312,7 +312,7 @@ fn evaluate_comparison(
 }
 
 fn evaulate_like(
-    env: &mut Enviroment,
+    env: &mut Environment,
     expr: &LikeExpression,
     object: &HashMap<String, Value>,
 ) -> Result<Value, String> {
@@ -333,7 +333,7 @@ fn evaulate_like(
 }
 
 fn evaulate_glob(
-    env: &mut Enviroment,
+    env: &mut Environment,
     expr: &GlobExpression,
     object: &HashMap<String, Value>,
 ) -> Result<Value, String> {
@@ -352,7 +352,7 @@ fn evaulate_glob(
 }
 
 fn evaluate_logical(
-    env: &mut Enviroment,
+    env: &mut Environment,
     expr: &LogicalExpression,
     object: &HashMap<String, Value>,
 ) -> Result<Value, String> {
@@ -375,7 +375,7 @@ fn evaluate_logical(
 }
 
 fn evaluate_bitwise(
-    env: &mut Enviroment,
+    env: &mut Environment,
     expr: &BitwiseExpression,
     object: &HashMap<String, Value>,
 ) -> Result<Value, String> {
@@ -403,7 +403,7 @@ fn evaluate_bitwise(
 }
 
 fn evaluate_call(
-    env: &mut Enviroment,
+    env: &mut Environment,
     expr: &CallExpression,
     object: &HashMap<String, Value>,
 ) -> Result<Value, String> {
@@ -415,11 +415,11 @@ fn evaluate_call(
         arguments.push(evaluate_expression(env, arg, object)?);
     }
 
-    Ok(function(arguments))
+    Ok(function(&arguments))
 }
 
 fn evaluate_between(
-    env: &mut Enviroment,
+    env: &mut Environment,
     expr: &BetweenExpression,
     object: &HashMap<String, Value>,
 ) -> Result<Value, String> {
@@ -433,7 +433,7 @@ fn evaluate_between(
 }
 
 fn evaluate_case(
-    env: &mut Enviroment,
+    env: &mut Environment,
     expr: &CaseExpression,
     object: &HashMap<String, Value>,
 ) -> Result<Value, String> {
@@ -454,7 +454,7 @@ fn evaluate_case(
 }
 
 fn evaluate_in(
-    env: &mut Enviroment,
+    env: &mut Environment,
     expr: &InExpression,
     object: &HashMap<String, Value>,
 ) -> Result<Value, String> {
@@ -469,7 +469,7 @@ fn evaluate_in(
 }
 
 fn evaluate_is_null(
-    env: &mut Enviroment,
+    env: &mut Environment,
     expr: &IsNullExpression,
     object: &HashMap<String, Value>,
 ) -> Result<Value, String> {

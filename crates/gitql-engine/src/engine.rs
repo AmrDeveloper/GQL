@@ -5,7 +5,7 @@ use std::hash::Hash;
 use std::hash::Hasher;
 use std::vec;
 
-use gitql_ast::enviroment::Enviroment;
+use gitql_ast::environment::Environment;
 use gitql_ast::object::GQLObject;
 use gitql_ast::statement::GQLQuery;
 use gitql_ast::statement::Query;
@@ -31,7 +31,7 @@ pub enum EvaluationResult {
 }
 
 pub fn evaluate(
-    env: &mut Enviroment,
+    env: &mut Environment,
     repos: &[gix::Repository],
     query: Query,
 ) -> Result<EvaluationResult, String> {
@@ -45,7 +45,7 @@ pub fn evaluate(
 }
 
 pub fn evaluate_select_query(
-    env: &mut Enviroment,
+    env: &mut Environment,
     repos: &[gix::Repository],
     query: GQLQuery,
 ) -> Result<EvaluationResult, String> {

@@ -1,6 +1,6 @@
 pub mod aggregation;
 pub mod date_utils;
-pub mod enviroment;
+pub mod environment;
 pub mod expression;
 pub mod function;
 pub mod object;

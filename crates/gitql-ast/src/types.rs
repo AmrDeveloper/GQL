@@ -51,6 +51,8 @@ pub enum DataType {
     Variant(Vec<DataType>),
     /// Represent an optional type so it can passed or not
     Optional(Box<DataType>),
+    /// Represent variable arguments so can pass 0 or more value with spastic type
+    Varargs(Box<DataType>),
 }
 
 impl PartialEq for DataType {
@@ -83,6 +85,14 @@ impl PartialEq for DataType {
 
         if let DataType::Optional(optional_type) = other {
             return optional_type.as_ref() == self;
+        }
+
+        if let DataType::Varargs(data_type) = self {
+            return data_type.as_ref() == other;
+        }
+
+        if let DataType::Varargs(data_type) = other {
+            return data_type.as_ref() == self;
         }
 
         if self.is_bool() && other.is_bool() {
@@ -155,6 +165,9 @@ impl fmt::Display for DataType {
             DataType::Optional(data_type) => {
                 write!(f, "{}?", data_type)
             }
+            DataType::Varargs(data_type) => {
+                write!(f, "...{}", data_type)
+            }
         }
     }
 }
@@ -210,5 +223,9 @@ impl DataType {
 
     pub fn is_optional(&self) -> bool {
         matches!(self, DataType::Optional(_))
+    }
+
+    pub fn is_varargs(&self) -> bool {
+        matches!(self, DataType::Varargs(_))
     }
 }

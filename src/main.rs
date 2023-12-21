@@ -1,5 +1,5 @@
 use atty::Stream;
-use gitql_ast::enviroment::Enviroment;
+use gitql_ast::environment::Environment;
 use gitql_cli::arguments;
 use gitql_cli::arguments::Arguments;
 use gitql_cli::arguments::Command;
@@ -33,7 +33,7 @@ fn main() {
             }
 
             let repos = git_repos_result.ok().unwrap();
-            let mut env = Enviroment::default();
+            let mut env = Environment::default();
             execute_gitql_query(query, &arguments, &repos, &mut env, &mut reporter);
         }
         Command::Help => {
@@ -56,7 +56,7 @@ fn launch_gitql_repl(arguments: Arguments) {
         return;
     }
 
-    let mut global_env = Enviroment::default();
+    let mut global_env = Environment::default();
     let git_repositories = git_repos_result.ok().unwrap();
 
     let mut input = String::new();
@@ -107,7 +107,7 @@ fn execute_gitql_query(
     query: String,
     arguments: &Arguments,
     repos: &[gix::Repository],
-    env: &mut Enviroment,
+    env: &mut Environment,
     reporter: &mut DiagnosticReporter,
 ) {
     let front_start = std::time::Instant::now();

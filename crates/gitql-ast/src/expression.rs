@@ -1,6 +1,6 @@
 use std::any::Any;
 
-use crate::enviroment::Enviroment;
+use crate::environment::Environment;
 use crate::function::PROTOTYPES;
 use crate::types::{DataType, TABLES_FIELDS_TYPES};
 use crate::value::Value;
@@ -30,7 +30,7 @@ pub enum ExpressionKind {
 
 pub trait Expression {
     fn expression_kind(&self) -> ExpressionKind;
-    fn expr_type(&self, scope: &Enviroment) -> DataType;
+    fn expr_type(&self, scope: &Environment) -> DataType;
     fn as_any(&self) -> &dyn Any;
 }
 
@@ -53,7 +53,7 @@ impl Expression for AssignmentExpression {
         ExpressionKind::Assignment
     }
 
-    fn expr_type(&self, scope: &Enviroment) -> DataType {
+    fn expr_type(&self, scope: &Environment) -> DataType {
         self.value.expr_type(scope)
     }
 
@@ -79,7 +79,7 @@ impl Expression for StringExpression {
         ExpressionKind::String
     }
 
-    fn expr_type(&self, _scope: &Enviroment) -> DataType {
+    fn expr_type(&self, _scope: &Environment) -> DataType {
         match self.value_type {
             StringValueType::Text => DataType::Text,
             StringValueType::Time => DataType::Time,
@@ -102,7 +102,7 @@ impl Expression for SymbolExpression {
         ExpressionKind::Symbol
     }
 
-    fn expr_type(&self, scope: &Enviroment) -> DataType {
+    fn expr_type(&self, scope: &Environment) -> DataType {
         // Search in symbol table
         if scope.contains(&self.value) {
             return scope.scopes[self.value.as_str()].clone();
@@ -130,7 +130,7 @@ impl Expression for GlobalVariableExpression {
         ExpressionKind::GlobalVariable
     }
 
-    fn expr_type(&self, scope: &Enviroment) -> DataType {
+    fn expr_type(&self, scope: &Environment) -> DataType {
         if scope.globals_types.contains_key(&self.name) {
             return scope.globals_types[self.name.as_str()].clone();
         }
@@ -151,7 +151,7 @@ impl Expression for NumberExpression {
         ExpressionKind::Number
     }
 
-    fn expr_type(&self, _scope: &Enviroment) -> DataType {
+    fn expr_type(&self, _scope: &Environment) -> DataType {
         self.value.data_type()
     }
 
@@ -169,7 +169,7 @@ impl Expression for BooleanExpression {
         ExpressionKind::Boolean
     }
 
-    fn expr_type(&self, _scope: &Enviroment) -> DataType {
+    fn expr_type(&self, _scope: &Environment) -> DataType {
         DataType::Boolean
     }
 
@@ -194,7 +194,7 @@ impl Expression for PrefixUnary {
         ExpressionKind::PrefixUnary
     }
 
-    fn expr_type(&self, _scope: &Enviroment) -> DataType {
+    fn expr_type(&self, _scope: &Environment) -> DataType {
         if self.op == PrefixUnaryOperator::Bang {
             DataType::Boolean
         } else {
@@ -227,7 +227,7 @@ impl Expression for ArithmeticExpression {
         ExpressionKind::Arithmetic
     }
 
-    fn expr_type(&self, scope: &Enviroment) -> DataType {
+    fn expr_type(&self, scope: &Environment) -> DataType {
         let lhs = self.left.expr_type(scope);
         let rhs = self.left.expr_type(scope);
 
@@ -265,7 +265,7 @@ impl Expression for ComparisonExpression {
         ExpressionKind::Comparison
     }
 
-    fn expr_type(&self, _scope: &Enviroment) -> DataType {
+    fn expr_type(&self, _scope: &Environment) -> DataType {
         if self.operator == ComparisonOperator::NullSafeEqual {
             DataType::Integer
         } else {
@@ -288,7 +288,7 @@ impl Expression for LikeExpression {
         ExpressionKind::Like
     }
 
-    fn expr_type(&self, _scope: &Enviroment) -> DataType {
+    fn expr_type(&self, _scope: &Environment) -> DataType {
         DataType::Boolean
     }
 
@@ -307,7 +307,7 @@ impl Expression for GlobExpression {
         ExpressionKind::Glob
     }
 
-    fn expr_type(&self, _scope: &Enviroment) -> DataType {
+    fn expr_type(&self, _scope: &Environment) -> DataType {
         DataType::Boolean
     }
 
@@ -334,7 +334,7 @@ impl Expression for LogicalExpression {
         ExpressionKind::Logical
     }
 
-    fn expr_type(&self, _scope: &Enviroment) -> DataType {
+    fn expr_type(&self, _scope: &Environment) -> DataType {
         DataType::Boolean
     }
 
@@ -362,7 +362,7 @@ impl Expression for BitwiseExpression {
         ExpressionKind::Bitwise
     }
 
-    fn expr_type(&self, _scope: &Enviroment) -> DataType {
+    fn expr_type(&self, _scope: &Environment) -> DataType {
         DataType::Integer
     }
 
@@ -382,7 +382,7 @@ impl Expression for CallExpression {
         ExpressionKind::Call
     }
 
-    fn expr_type(&self, _scope: &Enviroment) -> DataType {
+    fn expr_type(&self, _scope: &Environment) -> DataType {
         let prototype = PROTOTYPES.get(&self.function_name.as_str()).unwrap();
         prototype.result.clone()
     }
@@ -403,7 +403,7 @@ impl Expression for BetweenExpression {
         ExpressionKind::Between
     }
 
-    fn expr_type(&self, _scope: &Enviroment) -> DataType {
+    fn expr_type(&self, _scope: &Environment) -> DataType {
         DataType::Boolean
     }
 
@@ -424,7 +424,7 @@ impl Expression for CaseExpression {
         ExpressionKind::Case
     }
 
-    fn expr_type(&self, _scope: &Enviroment) -> DataType {
+    fn expr_type(&self, _scope: &Environment) -> DataType {
         self.values_type.clone()
     }
 
@@ -444,7 +444,7 @@ impl Expression for InExpression {
         ExpressionKind::In
     }
 
-    fn expr_type(&self, _scope: &Enviroment) -> DataType {
+    fn expr_type(&self, _scope: &Environment) -> DataType {
         self.values_type.clone()
     }
 
@@ -463,7 +463,7 @@ impl Expression for IsNullExpression {
         ExpressionKind::IsNull
     }
 
-    fn expr_type(&self, _scope: &Enviroment) -> DataType {
+    fn expr_type(&self, _scope: &Environment) -> DataType {
         DataType::Boolean
     }
 
@@ -479,7 +479,7 @@ impl Expression for NullExpression {
         ExpressionKind::Null
     }
 
-    fn expr_type(&self, _scope: &Enviroment) -> DataType {
+    fn expr_type(&self, _scope: &Environment) -> DataType {
         DataType::Null
     }
 

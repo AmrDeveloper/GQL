@@ -5,7 +5,7 @@ use crate::value::Value;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 
-type Function = fn(Vec<Value>) -> Value;
+type Function = fn(&[Value]) -> Value;
 
 pub struct Prototype {
     pub parameters: Vec<DataType>,
@@ -226,7 +226,7 @@ lazy_static! {
         map.insert(
             "concat",
             Prototype {
-                parameters: vec![DataType::Text, DataType::Text],
+                parameters: vec![DataType::Text, DataType::Text, DataType::Varargs(Box::new(DataType::Text))],
                 result: DataType::Text
              },
         );
@@ -408,46 +408,46 @@ lazy_static! {
 
 // String functions
 
-fn text_lowercase(inputs: Vec<Value>) -> Value {
+fn text_lowercase(inputs: &[Value]) -> Value {
     Value::Text(inputs[0].as_text().to_lowercase())
 }
 
-fn text_uppercase(inputs: Vec<Value>) -> Value {
+fn text_uppercase(inputs: &[Value]) -> Value {
     Value::Text(inputs[0].as_text().to_uppercase())
 }
 
-fn text_reverse(inputs: Vec<Value>) -> Value {
+fn text_reverse(inputs: &[Value]) -> Value {
     Value::Text(inputs[0].as_text().chars().rev().collect::<String>())
 }
 
-fn text_replicate(inputs: Vec<Value>) -> Value {
+fn text_replicate(inputs: &[Value]) -> Value {
     let str = inputs[0].as_text();
     let count = inputs[1].as_int() as usize;
     Value::Text(str.repeat(count))
 }
 
-fn text_space(inputs: Vec<Value>) -> Value {
+fn text_space(inputs: &[Value]) -> Value {
     let n = inputs[0].as_int() as usize;
     Value::Text(" ".repeat(n))
 }
 
-fn text_trim(inputs: Vec<Value>) -> Value {
+fn text_trim(inputs: &[Value]) -> Value {
     Value::Text(inputs[0].as_text().trim().to_string())
 }
 
-fn text_left_trim(inputs: Vec<Value>) -> Value {
+fn text_left_trim(inputs: &[Value]) -> Value {
     Value::Text(inputs[0].as_text().trim_start().to_string())
 }
 
-fn text_right_trim(inputs: Vec<Value>) -> Value {
+fn text_right_trim(inputs: &[Value]) -> Value {
     Value::Text(inputs[0].as_text().trim_end().to_string())
 }
 
-fn text_len(inputs: Vec<Value>) -> Value {
+fn text_len(inputs: &[Value]) -> Value {
     Value::Integer(inputs[0].as_text().len() as i64)
 }
 
-fn text_ascii(inputs: Vec<Value>) -> Value {
+fn text_ascii(inputs: &[Value]) -> Value {
     let text = inputs[0].as_text();
     if text.is_empty() {
         return Value::Integer(0);
@@ -455,7 +455,7 @@ fn text_ascii(inputs: Vec<Value>) -> Value {
     Value::Integer(text.chars().next().unwrap() as i64)
 }
 
-fn text_left(inputs: Vec<Value>) -> Value {
+fn text_left(inputs: &[Value]) -> Value {
     let text = inputs[0].as_text();
     if text.is_empty() {
         return Value::Text("".to_string());
@@ -473,12 +473,12 @@ fn text_left(inputs: Vec<Value>) -> Value {
     Value::Text(substring)
 }
 
-fn text_datalength(inputs: Vec<Value>) -> Value {
+fn text_datalength(inputs: &[Value]) -> Value {
     let text = inputs[0].as_text();
     Value::Integer(text.as_bytes().len() as i64)
 }
 
-fn text_char(inputs: Vec<Value>) -> Value {
+fn text_char(inputs: &[Value]) -> Value {
     let code = inputs[0].as_int() as u32;
     if let Some(character) = char::from_u32(code) {
         return Value::Text(character.to_string());
@@ -486,7 +486,7 @@ fn text_char(inputs: Vec<Value>) -> Value {
     Value::Text("".to_string())
 }
 
-fn text_charindex(inputs: Vec<Value>) -> Value {
+fn text_charindex(inputs: &[Value]) -> Value {
     let substr = inputs[0].as_text();
     let input = inputs[1].as_text();
 
@@ -497,7 +497,7 @@ fn text_charindex(inputs: Vec<Value>) -> Value {
     }
 }
 
-fn text_replace(inputs: Vec<Value>) -> Value {
+fn text_replace(inputs: &[Value]) -> Value {
     let text = inputs[0].as_text();
     let old_string = inputs[1].as_text();
     let new_string = inputs[2].as_text();
@@ -517,7 +517,7 @@ fn text_replace(inputs: Vec<Value>) -> Value {
     Value::Text(result)
 }
 
-fn text_substring(inputs: Vec<Value>) -> Value {
+fn text_substring(inputs: &[Value]) -> Value {
     let text = inputs[0].as_text();
     //according to the specs, a stirng starts at position 1.
     //but in Rust, the index of a string starts from 0
@@ -534,7 +534,7 @@ fn text_substring(inputs: Vec<Value>) -> Value {
     Value::Text(text[start..(start + length as usize)].to_string())
 }
 
-fn text_stuff(inputs: Vec<Value>) -> Value {
+fn text_stuff(inputs: &[Value]) -> Value {
     let text = inputs[0].as_text();
     let start = (inputs[1].as_int() - 1) as usize;
     let length = inputs[2].as_int() as usize;
@@ -554,7 +554,7 @@ fn text_stuff(inputs: Vec<Value>) -> Value {
     Value::Text(text.into_iter().collect())
 }
 
-fn text_right(inputs: Vec<Value>) -> Value {
+fn text_right(inputs: &[Value]) -> Value {
     let text = inputs[0].as_text();
     if text.is_empty() {
         return Value::Text("".to_string());
@@ -569,7 +569,7 @@ fn text_right(inputs: Vec<Value>) -> Value {
     Value::Text(text[text.len() - number_of_chars..text.len()].to_string())
 }
 
-fn text_translate(inputs: Vec<Value>) -> Value {
+fn text_translate(inputs: &[Value]) -> Value {
     let mut text = inputs[0].as_text();
     let characters = inputs[1].as_text();
     let translations = inputs[2].as_text();
@@ -586,14 +586,14 @@ fn text_translate(inputs: Vec<Value>) -> Value {
     Value::Text(text)
 }
 
-fn text_unicode(inputs: Vec<Value>) -> Value {
+fn text_unicode(inputs: &[Value]) -> Value {
     if let Some(c) = inputs[0].as_text().chars().next() {
         return Value::Integer((c as u32).into());
     }
     Value::Integer(0)
 }
 
-fn text_soundex(inputs: Vec<Value>) -> Value {
+fn text_soundex(inputs: &[Value]) -> Value {
     let text = inputs[0].as_text();
     if text.is_empty() {
         return Value::Text("".to_string());
@@ -633,43 +633,43 @@ fn text_soundex(inputs: Vec<Value>) -> Value {
     Value::Text(result)
 }
 
-fn text_concat(inputs: Vec<Value>) -> Value {
+fn text_concat(inputs: &[Value]) -> Value {
     let text: Vec<String> = inputs.iter().map(|v| v.as_text()).collect();
     Value::Text(text.concat())
 }
 
 // Date functions
 
-fn date_current_date(_inputs: Vec<Value>) -> Value {
+fn date_current_date(_inputs: &[Value]) -> Value {
     let time_stamp = date_utils::get_unix_timestamp_ms();
     Value::Date(time_stamp)
 }
 
-fn date_current_time(_inputs: Vec<Value>) -> Value {
+fn date_current_time(_inputs: &[Value]) -> Value {
     let time_stamp = date_utils::get_unix_timestamp_ms();
     let time = date_utils::time_stamp_to_time(time_stamp);
     Value::Time(time)
 }
 
-fn date_current_timestamp(_inputs: Vec<Value>) -> Value {
+fn date_current_timestamp(_inputs: &[Value]) -> Value {
     let time_stamp = date_utils::get_unix_timestamp_ms();
     Value::DateTime(time_stamp)
 }
 
-fn date_make_date(inputs: Vec<Value>) -> Value {
+fn date_make_date(inputs: &[Value]) -> Value {
     let year = inputs[0].as_int() as i32;
     let day_of_year = inputs[1].as_int() as u32;
     let time_stamp = date_utils::time_stamp_from_year_and_day(year, day_of_year);
     Value::Date(time_stamp)
 }
 
-fn date_dayname(inputs: Vec<Value>) -> Value {
+fn date_dayname(inputs: &[Value]) -> Value {
     let date = inputs[0].as_date();
     let date_str = date_utils::date_to_day_name(date);
     Value::Text(date_str)
 }
 
-fn date_monthname(inputs: Vec<Value>) -> Value {
+fn date_monthname(inputs: &[Value]) -> Value {
     let date = inputs[0].as_date();
     let month_str = date_utils::date_to_month_name(date);
     Value::Text(month_str)
@@ -677,68 +677,68 @@ fn date_monthname(inputs: Vec<Value>) -> Value {
 
 // Numeric functions
 
-fn numeric_abs(inputs: Vec<Value>) -> Value {
+fn numeric_abs(inputs: &[Value]) -> Value {
     let value = inputs[0].as_int();
     Value::Integer(value.abs())
 }
 
-fn numeric_pi(_inputs: Vec<Value>) -> Value {
+fn numeric_pi(_inputs: &[Value]) -> Value {
     let pi = std::f64::consts::PI;
     Value::Float(pi)
 }
 
-fn numeric_floor(inputs: Vec<Value>) -> Value {
+fn numeric_floor(inputs: &[Value]) -> Value {
     let float_value = inputs[0].as_float();
     Value::Integer(float_value.floor() as i64)
 }
 
-fn numeric_round(inputs: Vec<Value>) -> Value {
+fn numeric_round(inputs: &[Value]) -> Value {
     let float_value = inputs[0].as_float();
     Value::Integer(float_value.round() as i64)
 }
 
-fn numeric_square(inputs: Vec<Value>) -> Value {
+fn numeric_square(inputs: &[Value]) -> Value {
     let int_value = inputs[0].as_int();
     Value::Integer(int_value * int_value)
 }
 
-fn numeric_sin(inputs: Vec<Value>) -> Value {
+fn numeric_sin(inputs: &[Value]) -> Value {
     let float_value = inputs[0].as_float();
     Value::Float(f64::sin(float_value))
 }
 
-fn numeric_asin(inputs: Vec<Value>) -> Value {
+fn numeric_asin(inputs: &[Value]) -> Value {
     let float_value = inputs[0].as_float();
     Value::Float(f64::asin(float_value))
 }
 
-fn numeric_cos(inputs: Vec<Value>) -> Value {
+fn numeric_cos(inputs: &[Value]) -> Value {
     let float_value = inputs[0].as_float();
     Value::Float(f64::cos(float_value))
 }
 
-fn numeric_acos(inputs: Vec<Value>) -> Value {
+fn numeric_acos(inputs: &[Value]) -> Value {
     let float_value = inputs[0].as_float();
     Value::Float(f64::acos(float_value))
 }
 
-fn numeric_tan(inputs: Vec<Value>) -> Value {
+fn numeric_tan(inputs: &[Value]) -> Value {
     let float_value = inputs[0].as_float();
     Value::Float(f64::tan(float_value))
 }
 
-fn numeric_atan(inputs: Vec<Value>) -> Value {
+fn numeric_atan(inputs: &[Value]) -> Value {
     let float_value = inputs[0].as_float();
     Value::Float(f64::atan(float_value))
 }
 
-fn numeric_atn2(inputs: Vec<Value>) -> Value {
+fn numeric_atn2(inputs: &[Value]) -> Value {
     let first = inputs[0].as_float();
     let other = inputs[1].as_float();
     Value::Float(f64::atan2(first, other))
 }
 
-fn numeric_sign(inputs: Vec<Value>) -> Value {
+fn numeric_sign(inputs: &[Value]) -> Value {
     let float_value = inputs[0].as_float();
     if float_value == 0.0 {
         Value::Integer(0)
@@ -751,16 +751,16 @@ fn numeric_sign(inputs: Vec<Value>) -> Value {
 
 // General functions
 
-fn general_is_null(inputs: Vec<Value>) -> Value {
+fn general_is_null(inputs: &[Value]) -> Value {
     Value::Boolean(inputs[0].data_type() == DataType::Null)
 }
 
-fn general_is_numeric(inputs: Vec<Value>) -> Value {
+fn general_is_numeric(inputs: &[Value]) -> Value {
     let input_type = inputs[0].data_type();
     Value::Boolean(input_type.is_number())
 }
 
-fn general_type_of(inputs: Vec<Value>) -> Value {
+fn general_type_of(inputs: &[Value]) -> Value {
     let input_type = inputs[0].data_type();
     Value::Text(input_type.to_string())
 }
