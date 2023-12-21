@@ -110,7 +110,7 @@ pub fn evaluate_select_query(
                     }
                 }
                 _ => {
-                    // Any other statement can be performend on first or non repository
+                    // Any other statement can be performed on first or non repository
                     execute_statement(
                         env,
                         statement,

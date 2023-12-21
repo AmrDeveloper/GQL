@@ -85,7 +85,7 @@ pub fn date_to_month_name(date: i64) -> String {
         5 => "May",
         6 => "June",
         7 => "July",
-        8 => "Auguest",
+        8 => "August",
         9 => "September",
         10 => "October",
         11 => "November",

@@ -143,7 +143,7 @@ pub fn parse_arguments(args: &Vec<String>) -> Command {
 pub fn print_help_list() {
     println!("GitQL is a SQL like query language to run on local repositories");
     println!();
-    println!("Usage: gitql.exe [OPTIONS]");
+    println!("Usage: gitql [OPTIONS]");
     println!();
     println!("Options:");
     println!("-r,  --repos <REPOS>        Path for local repositories to run query on");

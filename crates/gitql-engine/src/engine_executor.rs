@@ -118,7 +118,7 @@ fn execute_select_statement(
         }
     }
 
-    // Select obects from the target table
+    // Select objects from the target table
     let mut objects = select_gql_objects(
         env,
         repo,
@@ -348,7 +348,7 @@ fn execute_aggregation_function_statement(
         return Ok(());
     }
 
-    // Used to determind if group by statement is executed before or not
+    // Used to determine if group by statement is executed before or not
     let groups_count = groups.len();
 
     // We should run aggregation function for each group
@@ -405,7 +405,7 @@ fn execute_aggregation_function_statement(
             }
         }
 
-        // In case of group by statement is exectued
+        // In case of group by statement is executed
         // Remove all elements expect the first one
         if groups_count > 1 {
             group.drain(1..);

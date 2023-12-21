@@ -55,9 +55,9 @@ fn select_references(
             if (index - padding) >= 0 {
                 let value = &fields_values[(index - padding) as usize];
                 if value.as_any().downcast_ref::<SymbolExpression>().is_none() {
-                    let evaulated = evaluate_expression(env, value, &attributes)?;
+                    let evaluated = evaluate_expression(env, value, &attributes)?;
                     let column_name = get_column_name(alias_table, field_name);
-                    attributes.insert(column_name, evaulated);
+                    attributes.insert(column_name, evaluated);
                     continue;
                 }
             }
@@ -146,9 +146,9 @@ fn select_commits(
             if (index - padding) >= 0 {
                 let value = &fields_values[(index - padding) as usize];
                 if value.as_any().downcast_ref::<SymbolExpression>().is_none() {
-                    let evaulated = evaluate_expression(env, value, &attributes)?;
+                    let evaluated = evaluate_expression(env, value, &attributes)?;
                     let column_name = get_column_name(alias_table, field_name);
-                    attributes.insert(column_name, evaulated);
+                    attributes.insert(column_name, evaluated);
                     continue;
                 }
             }
@@ -243,9 +243,9 @@ fn select_diffs(
             if (index - padding) >= 0 {
                 let value = &fields_values[(index - padding) as usize];
                 if value.as_any().downcast_ref::<SymbolExpression>().is_none() {
-                    let evaulated = evaluate_expression(env, value, &attributes)?;
+                    let evaluated = evaluate_expression(env, value, &attributes)?;
                     let column_name = get_column_name(alias_table, field_name);
-                    attributes.insert(column_name, evaulated);
+                    attributes.insert(column_name, evaluated);
                     continue;
                 }
             }
@@ -313,9 +313,9 @@ fn select_diffs(
                 }
 
                 if field_name == "deletions" {
-                    let deletations = Value::Integer(deletions as i64);
+                    let deletions = Value::Integer(deletions as i64);
                     let column_name = get_column_name(alias_table, &"deletions".to_string());
-                    attributes.insert(column_name, deletations);
+                    attributes.insert(column_name, deletions);
                     continue;
                 }
 
@@ -372,9 +372,9 @@ fn select_branches(
             if (index - padding) >= 0 {
                 let value = &fields_values[(index - padding) as usize];
                 if value.as_any().downcast_ref::<SymbolExpression>().is_none() {
-                    let evaulated = evaluate_expression(env, value, &attributes)?;
+                    let evaluated = evaluate_expression(env, value, &attributes)?;
                     let column_name = get_column_name(alias_table, field_name);
-                    attributes.insert(column_name, evaulated);
+                    attributes.insert(column_name, evaluated);
                     continue;
                 }
             }
@@ -457,9 +457,9 @@ fn select_tags(
                 let value = &fields_values[(index - padding) as usize];
 
                 if value.as_any().downcast_ref::<SymbolExpression>().is_none() {
-                    let evaulated = evaluate_expression(env, value, &attributes)?;
+                    let evaluated = evaluate_expression(env, value, &attributes)?;
                     let column_name = get_column_name(alias_table, field_name);
-                    attributes.insert(column_name, evaulated);
+                    attributes.insert(column_name, evaluated);
                     continue;
                 }
             }
@@ -500,9 +500,9 @@ fn select_values(
     for index in 0..len {
         let field_name = &fields_names[index];
         let value = &fields_values[index];
-        let evaulated = evaluate_expression(env, value, &attributes)?;
+        let evaluated = evaluate_expression(env, value, &attributes)?;
         let column_name = get_column_name(alias_table, field_name);
-        attributes.insert(column_name, evaulated);
+        attributes.insert(column_name, evaluated);
     }
 
     Ok(vec![GQLObject { attributes }])

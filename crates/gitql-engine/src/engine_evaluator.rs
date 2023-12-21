@@ -47,7 +47,7 @@ pub fn evaluate_expression(
                 .as_any()
                 .downcast_ref::<AssignmentExpression>()
                 .unwrap();
-            evaluate_assignemnt(env, expr, object)
+            evaluate_assignment(env, expr, object)
         }
         String => {
             let expr = expression
@@ -68,7 +68,7 @@ pub fn evaluate_expression(
                 .as_any()
                 .downcast_ref::<GlobalVariableExpression>()
                 .unwrap();
-            evaulate_global_variable(env, expr)
+            evaluate_global_variable(env, expr)
         }
         Number => {
             let expr = expression
@@ -107,14 +107,14 @@ pub fn evaluate_expression(
                 .as_any()
                 .downcast_ref::<LikeExpression>()
                 .unwrap();
-            evaulate_like(env, expr, object)
+            evaluate_like(env, expr, object)
         }
         Glob => {
             let expr = expression
                 .as_any()
                 .downcast_ref::<GlobExpression>()
                 .unwrap();
-            evaulate_glob(env, expr, object)
+            evaluate_glob(env, expr, object)
         }
         Logical => {
             let expr = expression
@@ -166,7 +166,7 @@ pub fn evaluate_expression(
     }
 }
 
-fn evaluate_assignemnt(
+fn evaluate_assignment(
     env: &mut Environment,
     expr: &AssignmentExpression,
     object: &HashMap<String, Value>,
@@ -201,7 +201,7 @@ fn evaluate_symbol(
     Err(format!("Invalid column name `{}`", &expr.value))
 }
 
-fn evaulate_global_variable(
+fn evaluate_global_variable(
     env: &mut Environment,
     expr: &GlobalVariableExpression,
 ) -> Result<Value, String> {
@@ -311,7 +311,7 @@ fn evaluate_comparison(
     }))
 }
 
-fn evaulate_like(
+fn evaluate_like(
     env: &mut Environment,
     expr: &LikeExpression,
     object: &HashMap<String, Value>,
@@ -332,7 +332,7 @@ fn evaulate_like(
     Ok(Value::Boolean(regex.is_match(&lhs)))
 }
 
-fn evaulate_glob(
+fn evaluate_glob(
     env: &mut Environment,
     expr: &GlobExpression,
     object: &HashMap<String, Value>,
