@@ -41,7 +41,7 @@ pub fn evaluate_expression(
     expression: &Box<dyn Expression>,
     object: &HashMap<String, Value>,
 ) -> Result<Value, String> {
-    match expression.expression_kind() {
+    match expression.kind() {
         Assignment => {
             let expr = expression
                 .as_any()

@@ -10,6 +10,8 @@ use crate::tokenizer::Location;
 use crate::tokenizer::Token;
 use crate::tokenizer::TokenKind;
 use crate::type_checker::are_types_equals;
+use crate::type_checker::check_all_values_are_same_type;
+use crate::type_checker::is_expression_type_equals;
 use crate::type_checker::TypeCheckResult;
 
 use gitql_ast::aggregation::AGGREGATIONS;
@@ -636,7 +638,7 @@ fn parse_assignment_expression(
 ) -> Result<Box<dyn Expression>, GQLError> {
     let expression = parse_is_null_expression(context, env, tokens, position)?;
     if *position < tokens.len() && tokens[*position].kind == TokenKind::ColonEqual {
-        if expression.expression_kind() != ExpressionKind::GlobalVariable {
+        if expression.kind() != ExpressionKind::GlobalVariable {
             let location = tokens[*position].location;
             let message =
                 "Assignment expressions expect global variable name before `:=`".to_string();
@@ -726,7 +728,7 @@ fn parse_in_expression(
 
         let values = parse_arguments_expressions(context, env, tokens, position)?;
         let values_type_result = check_all_values_are_same_type(env, &values);
-        if values_type_result.is_err() {
+        if values_type_result.is_none() {
             return Err(GQLError {
                 message: "Expects values between `(` and `)` to have the same type".to_owned(),
                 location: in_location,
@@ -734,7 +736,7 @@ fn parse_in_expression(
         }
 
         // Check that argument and values has the same type
-        let values_type = values_type_result.ok().unwrap();
+        let values_type = values_type_result.unwrap();
         if values_type != DataType::Any && expression.expr_type(env) != values_type {
             return Err(GQLError {
                 message: "Argument and Values of In Expression must have the same type".to_owned(),
@@ -1443,14 +1445,14 @@ fn parse_function_call_expression(
         // Make sure it's valid function name
         let function_name = &symbol_expression.unwrap().value;
         if FUNCTIONS.contains_key(function_name.as_str()) {
-            let arguments = parse_arguments_expressions(context, env, tokens, position)?;
+            let mut arguments = parse_arguments_expressions(context, env, tokens, position)?;
             let prototype = PROTOTYPES.get(function_name.as_str()).unwrap();
             let parameters = &prototype.parameters;
             let return_type = prototype.result.clone();
 
             check_function_call_arguments(
                 env,
-                &arguments,
+                &mut arguments,
                 parameters,
                 function_name.to_string(),
                 function_name_location,
@@ -1465,14 +1467,14 @@ fn parse_function_call_expression(
                 is_aggregation: false,
             }));
         } else if AGGREGATIONS.contains_key(function_name.as_str()) {
-            let arguments = parse_arguments_expressions(context, env, tokens, position)?;
+            let mut arguments = parse_arguments_expressions(context, env, tokens, position)?;
             let prototype = AGGREGATIONS_PROTOS.get(function_name.as_str()).unwrap();
             let parameters = &vec![prototype.parameter.clone()];
             let return_type = prototype.result.clone();
 
             check_function_call_arguments(
                 env,
-                &arguments,
+                &mut arguments,
                 parameters,
                 function_name.to_string(),
                 function_name_location,
@@ -1751,7 +1753,7 @@ fn parse_case_expression(
 
 fn check_function_call_arguments(
     env: &mut Environment,
-    arguments: &Vec<Box<dyn Expression>>,
+    arguments: &mut Vec<Box<dyn Expression>>,
     parameters: &Vec<DataType>,
     function_name: String,
     location: Location,
@@ -1789,7 +1791,7 @@ fn check_function_call_arguments(
             return Err(GQLError { message, location });
         }
     }
-    // Has Varargs parameter type at the end
+    // Has Variable arguments parameter type at the end
     else if has_varargs_parameter {
         // If function last parameter is optional make sure it at least has
         if arguments_len < parameters_len - 1 {
@@ -1802,7 +1804,7 @@ fn check_function_call_arguments(
             return Err(GQLError { message, location });
         }
     }
-    // No Optional or Varargs but has invalid number of arguments passed
+    // No Optional or Variable arguments but has invalid number of arguments passed
     else if arguments_len != parameters_len {
         let message = format!(
             "Function `{}` expects `{}` arguments but got `{}`",
@@ -1818,15 +1820,24 @@ fn check_function_call_arguments(
 
     // Check each argument vs parameter type
     for index in 0..last_required_parameter_index {
-        let argument_type = arguments.get(index).unwrap().expr_type(env);
         let parameter_type = parameters.get(index).unwrap();
-
-        if !argument_type.eq(parameter_type) {
-            let message = format!(
-                "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
-                function_name, index, argument_type, parameter_type
-            );
-            return Err(GQLError { message, location });
+        let argument = arguments.get(index).unwrap();
+        match is_expression_type_equals(env, argument, parameter_type) {
+            TypeCheckResult::RightSideCasted(new_expr) => {
+                arguments[index] = new_expr;
+            }
+            TypeCheckResult::LeftSideCasted(new_expr) => {
+                arguments[index] = new_expr;
+            }
+            TypeCheckResult::NotEqualAndCantImplicitCast => {
+                let argument_type = argument.expr_type(env);
+                let message = format!(
+                    "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
+                    function_name, index, argument_type, parameter_type
+                );
+                return Err(GQLError { message, location });
+            }
+            _ => {}
         }
     }
 
@@ -1835,38 +1846,30 @@ fn check_function_call_arguments(
         let last_parameter_type = parameters.get(last_required_parameter_index).unwrap();
 
         for index in last_required_parameter_index..arguments_len {
-            let argument_type = arguments.get(index).unwrap().expr_type(env);
-            if !last_parameter_type.eq(&argument_type) {
-                let message = format!(
-                    "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
-                    function_name, index, argument_type, last_parameter_type
-                );
-                return Err(GQLError { message, location });
+            let argument = arguments.get(index).unwrap();
+            match is_expression_type_equals(env, argument, last_parameter_type) {
+                TypeCheckResult::RightSideCasted(new_expr) => {
+                    arguments[index] = new_expr;
+                }
+                TypeCheckResult::LeftSideCasted(new_expr) => {
+                    arguments[index] = new_expr;
+                }
+                TypeCheckResult::NotEqualAndCantImplicitCast => {
+                    let argument_type = arguments.get(index).unwrap().expr_type(env);
+                    if !last_parameter_type.eq(&argument_type) {
+                        let message = format!(
+                            "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
+                            function_name, index, argument_type, last_parameter_type
+                        );
+                        return Err(GQLError { message, location });
+                    }
+                }
+                _ => {}
             }
         }
     }
 
     Ok(())
-}
-
-fn check_all_values_are_same_type(
-    env: &mut Environment,
-    arguments: &Vec<Box<dyn Expression>>,
-) -> Result<DataType, ()> {
-    let arguments_count = arguments.len();
-    if arguments_count == 0 {
-        return Ok(DataType::Any);
-    }
-
-    let data_type = arguments[0].expr_type(env);
-    for argument in arguments.iter().take(arguments_count).skip(1) {
-        let expr_type = argument.expr_type(env);
-        if data_type != expr_type {
-            return Err(());
-        }
-    }
-
-    Ok(data_type)
 }
 
 fn type_check_selected_fields(
@@ -1985,6 +1988,7 @@ fn un_expected_expression_error(tokens: &Vec<Token>, position: &usize) -> GQLErr
 }
 
 /// Remove last token if it semicolon, because it's optional
+#[inline(always)]
 fn consume_optional_semicolon_if_exists(tokens: &mut Vec<Token>) {
     if tokens.is_empty() {
         return;

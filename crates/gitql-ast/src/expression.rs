@@ -29,7 +29,7 @@ pub enum ExpressionKind {
 }
 
 pub trait Expression {
-    fn expression_kind(&self) -> ExpressionKind;
+    fn kind(&self) -> ExpressionKind;
     fn expr_type(&self, scope: &Environment) -> DataType;
     fn as_any(&self) -> &dyn Any;
 }
@@ -37,7 +37,7 @@ pub trait Expression {
 impl dyn Expression {
     pub fn is_const(&self) -> bool {
         matches!(
-            self.expression_kind(),
+            self.kind(),
             ExpressionKind::Number | ExpressionKind::Boolean | ExpressionKind::String
         )
     }
@@ -49,7 +49,7 @@ pub struct AssignmentExpression {
 }
 
 impl Expression for AssignmentExpression {
-    fn expression_kind(&self) -> ExpressionKind {
+    fn kind(&self) -> ExpressionKind {
         ExpressionKind::Assignment
     }
 
@@ -75,7 +75,7 @@ pub struct StringExpression {
 }
 
 impl Expression for StringExpression {
-    fn expression_kind(&self) -> ExpressionKind {
+    fn kind(&self) -> ExpressionKind {
         ExpressionKind::String
     }
 
@@ -98,7 +98,7 @@ pub struct SymbolExpression {
 }
 
 impl Expression for SymbolExpression {
-    fn expression_kind(&self) -> ExpressionKind {
+    fn kind(&self) -> ExpressionKind {
         ExpressionKind::Symbol
     }
 
@@ -126,7 +126,7 @@ pub struct GlobalVariableExpression {
 }
 
 impl Expression for GlobalVariableExpression {
-    fn expression_kind(&self) -> ExpressionKind {
+    fn kind(&self) -> ExpressionKind {
         ExpressionKind::GlobalVariable
     }
 
@@ -147,7 +147,7 @@ pub struct NumberExpression {
 }
 
 impl Expression for NumberExpression {
-    fn expression_kind(&self) -> ExpressionKind {
+    fn kind(&self) -> ExpressionKind {
         ExpressionKind::Number
     }
 
@@ -165,7 +165,7 @@ pub struct BooleanExpression {
 }
 
 impl Expression for BooleanExpression {
-    fn expression_kind(&self) -> ExpressionKind {
+    fn kind(&self) -> ExpressionKind {
         ExpressionKind::Boolean
     }
 
@@ -190,7 +190,7 @@ pub struct PrefixUnary {
 }
 
 impl Expression for PrefixUnary {
-    fn expression_kind(&self) -> ExpressionKind {
+    fn kind(&self) -> ExpressionKind {
         ExpressionKind::PrefixUnary
     }
 
@@ -223,7 +223,7 @@ pub struct ArithmeticExpression {
 }
 
 impl Expression for ArithmeticExpression {
-    fn expression_kind(&self) -> ExpressionKind {
+    fn kind(&self) -> ExpressionKind {
         ExpressionKind::Arithmetic
     }
 
@@ -261,7 +261,7 @@ pub struct ComparisonExpression {
 }
 
 impl Expression for ComparisonExpression {
-    fn expression_kind(&self) -> ExpressionKind {
+    fn kind(&self) -> ExpressionKind {
         ExpressionKind::Comparison
     }
 
@@ -284,7 +284,7 @@ pub struct LikeExpression {
 }
 
 impl Expression for LikeExpression {
-    fn expression_kind(&self) -> ExpressionKind {
+    fn kind(&self) -> ExpressionKind {
         ExpressionKind::Like
     }
 
@@ -303,7 +303,7 @@ pub struct GlobExpression {
 }
 
 impl Expression for GlobExpression {
-    fn expression_kind(&self) -> ExpressionKind {
+    fn kind(&self) -> ExpressionKind {
         ExpressionKind::Glob
     }
 
@@ -330,7 +330,7 @@ pub struct LogicalExpression {
 }
 
 impl Expression for LogicalExpression {
-    fn expression_kind(&self) -> ExpressionKind {
+    fn kind(&self) -> ExpressionKind {
         ExpressionKind::Logical
     }
 
@@ -358,7 +358,7 @@ pub struct BitwiseExpression {
 }
 
 impl Expression for BitwiseExpression {
-    fn expression_kind(&self) -> ExpressionKind {
+    fn kind(&self) -> ExpressionKind {
         ExpressionKind::Bitwise
     }
 
@@ -378,7 +378,7 @@ pub struct CallExpression {
 }
 
 impl Expression for CallExpression {
-    fn expression_kind(&self) -> ExpressionKind {
+    fn kind(&self) -> ExpressionKind {
         ExpressionKind::Call
     }
 
@@ -399,7 +399,7 @@ pub struct BetweenExpression {
 }
 
 impl Expression for BetweenExpression {
-    fn expression_kind(&self) -> ExpressionKind {
+    fn kind(&self) -> ExpressionKind {
         ExpressionKind::Between
     }
 
@@ -420,7 +420,7 @@ pub struct CaseExpression {
 }
 
 impl Expression for CaseExpression {
-    fn expression_kind(&self) -> ExpressionKind {
+    fn kind(&self) -> ExpressionKind {
         ExpressionKind::Case
     }
 
@@ -440,7 +440,7 @@ pub struct InExpression {
 }
 
 impl Expression for InExpression {
-    fn expression_kind(&self) -> ExpressionKind {
+    fn kind(&self) -> ExpressionKind {
         ExpressionKind::In
     }
 
@@ -459,7 +459,7 @@ pub struct IsNullExpression {
 }
 
 impl Expression for IsNullExpression {
-    fn expression_kind(&self) -> ExpressionKind {
+    fn kind(&self) -> ExpressionKind {
         ExpressionKind::IsNull
     }
 
@@ -475,7 +475,7 @@ impl Expression for IsNullExpression {
 pub struct NullExpression {}
 
 impl Expression for NullExpression {
-    fn expression_kind(&self) -> ExpressionKind {
+    fn kind(&self) -> ExpressionKind {
         ExpressionKind::Null
     }
 

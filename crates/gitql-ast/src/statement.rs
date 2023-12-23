@@ -16,7 +16,7 @@ pub enum StatementKind {
 }
 
 pub trait Statement {
-    fn get_statement_kind(&self) -> StatementKind;
+    fn kind(&self) -> StatementKind;
     fn as_any(&self) -> &dyn Any;
 }
 
@@ -45,7 +45,7 @@ impl Statement for SelectStatement {
         self
     }
 
-    fn get_statement_kind(&self) -> StatementKind {
+    fn kind(&self) -> StatementKind {
         StatementKind::Select
     }
 }
@@ -59,7 +59,7 @@ impl Statement for WhereStatement {
         self
     }
 
-    fn get_statement_kind(&self) -> StatementKind {
+    fn kind(&self) -> StatementKind {
         StatementKind::Where
     }
 }
@@ -73,7 +73,7 @@ impl Statement for HavingStatement {
         self
     }
 
-    fn get_statement_kind(&self) -> StatementKind {
+    fn kind(&self) -> StatementKind {
         StatementKind::Having
     }
 }
@@ -87,7 +87,7 @@ impl Statement for LimitStatement {
         self
     }
 
-    fn get_statement_kind(&self) -> StatementKind {
+    fn kind(&self) -> StatementKind {
         StatementKind::Limit
     }
 }
@@ -101,7 +101,7 @@ impl Statement for OffsetStatement {
         self
     }
 
-    fn get_statement_kind(&self) -> StatementKind {
+    fn kind(&self) -> StatementKind {
         StatementKind::Offset
     }
 }
@@ -122,7 +122,7 @@ impl Statement for OrderByStatement {
         self
     }
 
-    fn get_statement_kind(&self) -> StatementKind {
+    fn kind(&self) -> StatementKind {
         StatementKind::OrderBy
     }
 }
@@ -136,7 +136,7 @@ impl Statement for GroupByStatement {
         self
     }
 
-    fn get_statement_kind(&self) -> StatementKind {
+    fn kind(&self) -> StatementKind {
         StatementKind::GroupBy
     }
 }
@@ -155,7 +155,7 @@ impl Statement for AggregationsStatement {
         self
     }
 
-    fn get_statement_kind(&self) -> StatementKind {
+    fn kind(&self) -> StatementKind {
         StatementKind::AggregateFunction
     }
 }
@@ -170,7 +170,7 @@ impl Statement for GlobalVariableStatement {
         self
     }
 
-    fn get_statement_kind(&self) -> StatementKind {
+    fn kind(&self) -> StatementKind {
         StatementKind::GlobalVariable
     }
 }

@@ -34,7 +34,7 @@ pub fn execute_statement(
     alias_table: &mut HashMap<String, String>,
     hidden_selection: &Vec<String>,
 ) -> Result<(), String> {
-    match statement.get_statement_kind() {
+    match statement.kind() {
         Select => {
             let statement = statement
                 .as_any()
