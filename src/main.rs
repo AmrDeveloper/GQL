@@ -3,11 +3,12 @@ use gitql_ast::environment::Environment;
 use gitql_cli::arguments;
 use gitql_cli::arguments::Arguments;
 use gitql_cli::arguments::Command;
+use gitql_cli::diagnostic_reporter;
+use gitql_cli::diagnostic_reporter::DiagnosticReporter;
 use gitql_cli::render;
-use gitql_cli::reporter;
-use gitql_cli::reporter::DiagnosticReporter;
 use gitql_engine::engine;
 use gitql_engine::engine::EvaluationResult::SelectedGroups;
+use gitql_parser::diagnostic::Diagnostic;
 use gitql_parser::parser;
 use gitql_parser::tokenizer;
 
@@ -25,10 +26,13 @@ fn main() {
             launch_gitql_repl(arguments);
         }
         Command::QueryMode(query, arguments) => {
-            let mut reporter = reporter::DiagnosticReporter::default();
+            let mut reporter = diagnostic_reporter::DiagnosticReporter::default();
             let git_repos_result = validate_git_repositories(&arguments.repos);
             if git_repos_result.is_err() {
-                reporter.report_error(git_repos_result.err().unwrap().as_str());
+                reporter.report_diagnostic(
+                    &query,
+                    Diagnostic::error(git_repos_result.err().unwrap().as_str()),
+                );
                 return;
             }
 
@@ -49,10 +53,13 @@ fn main() {
 }
 
 fn launch_gitql_repl(arguments: Arguments) {
-    let mut reporter = reporter::DiagnosticReporter::default();
+    let mut reporter = diagnostic_reporter::DiagnosticReporter::default();
     let git_repos_result = validate_git_repositories(&arguments.repos);
     if git_repos_result.is_err() {
-        reporter.report_error(git_repos_result.err().unwrap().as_str());
+        reporter.report_diagnostic(
+            "",
+            Diagnostic::error(git_repos_result.err().unwrap().as_str()),
+        );
         return;
     }
 
@@ -62,7 +69,7 @@ fn launch_gitql_repl(arguments: Arguments) {
     let mut input = String::new();
 
     loop {
-        // Render Promot only if input is received from terminal
+        // Render Prompt only if input is received from terminal
         if atty::is(Stream::Stdin) {
             print!("gql > ");
         }
@@ -75,23 +82,22 @@ fn launch_gitql_repl(arguments: Arguments) {
                 }
             }
             Err(error) => {
-                let error_message = format!("Error: {}", error);
-                reporter.report_error(&error_message)
+                reporter.report_diagnostic(&input, Diagnostic::error(&format!("{}", error)));
             }
         }
 
-        let trimed_input = input.trim();
-        if trimed_input.is_empty() || trimed_input == "\n" {
+        let stdin_input = input.trim();
+        if stdin_input.is_empty() || stdin_input == "\n" {
             continue;
         }
 
-        if trimed_input == "exit" {
+        if stdin_input == "exit" {
             println!("Goodbye!");
             break;
         }
 
         execute_gitql_query(
-            trimed_input.to_owned(),
+            stdin_input.to_owned(),
             &arguments,
             &git_repositories,
             &mut global_env,
@@ -111,28 +117,33 @@ fn execute_gitql_query(
     reporter: &mut DiagnosticReporter,
 ) {
     let front_start = std::time::Instant::now();
-    let tokenizer_result = tokenizer::tokenize(query);
+    let tokenizer_result = tokenizer::tokenize(query.clone());
     if tokenizer_result.is_err() {
-        reporter.report_gql_error(tokenizer_result.err().unwrap());
+        let diagnostic = tokenizer_result.err().unwrap();
+        reporter.report_diagnostic(&query, *diagnostic);
         return;
     }
 
     let tokens = tokenizer_result.ok().unwrap();
     let parser_result = parser::parse_gql(tokens, env);
     if parser_result.is_err() {
-        reporter.report_gql_error(parser_result.err().unwrap());
+        let diagnostic = parser_result.err().unwrap();
+        reporter.report_diagnostic(&query, *diagnostic);
         return;
     }
 
-    let query = parser_result.ok().unwrap();
+    let query_node = parser_result.ok().unwrap();
     let front_duration = front_start.elapsed();
 
     let engine_start = std::time::Instant::now();
-    let evaluation_result = engine::evaluate(env, repos, query);
+    let evaluation_result = engine::evaluate(env, repos, query_node);
 
     // Report Runtime exceptions if they exists
     if evaluation_result.is_err() {
-        reporter.report_runtime_error(evaluation_result.err().unwrap());
+        reporter.report_diagnostic(
+            &query,
+            Diagnostic::exception(&evaluation_result.err().unwrap()),
+        );
         return;
     }
 
@@ -161,8 +172,8 @@ fn execute_gitql_query(
 
 fn validate_git_repositories(repositories: &Vec<String>) -> Result<Vec<gix::Repository>, String> {
     let mut git_repositories: Vec<gix::Repository> = vec![];
-    for repsitory in repositories {
-        let git_repository = gix::open(repsitory);
+    for repository in repositories {
+        let git_repository = gix::open(repository);
         if git_repository.is_err() {
             return Err(git_repository.err().unwrap().to_string());
         }

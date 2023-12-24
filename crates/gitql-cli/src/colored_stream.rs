@@ -1,4 +1,3 @@
-use std::io::Write;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 pub struct ColoredStream {
@@ -14,14 +13,6 @@ impl Default for ColoredStream {
 }
 
 impl ColoredStream {
-    pub fn print(&mut self, input: &str) {
-        _ = write!(&mut self.stdout, "{}", input);
-    }
-
-    pub fn println(&mut self, input: &str) {
-        _ = writeln!(&mut self.stdout, "{}", input);
-    }
-
     pub fn set_color(&mut self, color: Option<Color>) {
         _ = self.stdout.set_color(ColorSpec::new().set_fg(color));
     }

@@ -87,9 +87,9 @@ pub struct Token {
     pub literal: String,
 }
 
-use crate::diagnostic::GQLError;
+use crate::diagnostic::Diagnostic;
 
-pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
+pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
     let mut tokens: Vec<Token> = Vec::new();
 
     let mut position = 0;
@@ -513,13 +513,10 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
                 continue;
             }
 
-            return Err(GQLError {
-                message: "Expect `=` after `:`".to_owned(),
-                location: Location {
-                    start: column_start,
-                    end: position,
-                },
-            });
+            return Err(Box::new(
+                Diagnostic::error("Expect `=` after `:`")
+                    .with_location_span(column_start, position),
+            ));
         }
 
         // Bang or Bang Equal
@@ -610,13 +607,9 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, GQLError> {
             continue;
         }
 
-        return Err(GQLError {
-            message: "Un expected character".to_owned(),
-            location: Location {
-                start: column_start,
-                end: position,
-            },
-        });
+        return Err(Box::new(
+            Diagnostic::error("Un expected character").with_location_span(column_start, position),
+        ));
     }
 
     Ok(tokens)
@@ -626,28 +619,23 @@ fn consume_global_variable_name(
     chars: &Vec<char>,
     pos: &mut usize,
     start: &mut usize,
-) -> Result<Token, GQLError> {
+) -> Result<Token, Box<Diagnostic>> {
     // Consume `@`
     *pos += 1;
 
     // Make sure first character is  alphabetic
     if *pos < chars.len() && !chars[*pos].is_alphabetic() {
-        let location = Location {
-            start: *start,
-            end: *pos,
-        };
-
-        return Err(GQLError {
-            message: "Global variable name must start with alphabetic character".to_owned(),
-            location,
-        });
+        return Err(Box::new(
+            Diagnostic::error("Global variable name must start with alphabetic character")
+                .with_location_span(*start, *pos),
+        ));
     }
 
     while *pos < chars.len() && (chars[*pos] == '_' || chars[*pos].is_alphanumeric()) {
         *pos += 1;
     }
 
-    // Idntifier is be case-insensitive by default, convert to lowercase to be easy to compare and lookup
+    // Identifier is be case-insensitive by default, convert to lowercase to be easy to compare and lookup
     let literal = &chars[*start..*pos];
     let string = String::from_utf8(literal.iter().map(|&c| c as u8).collect())
         .unwrap()
@@ -670,7 +658,7 @@ fn consume_identifier(chars: &Vec<char>, pos: &mut usize, start: &mut usize) -> 
         *pos += 1;
     }
 
-    // Idntifier is be case-insensitive by default, convert to lowercase to be easy to compare and lookup
+    // Identifier is be case-insensitive by default, convert to lowercase to be easy to compare and lookup
     let literal = &chars[*start..*pos];
     let string = String::from_utf8(literal.iter().map(|&c| c as u8).collect())
         .unwrap()
@@ -692,7 +680,7 @@ fn consume_number(
     chars: &Vec<char>,
     pos: &mut usize,
     start: &mut usize,
-) -> Result<Token, GQLError> {
+) -> Result<Token, Box<Diagnostic>> {
     let mut kind = TokenKind::Integer;
 
     while *pos < chars.len() && (chars[*pos].is_numeric() || chars[*pos] == '_') {
@@ -728,7 +716,7 @@ fn consume_backticks_identifier(
     chars: &Vec<char>,
     pos: &mut usize,
     start: &mut usize,
-) -> Result<Token, GQLError> {
+) -> Result<Token, Box<Diagnostic>> {
     *pos += 1;
 
     while *pos < chars.len() && chars[*pos] != '`' {
@@ -736,13 +724,9 @@ fn consume_backticks_identifier(
     }
 
     if *pos >= chars.len() {
-        return Err(GQLError {
-            message: "Unterminated backticks".to_owned(),
-            location: Location {
-                start: *start,
-                end: *pos,
-            },
-        });
+        return Err(Box::new(
+            Diagnostic::error("Unterminated backticks").with_location_span(*start, *pos),
+        ));
     }
 
     *pos += 1;
@@ -768,7 +752,7 @@ fn consume_binary_number(
     chars: &Vec<char>,
     pos: &mut usize,
     start: &mut usize,
-) -> Result<Token, GQLError> {
+) -> Result<Token, Box<Diagnostic>> {
     let mut has_digit = false;
     while *pos < chars.len() && ((chars[*pos] == '0' || chars[*pos] == '1') || chars[*pos] == '_') {
         *pos += 1;
@@ -776,13 +760,10 @@ fn consume_binary_number(
     }
 
     if !has_digit {
-        return Err(GQLError {
-            message: "Missing digits after the integer base prefix".to_owned(),
-            location: Location {
-                start: *start,
-                end: *pos,
-            },
-        });
+        return Err(Box::new(
+            Diagnostic::error("Missing digits after the integer base prefix")
+                .with_location_span(*start, *pos),
+        ));
     }
 
     let literal = &chars[*start..*pos];
@@ -791,13 +772,9 @@ fn consume_binary_number(
     let convert_result = i64::from_str_radix(&literal_num, 2);
 
     if convert_result.is_err() {
-        return Err(GQLError {
-            message: "Invalid binary number".to_owned(),
-            location: Location {
-                start: *start,
-                end: *pos,
-            },
-        });
+        return Err(Box::new(
+            Diagnostic::error("Invalid binary number").with_location_span(*start, *pos),
+        ));
     }
 
     let location = Location {
@@ -816,7 +793,7 @@ fn consume_octal_number(
     chars: &Vec<char>,
     pos: &mut usize,
     start: &mut usize,
-) -> Result<Token, GQLError> {
+) -> Result<Token, Box<Diagnostic>> {
     let mut has_digit = false;
     while *pos < chars.len() && ((chars[*pos] >= '0' || chars[*pos] < '8') || chars[*pos] == '_') {
         *pos += 1;
@@ -824,13 +801,10 @@ fn consume_octal_number(
     }
 
     if !has_digit {
-        return Err(GQLError {
-            message: "Missing digits after the integer base prefix".to_owned(),
-            location: Location {
-                start: *start,
-                end: *pos,
-            },
-        });
+        return Err(Box::new(
+            Diagnostic::error("Missing digits after the integer base prefix")
+                .with_location_span(*start, *pos),
+        ));
     }
 
     let literal = &chars[*start..*pos];
@@ -839,13 +813,9 @@ fn consume_octal_number(
     let convert_result = i64::from_str_radix(&literal_num, 8);
 
     if convert_result.is_err() {
-        return Err(GQLError {
-            message: "Invalid octal number".to_owned(),
-            location: Location {
-                start: *start,
-                end: *pos,
-            },
-        });
+        return Err(Box::new(
+            Diagnostic::error("Invalid octal number").with_location_span(*start, *pos),
+        ));
     }
 
     let location = Location {
@@ -864,7 +834,7 @@ fn consume_hex_number(
     chars: &Vec<char>,
     pos: &mut usize,
     start: &mut usize,
-) -> Result<Token, GQLError> {
+) -> Result<Token, Box<Diagnostic>> {
     let mut has_digit = false;
     while *pos < chars.len() && (chars[*pos].is_ascii_hexdigit() || chars[*pos] == '_') {
         *pos += 1;
@@ -872,13 +842,10 @@ fn consume_hex_number(
     }
 
     if !has_digit {
-        return Err(GQLError {
-            message: "Missing digits after the integer base prefix".to_owned(),
-            location: Location {
-                start: *start,
-                end: *pos,
-            },
-        });
+        return Err(Box::new(
+            Diagnostic::error("Missing digits after the integer base prefix")
+                .with_location_span(*start, *pos),
+        ));
     }
 
     let literal = &chars[*start..*pos];
@@ -887,13 +854,9 @@ fn consume_hex_number(
     let convert_result = i64::from_str_radix(&literal_num, 16);
 
     if convert_result.is_err() {
-        return Err(GQLError {
-            message: "Invalid hex decinmal number".to_owned(),
-            location: Location {
-                start: *start,
-                end: *pos,
-            },
-        });
+        return Err(Box::new(
+            Diagnostic::error("Invalid hex decimal number").with_location_span(*start, *pos),
+        ));
     }
 
     let location = Location {
@@ -912,7 +875,7 @@ fn consume_string(
     chars: &Vec<char>,
     pos: &mut usize,
     start: &mut usize,
-) -> Result<Token, GQLError> {
+) -> Result<Token, Box<Diagnostic>> {
     *pos += 1;
 
     while *pos < chars.len() && chars[*pos] != '"' {
@@ -920,13 +883,9 @@ fn consume_string(
     }
 
     if *pos >= chars.len() {
-        return Err(GQLError {
-            message: "Unterminated double quote string".to_owned(),
-            location: Location {
-                start: *start,
-                end: *pos,
-            },
-        });
+        return Err(Box::new(
+            Diagnostic::error("Unterminated double quote string").with_location_span(*start, *pos),
+        ));
     }
 
     *pos += 1;
@@ -958,7 +917,7 @@ fn ignore_single_line_comment(chars: &Vec<char>, pos: &mut usize) {
     *pos += 1;
 }
 
-fn ignore_c_style_comment(chars: &Vec<char>, pos: &mut usize) -> Result<(), GQLError> {
+fn ignore_c_style_comment(chars: &Vec<char>, pos: &mut usize) -> Result<(), Box<Diagnostic>> {
     *pos += 2;
 
     while *pos + 1 < chars.len() && (chars[*pos] != '*' && chars[*pos + 1] != '/') {
@@ -966,13 +925,9 @@ fn ignore_c_style_comment(chars: &Vec<char>, pos: &mut usize) -> Result<(), GQLE
     }
 
     if *pos + 2 > chars.len() {
-        return Err(GQLError {
-            message: "C Style comment must end with */".to_owned(),
-            location: Location {
-                start: *pos,
-                end: *pos,
-            },
-        });
+        return Err(Box::new(
+            Diagnostic::error("C Style comment must end with */").with_location_span(*pos, *pos),
+        ));
     }
 
     *pos += 2;
