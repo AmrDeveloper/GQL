@@ -24,7 +24,9 @@ impl DiagnosticReporter {
             if let Some(location) = diagnostic.location() {
                 print!("  | ");
                 print!("{}", &"-".repeat(location.0));
+                self.stdout.set_color(Some(Color::Yellow));
                 println!("{}", &"^".repeat(usize::max(1, location.1 - location.0)));
+                self.stdout.set_color(Some(Color::Red));
             }
 
             println!("  |");

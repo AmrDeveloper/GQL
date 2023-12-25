@@ -129,32 +129,42 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
                 if characters[position + 1] == 'x' {
                     position += 2;
                     column_start += 2;
-                    let result = consume_hex_number(&characters, &mut position, &mut column_start)?;
-                    tokens.push(result);
+                    tokens.push(consume_hex_number(
+                        &characters,
+                        &mut position,
+                        &mut column_start,
+                    )?);
                     continue;
                 }
 
                 if characters[position + 1] == 'b' {
                     position += 2;
                     column_start += 2;
-                    let result =
-                        consume_binary_number(&characters, &mut position, &mut column_start)?;
-                    tokens.push(result);
+                    tokens.push(consume_binary_number(
+                        &characters,
+                        &mut position,
+                        &mut column_start,
+                    )?);
                     continue;
                 }
 
                 if characters[position + 1] == 'o' {
                     position += 2;
                     column_start += 2;
-                    let result =
-                        consume_octal_number(&characters, &mut position, &mut column_start)?;
-                    tokens.push(result);
+                    tokens.push(consume_octal_number(
+                        &characters,
+                        &mut position,
+                        &mut column_start,
+                    )?);
                     continue;
                 }
             }
 
-            let number = consume_number(&characters, &mut position, &mut column_start)?;
-            tokens.push(number);
+            tokens.push(consume_number(
+                &characters,
+                &mut position,
+                &mut column_start,
+            )?);
             continue;
         }
 
@@ -242,10 +252,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
         if char == '/' {
             // Ignore C style comment which from /* comment */
             if position + 1 < characters.len() && characters[position + 1] == '*' {
-                let result = ignore_c_style_comment(&characters, &mut position);
-                if result.is_err() {
-                    return Err(result.err().unwrap());
-                }
+                ignore_c_style_comment(&characters, &mut position)?;
                 continue;
             }
 
@@ -515,6 +522,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
 
             return Err(Box::new(
                 Diagnostic::error("Expect `=` after `:`")
+                    .add_help("Only token that has `:` is `:=` so make sure you add `=` after `:`")
                     .with_location_span(column_start, position),
             ));
         }
@@ -627,6 +635,7 @@ fn consume_global_variable_name(
     if *pos < chars.len() && !chars[*pos].is_alphabetic() {
         return Err(Box::new(
             Diagnostic::error("Global variable name must start with alphabetic character")
+                .add_help("Add at least one alphabetic character after @")
                 .with_location_span(*start, *pos),
         ));
     }
@@ -725,7 +734,9 @@ fn consume_backticks_identifier(
 
     if *pos >= chars.len() {
         return Err(Box::new(
-            Diagnostic::error("Unterminated backticks").with_location_span(*start, *pos),
+            Diagnostic::error("Unterminated backticks")
+                .add_help("Add ` at the end of the identifier")
+                .with_location_span(*start, *pos),
         ));
     }
 
@@ -762,6 +773,8 @@ fn consume_binary_number(
     if !has_digit {
         return Err(Box::new(
             Diagnostic::error("Missing digits after the integer base prefix")
+                .add_help("Expect at least one binary digits after the prefix 0b")
+                .add_help("Binary digit mean 0 or 1")
                 .with_location_span(*start, *pos),
         ));
     }
@@ -803,6 +816,8 @@ fn consume_octal_number(
     if !has_digit {
         return Err(Box::new(
             Diagnostic::error("Missing digits after the integer base prefix")
+                .add_help("Expect at least one octal digits after the prefix 0o")
+                .add_help("Octal digit mean 0 to 8 number")
                 .with_location_span(*start, *pos),
         ));
     }
@@ -844,6 +859,8 @@ fn consume_hex_number(
     if !has_digit {
         return Err(Box::new(
             Diagnostic::error("Missing digits after the integer base prefix")
+                .add_help("Expect at least one hex digits after the prefix 0x")
+                .add_help("Hex digit mean 0 to 9 and a to f")
                 .with_location_span(*start, *pos),
         ));
     }
@@ -884,7 +901,9 @@ fn consume_string(
 
     if *pos >= chars.len() {
         return Err(Box::new(
-            Diagnostic::error("Unterminated double quote string").with_location_span(*start, *pos),
+            Diagnostic::error("Unterminated double quote string")
+                .add_help("Add \" at the end of the String literal")
+                .with_location_span(*start, *pos),
         ));
     }
 
@@ -926,7 +945,9 @@ fn ignore_c_style_comment(chars: &Vec<char>, pos: &mut usize) -> Result<(), Box<
 
     if *pos + 2 > chars.len() {
         return Err(Box::new(
-            Diagnostic::error("C Style comment must end with */").with_location_span(*pos, *pos),
+            Diagnostic::error("C Style comment must end with */")
+                .add_help("Add */ at the end of C Style comments")
+                .with_location_span(*pos, *pos),
         ));
     }
 
