@@ -1,15 +1,17 @@
+# Project information
 site_name: Git Query language
-
 site_url: https://amrdeveloper.github.io/gql
 site_description: A SQL Like query language to perform queries on .git files.
 site_author: AmrDeveloper
 
-copyright: Copyright &copy; 2023 Amr Heshan
-
-repo_name: amrdeveloper/gql
+# Repository
+repo_name: Amrdeveloper/GQL
 repo_url: https://github.com/amrdeveloper/GQL
-edit_uri: blob/master/docs/
 
+# Copyright
+copyright: Copyright &copy; 2023 Amr Hesham
+
+# Configuration
 theme:
   name: material
   logo: assets/gql_logo.svg
@@ -18,21 +20,36 @@ theme:
   icon:
     repo: fontawesome/brands/github
     edit: material/pencil
+    view: material/eye
 
   font:
     code: JetBrains Mono
 
   palette:
-    primary: black
-    accent: deep purple
+    - scheme: default
+      primary: white
+      accent: deep orange
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to dark mode
+
+    - scheme: slate
+      primary: black
+      accent: deep orange
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to light mode
 
   features:
     - content.code.annotate
     - content.code.copy
+    - content.action.edit
 
   plugins:
+    - optimize
     - offline
 
+# Extensions
 markdown_extensions:
   - pymdownx.highlight:
       use_pygments: true
@@ -43,6 +60,7 @@ markdown_extensions:
   - pymdownx.snippets
   - pymdownx.superfences
 
+# Page tree
 nav:
   - Home: index.md
   - Setup: setup.md

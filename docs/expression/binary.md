@@ -35,7 +35,7 @@ SELECT "10 usd" LIKE "[0-9]* usd"
 ---
 
 ### Glob Expression
-The `GLOB` operator is similar to `LIKE` but uses the Unix file globbing syntax for its wildcards. Also, `GLOB` is case sensitive, unlike `LIKE`.
+The `GLOB` operator is similar to `LIKE` but uses the Unix file globing syntax for its wildcards. Also, `GLOB` is case sensitive, unlike `LIKE`.
 
 ```sql
 SELECT "Git Query Language" GLOB "Git*"
@@ -70,7 +70,7 @@ SELECT commit_count FROM branches WHERE commit_count BETWEEN 2 .. 30000
 ---
 
 ### Is Null Expression
-Returns true if value is null, can uesd with `NOT` keyword to return if true if not null
+Returns true if value is null, can used with `NOT` keyword to return if true if not null
 
 ```SQL
 SELECT 1 IS NULL

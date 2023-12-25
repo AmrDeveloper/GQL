@@ -3,7 +3,7 @@ note that all functions names are case-insensitive.
 
 ### String functions
 
-| Name       | Paramters                    | Return  | Description                                                                                                                                                          |
+| Name       | Parameters                   | Return  | Description                                                                                                                                                          |
 | ---------- | ---------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | LOWER      | Text                         | Text    | Return Text in lower case.                                                                                                                                           |
 | UPPER      | Text                         | Text    | Return Text in upper case.                                                                                                                                           |
@@ -55,7 +55,7 @@ SELECT UNICODE("AmrDeveloper")
 
 ### Date functions
 
-| Name              | Paramters        | Return   | Description                                                    |
+| Name              | Parameters       | Return   | Description                                                    |
 | ----------------- | ---------------- | -------- | -------------------------------------------------------------- |
 | CURRENT_TIME      |                  | Time     | Return current time in `HH:MM:SS` format.                      |
 | CURRENT_DATE      |                  | Date     | Return current date in `YYYY-MM-DD` format.                    |
@@ -79,7 +79,7 @@ SELECT MONTHNAME(CURRENT_DATE())
 
 ### Numeric Functions
 
-| Name   | Paramters    | Return  | Description                                                                  |
+| Name   | Parameters   | Return  | Description                                                                  |
 | ------ | ------------ | ------- | ---------------------------------------------------------------------------- |
 | PI     |              | Float   | Return the value of PI.                                                      |
 | FLOOR  | Float        | Integer | Returns the largest integer value that is smaller than or equal to a number. |
@@ -109,11 +109,11 @@ SELECT ATN2(0.50, 1.0)
 
 ### General functions
 
-| Name      | Paramters | Return  | Description                                 |
-| --------- | --------- | ------- | ------------------------------------------- |
-| ISNULL    | ANY       | Boolean | Return TRUE if the argument type is null.   |
-| ISNUMERIC | ANY       | Boolean | Return TRUE if the argument type is number. |
-| TYPEOF    | ANY       | Text    | Return the argument type name.              |
+| Name      | Parameters | Return  | Description                                 |
+| --------- | ---------- | ------- | ------------------------------------------- |
+| ISNULL    | ANY        | Boolean | Return TRUE if the argument type is null.   |
+| ISNUMERIC | ANY        | Boolean | Return TRUE if the argument type is number. |
+| TYPEOF    | ANY        | Text    | Return the argument type name.              |
 
 ```sql
 SELECT ISNULL(null), ISNULL(1)
