@@ -295,6 +295,9 @@ fn select_diffs(
                 let select_insertions_or_deletions =
                     field_name == "insertions" || field_name == "deletions";
 
+                rewrite_cache.clear_resource_cache();
+                diff_cache.clear_resource_cache();
+
                 let (mut insertions, mut deletions, mut files_changed) = (0, 0, 0);
 
                 previous
