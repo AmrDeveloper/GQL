@@ -46,6 +46,7 @@ lazy_static! {
         map.insert("current_timestamp", date_current_timestamp);
         map.insert("now", date_current_timestamp);
         map.insert("makedate", date_make_date);
+        map.insert("maketime", date_make_time);
         map.insert("dayname", date_dayname);
         map.insert("monthname", date_monthname);
 
@@ -272,6 +273,13 @@ lazy_static! {
             Prototype {
                 parameters: vec![DataType::Integer, DataType::Integer],
                 result: DataType::Date,
+            },
+        );
+        map.insert(
+            "maketime",
+            Prototype {
+                parameters: vec![DataType::Integer, DataType::Integer, DataType::Integer],
+                result: DataType::Time,
             },
         );
         map.insert(
@@ -661,6 +669,13 @@ fn date_make_date(inputs: &[Value]) -> Value {
     let day_of_year = inputs[1].as_int() as u32;
     let time_stamp = date_utils::time_stamp_from_year_and_day(year, day_of_year);
     Value::Date(time_stamp)
+}
+
+fn date_make_time(inputs: &[Value]) -> Value {
+    let hour = inputs[0].as_int();
+    let minute = inputs[1].as_int();
+    let second = inputs[2].as_int();
+    Value::Time(format!("{}:{:02}:{:02}", hour, minute, second))
 }
 
 fn date_dayname(inputs: &[Value]) -> Value {

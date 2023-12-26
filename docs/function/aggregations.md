@@ -1,14 +1,14 @@
 An aggregate function in GQL performs a calculation on multiple values and returns a single value
 
 ### Aggregation `max`
-Accept field name with `NUMBER` to calculate the maximum value of it for all elements until the current one
+Accept field name to calculate the maximum value of it for all elements until the current one
 
 ```sql
 SELECT name, commit_count, max(commit_count) FROM branches
 ```
 
 ### Aggregation `min`
-Accept field name with `NUMBER` to calculate the minimum value of it for all elements until the current one
+Accept field name to calculate the minimum value of it for all elements until the current one
 
 ```sql
 SELECT name, commit_count, min(commit_count) FROM branches

@@ -55,15 +55,16 @@ SELECT UNICODE("AmrDeveloper")
 
 ### Date functions
 
-| Name              | Parameters       | Return   | Description                                                    |
-| ----------------- | ---------------- | -------- | -------------------------------------------------------------- |
-| CURRENT_TIME      |                  | Time     | Return current time in `HH:MM:SS` format.                      |
-| CURRENT_DATE      |                  | Date     | Return current date in `YYYY-MM-DD` format.                    |
-| CURRENT_TIMESTAMP |                  | DateTime | Return current date time in `YYYY-MM-DD HH:MM:SS` format.      |
-| MAKEDATE          | Integer, Integer | Date     | Create and return a date based on a year and a number of days. |
-| NOW               |                  | DateTime | Return current date time in `YYYY-MM-DD HH:MM:SS` format.      |
-| DAYNAME           | Date             | Text     | Returns the name of the day given a timestamp.                 |
-| MONTHNAME         | Date             | Text     | Returns the name of the month given a timestamp.               |
+| Name              | Parameters                | Return   | Description                                                                |
+| ----------------- | ------------------------- | -------- | -------------------------------------------------------------------------- |
+| CURRENT_TIME      |                           | Time     | Return current time in `HH:MM:SS` format.                                  |
+| CURRENT_DATE      |                           | Date     | Return current date in `YYYY-MM-DD` format.                                |
+| CURRENT_TIMESTAMP |                           | DateTime | Return current date time in `YYYY-MM-DD HH:MM:SS` format.                  |
+| MAKEDATE          | Integer, Integer          | Date     | Create and return a date based on a year and a number of days.             |
+| MAKETIME          | Integer, Integer, Integer | Time     | Create and return a time value based on an hour, minute, and second value. |
+| NOW               |                           | DateTime | Return current date time in `YYYY-MM-DD HH:MM:SS` format.                  |
+| DAYNAME           | Date                      | Text     | Returns the name of the day given a timestamp.                             |
+| MONTHNAME         | Date                      | Text     | Returns the name of the month given a timestamp.                           |
 
 ### Date functions samples
 
@@ -72,6 +73,7 @@ SELECT CURRENT_TIME()
 SELECT CURRENT_DATE()
 SELECT CURRENT_TIMESTAMP()
 SELECT MAKEDATE(2023, 12)
+SELECT MAKETIME(12, 59, 59)
 SELECT NOW()
 SELECT DAYNAME(CURRENT_DATE())
 SELECT MONTHNAME(CURRENT_DATE())
