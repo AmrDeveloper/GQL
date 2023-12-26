@@ -1112,6 +1112,11 @@ fn parse_equality_expression(
 
                 return Err(diagnostic.as_boxed());
             }
+            TypeCheckResult::Error(diagnostic) => {
+                return Err(diagnostic
+                    .with_location(get_safe_location(tokens, *position - 2))
+                    .as_boxed());
+            }
         };
 
         return Ok(Box::new(ComparisonExpression {
@@ -1154,13 +1159,28 @@ fn parse_comparison_expression(
             TypeCheckResult::RightSideCasted(expr) => rhs = expr,
             TypeCheckResult::LeftSideCasted(expr) => lhs = expr,
             TypeCheckResult::NotEqualAndCantImplicitCast => {
-                return Err(Diagnostic::error(&format!(
+                let lhs_type = lhs.expr_type(env);
+                let rhs_type = rhs.expr_type(env);
+                let diagnostic = Diagnostic::error(&format!(
                     "Can't compare values of different types `{}` and `{}`",
-                    lhs.expr_type(env),
-                    rhs.expr_type(env)
+                    lhs_type, rhs_type
                 ))
-                .with_location(get_safe_location(tokens, *position - 2))
-                .as_boxed());
+                .with_location(get_safe_location(tokens, *position - 2));
+
+                // Provides help messages if use compare null to non null value
+                if lhs_type.is_null() || rhs_type.is_null() {
+                    return Err(diagnostic
+                        .add_help("Try to use `IS NULL expr` expression")
+                        .add_help("Try to use `ISNULL(expr)` function")
+                        .as_boxed());
+                }
+
+                return Err(diagnostic.as_boxed());
+            }
+            TypeCheckResult::Error(diagnostic) => {
+                return Err(diagnostic
+                    .with_location(get_safe_location(tokens, *position - 2))
+                    .as_boxed());
             }
         };
 
@@ -1417,7 +1437,9 @@ fn parse_unary_expression(
                 DataType::Boolean,
                 rhs_type,
             ));
-        } else if op == PrefixUnaryOperator::Minus && rhs_type != DataType::Integer {
+        }
+
+        if op == PrefixUnaryOperator::Minus && rhs_type != DataType::Integer {
             return Err(type_mismatch_error(
                 get_safe_location(tokens, *position - 1),
                 DataType::Integer,
@@ -1449,8 +1471,9 @@ fn parse_function_call_expression(
                 .as_boxed());
         }
 
-        // Make sure it's valid function name
         let function_name = &symbol_expression.unwrap().value;
+
+        // Check if this function is a Standard library functions
         if FUNCTIONS.contains_key(function_name.as_str()) {
             let mut arguments = parse_arguments_expressions(context, env, tokens, position)?;
             let prototype = PROTOTYPES.get(function_name.as_str()).unwrap();
@@ -1473,7 +1496,10 @@ fn parse_function_call_expression(
                 arguments,
                 is_aggregation: false,
             }));
-        } else if AGGREGATIONS.contains_key(function_name.as_str()) {
+        }
+
+        // Check if this function is an Aggregation functions
+        if AGGREGATIONS.contains_key(function_name.as_str()) {
             let mut arguments = parse_arguments_expressions(context, env, tokens, position)?;
             let prototype = AGGREGATIONS_PROTOS.get(function_name.as_str()).unwrap();
             let parameters = &vec![prototype.parameter.clone()];
@@ -1508,11 +1534,16 @@ fn parse_function_call_expression(
             );
 
             return Ok(Box::new(SymbolExpression { value: column_name }));
-        } else {
-            return Err(Diagnostic::error("No such function name")
-                .with_location(function_name_location)
-                .as_boxed());
         }
+
+        // Report that this function name is not standard or aggregation
+        return Err(Diagnostic::error("No such function name")
+            .add_help(&format!(
+                "Function `{}` is not an Aggregation or Standard library function name",
+                function_name,
+            ))
+            .with_location(function_name_location)
+            .as_boxed());
     }
     Ok(expression)
 }

@@ -8,12 +8,16 @@ use gitql_ast::expression::StringExpression;
 use gitql_ast::expression::StringValueType;
 use gitql_ast::types::DataType;
 
+use crate::diagnostic::Diagnostic;
+
 /// The return result after performing types checking with implicit casting option
 pub enum TypeCheckResult {
     /// Both right and left hand sides types are equals without implicit casting
     Equals,
     /// Both right and left hand sides types are not equals and can't perform implicit casting
     NotEqualAndCantImplicitCast,
+    /// Not Equals and can't perform implicit casting with error message provided
+    Error(Box<Diagnostic>),
     /// Right hand side type will match the left side after implicit casting
     RightSideCasted(Box<dyn Expression>),
     /// Left hand side type will match the right side after implicit casting
@@ -40,7 +44,14 @@ pub fn is_expression_type_equals(
         let literal = expr.as_any().downcast_ref::<StringExpression>().unwrap();
         let string_literal_value = &literal.value;
         if !is_valid_time_format(string_literal_value) {
-            return TypeCheckResult::NotEqualAndCantImplicitCast;
+            return TypeCheckResult::Error(
+                Diagnostic::error(&format!(
+                    "Can't compare Time and Text `{}` because it can't be implicitly casted to Time",
+                    string_literal_value
+                )).add_help("A valid Time format must match `HH:MM:SS` or `HH:MM:SS.SSS`")
+                .add_help("You can use `MAKETIME(hour, minute, second)` function to create date value")
+                .as_boxed(),
+            );
         }
 
         return TypeCheckResult::RightSideCasted(Box::new(StringExpression {
@@ -54,7 +65,14 @@ pub fn is_expression_type_equals(
         let literal = expr.as_any().downcast_ref::<StringExpression>().unwrap();
         let string_literal_value = &literal.value;
         if !is_valid_date_format(string_literal_value) {
-            return TypeCheckResult::NotEqualAndCantImplicitCast;
+            return TypeCheckResult::Error(
+                Diagnostic::error(&format!(
+                    "Can't compare Date and Text `{}` because it can't be implicitly casted to Date",
+                    string_literal_value
+                )).add_help("A valid Date format must match `YYYY-MM-DD`")
+                .add_help("You can use `MAKEDATE(year, dayOfYear)` function to a create date value")
+                .as_boxed(),
+            );
         }
 
         return TypeCheckResult::RightSideCasted(Box::new(StringExpression {
@@ -68,7 +86,13 @@ pub fn is_expression_type_equals(
         let literal = expr.as_any().downcast_ref::<StringExpression>().unwrap();
         let string_literal_value = &literal.value;
         if !is_valid_datetime_format(string_literal_value) {
-            return TypeCheckResult::NotEqualAndCantImplicitCast;
+            return TypeCheckResult::Error(
+                Diagnostic::error(&format!(
+                    "Can't compare DateTime and Text `{}` because it can't be implicitly casted to DateTime",
+                    string_literal_value
+                )).add_help("A valid DateTime format must match `YYYY-MM-DD HH:MM:SS` or `YYYY-MM-DD HH:MM:SS.SSS`")
+                .as_boxed(),
+            );
         }
 
         return TypeCheckResult::RightSideCasted(Box::new(StringExpression {
@@ -101,7 +125,14 @@ pub fn are_types_equals(
         let expr = rhs.as_any().downcast_ref::<StringExpression>().unwrap();
         let string_literal_value = &expr.value;
         if !is_valid_time_format(string_literal_value) {
-            return TypeCheckResult::NotEqualAndCantImplicitCast;
+            return TypeCheckResult::Error(
+                Diagnostic::error(&format!(
+                    "Can't compare Time and Text `{}` because it can't be implicitly casted to Time",
+                    string_literal_value
+                )).add_help("A valid Time format must match `HH:MM:SS` or `HH:MM:SS.SSS`")
+                .add_help("You can use `MAKETIME(hour, minute, second)` function to a create date value")
+                .as_boxed(),
+            );
         }
 
         return TypeCheckResult::RightSideCasted(Box::new(StringExpression {
@@ -115,7 +146,14 @@ pub fn are_types_equals(
         let expr = lhs.as_any().downcast_ref::<StringExpression>().unwrap();
         let string_literal_value = &expr.value;
         if !is_valid_time_format(string_literal_value) {
-            return TypeCheckResult::NotEqualAndCantImplicitCast;
+            return TypeCheckResult::Error(
+                Diagnostic::error(&format!(
+                    "Can't compare Text `{}` and Time because it can't be implicitly casted to Time",
+                    string_literal_value
+                )).add_help("A valid Time format must match `HH:MM:SS` or `HH:MM:SS.SSS`")
+                .add_help("You can use `MAKETIME(hour, minute, second)` function to a create date value")
+                .as_boxed(),
+            );
         }
 
         return TypeCheckResult::LeftSideCasted(Box::new(StringExpression {
@@ -129,7 +167,14 @@ pub fn are_types_equals(
         let expr = rhs.as_any().downcast_ref::<StringExpression>().unwrap();
         let string_literal_value = &expr.value;
         if !is_valid_date_format(string_literal_value) {
-            return TypeCheckResult::NotEqualAndCantImplicitCast;
+            return TypeCheckResult::Error(
+                Diagnostic::error(&format!(
+                    "Can't compare Date and Text(`{}`) because Text can't be implicitly casted to Date",
+                    string_literal_value
+                )).add_help("A valid Date format should be matching `YYYY-MM-DD`")
+                .add_help("You can use `MAKEDATE(year, dayOfYear)` function to a create date value")
+                .as_boxed(),
+            );
         }
 
         return TypeCheckResult::RightSideCasted(Box::new(StringExpression {
@@ -143,7 +188,14 @@ pub fn are_types_equals(
         let expr = lhs.as_any().downcast_ref::<StringExpression>().unwrap();
         let string_literal_value = &expr.value;
         if !is_valid_date_format(string_literal_value) {
-            return TypeCheckResult::NotEqualAndCantImplicitCast;
+            return TypeCheckResult::Error(
+                Diagnostic::error(&format!(
+                    "Can't compare Text(`{}`) and Date because Text can't be implicitly casted to Date",
+                    string_literal_value
+                )).add_help("A valid Date format should be matching `YYYY-MM-DD`")
+                .add_help("You can use `MAKEDATE(year, dayOfYear)` function to a create date value")
+                .as_boxed(),
+            );
         }
 
         return TypeCheckResult::LeftSideCasted(Box::new(StringExpression {
@@ -157,7 +209,13 @@ pub fn are_types_equals(
         let expr = rhs.as_any().downcast_ref::<StringExpression>().unwrap();
         let string_literal_value = &expr.value;
         if !is_valid_datetime_format(string_literal_value) {
-            return TypeCheckResult::NotEqualAndCantImplicitCast;
+            return TypeCheckResult::Error(
+                Diagnostic::error(&format!(
+                    "Can't compare DateTime and Text `{}` because it can't be implicitly casted to DateTime",
+                    string_literal_value
+                )).add_help("A valid DateTime format must match `YYYY-MM-DD HH:MM:SS` or `YYYY-MM-DD HH:MM:SS.SSS`")
+                .as_boxed(),
+            );
         }
 
         return TypeCheckResult::RightSideCasted(Box::new(StringExpression {
@@ -171,7 +229,13 @@ pub fn are_types_equals(
         let expr = lhs.as_any().downcast_ref::<StringExpression>().unwrap();
         let string_literal_value = &expr.value;
         if !is_valid_datetime_format(string_literal_value) {
-            return TypeCheckResult::NotEqualAndCantImplicitCast;
+            return TypeCheckResult::Error(
+                Diagnostic::error(&format!(
+                    "Can't compare Text `{}` and DateTime because it can't be implicitly casted to DateTime",
+                    string_literal_value
+                )).add_help("A valid DateTime format must match `YYYY-MM-DD HH:MM:SS` or `YYYY-MM-DD HH:MM:SS.SSS`")
+                .as_boxed(),
+            );
         }
 
         return TypeCheckResult::LeftSideCasted(Box::new(StringExpression {
