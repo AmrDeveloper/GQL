@@ -21,7 +21,7 @@ members = [
 ]
 
 [workspace.dependencies]
-gix = { version = "0.55.2", default-features = false }
+gix = { version = "0.56.0", default-features = false }
 
 [dependencies]
 gitql-ast = { path = "./crates/gitql-ast", version = "0.8.0" }

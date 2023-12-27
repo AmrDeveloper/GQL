@@ -228,6 +228,11 @@ fn select_diffs(
     let revwalk = repo.head_id().unwrap().ancestors().all().unwrap();
     let repo_path = repo.path().to_str().unwrap().to_string();
 
+    let mut rewrite_cache = repo
+        .diff_resource_cache(gix::diff::blob::pipeline::Mode::ToGit, Default::default())
+        .unwrap();
+    let mut diff_cache = rewrite_cache.clone();
+
     let names_len = fields_names.len() as i64;
     let values_len = fields_values.len() as i64;
     let padding = names_len - values_len;
@@ -286,19 +291,30 @@ fn select_diffs(
                     .next()
                     .map(|id| id.object().unwrap().into_commit().tree().unwrap())
                     .unwrap_or_else(|| repo.empty_tree());
+
+                let select_insertions_or_deletions =
+                    field_name == "insertions" || field_name == "deletions";
+
+                rewrite_cache.clear_resource_cache();
+                diff_cache.clear_resource_cache();
+
                 let (mut insertions, mut deletions, mut files_changed) = (0, 0, 0);
 
                 previous
                     .changes()
                     .unwrap()
-                    .for_each_to_obtain_tree(
+                    .for_each_to_obtain_tree_with_cache(
                         &current,
+                        &mut rewrite_cache,
                         |change| -> Result<_, gix::object::blob::diff::init::Error> {
                             files_changed += usize::from(change.event.entry_mode().is_no_tree());
-                            if let Some(diff) = change.event.diff().transpose()? {
-                                let counts = diff.line_counts();
-                                deletions += counts.removals;
-                                insertions += counts.insertions;
+                            if select_insertions_or_deletions {
+                                if let Ok(mut platform) = change.diff(&mut diff_cache) {
+                                    if let Ok(Some(counts)) = platform.line_counts() {
+                                        deletions += counts.removals;
+                                        insertions += counts.insertions;
+                                    }
+                                }
                             }
                             Ok(gix::object::tree::diff::Action::Continue)
                         },
