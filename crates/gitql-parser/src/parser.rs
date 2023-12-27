@@ -431,7 +431,7 @@ fn parse_where_statement(
     let condition_type = condition.expr_type(env);
     if condition_type != DataType::Boolean {
         return Err(Diagnostic::error(&format!(
-            "Expect `WHERE` condition bo be type {} but got {}",
+            "Expect `WHERE` condition to be type {} but got {}",
             DataType::Boolean,
             condition_type
         ))
@@ -506,7 +506,7 @@ fn parse_having_statement(
     let condition_type = condition.expr_type(env);
     if condition_type != DataType::Boolean {
         return Err(Diagnostic::error(&format!(
-            "Expect `HAVING` condition bo be type {} but got {}",
+            "Expect `HAVING` condition to be type {} but got {}",
             DataType::Boolean,
             condition_type
         ))
