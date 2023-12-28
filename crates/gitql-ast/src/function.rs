@@ -227,7 +227,7 @@ lazy_static! {
         map.insert(
             "concat",
             Prototype {
-                parameters: vec![DataType::Text, DataType::Text, DataType::Varargs(Box::new(DataType::Text))],
+                parameters: vec![DataType::Any, DataType::Any, DataType::Varargs(Box::new(DataType::Any))],
                 result: DataType::Text
              },
         );
@@ -642,7 +642,7 @@ fn text_soundex(inputs: &[Value]) -> Value {
 }
 
 fn text_concat(inputs: &[Value]) -> Value {
-    let text: Vec<String> = inputs.iter().map(|v| v.as_text()).collect();
+    let text: Vec<String> = inputs.iter().map(|v| v.to_string()).collect();
     Value::Text(text.concat())
 }
 
