@@ -69,20 +69,20 @@ fn select_references(
                     .map(|(_, sn)| sn)
                     .unwrap_or("".into())
                     .to_string();
-                let column_name = get_column_name(alias_table, &"name".to_string());
+                let column_name = get_column_name(alias_table, "name");
                 attributes.insert(column_name, Value::Text(name));
                 continue;
             }
 
             if field_name == "full_name" {
                 let full_name = reference.name().as_bstr().to_string();
-                let column_name = get_column_name(alias_table, &"full_name".to_string());
+                let column_name = get_column_name(alias_table, "full_name");
                 attributes.insert(column_name, Value::Text(full_name));
                 continue;
             }
 
             if field_name == "type" {
-                let column_name = get_column_name(alias_table, &"type".to_string());
+                let column_name = get_column_name(alias_table, "type");
                 let category = reference.name().category();
                 if category.map_or(false, |cat| cat == Category::LocalBranch) {
                     attributes.insert(column_name, Value::Text("branch".to_owned()));
@@ -99,7 +99,7 @@ fn select_references(
             }
 
             if field_name == "repo" {
-                let column_name = get_column_name(alias_table, &"repo".to_string());
+                let column_name = get_column_name(alias_table, "repo");
                 attributes.insert(column_name, Value::Text(repo_path.to_string()));
                 continue;
             }
@@ -155,41 +155,41 @@ fn select_commits(
 
             if field_name == "commit_id" {
                 let commit_id = Value::Text(commit_info.id.to_string());
-                let column_name = get_column_name(alias_table, &"commit_id".to_string());
+                let column_name = get_column_name(alias_table, "commit_id");
                 attributes.insert(column_name, commit_id);
                 continue;
             }
 
             if field_name == "name" {
                 let name = commit.author().name.to_string();
-                let column_name = get_column_name(alias_table, &"name".to_string());
+                let column_name = get_column_name(alias_table, "name");
                 attributes.insert(column_name, Value::Text(name));
                 continue;
             }
 
             if field_name == "email" {
                 let email = commit.author().email.to_string();
-                let column_name = get_column_name(alias_table, &"email".to_string());
+                let column_name = get_column_name(alias_table, "email");
                 attributes.insert(column_name, Value::Text(email));
                 continue;
             }
 
             if field_name == "title" {
                 let summary = Value::Text(commit.message().summary().to_string());
-                let column_name = get_column_name(alias_table, &"title".to_string());
+                let column_name = get_column_name(alias_table, "title");
                 attributes.insert(column_name, summary);
                 continue;
             }
 
             if field_name == "message" {
                 let message = Value::Text(commit.message.to_string());
-                let column_name = get_column_name(alias_table, &"message".to_string());
+                let column_name = get_column_name(alias_table, "message");
                 attributes.insert(column_name, message);
                 continue;
             }
 
             if field_name == "datetime" {
-                let column_name = get_column_name(alias_table, &"datetime".to_string());
+                let column_name = get_column_name(alias_table, "datetime");
                 let time_stamp = commit_info
                     .commit_time
                     .unwrap_or_else(|| commit.time().seconds);
@@ -198,7 +198,7 @@ fn select_commits(
             }
 
             if field_name == "repo" {
-                let column_name = get_column_name(alias_table, &"repo".to_string());
+                let column_name = get_column_name(alias_table, "repo");
                 attributes.insert(column_name, Value::Text(repo_path.to_string()));
                 continue;
             }
@@ -256,27 +256,27 @@ fn select_diffs(
             }
 
             if field_name == "commit_id" {
-                let column_name = get_column_name(alias_table, &"commit_id".to_string());
+                let column_name = get_column_name(alias_table, "commit_id");
                 attributes.insert(column_name, Value::Text(commit_info.id.to_string()));
                 continue;
             }
 
             if field_name == "name" {
                 let name = commit.author().unwrap().name.to_string();
-                let column_name = get_column_name(alias_table, &"name".to_string());
+                let column_name = get_column_name(alias_table, "name");
                 attributes.insert(column_name, Value::Text(name));
                 continue;
             }
 
             if field_name == "email" {
                 let email = commit.author().unwrap().email.to_string();
-                let column_name = get_column_name(alias_table, &"email".to_string());
+                let column_name = get_column_name(alias_table, "email");
                 attributes.insert(column_name, Value::Text(email));
                 continue;
             }
 
             if field_name == "repo" {
-                let column_name = get_column_name(alias_table, &"repo".to_string());
+                let column_name = get_column_name(alias_table, "repo");
                 attributes.insert(column_name, Value::Text(repo_path.to_string()));
                 continue;
             }
@@ -322,23 +322,20 @@ fn select_diffs(
                     .unwrap();
 
                 if field_name == "insertions" {
-                    let insertions = Value::Integer(insertions as i64);
-                    let column_name = get_column_name(alias_table, &"insertions".to_string());
-                    attributes.insert(column_name, insertions);
+                    let column_name = get_column_name(alias_table, "insertions");
+                    attributes.insert(column_name, Value::Integer(insertions as i64));
                     continue;
                 }
 
                 if field_name == "deletions" {
-                    let deletions = Value::Integer(deletions as i64);
-                    let column_name = get_column_name(alias_table, &"deletions".to_string());
-                    attributes.insert(column_name, deletions);
+                    let column_name = get_column_name(alias_table, "deletions");
+                    attributes.insert(column_name, Value::Integer(deletions as i64));
                     continue;
                 }
 
                 if field_name == "files_changed" {
-                    let file_changed = Value::Integer(files_changed as i64);
-                    let column_name = get_column_name(alias_table, &"files_changed".to_string());
-                    attributes.insert(column_name, file_changed);
+                    let column_name = get_column_name(alias_table, "files_changed");
+                    attributes.insert(column_name, Value::Integer(files_changed as i64));
                     continue;
                 }
             }
@@ -397,35 +394,34 @@ fn select_branches(
 
             if field_name == "name" {
                 let branch_name = branch.name().as_bstr().to_string();
-                let column_name = get_column_name(alias_table, &"name".to_string());
+                let column_name = get_column_name(alias_table, "name");
                 attributes.insert(column_name, Value::Text(branch_name));
                 continue;
             }
 
             if field_name == "commit_count" {
                 let commit_count = if let Some(id) = branch.try_id() {
-                    let revwalk = id.ancestors().all();
-                    if revwalk.is_ok() {
-                        revwalk.ok().unwrap().count() as i64
+                    if let Ok(revwalk) = id.ancestors().all() {
+                        revwalk.count() as i64
                     } else {
                         -1
                     }
                 } else {
                     -1
                 };
-                let column_name = get_column_name(alias_table, &"commit_count".to_string());
+                let column_name = get_column_name(alias_table, "commit_count");
                 attributes.insert(column_name, Value::Integer(commit_count));
                 continue;
             }
 
             if field_name == "is_head" {
-                let column_name = get_column_name(alias_table, &"is_head".to_string());
+                let column_name = get_column_name(alias_table, "is_head");
                 attributes.insert(column_name, Value::Boolean(branch.inner == head_ref.inner));
                 continue;
             }
 
             if field_name == "is_remote" {
-                let column_name = get_column_name(alias_table, &"is_remote".to_string());
+                let column_name = get_column_name(alias_table, "is_remote");
                 let is_remote = branch
                     .name()
                     .category()
@@ -435,7 +431,7 @@ fn select_branches(
             }
 
             if field_name == "repo" {
-                let column_name = get_column_name(alias_table, &"repo".to_string());
+                let column_name = get_column_name(alias_table, "repo");
                 attributes.insert(column_name, Value::Text(repo_path.to_string()));
                 continue;
             }
@@ -481,7 +477,7 @@ fn select_tags(
             }
 
             if field_name == "name" {
-                let column_name = get_column_name(alias_table, &"name".to_string());
+                let column_name = get_column_name(alias_table, "name");
                 let tag_name = tag_ref
                     .name()
                     .category_and_short_name()
@@ -491,7 +487,7 @@ fn select_tags(
             }
 
             if field_name == "repo" {
-                let column_name = get_column_name(alias_table, &"repo".to_string());
+                let column_name = get_column_name(alias_table, "repo");
                 attributes.insert(column_name, Value::Text(repo_path.to_string()));
                 continue;
             }
@@ -525,7 +521,7 @@ fn select_values(
 }
 
 #[inline(always)]
-pub fn get_column_name(alias_table: &HashMap<String, String>, name: &String) -> String {
+pub fn get_column_name(alias_table: &HashMap<String, String>, name: &str) -> String {
     alias_table
         .get(name)
         .unwrap_or(&name.to_string())
