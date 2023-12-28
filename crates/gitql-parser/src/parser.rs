@@ -104,7 +104,8 @@ fn parse_select_query(
         match &token.kind {
             TokenKind::Select => {
                 if statements.contains_key("select") {
-                    return Err(Diagnostic::error("You already used `select` statement ")
+                    return Err(Diagnostic::error("You already used `SELECT` statement")
+                        .add_note("Can't use more than one `SELECT` statement in the same query")
                         .with_location(token.location)
                         .as_boxed());
                 }
@@ -113,16 +114,9 @@ fn parse_select_query(
                 context.is_single_value_query = !context.aggregations.is_empty();
             }
             TokenKind::Where => {
-                if !statements.contains_key("select") {
-                    return Err(
-                        Diagnostic::error("`WHERE` must be used after `SELECT` statement")
-                            .with_location(token.location)
-                            .as_boxed(),
-                    );
-                }
-
                 if statements.contains_key("where") {
-                    return Err(Diagnostic::error("You already used `where` statement")
+                    return Err(Diagnostic::error("You already used `WHERE` statement")
+                        .add_note("Can't use more than one `WHERE` statement in the same query")
                         .with_location(token.location)
                         .as_boxed());
                 }
@@ -131,16 +125,9 @@ fn parse_select_query(
                 statements.insert("where".to_string(), statement);
             }
             TokenKind::Group => {
-                if !statements.contains_key("select") {
-                    return Err(Diagnostic::error(
-                        "`GROUP BY` must be used after `SELECT` statement",
-                    )
-                    .with_location(token.location)
-                    .as_boxed());
-                }
-
                 if statements.contains_key("group") {
-                    return Err(Diagnostic::error("`You already used `group by` statement")
+                    return Err(Diagnostic::error("`You already used `GROUP BY` statement")
+                        .add_note("Can't use more than one `GROUP BY` statement in the same query")
                         .with_location(token.location)
                         .as_boxed());
                 }
@@ -150,31 +137,30 @@ fn parse_select_query(
             }
             TokenKind::Having => {
                 if statements.contains_key("having") {
-                    return Err(Diagnostic::error("You already used `having` statement")
+                    return Err(Diagnostic::error("You already used `HAVING` statement")
+                        .add_note("Can't use more than one `HAVING` statement in the same query")
                         .with_location(token.location)
                         .as_boxed());
                 }
 
                 if !statements.contains_key("group") {
-                    return Err(Diagnostic::error("`HAVING` must be used after GROUP BY")
-                        .with_location(token.location)
-                        .as_boxed());
+                    return Err(Diagnostic::error(
+                        "`HAVING` must be used after `GROUP BY` statement",
+                    )
+                    .add_note(
+                        "`HAVING` statement must be used in a query that has `GROUP BY` statement",
+                    )
+                    .with_location(token.location)
+                    .as_boxed());
                 }
 
                 let statement = parse_having_statement(&mut context, env, tokens, &mut position)?;
                 statements.insert("having".to_string(), statement);
             }
             TokenKind::Limit => {
-                if !statements.contains_key("select") {
-                    return Err(
-                        Diagnostic::error("`LIMIT` must be used after `SELECT` statement")
-                            .with_location(token.location)
-                            .as_boxed(),
-                    );
-                }
-
                 if statements.contains_key("limit") {
-                    return Err(Diagnostic::error("You already used `limit` statement")
+                    return Err(Diagnostic::error("You already used `LIMIT` statement")
+                        .add_note("Can't use more than one `LIMIT` statement in the same query")
                         .with_location(token.location)
                         .as_boxed());
                 }
@@ -183,16 +169,9 @@ fn parse_select_query(
                 statements.insert("limit".to_string(), statement);
             }
             TokenKind::Offset => {
-                if !statements.contains_key("select") {
-                    return Err(Diagnostic::error(
-                        "`OFFSET` must be used after `SELECT` statement",
-                    )
-                    .with_location(token.location)
-                    .as_boxed());
-                }
-
                 if statements.contains_key("offset") {
-                    return Err(Diagnostic::error("You already used `offset` statement")
+                    return Err(Diagnostic::error("You already used `OFFSET` statement")
+                        .add_note("Can't use more than one `OFFSET` statement in the same query")
                         .with_location(token.location)
                         .as_boxed());
                 }
@@ -201,16 +180,9 @@ fn parse_select_query(
                 statements.insert("offset".to_string(), statement);
             }
             TokenKind::Order => {
-                if !statements.contains_key("select") {
-                    return Err(Diagnostic::error(
-                        "`ORDER BY` must be used after `SELECT` statement",
-                    )
-                    .with_location(token.location)
-                    .as_boxed());
-                }
-
                 if statements.contains_key("order") {
-                    return Err(Diagnostic::error("You already used `order by` statement")
+                    return Err(Diagnostic::error("You already used `ORDER BY` statement")
+                        .add_note("Can't use more than one `ORDER BY` statement in the same query")
                         .with_location(token.location)
                         .as_boxed());
                 }
@@ -256,10 +228,9 @@ fn parse_select_statement(
     *position += 1;
 
     if *position >= tokens.len() {
-        return Err(Box::new(
-            Diagnostic::error("Incomplete input for select statement")
-                .with_location(get_safe_location(tokens, *position - 1)),
-        ));
+        return Err(Diagnostic::error("Incomplete input for select statement")
+            .with_location(get_safe_location(tokens, *position - 1))
+            .as_boxed());
     }
 
     let mut table_name = "";
@@ -1466,7 +1437,7 @@ fn parse_function_call_expression(
 
         // Make sure function name is SymbolExpression
         if symbol_expression.is_none() {
-            return Err(Diagnostic::error("Function name must be identifier")
+            return Err(Diagnostic::error("Function name must be an identifier")
                 .with_location(function_name_location)
                 .as_boxed());
         }
@@ -1943,6 +1914,7 @@ fn type_check_selected_fields(
 
 fn un_expected_statement_error(tokens: &Vec<Token>, position: &mut usize) -> Box<Diagnostic> {
     Diagnostic::error("Unexpected statement")
+        .add_help("Expect query to start with `SELECT` or `SET` keyword")
         .with_location(get_safe_location(tokens, *position))
         .as_boxed()
 }
