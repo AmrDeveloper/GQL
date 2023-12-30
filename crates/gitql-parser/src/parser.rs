@@ -229,6 +229,8 @@ fn parse_select_statement(
 
     if *position >= tokens.len() {
         return Err(Diagnostic::error("Incomplete input for select statement")
+            .add_help("Try select one or more values in the `SELECT` statement")
+            .add_note("Select statements requires at least selecting one value")
             .with_location(get_safe_location(tokens, *position - 1))
             .as_boxed());
     }
@@ -287,6 +289,7 @@ fn parse_select_statement(
                 {
                     return Err(
                         Diagnostic::error("You already have field with the same name")
+                            .add_help("Try to use a new unique name for alias")
                             .with_location(get_safe_location(tokens, *position))
                             .as_boxed(),
                     );
@@ -326,6 +329,7 @@ fn parse_select_statement(
         let table_name_token = consume_kind(tokens, *position, TokenKind::Symbol);
         if table_name_token.is_err() {
             return Err(Diagnostic::error("Expect `identifier` as a table name")
+                .add_note("Table name must be an identifier")
                 .with_location(get_safe_location(tokens, *position))
                 .as_boxed());
         }
@@ -336,6 +340,7 @@ fn parse_select_statement(
         table_name = &table_name_token.ok().unwrap().literal;
         if !TABLES_FIELDS_NAMES.contains_key(table_name) {
             return Err(Diagnostic::error("Unresolved table name")
+                .add_help("Check the documentations to see available tables")
                 .with_location(get_safe_location(tokens, *position))
                 .as_boxed());
         }
@@ -347,6 +352,7 @@ fn parse_select_statement(
     if is_select_all && table_name.is_empty() {
         return Err(
             Diagnostic::error("Expect `FROM` and table name after `SELECT *`")
+                .add_note("Select all must be used with valid table name")
                 .with_location(get_safe_location(tokens, *position))
                 .as_boxed(),
         );
@@ -355,6 +361,8 @@ fn parse_select_statement(
     // Select input validations
     if !is_select_all && fields_names.is_empty() {
         return Err(Diagnostic::error("Incomplete input for select statement")
+            .add_help("Try select one or more values in the `SELECT` statement")
+            .add_note("Select statements requires at least selecting one value")
             .with_location(get_safe_location(tokens, *position - 1))
             .as_boxed());
     }
@@ -390,6 +398,8 @@ fn parse_where_statement(
     *position += 1;
     if *position >= tokens.len() {
         return Err(Diagnostic::error("Expect expression after `WHERE` keyword")
+            .add_help("Try to add boolean expression after `WHERE` keyword")
+            .add_note("`WHERE` statement expects expression as condition")
             .with_location(get_safe_location(tokens, *position - 1))
             .as_boxed());
     }
@@ -406,6 +416,7 @@ fn parse_where_statement(
             DataType::Boolean,
             condition_type
         ))
+        .add_note("`WHERE` statement condition must be Boolean")
         .with_location(condition_location)
         .as_boxed());
     }
@@ -414,6 +425,8 @@ fn parse_where_statement(
     if aggregations_count_before != aggregations_count_after {
         return Err(
             Diagnostic::error("Can't use Aggregation functions in `WHERE` statement")
+                .add_note("Aggregation functions must be used after `GROUP BY` statement")
+                .add_note("Aggregation functions evaluated after later after `GROUP BY` statement")
                 .with_location(condition_location)
                 .as_boxed(),
         );
@@ -432,6 +445,7 @@ fn parse_group_by_statement(
     if *position >= tokens.len() || tokens[*position].kind != TokenKind::By {
         return Err(
             Diagnostic::error("Expect keyword `by` after keyword `group`")
+                .add_help("Try to use `BY` keyword after `GROUP")
                 .with_location(get_safe_location(tokens, *position - 1))
                 .as_boxed(),
         );
@@ -449,6 +463,7 @@ fn parse_group_by_statement(
     if !env.contains(&field_name) {
         return Err(
             Diagnostic::error("Current table not contains field with this name")
+                .add_help("Check the documentations to see available fields for each tables")
                 .with_location(get_safe_location(tokens, *position - 1))
                 .as_boxed(),
         );
@@ -466,9 +481,13 @@ fn parse_having_statement(
 ) -> Result<Box<dyn Statement>, Box<Diagnostic>> {
     *position += 1;
     if *position >= tokens.len() {
-        return Err(Diagnostic::error("Expect expression after `where` keyword")
-            .with_location(get_safe_location(tokens, *position - 1))
-            .as_boxed());
+        return Err(
+            Diagnostic::error("Expect expression after `HAVING` keyword")
+                .add_help("Try to add boolean expression after `HAVING` keyword")
+                .add_note("`HAVING` statement expects expression as condition")
+                .with_location(get_safe_location(tokens, *position - 1))
+                .as_boxed(),
+        );
     }
 
     // Make sure HAVING condition expression has boolean type
@@ -481,6 +500,7 @@ fn parse_having_statement(
             DataType::Boolean,
             condition_type
         ))
+        .add_note("`HAVING` statement condition must be Boolean")
         .with_location(condition_location)
         .as_boxed());
     }
