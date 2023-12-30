@@ -377,7 +377,7 @@ fn parse_select_statement(
         );
     }
 
-    // Type check all selected fields has type regsited in type table
+    // Type check all selected fields has type registered in type table
     type_check_selected_fields(env, table_name, &fields_names, tokens, *position)?;
 
     Ok(Box::new(SelectStatement {
@@ -554,6 +554,7 @@ fn parse_order_by_statement(
     if *position >= tokens.len() || tokens[*position].kind != TokenKind::By {
         return Err(
             Diagnostic::error("Expect keyword `BY` after keyword `ORDER")
+                .add_help("Try to use `BY` keyword after `ORDER")
                 .with_location(get_safe_location(tokens, *position - 1))
                 .as_boxed(),
         );
@@ -680,18 +681,18 @@ fn parse_is_null_expression(
         if *position < tokens.len() && tokens[*position].kind == TokenKind::Null {
             // Consume `Null` keyword
             *position += 1;
-        } else {
-            return Err(
-                Diagnostic::error("Expects `NULL` Keyword after `IS` or `IS NOT`")
-                    .with_location(is_location)
-                    .as_boxed(),
-            );
+
+            return Ok(Box::new(IsNullExpression {
+                argument: expression,
+                has_not: has_not_keyword,
+            }));
         }
 
-        return Ok(Box::new(IsNullExpression {
-            argument: expression,
-            has_not: has_not_keyword,
-        }));
+        return Err(
+            Diagnostic::error("Expects `NULL` Keyword after `IS` or `IS NOT`")
+                .with_location(is_location)
+                .as_boxed(),
+        );
     }
     Ok(expression)
 }
@@ -828,10 +829,7 @@ fn parse_logical_or_expression(
     }
 
     let lhs = expression.ok().unwrap();
-
-    let operator = &tokens[*position];
-
-    if operator.kind == TokenKind::LogicalOr {
+    if tokens[*position].kind == TokenKind::LogicalOr {
         *position += 1;
 
         if lhs.expr_type(env) != DataType::Boolean {
@@ -875,10 +873,7 @@ fn parse_logical_and_expression(
     }
 
     let lhs = expression.ok().unwrap();
-
-    let operator = &tokens[*position];
-
-    if operator.kind == TokenKind::LogicalAnd {
+    if tokens[*position].kind == TokenKind::LogicalAnd {
         *position += 1;
 
         if lhs.expr_type(env) != DataType::Boolean {
@@ -922,10 +917,7 @@ fn parse_bitwise_or_expression(
     }
 
     let lhs = expression.ok().unwrap();
-
-    let operator = &tokens[*position];
-
-    if operator.kind == TokenKind::BitwiseOr {
+    if tokens[*position].kind == TokenKind::BitwiseOr {
         *position += 1;
 
         if lhs.expr_type(env) != DataType::Boolean {
@@ -969,10 +961,7 @@ fn parse_logical_xor_expression(
     }
 
     let lhs = expression.ok().unwrap();
-
-    let operator = &tokens[*position];
-
-    if operator.kind == TokenKind::LogicalXor {
+    if tokens[*position].kind == TokenKind::LogicalXor {
         *position += 1;
 
         if lhs.expr_type(env) != DataType::Boolean {
@@ -1014,10 +1003,7 @@ fn parse_bitwise_and_expression(
     }
 
     let lhs = expression.ok().unwrap();
-
-    let operator = &tokens[*position];
-
-    if operator.kind == TokenKind::BitwiseAnd {
+    if tokens[*position].kind == TokenKind::BitwiseAnd {
         *position += 1;
 
         if lhs.expr_type(env) != DataType::Boolean {
@@ -1028,16 +1014,7 @@ fn parse_bitwise_and_expression(
             ));
         }
 
-        let right_expr = parse_equality_expression(context, env, tokens, position);
-        if right_expr.is_err() {
-            return Err(
-                Diagnostic::error("Can't parser right side of bitwise and expression")
-                    .with_location(get_safe_location(tokens, *position))
-                    .as_boxed(),
-            );
-        }
-
-        let rhs = right_expr.ok().unwrap();
+        let rhs = parse_equality_expression(context, env, tokens, position)?;
         if rhs.expr_type(env) != DataType::Boolean {
             return Err(type_mismatch_error(
                 tokens[*position].location,
@@ -1507,6 +1484,8 @@ fn parse_function_call_expression(
             let argument_result = get_expression_name(&arguments[0]);
             if argument_result.is_err() {
                 return Err(Diagnostic::error("Invalid Aggregation function argument")
+                    .add_help("Try to use field name as Aggregation function argument")
+                    .add_note("Aggregation function accept field name as argument")
                     .with_location(function_name_location)
                     .as_boxed());
             }
@@ -1679,12 +1658,13 @@ fn parse_case_expression(
             if has_else_branch {
                 return Err(
                     Diagnostic::error("This case expression already has else branch")
+                        .add_note("`CASE` expression can has only one `ELSE` branch")
                         .with_location(get_safe_location(tokens, *position))
                         .as_boxed(),
                 );
             }
 
-            // consume else keyword
+            // Consume `ELSE` keyword
             *position += 1;
 
             let default_value_expr = parse_expression(context, env, tokens, position)?;
@@ -1693,15 +1673,16 @@ fn parse_case_expression(
             continue;
         }
 
-        // When
+        // Check if current token kind is `WHEN` keyword
         let when_result = consume_kind(tokens, *position, TokenKind::When);
         if when_result.is_err() {
             return Err(Diagnostic::error("Expect `when` before case condition")
+                .add_help("Try to add `WHEN` keyword before any condition")
                 .with_location(get_safe_location(tokens, *position))
                 .as_boxed());
         }
 
-        // Consume when keyword
+        // Consume `WHEN` keyword
         *position += 1;
 
         let condition = parse_expression(context, env, tokens, position)?;
@@ -1715,7 +1696,7 @@ fn parse_case_expression(
 
         let then_result = consume_kind(tokens, *position, TokenKind::Then);
         if then_result.is_err() {
-            return Err(Diagnostic::error("Expect `then` after case condition")
+            return Err(Diagnostic::error("Expect `THEN` after case condition")
                 .with_location(get_safe_location(tokens, *position))
                 .as_boxed());
         }
@@ -1738,7 +1719,7 @@ fn parse_case_expression(
 
     // Make sure case expression end with END keyword
     if *position >= tokens.len() || tokens[*position].kind != TokenKind::End {
-        return Err(Diagnostic::error("Expect `end` after case branches")
+        return Err(Diagnostic::error("Expect `END` after case branches")
             .with_location(get_safe_location(tokens, *position))
             .as_boxed());
     }
@@ -1761,6 +1742,7 @@ fn parse_case_expression(
                 "Case value in branch {} has different type than the last branch",
                 i + 1
             ))
+            .add_note("All values in `CASE` expression must has the same Type")
             .with_location(case_location)
             .as_boxed());
         }
@@ -1921,13 +1903,13 @@ fn type_check_selected_fields(
             continue;
         }
 
-        return Err(Box::new(
-            Diagnostic::error(&format!(
-                "Table `{}` has no field with name `{}`",
-                table_name, field_name
-            ))
-            .with_location(get_safe_location(tokens, position)),
-        ));
+        return Err(Diagnostic::error(&format!(
+            "Table `{}` has no field with name `{}`",
+            table_name, field_name
+        ))
+        .add_help("Check the documentations to see available fields for each tables")
+        .with_location(get_safe_location(tokens, position))
+        .as_boxed());
     }
     Ok(())
 }
@@ -2009,10 +1991,6 @@ fn un_expected_expression_error(tokens: &Vec<Token>, position: &usize) -> Box<Di
 /// Remove last token if it semicolon, because it's optional
 #[inline(always)]
 fn consume_optional_semicolon_if_exists(tokens: &mut Vec<Token>) {
-    if tokens.is_empty() {
-        return;
-    }
-
     if let Some(last_token) = tokens.last() {
         if last_token.kind == TokenKind::Semicolon {
             tokens.remove(tokens.len() - 1);
