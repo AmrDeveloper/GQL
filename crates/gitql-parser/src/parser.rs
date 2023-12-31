@@ -1545,15 +1545,16 @@ fn parse_arguments_expressions(
             }
         }
 
-        if consume_kind(tokens, *position, TokenKind::RightParen).is_ok() {
-            *position += 1;
-        } else {
+        if consume_kind(tokens, *position, TokenKind::RightParen).is_err() {
             return Err(
                 Diagnostic::error("Expect `)` after function call arguments")
+                    .add_help("Try to add ')' at the end of function call, after arguments")
                     .with_location(get_safe_location(tokens, *position))
                     .as_boxed(),
             );
         }
+
+        *position += 1;
     }
     Ok(arguments)
 }
@@ -1630,6 +1631,7 @@ fn parse_group_expression(
     if tokens[*position].kind != TokenKind::RightParen {
         return Err(Diagnostic::error("Expect `)` to end group expression")
             .with_location(get_safe_location(tokens, *position))
+            .add_help("Try to add ')' at the end of group expression")
             .as_boxed());
     }
     *position += 1;
@@ -1844,11 +1846,11 @@ fn check_function_call_arguments(
             }
             TypeCheckResult::NotEqualAndCantImplicitCast => {
                 let argument_type = argument.expr_type(env);
-                return Err(Box::new(Diagnostic::error(&format!(
+                return Err(Diagnostic::error(&format!(
                     "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
                     function_name, index, argument_type, parameter_type
                 ))
-                .with_location(location)));
+                .with_location(location).as_boxed());
             }
             _ => {}
         }
@@ -1870,11 +1872,11 @@ fn check_function_call_arguments(
                 TypeCheckResult::NotEqualAndCantImplicitCast => {
                     let argument_type = arguments.get(index).unwrap().expr_type(env);
                     if !last_parameter_type.eq(&argument_type) {
-                        return Err(Box::new(Diagnostic::error(&format!(
+                        return Err(Diagnostic::error(&format!(
                             "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
                             function_name, index, argument_type, last_parameter_type
                         ))
-                        .with_location(location)));
+                        .with_location(location).as_boxed());
                     }
                 }
                 _ => {}
