@@ -1235,11 +1235,24 @@ fn parse_term_expression(
             continue;
         }
 
+        // Report Error message that suggest to replace `+` operator by `CONCAT` function
+        if math_operator == ArithmeticOperator::Plus {
+            return Err(Diagnostic::error(&format!(
+                "Math operators `+` both sides to be number types but got `{}` and `{}`",
+                lhs_type, rhs_type
+            ))
+            .add_help(
+                "You can use `CONCAT(Any, Any, ...Any)` function to concatenate values with different types",
+            )
+            .with_location(operator.location)
+            .as_boxed());
+        }
+
         return Err(Diagnostic::error(&format!(
             "Math operators require number types but got `{}` and `{}`",
             lhs_type, rhs_type
         ))
-        .with_location(get_safe_location(tokens, *position - 2))
+        .with_location(operator.location)
         .as_boxed());
     }
 
