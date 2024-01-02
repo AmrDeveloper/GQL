@@ -39,6 +39,7 @@ lazy_static! {
         map.insert("soundex", text_soundex);
         map.insert("concat", text_concat);
         map.insert("unicode", text_unicode);
+        map.insert("strcmp", text_strcmp);
 
         // Date functions
         map.insert("current_date", date_current_date);
@@ -238,6 +239,7 @@ lazy_static! {
                 result: DataType::Integer
              },
         );
+        map.insert("strcmp", Prototype { parameters: vec![DataType::Text, DataType::Text], result: DataType::Integer });
 
         // Date functions
         map.insert(
@@ -644,6 +646,14 @@ fn text_soundex(inputs: &[Value]) -> Value {
 fn text_concat(inputs: &[Value]) -> Value {
     let text: Vec<String> = inputs.iter().map(|v| v.to_string()).collect();
     Value::Text(text.concat())
+}
+
+fn text_strcmp(inputs: &[Value]) -> Value {
+    Value::Integer(match inputs[0].as_text().cmp(&inputs[1].as_text()) {
+        std::cmp::Ordering::Less => 1,
+        std::cmp::Ordering::Equal => 2,
+        std::cmp::Ordering::Greater => 0,
+    })
 }
 
 // Date functions

@@ -28,6 +28,7 @@ note that all functions names are case-insensitive.
 | SOUNDEX    | Text                         | Text    | Returns a four-character code to evaluate the similarity of two expressions.                                                                                         |
 | CONCAT     | Any, Any, ...Any             | Text    | Add several string representations of values together together.                                                                                                      |
 | UNICODE    | Text                         | Integer | Return an integer value (the Unicode value), for the first character of the input expression.                                                                        |
+| STRCMP     | Text , Text                  | Integer | Return 0 If string1 = string2, -1 if string1 < string2, this function returns -1, and 1 if string1 > string2                                                         |
 
 ### String functions samples
 
