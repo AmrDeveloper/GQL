@@ -2,6 +2,8 @@ use gitql_ast::environment::Environment;
 use gitql_ast::environment::TABLES_FIELDS_NAMES;
 use gitql_ast::value::Value;
 use std::collections::HashMap;
+use std::num::IntErrorKind;
+use std::num::ParseIntError;
 use std::vec;
 
 use crate::context::ParserContext;
@@ -167,6 +169,63 @@ fn parse_select_query(
 
                 let statement = parse_limit_statement(tokens, &mut position)?;
                 statements.insert("limit".to_string(), statement);
+
+                // Check for Limit and Offset shortcut
+                if position < len && tokens[position].kind == TokenKind::Comma {
+                    // Prevent user from using offset statement more than one time
+                    if statements.contains_key("offset") {
+                        return Err(Diagnostic::error("You already used `OFFSET` statement")
+                            .add_note(
+                                "Can't use more than one `OFFSET` statement in the same query",
+                            )
+                            .with_location(token.location)
+                            .as_boxed());
+                    }
+
+                    // Consume Comma
+                    position += 1;
+
+                    if position >= len || tokens[position].kind != TokenKind::Integer {
+                        return Err(Diagnostic::error(
+                            "Expects `OFFSET` amount as Integer value after `,`",
+                        )
+                        .add_help("Try to add constant Integer after comma")
+                        .add_note("`OFFSET` value must be a constant Integer")
+                        .with_location(token.location)
+                        .as_boxed());
+                    }
+
+                    let count_result: Result<usize, ParseIntError> =
+                        tokens[position].literal.parse();
+
+                    // Report clear error for Integer parsing
+                    if let Err(error) = &count_result {
+                        if error.kind().eq(&IntErrorKind::PosOverflow) {
+                            return Err(Diagnostic::error("`OFFSET` integer value is too large")
+                                .add_help("Try to use smaller value")
+                                .add_note(&format!(
+                                    "`OFFSET` value must be between 0 and {}",
+                                    usize::MAX
+                                ))
+                                .with_location(token.location)
+                                .as_boxed());
+                        }
+
+                        return Err(Diagnostic::error("`OFFSET` integer value is invalid")
+                            .add_help(&format!(
+                                "`OFFSET` value must be between 0 and {}",
+                                usize::MAX
+                            ))
+                            .with_location(token.location)
+                            .as_boxed());
+                    }
+
+                    // Consume Offset value
+                    position += 1;
+
+                    let count = count_result.unwrap();
+                    statements.insert("offset".to_string(), Box::new(OffsetStatement { count }));
+                }
             }
             TokenKind::Offset => {
                 if statements.contains_key("offset") {
@@ -519,9 +578,34 @@ fn parse_limit_statement(
             .as_boxed());
     }
 
-    let count_str = tokens[*position].literal.to_string();
-    let count: usize = count_str.parse().unwrap();
+    let count_result: Result<usize, ParseIntError> = tokens[*position].literal.parse();
+
+    // Report clear error for Integer parsing
+    if let Err(error) = &count_result {
+        if error.kind().eq(&IntErrorKind::PosOverflow) {
+            return Err(Diagnostic::error("`LIMIT` integer value is too large")
+                .add_help("Try to use smaller value")
+                .add_note(&format!(
+                    "`LIMIT` value must be between 0 and {}",
+                    usize::MAX
+                ))
+                .with_location(get_safe_location(tokens, *position))
+                .as_boxed());
+        }
+
+        return Err(Diagnostic::error("`LIMIT` integer value is invalid")
+            .add_help(&format!(
+                "`LIMIT` value must be between 0 and {}",
+                usize::MAX
+            ))
+            .with_location(get_safe_location(tokens, *position))
+            .as_boxed());
+    }
+
+    // Consume Integer value
     *position += 1;
+
+    let count = count_result.unwrap();
     Ok(Box::new(LimitStatement { count }))
 }
 
@@ -536,9 +620,33 @@ fn parse_offset_statement(
             .as_boxed());
     }
 
-    let count_str = tokens[*position].literal.to_string();
-    let count: usize = count_str.parse().unwrap();
+    let count_result: Result<usize, ParseIntError> = tokens[*position].literal.parse();
+
+    // Report clear error for Integer parsing
+    if let Err(error) = &count_result {
+        if error.kind().eq(&IntErrorKind::PosOverflow) {
+            return Err(Diagnostic::error("`OFFSET` integer value is too large")
+                .add_help("Try to use smaller value")
+                .add_note(&format!(
+                    "`OFFSET` value must be between 0 and {}",
+                    usize::MAX
+                ))
+                .with_location(get_safe_location(tokens, *position))
+                .as_boxed());
+        }
+
+        return Err(Diagnostic::error("`OFFSET` integer value is invalid")
+            .add_help(&format!(
+                "`OFFSET` value must be between 0 and {}",
+                usize::MAX
+            ))
+            .with_location(get_safe_location(tokens, *position))
+            .as_boxed());
+    }
+
     *position += 1;
+
+    let count = count_result.unwrap();
     Ok(Box::new(OffsetStatement { count }))
 }
 
