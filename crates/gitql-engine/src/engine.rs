@@ -6,7 +6,9 @@ use std::hash::Hasher;
 use std::vec;
 
 use gitql_ast::environment::Environment;
-use gitql_ast::object::GQLObject;
+use gitql_ast::object::GitQLGroups;
+use gitql_ast::object::Group;
+use gitql_ast::object::Row;
 use gitql_ast::statement::GQLQuery;
 use gitql_ast::statement::Query;
 use gitql_ast::statement::SelectStatement;
@@ -26,7 +28,7 @@ const GQL_COMMANDS_IN_ORDER: [&str; 8] = [
 ];
 
 pub enum EvaluationResult {
-    SelectedGroups(Vec<Vec<GQLObject>>, Vec<std::string::String>),
+    SelectedGroups(GitQLGroups, Vec<std::string::String>),
     SetGlobalVariable,
 }
 
@@ -49,7 +51,11 @@ pub fn evaluate_select_query(
     repos: &[gix::Repository],
     query: GQLQuery,
 ) -> Result<EvaluationResult, String> {
-    let mut groups: Vec<Vec<GQLObject>> = Vec::new();
+    let mut groups: GitQLGroups = GitQLGroups {
+        titles: vec![],
+        groups: vec![],
+    };
+
     let mut alias_table: HashMap<String, String> = HashMap::new();
 
     let hidden_selections = query.hidden_selections;
@@ -80,8 +86,8 @@ pub fn evaluate_select_query(
                         )?;
 
                         // If the main group is empty, no need to perform other statements
-                        if groups.is_empty() || groups[0].is_empty() {
-                            return Ok(EvaluationResult::SelectedGroups(vec![], hidden_selections));
+                        if groups.is_empty() || groups.groups[0].is_empty() {
+                            return Ok(EvaluationResult::SelectedGroups(groups, hidden_selections));
                         }
 
                         continue;
@@ -100,8 +106,8 @@ pub fn evaluate_select_query(
                     }
 
                     // If the main group is empty, no need to perform other statements
-                    if groups.is_empty() || groups[0].is_empty() {
-                        return Ok(EvaluationResult::SelectedGroups(vec![], hidden_selections));
+                    if groups.is_empty() || groups.groups[0].is_empty() {
+                        return Ok(EvaluationResult::SelectedGroups(groups, hidden_selections));
                     }
 
                     // If Select statement has table name and distinct flag, keep only unique values
@@ -127,51 +133,47 @@ pub fn evaluate_select_query(
     // If there are many groups that mean group by is executed before.
     // must merge each group into only one element
     if groups.len() > 1 {
-        for group in groups.iter_mut() {
+        for group in groups.groups.iter_mut() {
             if group.len() > 1 {
-                group.drain(1..);
+                group.rows.drain(1..);
             }
         }
     }
     // If it a single group but it select only aggregations function,
     // should return only first element in the group
     else if groups.len() == 1 && !query.has_group_by_statement && query.has_aggregation_function {
-        let group: &mut Vec<GQLObject> = groups[0].as_mut();
+        let group: &mut Group = &mut groups.groups[0];
         if group.len() > 1 {
-            group.drain(1..);
+            group.rows.drain(1..);
         }
     }
 
     // Return the groups and hidden selections to be used later in GUI or TUI ...etc
-    Ok(EvaluationResult::SelectedGroups(
-        groups.to_owned(),
-        hidden_selections,
-    ))
+    Ok(EvaluationResult::SelectedGroups(groups, hidden_selections))
 }
 
-fn apply_distinct_on_objects_group(groups: &mut Vec<Vec<GQLObject>>, hidden_selections: &[String]) {
+fn apply_distinct_on_objects_group(groups: &mut GitQLGroups, hidden_selections: &[String]) {
     if groups.is_empty() {
         return;
     }
 
-    let titles: Vec<&str> = groups[0][0]
-        .attributes
-        .keys()
+    let titles: Vec<&String> = groups
+        .titles
+        .iter()
         .filter(|s| !hidden_selections.contains(s))
-        .map(|k| k.as_ref())
         .collect();
 
     let titles_count = titles.len();
 
-    let objects = &groups[0];
-    let mut new_objects: Vec<GQLObject> = vec![];
+    let objects = &groups.groups[0].rows;
+    let mut new_objects: Group = Group { rows: vec![] };
     let mut values_set: HashSet<u64> = HashSet::new();
 
     for object in objects {
         // Build row of the selected only values
         let mut row_values: Vec<String> = Vec::with_capacity(titles_count);
-        for key in &titles {
-            row_values.push(object.attributes.get(key as &str).unwrap().to_string());
+        for index in 0..titles.len() {
+            row_values.push(object.values.get(index).unwrap().to_string());
         }
 
         // Compute the hash for row of values
@@ -181,13 +183,15 @@ fn apply_distinct_on_objects_group(groups: &mut Vec<Vec<GQLObject>>, hidden_sele
 
         // If this hash is unique, insert the row
         if values_set.insert(values_hash) {
-            new_objects.push(object.to_owned());
+            new_objects.rows.push(Row {
+                values: object.values.clone(),
+            });
         }
     }
 
     // If number of total rows is changed, update the main group rows
     if objects.len() != new_objects.len() {
-        groups[0].clear();
-        groups[0].append(&mut new_objects);
+        groups.groups[0].rows.clear();
+        groups.groups[0].rows.append(&mut new_objects.rows);
     }
 }

@@ -4,8 +4,9 @@ use std::collections::HashMap;
 
 use gitql_ast::aggregation::AGGREGATIONS;
 use gitql_ast::environment::Environment;
-use gitql_ast::object::flat_gql_groups;
-use gitql_ast::object::GQLObject;
+use gitql_ast::object::GitQLGroups;
+use gitql_ast::object::Group;
+use gitql_ast::object::Row;
 use gitql_ast::statement::AggregateValue;
 use gitql_ast::statement::AggregationsStatement;
 use gitql_ast::statement::GlobalVariableStatement;
@@ -30,7 +31,7 @@ pub fn execute_statement(
     env: &mut Environment,
     statement: &Box<dyn Statement>,
     repo: &gix::Repository,
-    groups: &mut Vec<Vec<GQLObject>>,
+    groups: &mut GitQLGroups,
     alias_table: &mut HashMap<String, String>,
     hidden_selection: &Vec<String>,
 ) -> Result<(), String> {
@@ -105,7 +106,7 @@ fn execute_select_statement(
     env: &mut Environment,
     statement: &SelectStatement,
     repo: &gix::Repository,
-    groups: &mut Vec<Vec<GQLObject>>,
+    groups: &mut GitQLGroups,
     hidden_selections: &Vec<String>,
 ) -> Result<(), String> {
     // Append hidden selection to the selected fields names
@@ -113,9 +114,16 @@ fn execute_select_statement(
     if !statement.table_name.is_empty() {
         for hidden in hidden_selections {
             if !fields_names.contains(hidden) {
-                fields_names.insert(0, hidden.to_string());
+                fields_names.push(hidden.to_string());
             }
         }
+    }
+
+    // Calculate list of titles once
+    for field_name in &fields_names {
+        groups
+            .titles
+            .push(get_column_name(&statement.alias_table, field_name));
     }
 
     // Select objects from the target table
@@ -124,15 +132,15 @@ fn execute_select_statement(
         repo,
         statement.table_name.to_string(),
         &fields_names,
+        &groups.titles,
         &statement.fields_values,
-        &statement.alias_table,
     )?;
 
     // Push the selected elements as a first group
     if groups.is_empty() {
-        groups.push(objects);
+        groups.groups.push(objects);
     } else {
-        groups[0].append(&mut objects);
+        groups.groups[0].rows.append(&mut objects.rows);
     }
 
     Ok(())
@@ -141,7 +149,7 @@ fn execute_select_statement(
 fn execute_where_statement(
     env: &mut Environment,
     statement: &WhereStatement,
-    groups: &mut Vec<Vec<GQLObject>>,
+    groups: &mut GitQLGroups,
 ) -> Result<(), String> {
     if groups.is_empty() {
         return Ok(());
@@ -149,22 +157,25 @@ fn execute_where_statement(
 
     // Perform where command only on the first group
     // because group by command not executed yet
-    let mut filtered_group: Vec<GQLObject> = vec![];
-    let first_group = groups.first().unwrap().iter();
+    let mut filtered_group: Group = Group { rows: vec![] };
+    let first_group = groups.groups.first().unwrap().rows.iter();
     for object in first_group {
-        let eval_result = evaluate_expression(env, &statement.condition, &object.attributes);
+        let eval_result =
+            evaluate_expression(env, &statement.condition, &groups.titles, &object.values);
         if eval_result.is_err() {
             return Err(eval_result.err().unwrap());
         }
 
         if eval_result.ok().unwrap().as_bool() {
-            filtered_group.push(object.clone());
+            filtered_group.rows.push(Row {
+                values: object.values.clone(),
+            });
         }
     }
 
     // Update the main group with the filtered data
-    groups.remove(0);
-    groups.push(filtered_group);
+    groups.groups.remove(0);
+    groups.groups.push(filtered_group);
 
     Ok(())
 }
@@ -172,53 +183,56 @@ fn execute_where_statement(
 fn execute_having_statement(
     env: &mut Environment,
     statement: &HavingStatement,
-    groups: &mut Vec<Vec<GQLObject>>,
+    groups: &mut GitQLGroups,
 ) -> Result<(), String> {
     if groups.is_empty() {
         return Ok(());
     }
 
     if groups.len() > 1 {
-        flat_gql_groups(groups);
+        groups.flat()
     }
 
     // Perform where command only on the first group
     // because groups are already merged
-    let mut filtered_group: Vec<GQLObject> = vec![];
-    let first_group = groups.first().unwrap().iter();
+    let mut filtered_group: Group = Group { rows: vec![] };
+    let first_group = groups.groups.first().unwrap().rows.iter();
     for object in first_group {
-        let eval_result = evaluate_expression(env, &statement.condition, &object.attributes);
+        let eval_result =
+            evaluate_expression(env, &statement.condition, &groups.titles, &object.values);
         if eval_result.is_err() {
             return Err(eval_result.err().unwrap());
         }
 
         if eval_result.ok().unwrap().as_bool() {
-            filtered_group.push(object.clone());
+            filtered_group.rows.push(Row {
+                values: object.values.clone(),
+            });
         }
     }
 
     // Update the main group with the filtered data
-    groups.remove(0);
-    groups.push(filtered_group);
+    groups.groups.remove(0);
+    groups.groups.push(filtered_group);
 
     Ok(())
 }
 
 fn execute_limit_statement(
     statement: &LimitStatement,
-    groups: &mut Vec<Vec<GQLObject>>,
+    groups: &mut GitQLGroups,
 ) -> Result<(), String> {
     if groups.is_empty() {
         return Ok(());
     }
 
     if groups.len() > 1 {
-        flat_gql_groups(groups);
+        groups.flat()
     }
 
-    let main_group: &mut Vec<GQLObject> = groups[0].as_mut();
+    let main_group: &mut Group = &mut groups.groups[0];
     if statement.count <= main_group.len() {
-        main_group.drain(statement.count..main_group.len());
+        main_group.rows.drain(statement.count..main_group.len());
     }
 
     Ok(())
@@ -226,17 +240,20 @@ fn execute_limit_statement(
 
 fn execute_offset_statement(
     statement: &OffsetStatement,
-    groups: &mut Vec<Vec<GQLObject>>,
+    groups: &mut GitQLGroups,
 ) -> Result<(), String> {
     if groups.is_empty() {
         return Ok(());
     }
 
     if groups.len() > 1 {
-        flat_gql_groups(groups);
+        groups.flat()
     }
-    let main_group: &mut Vec<GQLObject> = groups[0].as_mut();
-    main_group.drain(0..cmp::min(statement.count, main_group.len()));
+
+    let main_group: &mut Group = &mut groups.groups[0];
+    main_group
+        .rows
+        .drain(0..cmp::min(statement.count, main_group.len()));
 
     Ok(())
 }
@@ -244,22 +261,22 @@ fn execute_offset_statement(
 fn execute_order_by_statement(
     env: &mut Environment,
     statement: &OrderByStatement,
-    groups: &mut Vec<Vec<GQLObject>>,
+    groups: &mut GitQLGroups,
 ) -> Result<(), String> {
     if groups.is_empty() {
         return Ok(());
     }
 
     if groups.len() > 1 {
-        flat_gql_groups(groups);
+        groups.flat();
     }
 
-    let main_group: &mut Vec<GQLObject> = groups[0].as_mut();
+    let main_group: &mut Group = &mut groups.groups[0];
     if main_group.is_empty() {
         return Ok(());
     }
 
-    main_group.sort_by(|a, b| {
+    main_group.rows.sort_by(|a, b| {
         // The default ordering
         let mut ordering = Ordering::Equal;
 
@@ -271,8 +288,11 @@ fn execute_order_by_statement(
             }
 
             // Compare the two set of attributes using the current argument
-            let first = &evaluate_expression(env, argument, &a.attributes).unwrap_or(Value::Null);
-            let other = &evaluate_expression(env, argument, &b.attributes).unwrap_or(Value::Null);
+            let first = &evaluate_expression(env, argument, &groups.titles, &a.values)
+                .unwrap_or(Value::Null);
+            let other = &evaluate_expression(env, argument, &groups.titles, &b.values)
+                .unwrap_or(Value::Null);
+
             let current_ordering = first.compare(other);
 
             // If comparing result still equal, check the next argument
@@ -297,13 +317,13 @@ fn execute_order_by_statement(
 
 fn execute_group_by_statement(
     statement: &GroupByStatement,
-    groups: &mut Vec<Vec<GQLObject>>,
+    groups: &mut GitQLGroups,
 ) -> Result<(), String> {
     if groups.is_empty() {
         return Ok(());
     }
 
-    let main_group: Vec<GQLObject> = groups.remove(0);
+    let main_group: Group = groups.groups.remove(0);
     if main_group.is_empty() {
         return Ok(());
     }
@@ -314,8 +334,14 @@ fn execute_group_by_statement(
     // Track current group index
     let mut next_group_index = 0;
 
-    for object in main_group.into_iter() {
-        let field_value = object.attributes.get(&statement.field_name).unwrap();
+    for object in main_group.rows.into_iter() {
+        let field_index = groups
+            .titles
+            .iter()
+            .position(|r| r.eq(&statement.field_name))
+            .unwrap();
+
+        let field_value = &object.values[field_index];
 
         // If there is an existing group for this value, append current object to it
         if let std::collections::hash_map::Entry::Vacant(e) =
@@ -323,13 +349,13 @@ fn execute_group_by_statement(
         {
             e.insert(next_group_index);
             next_group_index += 1;
-            groups.push(vec![object.to_owned()]);
+            groups.groups.push(Group { rows: vec![object] });
         }
         // Push a new group for this unique value and update the next index
         else {
             let index = *groups_map.get(&field_value.as_text()).unwrap();
-            let target_group = &mut groups[index];
-            target_group.push(object.to_owned());
+            let target_group = &mut groups.groups[index];
+            target_group.rows.push(object);
         }
     }
 
@@ -339,7 +365,7 @@ fn execute_group_by_statement(
 fn execute_aggregation_function_statement(
     env: &mut Environment,
     statement: &AggregationsStatement,
-    groups: &mut Vec<Vec<GQLObject>>,
+    groups: &mut GitQLGroups,
     alias_table: &HashMap<String, String>,
 ) -> Result<(), String> {
     // Make sure you have at least one aggregation function to calculate
@@ -352,7 +378,7 @@ fn execute_aggregation_function_statement(
     let groups_count = groups.len();
 
     // We should run aggregation function for each group
-    for group in groups {
+    for group in &mut groups.groups {
         // No need to apply all aggregation if there is no selected elements
         if group.is_empty() {
             continue;
@@ -362,27 +388,27 @@ fn execute_aggregation_function_statement(
         for aggregation in aggregations_map {
             if let AggregateValue::Function(function, argument) = aggregation.1 {
                 // Get alias name if exists or column name by default
+
                 let result_column_name = aggregation.0;
                 let column_name = get_column_name(alias_table, result_column_name);
 
+                let column_index = groups
+                    .titles
+                    .iter()
+                    .position(|r| r.eq(&column_name))
+                    .unwrap();
+
                 // Get the target aggregation function
                 let aggregation_function = AGGREGATIONS.get(function.as_str()).unwrap();
-                let result = &aggregation_function(&argument.to_string(), group);
+                let result = &aggregation_function(&argument.to_string(), &groups.titles, group);
 
                 // Insert the calculated value in the group objects
-                for object in group.iter_mut() {
-                    object
-                        .attributes
-                        .insert(column_name.to_string(), result.to_owned());
-                } // Get the target aggregation function
-                let aggregation_function = AGGREGATIONS.get(function.as_str()).unwrap();
-                let result = &aggregation_function(&argument.to_string(), group);
-
-                // Insert the calculated value in the group objects
-                for object in group.iter_mut() {
-                    object
-                        .attributes
-                        .insert(column_name.to_string(), result.to_owned());
+                for object in &mut group.rows {
+                    if column_index < object.values.len() {
+                        object.values[column_index] = result.clone();
+                    } else {
+                        object.values.push(result.clone());
+                    }
                 }
             }
         }
@@ -394,13 +420,20 @@ fn execute_aggregation_function_statement(
                 let result_column_name = aggregation.0;
                 let column_name = get_column_name(alias_table, result_column_name);
 
-                // Insert the calculated value in the group objects
-                for object in group.iter_mut() {
-                    let result = evaluate_expression(env, expr, &object.attributes)?;
+                let column_index = groups
+                    .titles
+                    .iter()
+                    .position(|r| r.eq(&column_name))
+                    .unwrap();
 
-                    object
-                        .attributes
-                        .insert(column_name.to_string(), result.to_owned());
+                // Insert the calculated value in the group objects
+                for object in group.rows.iter_mut() {
+                    let result = evaluate_expression(env, expr, &groups.titles, &object.values)?;
+                    if column_index < object.values.len() {
+                        object.values[column_index] = result.clone();
+                    } else {
+                        object.values.push(result.clone());
+                    }
                 }
             }
         }
@@ -408,7 +441,7 @@ fn execute_aggregation_function_statement(
         // In case of group by statement is executed
         // Remove all elements expect the first one
         if groups_count > 1 {
-            group.drain(1..);
+            group.rows.drain(1..);
         }
     }
 
@@ -419,7 +452,7 @@ pub fn execute_global_variable_statement(
     env: &mut Environment,
     statement: &GlobalVariableStatement,
 ) -> Result<(), String> {
-    let value = evaluate_expression(env, &statement.value, &HashMap::default())?;
+    let value = evaluate_expression(env, &statement.value, &[], &vec![])?;
     env.globals.insert(statement.name.to_string(), value);
     Ok(())
 }

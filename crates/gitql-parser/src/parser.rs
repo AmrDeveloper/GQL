@@ -609,6 +609,11 @@ fn parse_expression(
         let column_name = context.generate_column_name();
         env.define(column_name.to_string(), expression.expr_type(env));
 
+        // Register the new aggregation generated field if the this expression is after group by
+        if context.has_group_by_statement && !context.hidden_selections.contains(&column_name) {
+            context.hidden_selections.push(column_name.to_string());
+        }
+
         context
             .aggregations
             .insert(column_name.clone(), AggregateValue::Expression(expression));

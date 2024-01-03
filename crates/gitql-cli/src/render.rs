@@ -1,5 +1,5 @@
-use gitql_ast::object::flat_gql_groups;
-use gitql_ast::object::GQLObject;
+use gitql_ast::object::GitQLGroups;
+use gitql_ast::object::Row;
 
 enum PaginationInput {
     NextPage,
@@ -8,25 +8,25 @@ enum PaginationInput {
 }
 
 pub fn render_objects(
-    groups: &mut Vec<Vec<GQLObject>>,
+    groups: &mut GitQLGroups,
     hidden_selections: &[String],
     pagination: bool,
     page_size: usize,
 ) {
     if groups.len() > 1 {
-        flat_gql_groups(groups);
+        groups.flat()
     }
 
-    if groups.is_empty() || groups[0].is_empty() {
+    if groups.is_empty() || groups.groups[0].is_empty() {
         return;
     }
 
-    let gql_group = groups.first().unwrap();
+    let gql_group = groups.groups.first().unwrap();
     let gql_group_len = gql_group.len();
 
-    let titles: Vec<&str> = groups[0][0]
-        .attributes
-        .keys()
+    let titles: Vec<&str> = groups
+        .titles
+        .iter()
         .filter(|s| !hidden_selections.contains(s))
         .map(|k| k.as_ref())
         .collect();
@@ -40,7 +40,7 @@ pub fn render_objects(
 
     // Print all data without pagination
     if !pagination || page_size >= gql_group_len {
-        print_group_as_table(&titles, table_headers, gql_group);
+        print_group_as_table(&titles, table_headers, &gql_group.rows);
         return;
     }
 
@@ -52,8 +52,7 @@ pub fn render_objects(
         let start_index = (current_page - 1) * page_size;
         let end_index = (start_index + page_size).min(gql_group_len);
 
-        let current_page_groups = &gql_group[start_index..end_index].to_vec();
-
+        let current_page_groups = &gql_group.rows[start_index..end_index];
         println!("Page {}/{}", current_page, number_of_pages);
         print_group_as_table(&titles, table_headers.clone(), current_page_groups);
 
@@ -66,11 +65,7 @@ pub fn render_objects(
     }
 }
 
-fn print_group_as_table(
-    titles: &Vec<&str>,
-    table_headers: Vec<comfy_table::Cell>,
-    group: &Vec<GQLObject>,
-) {
+fn print_group_as_table(titles: &Vec<&str>, table_headers: Vec<comfy_table::Cell>, rows: &[Row]) {
     let mut table = comfy_table::Table::new();
 
     // Setup table style
@@ -80,11 +75,13 @@ fn print_group_as_table(
 
     table.set_header(table_headers);
 
+    let titles_len = titles.len();
+
     // Add rows to the table
-    for object in group {
+    for row in rows {
         let mut table_row: Vec<comfy_table::Cell> = vec![];
-        for key in titles {
-            let value = object.attributes.get(key as &str).unwrap();
+        for index in 0..titles_len {
+            let value = row.values.get(index).unwrap();
             table_row.push(comfy_table::Cell::new(value.to_string()));
         }
         table.add_row(table_row);
