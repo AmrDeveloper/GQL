@@ -5,6 +5,7 @@ use chrono::NaiveDate;
 use chrono::NaiveDateTime;
 use chrono::NaiveTime;
 use chrono::TimeZone;
+use chrono::Timelike;
 use chrono::Utc;
 use chrono::Weekday;
 
@@ -56,6 +57,12 @@ pub fn date_time_to_time_stamp(date: &str) -> i64 {
         return 0;
     }
     date_time.ok().unwrap().timestamp()
+}
+
+pub fn date_time_to_hour(date: i64) -> i64 {
+    let date_time = NaiveDateTime::from_timestamp_opt(date, 0);
+    let dt = date_time.unwrap().time();
+    dt.hour() as i64
 }
 
 pub fn date_to_day_name(date: i64) -> String {

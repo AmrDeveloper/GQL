@@ -66,6 +66,7 @@ SELECT UNICODE("AmrDeveloper")
 | NOW               |                           | DateTime | Return current date time in `YYYY-MM-DD HH:MM:SS` format.                  |
 | DAYNAME           | Date                      | Text     | Returns the name of the day given a timestamp.                             |
 | MONTHNAME         | Date                      | Text     | Returns the name of the month given a timestamp.                           |
+| HOUR              | DateTime                  | Integer  | Returns the hour given a timestamp.                                        |
 
 ### Date functions samples
 
@@ -78,6 +79,7 @@ SELECT MAKETIME(12, 59, 59)
 SELECT NOW()
 SELECT DAYNAME(CURRENT_DATE())
 SELECT MONTHNAME(CURRENT_DATE())
+SELECT HOUR(NOW())
 ```
 
 ### Numeric Functions
