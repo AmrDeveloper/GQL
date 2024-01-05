@@ -66,7 +66,7 @@ SELECT UNICODE("AmrDeveloper")
 | NOW               |                           | DateTime | Return current date time in `YYYY-MM-DD HH:MM:SS` format.                  |
 | DAYNAME           | Date                      | Text     | Returns the name of the day given a timestamp.                             |
 | MONTHNAME         | Date                      | Text     | Returns the name of the month given a timestamp.                           |
-| HOUR              | DateTime                  | Integer  | Returns the hour given a timestamp.                                        |
+| HOUR              | DateTime                  | Integer  | Returns the hour part of a datetime.                                        |
 
 ### Date functions samples
 
