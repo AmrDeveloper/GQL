@@ -28,7 +28,6 @@ use gitql_ast::expression::StringExpression;
 use gitql_ast::expression::StringValueType;
 use gitql_ast::expression::SymbolExpression;
 use gitql_ast::function::FUNCTIONS;
-use gitql_ast::types::DataType;
 use gitql_ast::value::Value;
 
 use regex::Regex;
@@ -270,18 +269,12 @@ fn evaluate_comparison(
     let rhs = evaluate_expression(env, &expr.right, titles, object)?;
 
     let left_type = lhs.data_type();
-    let comparison_result = if left_type == DataType::Integer {
-        let ilhs = lhs.as_int();
-        let irhs = rhs.as_int();
-        ilhs.cmp(&irhs)
-    } else if left_type == DataType::Float {
-        let ilhs = lhs.as_float();
-        let irhs = rhs.as_float();
-        ilhs.total_cmp(&irhs)
-    } else if left_type == DataType::Boolean {
-        let ilhs = lhs.as_bool();
-        let irhs = rhs.as_bool();
-        ilhs.cmp(&irhs)
+    let comparison_result = if left_type.is_int() {
+        lhs.as_int().cmp(&rhs.as_int())
+    } else if left_type.is_float() {
+        lhs.as_float().total_cmp(&rhs.as_float())
+    } else if left_type.is_bool() {
+        lhs.as_bool().cmp(&rhs.as_bool())
     } else {
         lhs.to_string().cmp(&rhs.to_string())
     };
@@ -289,14 +282,14 @@ fn evaluate_comparison(
     if expr.operator == ComparisonOperator::NullSafeEqual {
         return Ok(Value::Integer(
             // Return 1 of both sides are null
-            if left_type == DataType::Null && rhs.data_type() == DataType::Null {
+            if left_type.is_null() && rhs.data_type().is_null() {
                 1
             }
             // Return 0 if one side is null
-            else if left_type == DataType::Null || rhs.data_type() == DataType::Null {
+            else if left_type.is_null() || rhs.data_type().is_null() {
                 0
             }
-            // Return 1 if both non null sides are equals
+            // Return 1 if both non null sides are equals``
             else if comparison_result.is_eq() {
                 1
             }
@@ -422,7 +415,7 @@ fn evaluate_call(
     let function_name = expr.function_name.as_str();
     let function = FUNCTIONS.get(function_name).unwrap();
 
-    let mut arguments = vec![];
+    let mut arguments = Vec::with_capacity(expr.arguments.len());
     for arg in expr.arguments.iter() {
         arguments.push(evaluate_expression(env, arg, titles, object)?);
     }
