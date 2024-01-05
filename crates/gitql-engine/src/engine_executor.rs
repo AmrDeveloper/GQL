@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 use gitql_ast::aggregation::AGGREGATIONS;
 use gitql_ast::environment::Environment;
-use gitql_ast::object::GitQLGroups;
+use gitql_ast::object::GitQLObject;
 use gitql_ast::object::Group;
 use gitql_ast::object::Row;
 use gitql_ast::statement::AggregateValue;
@@ -31,7 +31,7 @@ pub fn execute_statement(
     env: &mut Environment,
     statement: &Box<dyn Statement>,
     repo: &gix::Repository,
-    groups: &mut GitQLGroups,
+    gitql_object: &mut GitQLObject,
     alias_table: &mut HashMap<String, String>,
     hidden_selection: &Vec<String>,
 ) -> Result<(), String> {
@@ -47,50 +47,50 @@ pub fn execute_statement(
                 alias_table.insert(alias.0.to_string(), alias.1.to_string());
             }
 
-            execute_select_statement(env, statement, repo, groups, hidden_selection)
+            execute_select_statement(env, statement, repo, gitql_object, hidden_selection)
         }
         Where => {
             let statement = statement.as_any().downcast_ref::<WhereStatement>().unwrap();
-            execute_where_statement(env, statement, groups)
+            execute_where_statement(env, statement, gitql_object)
         }
         Having => {
             let statement = statement
                 .as_any()
                 .downcast_ref::<HavingStatement>()
                 .unwrap();
-            execute_having_statement(env, statement, groups)
+            execute_having_statement(env, statement, gitql_object)
         }
         Limit => {
             let statement = statement.as_any().downcast_ref::<LimitStatement>().unwrap();
-            execute_limit_statement(statement, groups)
+            execute_limit_statement(statement, gitql_object)
         }
         Offset => {
             let statement = statement
                 .as_any()
                 .downcast_ref::<OffsetStatement>()
                 .unwrap();
-            execute_offset_statement(statement, groups)
+            execute_offset_statement(statement, gitql_object)
         }
         OrderBy => {
             let statement = statement
                 .as_any()
                 .downcast_ref::<OrderByStatement>()
                 .unwrap();
-            execute_order_by_statement(env, statement, groups)
+            execute_order_by_statement(env, statement, gitql_object)
         }
         GroupBy => {
             let statement = statement
                 .as_any()
                 .downcast_ref::<GroupByStatement>()
                 .unwrap();
-            execute_group_by_statement(statement, groups)
+            execute_group_by_statement(statement, gitql_object)
         }
         AggregateFunction => {
             let statement = statement
                 .as_any()
                 .downcast_ref::<AggregationsStatement>()
                 .unwrap();
-            execute_aggregation_function_statement(env, statement, groups, alias_table)
+            execute_aggregation_function_statement(env, statement, gitql_object, alias_table)
         }
         GlobalVariable => {
             let statement = statement
@@ -106,7 +106,7 @@ fn execute_select_statement(
     env: &mut Environment,
     statement: &SelectStatement,
     repo: &gix::Repository,
-    groups: &mut GitQLGroups,
+    gitql_object: &mut GitQLObject,
     hidden_selections: &Vec<String>,
 ) -> Result<(), String> {
     // Append hidden selection to the selected fields names
@@ -121,7 +121,7 @@ fn execute_select_statement(
 
     // Calculate list of titles once
     for field_name in &fields_names {
-        groups
+        gitql_object
             .titles
             .push(get_column_name(&statement.alias_table, field_name));
     }
@@ -132,15 +132,15 @@ fn execute_select_statement(
         repo,
         statement.table_name.to_string(),
         &fields_names,
-        &groups.titles,
+        &gitql_object.titles,
         &statement.fields_values,
     )?;
 
     // Push the selected elements as a first group
-    if groups.is_empty() {
-        groups.groups.push(objects);
+    if gitql_object.is_empty() {
+        gitql_object.groups.push(objects);
     } else {
-        groups.groups[0].rows.append(&mut objects.rows);
+        gitql_object.groups[0].rows.append(&mut objects.rows);
     }
 
     Ok(())
@@ -149,19 +149,23 @@ fn execute_select_statement(
 fn execute_where_statement(
     env: &mut Environment,
     statement: &WhereStatement,
-    groups: &mut GitQLGroups,
+    gitql_object: &mut GitQLObject,
 ) -> Result<(), String> {
-    if groups.is_empty() {
+    if gitql_object.is_empty() {
         return Ok(());
     }
 
     // Perform where command only on the first group
     // because group by command not executed yet
     let mut filtered_group: Group = Group { rows: vec![] };
-    let first_group = groups.groups.first().unwrap().rows.iter();
+    let first_group = gitql_object.groups.first().unwrap().rows.iter();
     for object in first_group {
-        let eval_result =
-            evaluate_expression(env, &statement.condition, &groups.titles, &object.values);
+        let eval_result = evaluate_expression(
+            env,
+            &statement.condition,
+            &gitql_object.titles,
+            &object.values,
+        );
         if eval_result.is_err() {
             return Err(eval_result.err().unwrap());
         }
@@ -174,8 +178,8 @@ fn execute_where_statement(
     }
 
     // Update the main group with the filtered data
-    groups.groups.remove(0);
-    groups.groups.push(filtered_group);
+    gitql_object.groups.remove(0);
+    gitql_object.groups.push(filtered_group);
 
     Ok(())
 }
@@ -183,23 +187,27 @@ fn execute_where_statement(
 fn execute_having_statement(
     env: &mut Environment,
     statement: &HavingStatement,
-    groups: &mut GitQLGroups,
+    gitql_object: &mut GitQLObject,
 ) -> Result<(), String> {
-    if groups.is_empty() {
+    if gitql_object.is_empty() {
         return Ok(());
     }
 
-    if groups.len() > 1 {
-        groups.flat()
+    if gitql_object.len() > 1 {
+        gitql_object.flat()
     }
 
     // Perform where command only on the first group
     // because groups are already merged
     let mut filtered_group: Group = Group { rows: vec![] };
-    let first_group = groups.groups.first().unwrap().rows.iter();
+    let first_group = gitql_object.groups.first().unwrap().rows.iter();
     for object in first_group {
-        let eval_result =
-            evaluate_expression(env, &statement.condition, &groups.titles, &object.values);
+        let eval_result = evaluate_expression(
+            env,
+            &statement.condition,
+            &gitql_object.titles,
+            &object.values,
+        );
         if eval_result.is_err() {
             return Err(eval_result.err().unwrap());
         }
@@ -212,25 +220,25 @@ fn execute_having_statement(
     }
 
     // Update the main group with the filtered data
-    groups.groups.remove(0);
-    groups.groups.push(filtered_group);
+    gitql_object.groups.remove(0);
+    gitql_object.groups.push(filtered_group);
 
     Ok(())
 }
 
 fn execute_limit_statement(
     statement: &LimitStatement,
-    groups: &mut GitQLGroups,
+    gitql_object: &mut GitQLObject,
 ) -> Result<(), String> {
-    if groups.is_empty() {
+    if gitql_object.is_empty() {
         return Ok(());
     }
 
-    if groups.len() > 1 {
-        groups.flat()
+    if gitql_object.len() > 1 {
+        gitql_object.flat()
     }
 
-    let main_group: &mut Group = &mut groups.groups[0];
+    let main_group: &mut Group = &mut gitql_object.groups[0];
     if statement.count <= main_group.len() {
         main_group.rows.drain(statement.count..main_group.len());
     }
@@ -240,17 +248,17 @@ fn execute_limit_statement(
 
 fn execute_offset_statement(
     statement: &OffsetStatement,
-    groups: &mut GitQLGroups,
+    gitql_object: &mut GitQLObject,
 ) -> Result<(), String> {
-    if groups.is_empty() {
+    if gitql_object.is_empty() {
         return Ok(());
     }
 
-    if groups.len() > 1 {
-        groups.flat()
+    if gitql_object.len() > 1 {
+        gitql_object.flat()
     }
 
-    let main_group: &mut Group = &mut groups.groups[0];
+    let main_group: &mut Group = &mut gitql_object.groups[0];
     main_group
         .rows
         .drain(0..cmp::min(statement.count, main_group.len()));
@@ -261,17 +269,17 @@ fn execute_offset_statement(
 fn execute_order_by_statement(
     env: &mut Environment,
     statement: &OrderByStatement,
-    groups: &mut GitQLGroups,
+    gitql_object: &mut GitQLObject,
 ) -> Result<(), String> {
-    if groups.is_empty() {
+    if gitql_object.is_empty() {
         return Ok(());
     }
 
-    if groups.len() > 1 {
-        groups.flat();
+    if gitql_object.len() > 1 {
+        gitql_object.flat();
     }
 
-    let main_group: &mut Group = &mut groups.groups[0];
+    let main_group: &mut Group = &mut gitql_object.groups[0];
     if main_group.is_empty() {
         return Ok(());
     }
@@ -288,9 +296,9 @@ fn execute_order_by_statement(
             }
 
             // Compare the two set of attributes using the current argument
-            let first = &evaluate_expression(env, argument, &groups.titles, &a.values)
+            let first = &evaluate_expression(env, argument, &gitql_object.titles, &a.values)
                 .unwrap_or(Value::Null);
-            let other = &evaluate_expression(env, argument, &groups.titles, &b.values)
+            let other = &evaluate_expression(env, argument, &gitql_object.titles, &b.values)
                 .unwrap_or(Value::Null);
 
             let current_ordering = first.compare(other);
@@ -317,13 +325,13 @@ fn execute_order_by_statement(
 
 fn execute_group_by_statement(
     statement: &GroupByStatement,
-    groups: &mut GitQLGroups,
+    gitql_object: &mut GitQLObject,
 ) -> Result<(), String> {
-    if groups.is_empty() {
+    if gitql_object.is_empty() {
         return Ok(());
     }
 
-    let main_group: Group = groups.groups.remove(0);
+    let main_group: Group = gitql_object.groups.remove(0);
     if main_group.is_empty() {
         return Ok(());
     }
@@ -335,7 +343,7 @@ fn execute_group_by_statement(
     let mut next_group_index = 0;
 
     for object in main_group.rows.into_iter() {
-        let field_index = groups
+        let field_index = gitql_object
             .titles
             .iter()
             .position(|r| r.eq(&statement.field_name))
@@ -349,12 +357,12 @@ fn execute_group_by_statement(
         {
             e.insert(next_group_index);
             next_group_index += 1;
-            groups.groups.push(Group { rows: vec![object] });
+            gitql_object.groups.push(Group { rows: vec![object] });
         }
         // Push a new group for this unique value and update the next index
         else {
             let index = *groups_map.get(&field_value.as_text()).unwrap();
-            let target_group = &mut groups.groups[index];
+            let target_group = &mut gitql_object.groups[index];
             target_group.rows.push(object);
         }
     }
@@ -365,7 +373,7 @@ fn execute_group_by_statement(
 fn execute_aggregation_function_statement(
     env: &mut Environment,
     statement: &AggregationsStatement,
-    groups: &mut GitQLGroups,
+    gitql_object: &mut GitQLObject,
     alias_table: &HashMap<String, String>,
 ) -> Result<(), String> {
     // Make sure you have at least one aggregation function to calculate
@@ -375,10 +383,10 @@ fn execute_aggregation_function_statement(
     }
 
     // Used to determine if group by statement is executed before or not
-    let groups_count = groups.len();
+    let groups_count = gitql_object.len();
 
     // We should run aggregation function for each group
-    for group in &mut groups.groups {
+    for group in &mut gitql_object.groups {
         // No need to apply all aggregation if there is no selected elements
         if group.is_empty() {
             continue;
@@ -392,7 +400,7 @@ fn execute_aggregation_function_statement(
                 let result_column_name = aggregation.0;
                 let column_name = get_column_name(alias_table, result_column_name);
 
-                let column_index = groups
+                let column_index = gitql_object
                     .titles
                     .iter()
                     .position(|r| r.eq(&column_name))
@@ -400,7 +408,8 @@ fn execute_aggregation_function_statement(
 
                 // Get the target aggregation function
                 let aggregation_function = AGGREGATIONS.get(function.as_str()).unwrap();
-                let result = &aggregation_function(&argument.to_string(), &groups.titles, group);
+                let result =
+                    &aggregation_function(&argument.to_string(), &gitql_object.titles, group);
 
                 // Insert the calculated value in the group objects
                 for object in &mut group.rows {
@@ -420,7 +429,7 @@ fn execute_aggregation_function_statement(
                 let result_column_name = aggregation.0;
                 let column_name = get_column_name(alias_table, result_column_name);
 
-                let column_index = groups
+                let column_index = gitql_object
                     .titles
                     .iter()
                     .position(|r| r.eq(&column_name))
@@ -428,7 +437,8 @@ fn execute_aggregation_function_statement(
 
                 // Insert the calculated value in the group objects
                 for object in group.rows.iter_mut() {
-                    let result = evaluate_expression(env, expr, &groups.titles, &object.values)?;
+                    let result =
+                        evaluate_expression(env, expr, &gitql_object.titles, &object.values)?;
                     if column_index < object.values.len() {
                         object.values[column_index] = result.clone();
                     } else {

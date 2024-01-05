@@ -6,7 +6,7 @@ use std::hash::Hasher;
 use std::vec;
 
 use gitql_ast::environment::Environment;
-use gitql_ast::object::GitQLGroups;
+use gitql_ast::object::GitQLObject;
 use gitql_ast::object::Group;
 use gitql_ast::object::Row;
 use gitql_ast::statement::GQLQuery;
@@ -28,7 +28,7 @@ const GQL_COMMANDS_IN_ORDER: [&str; 8] = [
 ];
 
 pub enum EvaluationResult {
-    SelectedGroups(GitQLGroups, Vec<std::string::String>),
+    SelectedGroups(GitQLObject, Vec<std::string::String>),
     SetGlobalVariable,
 }
 
@@ -51,11 +51,7 @@ pub fn evaluate_select_query(
     repos: &[gix::Repository],
     query: GQLQuery,
 ) -> Result<EvaluationResult, String> {
-    let mut groups: GitQLGroups = GitQLGroups {
-        titles: vec![],
-        groups: vec![],
-    };
-
+    let mut gitql_object = GitQLObject::default();
     let mut alias_table: HashMap<String, String> = HashMap::new();
 
     let hidden_selections = query.hidden_selections;
@@ -80,14 +76,17 @@ pub fn evaluate_select_query(
                             env,
                             statement,
                             &repos[0],
-                            &mut groups,
+                            &mut gitql_object,
                             &mut alias_table,
                             &hidden_selections,
                         )?;
 
                         // If the main group is empty, no need to perform other statements
-                        if groups.is_empty() || groups.groups[0].is_empty() {
-                            return Ok(EvaluationResult::SelectedGroups(groups, hidden_selections));
+                        if gitql_object.is_empty() || gitql_object.groups[0].is_empty() {
+                            return Ok(EvaluationResult::SelectedGroups(
+                                gitql_object,
+                                hidden_selections,
+                            ));
                         }
 
                         continue;
@@ -99,20 +98,23 @@ pub fn evaluate_select_query(
                             env,
                             statement,
                             repo,
-                            &mut groups,
+                            &mut gitql_object,
                             &mut alias_table,
                             &hidden_selections,
                         )?;
                     }
 
                     // If the main group is empty, no need to perform other statements
-                    if groups.is_empty() || groups.groups[0].is_empty() {
-                        return Ok(EvaluationResult::SelectedGroups(groups, hidden_selections));
+                    if gitql_object.is_empty() || gitql_object.groups[0].is_empty() {
+                        return Ok(EvaluationResult::SelectedGroups(
+                            gitql_object,
+                            hidden_selections,
+                        ));
                     }
 
                     // If Select statement has table name and distinct flag, keep only unique values
                     if !select_statement.table_name.is_empty() && select_statement.is_distinct {
-                        apply_distinct_on_objects_group(&mut groups, &hidden_selections);
+                        apply_distinct_on_objects_group(&mut gitql_object, &hidden_selections);
                     }
                 }
                 _ => {
@@ -121,7 +123,7 @@ pub fn evaluate_select_query(
                         env,
                         statement,
                         first_repo,
-                        &mut groups,
+                        &mut gitql_object,
                         &mut alias_table,
                         &hidden_selections,
                     )?;
@@ -132,8 +134,8 @@ pub fn evaluate_select_query(
 
     // If there are many groups that mean group by is executed before.
     // must merge each group into only one element
-    if groups.len() > 1 {
-        for group in groups.groups.iter_mut() {
+    if gitql_object.len() > 1 {
+        for group in gitql_object.groups.iter_mut() {
             if group.len() > 1 {
                 group.rows.drain(1..);
             }
@@ -141,23 +143,29 @@ pub fn evaluate_select_query(
     }
     // If it a single group but it select only aggregations function,
     // should return only first element in the group
-    else if groups.len() == 1 && !query.has_group_by_statement && query.has_aggregation_function {
-        let group: &mut Group = &mut groups.groups[0];
+    else if gitql_object.len() == 1
+        && !query.has_group_by_statement
+        && query.has_aggregation_function
+    {
+        let group: &mut Group = &mut gitql_object.groups[0];
         if group.len() > 1 {
             group.rows.drain(1..);
         }
     }
 
     // Return the groups and hidden selections to be used later in GUI or TUI ...etc
-    Ok(EvaluationResult::SelectedGroups(groups, hidden_selections))
+    Ok(EvaluationResult::SelectedGroups(
+        gitql_object,
+        hidden_selections,
+    ))
 }
 
-fn apply_distinct_on_objects_group(groups: &mut GitQLGroups, hidden_selections: &[String]) {
-    if groups.is_empty() {
+fn apply_distinct_on_objects_group(gitql_object: &mut GitQLObject, hidden_selections: &[String]) {
+    if gitql_object.is_empty() {
         return;
     }
 
-    let titles: Vec<&String> = groups
+    let titles: Vec<&String> = gitql_object
         .titles
         .iter()
         .filter(|s| !hidden_selections.contains(s))
@@ -165,7 +173,7 @@ fn apply_distinct_on_objects_group(groups: &mut GitQLGroups, hidden_selections: 
 
     let titles_count = titles.len();
 
-    let objects = &groups.groups[0].rows;
+    let objects = &gitql_object.groups[0].rows;
     let mut new_objects: Group = Group { rows: vec![] };
     let mut values_set: HashSet<u64> = HashSet::new();
 
@@ -191,7 +199,7 @@ fn apply_distinct_on_objects_group(groups: &mut GitQLGroups, hidden_selections: 
 
     // If number of total rows is changed, update the main group rows
     if objects.len() != new_objects.len() {
-        groups.groups[0].rows.clear();
-        groups.groups[0].rows.append(&mut new_objects.rows);
+        gitql_object.groups[0].rows.clear();
+        gitql_object.groups[0].rows.append(&mut new_objects.rows);
     }
 }

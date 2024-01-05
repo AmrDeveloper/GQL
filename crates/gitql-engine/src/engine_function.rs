@@ -49,7 +49,7 @@ fn select_references(
     let padding = names_len - values_len;
 
     for reference in references.all().unwrap().flatten() {
-        let mut values: Vec<Value> = vec![];
+        let mut values: Vec<Value> = Vec::with_capacity(fields_names.len());
 
         for index in 0..names_len {
             let field_name = &fields_names[index as usize];
@@ -137,7 +137,7 @@ fn select_commits(
         let commit = repo.find_object(commit_info.id).unwrap().into_commit();
         let commit = commit.decode().unwrap();
 
-        let mut values: Vec<Value> = vec![];
+        let mut values: Vec<Value> = Vec::with_capacity(fields_names.len());
 
         for index in 0..names_len {
             let field_name = &fields_names[index as usize];
@@ -235,7 +235,8 @@ fn select_branches(
     let padding = names_len - values_len;
 
     for branch in local_and_remote_branches.flatten() {
-        let mut values: Vec<Value> = vec![];
+        let mut values: Vec<Value> = Vec::with_capacity(fields_names.len());
+
         for index in 0..names_len {
             let field_name = &fields_names[index as usize];
 
@@ -327,7 +328,7 @@ fn select_diffs(
         let commit_info = commit_info.unwrap();
         let commit = commit_info.id().object().unwrap().into_commit();
 
-        let mut values: Vec<Value> = vec![];
+        let mut values: Vec<Value> = Vec::with_capacity(fields_names.len());
 
         for index in 0..names_len {
             let field_name = &fields_names[index as usize];
@@ -447,7 +448,7 @@ fn select_tags(
     let mut rows: Vec<Row> = vec![];
 
     for tag_ref in tag_names.flatten() {
-        let mut values: Vec<Value> = vec![];
+        let mut values: Vec<Value> = Vec::with_capacity(fields_names.len());
 
         for index in 0..names_len {
             let field_name = &fields_names[index as usize];
@@ -491,13 +492,14 @@ fn select_values(
     fields_values: &[Box<dyn Expression>],
 ) -> Result<Group, String> {
     let mut group = Group { rows: vec![] };
-    let mut row = vec![];
+    let mut values = Vec::with_capacity(fields_values.len());
+
     for value in fields_values.iter() {
-        let evaluated = evaluate_expression(env, value, titles, &row)?;
-        row.push(evaluated);
+        let evaluated = evaluate_expression(env, value, titles, &values)?;
+        values.push(evaluated);
     }
 
-    group.rows.push(Row { values: row });
+    group.rows.push(Row { values });
     Ok(group)
 }
 

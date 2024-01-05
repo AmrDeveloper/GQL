@@ -1,4 +1,4 @@
-use gitql_ast::object::GitQLGroups;
+use gitql_ast::object::GitQLObject;
 use gitql_ast::object::Row;
 
 enum PaginationInput {
@@ -8,7 +8,7 @@ enum PaginationInput {
 }
 
 pub fn render_objects(
-    groups: &mut GitQLGroups,
+    groups: &mut GitQLObject,
     hidden_selections: &[String],
     pagination: bool,
     page_size: usize,
