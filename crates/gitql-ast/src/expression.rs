@@ -437,6 +437,7 @@ pub struct InExpression {
     pub argument: Box<dyn Expression>,
     pub values: Vec<Box<dyn Expression>>,
     pub values_type: DataType,
+    pub has_not_keyword: bool,
 }
 
 impl Expression for InExpression {

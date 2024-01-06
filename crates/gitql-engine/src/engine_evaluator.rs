@@ -466,21 +466,16 @@ fn evaluate_in(
     titles: &[String],
     object: &Vec<Value>,
 ) -> Result<Value, String> {
-    // No need to evaluate the argument if the list is empty
-    if expr.values.is_empty() {
-        return Ok(Value::Boolean(false));
-    }
-
     let argument = evaluate_expression(env, &expr.argument, titles, object)?;
 
     for value_expr in &expr.values {
         let value = evaluate_expression(env, value_expr, titles, object)?;
         if argument.equals(&value) {
-            return Ok(Value::Boolean(true));
+            return Ok(Value::Boolean(!expr.has_not_keyword));
         }
     }
 
-    Ok(Value::Boolean(false))
+    Ok(Value::Boolean(expr.has_not_keyword))
 }
 
 fn evaluate_is_null(

@@ -817,6 +817,15 @@ fn parse_in_expression(
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     let expression = parse_between_expression(context, env, tokens, position)?;
+
+    // Consume `NOT` keyword if IN Expression prefixed with `NOT` for example `expr NOT IN (...values)`
+    let has_not_keyword = if *position < tokens.len() && tokens[*position].kind == TokenKind::Not {
+        *position += 1;
+        true
+    } else {
+        false
+    };
+
     if *position < tokens.len() && tokens[*position].kind == TokenKind::In {
         let in_location = tokens[*position].location;
 
@@ -855,8 +864,22 @@ fn parse_in_expression(
             argument: expression,
             values,
             values_type,
+            has_not_keyword,
         }));
     }
+
+    // Report error if user write `NOT` with no `IN` keyword after it
+    if has_not_keyword {
+        return Err(
+            Diagnostic::error("Expects `IN` expression after this `NOT` keyword")
+                .add_help("Try to use `IN` expression after NOT keyword")
+                .add_help("Try to remove `NOT` keyword")
+                .add_note("Expect to see `NOT` then `IN` keyword with a list of values")
+                .with_location(get_safe_location(tokens, *position - 1))
+                .as_boxed(),
+        );
+    }
+
     Ok(expression)
 }
 
@@ -2042,10 +2065,21 @@ fn type_check_selected_fields(
     Ok(())
 }
 
-fn un_expected_statement_error(tokens: &Vec<Token>, position: &mut usize) -> Box<Diagnostic> {
+fn un_expected_statement_error(tokens: &[Token], position: &mut usize) -> Box<Diagnostic> {
+    let token: &Token = &tokens[*position];
+    let location = token.location;
+
+    // Query starts with invalid statement
+    if location.start == 0 {
+        return Diagnostic::error("Unexpected statement")
+            .add_help("Expect query to start with `SELECT` or `SET` keyword")
+            .with_location(location)
+            .as_boxed();
+    }
+
+    // General un expected statement error
     Diagnostic::error("Unexpected statement")
-        .add_help("Expect query to start with `SELECT` or `SET` keyword")
-        .with_location(get_safe_location(tokens, *position))
+        .with_location(location)
         .as_boxed()
 }
 
