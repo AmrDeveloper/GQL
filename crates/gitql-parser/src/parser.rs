@@ -841,6 +841,14 @@ fn parse_in_expression(
         }
 
         let values = parse_arguments_expressions(context, env, tokens, position)?;
+
+        // Optimize the Expression if the number of values in the list is 0
+        if values.is_empty() {
+            return Ok(Box::new(BooleanExpression {
+                is_true: has_not_keyword,
+            }));
+        }
+
         let values_type_result = check_all_values_are_same_type(env, &values);
         if values_type_result.is_none() {
             return Err(Diagnostic::error(
