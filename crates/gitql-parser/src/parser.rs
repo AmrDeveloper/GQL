@@ -98,7 +98,7 @@ fn parse_select_query(
     let mut position = 0;
 
     let mut context = ParserContext::default();
-    let mut statements: HashMap<String, Box<dyn Statement>> = HashMap::new();
+    let mut statements: HashMap<&'static str, Box<dyn Statement>> = HashMap::new();
 
     while position < len {
         let token = &tokens[position];
@@ -112,7 +112,7 @@ fn parse_select_query(
                         .as_boxed());
                 }
                 let statement = parse_select_statement(&mut context, env, tokens, &mut position)?;
-                statements.insert("select".to_string(), statement);
+                statements.insert("select", statement);
                 context.is_single_value_query = !context.aggregations.is_empty();
             }
             TokenKind::Where => {
@@ -124,7 +124,7 @@ fn parse_select_query(
                 }
 
                 let statement = parse_where_statement(&mut context, env, tokens, &mut position)?;
-                statements.insert("where".to_string(), statement);
+                statements.insert("where", statement);
             }
             TokenKind::Group => {
                 if statements.contains_key("group") {
@@ -135,7 +135,7 @@ fn parse_select_query(
                 }
 
                 let statement = parse_group_by_statement(&mut context, env, tokens, &mut position)?;
-                statements.insert("group".to_string(), statement);
+                statements.insert("group", statement);
             }
             TokenKind::Having => {
                 if statements.contains_key("having") {
@@ -157,7 +157,7 @@ fn parse_select_query(
                 }
 
                 let statement = parse_having_statement(&mut context, env, tokens, &mut position)?;
-                statements.insert("having".to_string(), statement);
+                statements.insert("having", statement);
             }
             TokenKind::Limit => {
                 if statements.contains_key("limit") {
@@ -168,7 +168,7 @@ fn parse_select_query(
                 }
 
                 let statement = parse_limit_statement(tokens, &mut position)?;
-                statements.insert("limit".to_string(), statement);
+                statements.insert("limit", statement);
 
                 // Check for Limit and Offset shortcut
                 if position < len && tokens[position].kind == TokenKind::Comma {
@@ -224,7 +224,7 @@ fn parse_select_query(
                     position += 1;
 
                     let count = count_result.unwrap();
-                    statements.insert("offset".to_string(), Box::new(OffsetStatement { count }));
+                    statements.insert("offset", Box::new(OffsetStatement { count }));
                 }
             }
             TokenKind::Offset => {
@@ -236,7 +236,7 @@ fn parse_select_query(
                 }
 
                 let statement = parse_offset_statement(tokens, &mut position)?;
-                statements.insert("offset".to_string(), statement);
+                statements.insert("offset", statement);
             }
             TokenKind::Order => {
                 if statements.contains_key("order") {
@@ -247,7 +247,7 @@ fn parse_select_query(
                 }
 
                 let statement = parse_order_by_statement(&mut context, env, tokens, &mut position)?;
-                statements.insert("order".to_string(), statement);
+                statements.insert("order", statement);
             }
             _ => return Err(un_expected_statement_error(tokens, &mut position)),
         }
@@ -258,7 +258,7 @@ fn parse_select_query(
         let aggregation_functions = AggregationsStatement {
             aggregations: context.aggregations,
         };
-        statements.insert("aggregation".to_string(), Box::new(aggregation_functions));
+        statements.insert("aggregation", Box::new(aggregation_functions));
     }
 
     // Remove all selected fields from hidden selection

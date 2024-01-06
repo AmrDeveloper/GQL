@@ -148,7 +148,7 @@ pub fn print_help_list() {
     println!("Options:");
     println!("-r,  --repos <REPOS>        Path for local repositories to run query on");
     println!("-q,  --query <GQL Query>    GitQL query to run on selected repositories");
-    println!("-p,  --pagination           Enable print result with pagninations");
+    println!("-p,  --pagination           Enable print result with pagination");
     println!("-ps, --pagesize             Set pagination page size [default: 10]");
     println!("-a,  --analysis             Print Query analysis");
     println!("-h,  --help                 Print GitQL help");
