@@ -30,54 +30,68 @@ pub fn parse_gql(mut tokens: Vec<Token>, env: &mut Environment) -> Result<Query,
 
     let mut position = 0;
     let first_token = &tokens[position];
-    match &first_token.kind {
-        TokenKind::Set => parse_set_query(env, &tokens),
-        TokenKind::Select => parse_select_query(env, &tokens),
+    let query_result = match &first_token.kind {
+        TokenKind::Set => parse_set_query(env, &tokens, &mut position),
+        TokenKind::Select => parse_select_query(env, &tokens, &mut position),
         _ => Err(un_expected_statement_error(&tokens, &mut position)),
+    };
+
+    // Check for un expected content after valid statement
+    if query_result.is_ok() && position < tokens.len() {
+        return Err(un_expected_content_after_correct_statement(
+            &first_token.literal,
+            &tokens,
+            &mut position,
+        ));
     }
+
+    query_result
 }
 
-fn parse_set_query(env: &mut Environment, tokens: &Vec<Token>) -> Result<Query, Box<Diagnostic>> {
+fn parse_set_query(
+    env: &mut Environment,
+    tokens: &Vec<Token>,
+    position: &mut usize,
+) -> Result<Query, Box<Diagnostic>> {
     let len = tokens.len();
-    let mut position = 0;
     let mut context = ParserContext::default();
 
     // Consume Set keyword
-    position += 1;
+    *position += 1;
 
-    if position >= len || tokens[position].kind != TokenKind::GlobalVariable {
+    if *position >= len || tokens[*position].kind != TokenKind::GlobalVariable {
         return Err(Diagnostic::error(
             "Expect Global variable name start with `@` after `SET` keyword",
         )
-        .with_location(get_safe_location(tokens, position - 1))
+        .with_location(get_safe_location(tokens, *position - 1))
         .as_boxed());
     }
 
-    let name = &tokens[position].literal;
+    let name = &tokens[*position].literal;
 
     // Consume variable name
-    position += 1;
+    *position += 1;
 
-    if position >= len || !is_assignment_operator(&tokens[position]) {
+    if *position >= len || !is_assignment_operator(&tokens[*position]) {
         return Err(
             Diagnostic::error("Expect `=` or `:=` and Value after Variable name")
-                .with_location(get_safe_location(tokens, position - 1))
+                .with_location(get_safe_location(tokens, *position - 1))
                 .as_boxed(),
         );
     }
 
     // Consume `=` or `:=` token
-    position += 1;
+    *position += 1;
 
     let aggregations_count_before = context.aggregations.len();
-    let value = parse_expression(&mut context, env, tokens, &mut position)?;
+    let value = parse_expression(&mut context, env, tokens, position)?;
     let has_aggregations = context.aggregations.len() != aggregations_count_before;
 
     // Until supports sub queries, aggregation value can't be stored in variables
     if has_aggregations {
         return Err(
             Diagnostic::error("Aggregation value can't be assigned to global variable")
-                .with_location(get_safe_location(tokens, position - 1))
+                .with_location(get_safe_location(tokens, *position - 1))
                 .as_boxed(),
         );
     }
@@ -93,15 +107,15 @@ fn parse_set_query(env: &mut Environment, tokens: &Vec<Token>) -> Result<Query, 
 fn parse_select_query(
     env: &mut Environment,
     tokens: &Vec<Token>,
+    position: &mut usize,
 ) -> Result<Query, Box<Diagnostic>> {
     let len = tokens.len();
-    let mut position = 0;
 
     let mut context = ParserContext::default();
     let mut statements: HashMap<&'static str, Box<dyn Statement>> = HashMap::new();
 
-    while position < len {
-        let token = &tokens[position];
+    while *position < len {
+        let token = &tokens[*position];
 
         match &token.kind {
             TokenKind::Select => {
@@ -111,7 +125,7 @@ fn parse_select_query(
                         .with_location(token.location)
                         .as_boxed());
                 }
-                let statement = parse_select_statement(&mut context, env, tokens, &mut position)?;
+                let statement = parse_select_statement(&mut context, env, tokens, position)?;
                 statements.insert("select", statement);
                 context.is_single_value_query = !context.aggregations.is_empty();
             }
@@ -123,7 +137,7 @@ fn parse_select_query(
                         .as_boxed());
                 }
 
-                let statement = parse_where_statement(&mut context, env, tokens, &mut position)?;
+                let statement = parse_where_statement(&mut context, env, tokens, position)?;
                 statements.insert("where", statement);
             }
             TokenKind::Group => {
@@ -134,7 +148,7 @@ fn parse_select_query(
                         .as_boxed());
                 }
 
-                let statement = parse_group_by_statement(&mut context, env, tokens, &mut position)?;
+                let statement = parse_group_by_statement(&mut context, env, tokens, position)?;
                 statements.insert("group", statement);
             }
             TokenKind::Having => {
@@ -156,7 +170,7 @@ fn parse_select_query(
                     .as_boxed());
                 }
 
-                let statement = parse_having_statement(&mut context, env, tokens, &mut position)?;
+                let statement = parse_having_statement(&mut context, env, tokens, position)?;
                 statements.insert("having", statement);
             }
             TokenKind::Limit => {
@@ -167,11 +181,11 @@ fn parse_select_query(
                         .as_boxed());
                 }
 
-                let statement = parse_limit_statement(tokens, &mut position)?;
+                let statement = parse_limit_statement(tokens, position)?;
                 statements.insert("limit", statement);
 
                 // Check for Limit and Offset shortcut
-                if position < len && tokens[position].kind == TokenKind::Comma {
+                if *position < len && tokens[*position].kind == TokenKind::Comma {
                     // Prevent user from using offset statement more than one time
                     if statements.contains_key("offset") {
                         return Err(Diagnostic::error("You already used `OFFSET` statement")
@@ -183,9 +197,9 @@ fn parse_select_query(
                     }
 
                     // Consume Comma
-                    position += 1;
+                    *position += 1;
 
-                    if position >= len || tokens[position].kind != TokenKind::Integer {
+                    if *position >= len || tokens[*position].kind != TokenKind::Integer {
                         return Err(Diagnostic::error(
                             "Expects `OFFSET` amount as Integer value after `,`",
                         )
@@ -196,7 +210,7 @@ fn parse_select_query(
                     }
 
                     let count_result: Result<usize, ParseIntError> =
-                        tokens[position].literal.parse();
+                        tokens[*position].literal.parse();
 
                     // Report clear error for Integer parsing
                     if let Err(error) = &count_result {
@@ -221,7 +235,7 @@ fn parse_select_query(
                     }
 
                     // Consume Offset value
-                    position += 1;
+                    *position += 1;
 
                     let count = count_result.unwrap();
                     statements.insert("offset", Box::new(OffsetStatement { count }));
@@ -235,7 +249,7 @@ fn parse_select_query(
                         .as_boxed());
                 }
 
-                let statement = parse_offset_statement(tokens, &mut position)?;
+                let statement = parse_offset_statement(tokens, position)?;
                 statements.insert("offset", statement);
             }
             TokenKind::Order => {
@@ -246,10 +260,10 @@ fn parse_select_query(
                         .as_boxed());
                 }
 
-                let statement = parse_order_by_statement(&mut context, env, tokens, &mut position)?;
+                let statement = parse_order_by_statement(&mut context, env, tokens, position)?;
                 statements.insert("order", statement);
             }
-            _ => return Err(un_expected_statement_error(tokens, &mut position)),
+            _ => break,
         }
     }
 
@@ -2155,6 +2169,30 @@ fn un_expected_expression_error(tokens: &Vec<Token>, position: &usize) -> Box<Di
     // Default error message
     Diagnostic::error("Can't complete parsing this expression")
         .with_location(location)
+        .as_boxed()
+}
+
+/// Report error message for extra content after the end of current statement
+fn un_expected_content_after_correct_statement(
+    statement_name: &str,
+    tokens: &Vec<Token>,
+    position: &mut usize,
+) -> Box<Diagnostic> {
+    let error_message = &format!(
+        "Unexpected content after the end of `{}` statement",
+        statement_name.to_uppercase()
+    );
+
+    // The range of extra content
+    let location_of_extra_content = Location {
+        start: tokens[*position].location.start,
+        end: tokens[tokens.len() - 1].location.end,
+    };
+
+    Diagnostic::error(error_message)
+        .add_help("Try to check if statement keyword is missing")
+        .add_help("Try remove un expected extra content")
+        .with_location(location_of_extra_content)
         .as_boxed()
 }
 
