@@ -25,9 +25,7 @@ use gitql_ast::statement::*;
 use gitql_ast::types::DataType;
 use gitql_ast::types::TABLES_FIELDS_TYPES;
 
-pub fn parse_gql(mut tokens: Vec<Token>, env: &mut Environment) -> Result<Query, Box<Diagnostic>> {
-    consume_optional_semicolon_if_exists(&mut tokens);
-
+pub fn parse_gql(tokens: Vec<Token>, env: &mut Environment) -> Result<Query, Box<Diagnostic>> {
     let mut position = 0;
     let first_token = &tokens[position];
     let query_result = match &first_token.kind {
@@ -35,6 +33,13 @@ pub fn parse_gql(mut tokens: Vec<Token>, env: &mut Environment) -> Result<Query,
         TokenKind::Select => parse_select_query(env, &tokens, &mut position),
         _ => Err(un_expected_statement_error(&tokens, &mut position)),
     };
+
+    // Consume optional `;` at the end of valid statement
+    if let Some(last_token) = tokens.get(position) {
+        if last_token.kind == TokenKind::Semicolon {
+            position += 1;
+        }
+    }
 
     // Check for un expected content after valid statement
     if query_result.is_ok() && position < tokens.len() {
@@ -2194,16 +2199,6 @@ fn un_expected_content_after_correct_statement(
         .add_help("Try remove un expected extra content")
         .with_location(location_of_extra_content)
         .as_boxed()
-}
-
-/// Remove last token if it semicolon, because it's optional
-#[inline(always)]
-fn consume_optional_semicolon_if_exists(tokens: &mut Vec<Token>) {
-    if let Some(last_token) = tokens.last() {
-        if last_token.kind == TokenKind::Semicolon {
-            tokens.remove(tokens.len() - 1);
-        }
-    }
 }
 
 #[allow(clippy::borrowed_box)]
