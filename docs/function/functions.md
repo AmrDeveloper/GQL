@@ -66,7 +66,7 @@ SELECT UNICODE("AmrDeveloper")
 | NOW               |                           | DateTime | Return current date time in `YYYY-MM-DD HH:MM:SS` format.                  |
 | DAYNAME           | Date                      | Text     | Returns the name of the day given a timestamp.                             |
 | MONTHNAME         | Date                      | Text     | Returns the name of the month given a timestamp.                           |
-| HOUR              | DateTime                  | Integer  | Returns the hour part of a datetime.                                        |
+| HOUR              | DateTime                  | Integer  | Returns the hour part of a datetime.                                       |
 
 ### Date functions samples
 
@@ -114,14 +114,16 @@ SELECT ATN2(0.50, 1.0)
 
 ### General functions
 
-| Name      | Parameters | Return  | Description                                 |
-| --------- | ---------- | ------- | ------------------------------------------- |
-| ISNULL    | ANY        | Boolean | Return TRUE if the argument type is null.   |
-| ISNUMERIC | ANY        | Boolean | Return TRUE if the argument type is number. |
-| TYPEOF    | ANY        | Text    | Return the argument type name.              |
+| Name      | Parameters       | Return  | Description                                   |
+| --------- | ---------------- | ------- | --------------------------------------------- |
+| ISNULL    | ANY              | Boolean | Return TRUE if the argument type is null.     |
+| ISNUMERIC | ANY              | Boolean | Return TRUE if the argument type is number.   |
+| TYPEOF    | ANY              | Text    | Return the argument type name.                |
+| GREATEST  | ANY, Any, ...Any | Any     | Return the greatest value from list of values |
 
 ```sql
 SELECT ISNULL(null), ISNULL(1)
 SELECT ISNUMERIC(null), ISNUMERIC(1), ISNUMERIC(1.1), ISNUMERIC(false)
 SELECT TYPEOF(""), TYPEOF(1), TYPEOF(null)
+SELECT GREATEST(1, 2, 3, 4)
 ```

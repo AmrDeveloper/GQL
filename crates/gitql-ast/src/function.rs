@@ -3,6 +3,7 @@ use crate::types::DataType;
 use crate::value::Value;
 
 use lazy_static::lazy_static;
+use std::cmp::Ordering;
 use std::collections::HashMap;
 
 type Function = fn(&[Value]) -> Value;
@@ -71,6 +72,7 @@ lazy_static! {
         map.insert("isnull", general_is_null);
         map.insert("isnumeric", general_is_numeric);
         map.insert("typeof", general_type_of);
+        map.insert("greatest", general_greatest);
         map
     };
 }
@@ -419,6 +421,13 @@ lazy_static! {
                 parameters: vec![DataType::Any],
                 result: DataType::Text,
             },
+        );
+        map.insert(
+            "greatest",
+            Prototype {
+                parameters: vec![DataType::Any, DataType::Any, DataType::Varargs(Box::new(DataType::Any))],
+                result: DataType::Text
+             },
         );
         map
     };
@@ -802,4 +811,16 @@ fn general_is_numeric(inputs: &[Value]) -> Value {
 fn general_type_of(inputs: &[Value]) -> Value {
     let input_type = inputs[0].data_type();
     Value::Text(input_type.to_string())
+}
+
+fn general_greatest(inputs: &[Value]) -> Value {
+    let mut max = &inputs[0];
+
+    for value in inputs.iter().skip(1) {
+        if max.compare(value) == Ordering::Greater {
+            max = value;
+        }
+    }
+
+    max.to_owned()
 }
