@@ -120,10 +120,12 @@ SELECT ATN2(0.50, 1.0)
 | ISNUMERIC | ANY              | Boolean | Return TRUE if the argument type is number.   |
 | TYPEOF    | ANY              | Text    | Return the argument type name.                |
 | GREATEST  | ANY, Any, ...Any | Any     | Return the greatest value from list of values |
+| LEAST     | ANY, Any, ...Any | Any     | Return the smallest value from list of values |
 
 ```sql
 SELECT ISNULL(null), ISNULL(1)
 SELECT ISNUMERIC(null), ISNUMERIC(1), ISNUMERIC(1.1), ISNUMERIC(false)
 SELECT TYPEOF(""), TYPEOF(1), TYPEOF(null)
 SELECT GREATEST(1, 2, 3, 4)
+SELECT LEAST(1, 2, 3, 4)
 ```

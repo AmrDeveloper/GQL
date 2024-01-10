@@ -73,6 +73,7 @@ lazy_static! {
         map.insert("isnumeric", general_is_numeric);
         map.insert("typeof", general_type_of);
         map.insert("greatest", general_greatest);
+        map.insert("least", general_least);
         map
     };
 }
@@ -426,7 +427,14 @@ lazy_static! {
             "greatest",
             Prototype {
                 parameters: vec![DataType::Any, DataType::Any, DataType::Varargs(Box::new(DataType::Any))],
-                result: DataType::Text
+                result: DataType::Any
+             },
+        );
+        map.insert(
+            "least",
+            Prototype {
+                parameters: vec![DataType::Any, DataType::Any, DataType::Varargs(Box::new(DataType::Any))],
+                result: DataType::Any
              },
         );
         map
@@ -823,4 +831,16 @@ fn general_greatest(inputs: &[Value]) -> Value {
     }
 
     max.to_owned()
+}
+
+fn general_least(inputs: &[Value]) -> Value {
+    let mut lest = &inputs[0];
+
+    for value in inputs.iter().skip(1) {
+        if lest.compare(value) == Ordering::Less {
+            lest = value;
+        }
+    }
+
+    lest.to_owned()
 }
