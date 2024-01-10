@@ -834,13 +834,13 @@ fn general_greatest(inputs: &[Value]) -> Value {
 }
 
 fn general_least(inputs: &[Value]) -> Value {
-    let mut lest = &inputs[0];
+    let mut least = &inputs[0];
 
     for value in inputs.iter().skip(1) {
-        if lest.compare(value) == Ordering::Less {
-            lest = value;
+        if least.compare(value) == Ordering::Less {
+            least = value;
         }
     }
 
-    lest.to_owned()
+    least.to_owned()
 }
