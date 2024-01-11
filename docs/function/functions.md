@@ -67,6 +67,7 @@ SELECT UNICODE("AmrDeveloper")
 | DAYNAME           | Date                      | Text     | Returns the name of the day given a timestamp.                             |
 | MONTHNAME         | Date                      | Text     | Returns the name of the month given a timestamp.                           |
 | HOUR              | DateTime                  | Integer  | Returns the hour part of a datetime.                                       |
+| ISDATE            | Any                       | Boolean  | Return TRUE if the argument type is Date.                                  |
 
 ### Date functions samples
 
