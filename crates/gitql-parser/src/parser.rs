@@ -924,48 +924,37 @@ fn parse_between_expression(
         // Consume `BETWEEN` keyword
         *position += 1;
 
-        if expression.expr_type(env) != DataType::Integer {
-            return Err(Diagnostic::error(&format!(
-                "BETWEEN value must to be Number type but got {}",
-                expression.expr_type(env)
-            ))
-            .with_location(between_location)
-            .as_boxed());
-        }
-
         if *position >= tokens.len() {
             return Err(
-                Diagnostic::error("Between keyword expects two range after it")
+                Diagnostic::error("`BETWEEN` keyword expects two range after it")
                     .with_location(between_location)
                     .as_boxed(),
             );
         }
 
+        let argument_type = expression.expr_type(env);
         let range_start = parse_logical_or_expression(context, env, tokens, position)?;
-        if range_start.expr_type(env) != DataType::Integer {
-            return Err(Diagnostic::error(&format!(
-                "Expect range start to be Number type but got {}",
-                range_start.expr_type(env)
-            ))
-            .with_location(between_location)
-            .as_boxed());
-        }
 
         if *position >= tokens.len() || tokens[*position].kind != TokenKind::DotDot {
-            return Err(Diagnostic::error("Expect `..` after BETWEEN range start")
+            return Err(Diagnostic::error("Expect `..` after `BETWEEN` range start")
                 .with_location(between_location)
                 .as_boxed());
         }
 
-        // Consume `..` keyword
+        // Consume `..` token
         *position += 1;
 
         let range_end = parse_logical_or_expression(context, env, tokens, position)?;
-        if range_end.expr_type(env) != DataType::Integer {
+
+        if argument_type != range_start.expr_type(env) || argument_type != range_end.expr_type(env)
+        {
             return Err(Diagnostic::error(&format!(
-                "Expect range end to be Number type but got {}",
+                "Expect `BETWEEN` argument, range start and end to has same type but got {}, {} and {}",
+                argument_type,
+                range_start.expr_type(env),
                 range_end.expr_type(env)
             ))
+            .add_help("Try to make sure all of them has same type")
             .with_location(between_location)
             .as_boxed());
         }

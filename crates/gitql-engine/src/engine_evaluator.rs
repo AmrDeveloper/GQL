@@ -429,13 +429,12 @@ fn evaluate_between(
     titles: &[String],
     object: &Vec<Value>,
 ) -> Result<Value, String> {
-    let value_result = evaluate_expression(env, &expr.value, titles, object)?;
-    let range_start_result = evaluate_expression(env, &expr.range_start, titles, object)?;
-    let range_end_result = evaluate_expression(env, &expr.range_end, titles, object)?;
-    let value = value_result.as_int();
-    let range_start = range_start_result.as_int();
-    let range_end = range_end_result.as_int();
-    Ok(Value::Boolean(value >= range_start && value <= range_end))
+    let value = evaluate_expression(env, &expr.value, titles, object)?;
+    let range_start = evaluate_expression(env, &expr.range_start, titles, object)?;
+    let range_end = evaluate_expression(env, &expr.range_end, titles, object)?;
+    Ok(Value::Boolean(
+        value.compare(&range_start).is_le() && value.compare(&range_end).is_ge(),
+    ))
 }
 
 fn evaluate_case(
