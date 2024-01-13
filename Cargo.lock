@@ -430,7 +430,7 @@ dependencies = [
 
 [[package]]
 name = "gitql"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "atty",
  "gitql-ast",
@@ -442,7 +442,7 @@ dependencies = [
 
 [[package]]
 name = "gitql-ast"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "chrono",
  "lazy_static",
@@ -450,7 +450,7 @@ dependencies = [
 
 [[package]]
 name = "gitql-cli"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "comfy-table",
  "gitql-ast",
@@ -460,7 +460,7 @@ dependencies = [
 
 [[package]]
 name = "gitql-engine"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "gitql-ast",
  "gix",
@@ -469,7 +469,7 @@ dependencies = [
 
 [[package]]
 name = "gitql-parser"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "gitql-ast",
  "lazy_static",

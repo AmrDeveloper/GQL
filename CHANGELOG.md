@@ -1,6 +1,22 @@
 Change Log
 ==========
 
+Version 0.12.0 *(2024-01-13)*
+-----------------------------
+
+* Change GitQLObject structure to get more speedup and keep values sorted.
+* Supports `LIMIT OFFSET` shorthand inspired by MySQL.
+* Implement `HOUR` Date functions.
+* Implement `STRCMP` Text Function.
+* Implement `GREATEST`, `LEAST` General function.
+* Implement `ISDATE` Date function.
+* Optimize `in` expression in case of empty list.
+* Add Support for `NOT IN` expression.
+* Report error if user write un expected content after valid statement.
+* Fix Date and DateTime incorrect equals #71
+* Allow `BETWEEN` to work with any type.
+* Fix ArithmeticExpression expr_type if any side is float
+
 Version 0.11.0 *(2023-12-29)*
 -----------------------------
 
