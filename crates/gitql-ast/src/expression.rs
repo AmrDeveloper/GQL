@@ -228,13 +228,9 @@ impl Expression for ArithmeticExpression {
     }
 
     fn expr_type(&self, scope: &Environment) -> DataType {
-        let lhs = self.left.expr_type(scope);
-        let rhs = self.left.expr_type(scope);
-
-        if lhs.is_int() && rhs.is_int() {
+        if self.left.expr_type(scope).is_int() && self.right.expr_type(scope).is_int() {
             return DataType::Integer;
         }
-
         DataType::Float
     }
 
