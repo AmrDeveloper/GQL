@@ -39,6 +39,7 @@ lazy_static! {
         map.insert("translate", text_translate);
         map.insert("soundex", text_soundex);
         map.insert("concat", text_concat);
+        map.insert("concat_ws", text_concat_ws);
         map.insert("unicode", text_unicode);
         map.insert("strcmp", text_strcmp);
 
@@ -234,6 +235,13 @@ lazy_static! {
             "concat",
             Prototype {
                 parameters: vec![DataType::Any, DataType::Any, DataType::Varargs(Box::new(DataType::Any))],
+                result: DataType::Text
+             },
+        );
+        map.insert(
+            "concat_ws",
+            Prototype {
+                parameters: vec![DataType::Text, DataType::Any, DataType::Any, DataType::Varargs(Box::new(DataType::Any))],
                 result: DataType::Text
              },
         );
@@ -679,6 +687,12 @@ fn text_soundex(inputs: &[Value]) -> Value {
 fn text_concat(inputs: &[Value]) -> Value {
     let text: Vec<String> = inputs.iter().map(|v| v.to_string()).collect();
     Value::Text(text.concat())
+}
+
+fn text_concat_ws(inputs: &[Value]) -> Value {
+    let separator = inputs[0].as_text();
+    let text: Vec<String> = inputs.iter().skip(1).map(|v| v.to_string()).collect();
+    Value::Text(text.join(&separator))
 }
 
 fn text_strcmp(inputs: &[Value]) -> Value {

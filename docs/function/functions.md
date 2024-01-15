@@ -27,6 +27,7 @@ note that all functions names are case-insensitive.
 | TRANSLATE  | Text, Text, Text,            | Text    | Returns the string from the first argument after the characters specified in the second argument are translated into the characters specified in the third argument. |
 | SOUNDEX    | Text                         | Text    | Returns a four-character code to evaluate the similarity of two expressions.                                                                                         |
 | CONCAT     | Any, Any, ...Any             | Text    | Add several string representations of values together together.                                                                                                      |
+| CONCAT_WS  | Text, Any, Any, ...Any       | Text    | Add several string representations of values together together with separate.                                                                                        |
 | UNICODE    | Text                         | Integer | Return an integer value (the Unicode value), for the first character of the input expression.                                                                        |
 | STRCMP     | Text , Text                  | Integer | Return 0 If string1 = string2, -1 if string1 < string2, this function returns -1, and 1 if string1 > string2                                                         |
 
@@ -51,6 +52,7 @@ SELECT RIGHT("AmrDeveloper", 3) AS extract
 SELECT TRANSLATE("Amr[Dev]{eloper}", "[]{}", "()()")
 SELECT SOUNDEX("AmrDeveloper") as code
 SELECT CONCAT("amrdeveloper", ".github.io")
+SELECT CONCAT_WS("_", "Git", "Query", "Language"); 
 SELECT UNICODE("AmrDeveloper")
 ```
 
