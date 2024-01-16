@@ -234,10 +234,15 @@ fn evaluate_prefix_unary(
     object: &Vec<Value>,
 ) -> Result<Value, String> {
     let rhs = evaluate_expression(env, &expr.right, titles, object)?;
-    if expr.op == PrefixUnaryOperator::Bang {
-        Ok(Value::Boolean(!rhs.as_bool()))
-    } else {
-        Ok(Value::Integer(-rhs.as_int()))
+    match expr.op {
+        PrefixUnaryOperator::Minus => {
+            if rhs.data_type().is_int() {
+                Ok(Value::Integer(-rhs.as_int()))
+            } else {
+                Ok(Value::Float(-rhs.as_float()))
+            }
+        }
+        PrefixUnaryOperator::Bang => Ok(Value::Boolean(!rhs.as_bool())),
     }
 }
 
