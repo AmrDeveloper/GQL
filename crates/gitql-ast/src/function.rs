@@ -413,7 +413,7 @@ lazy_static! {
         map.insert(
             "sign",
             Prototype {
-                parameters: vec![DataType::Float],
+                parameters: vec![DataType::Variant(vec![DataType::Integer, DataType::Float])],
                 result: DataType::Integer,
             },
         );
@@ -821,7 +821,13 @@ fn numeric_atn2(inputs: &[Value]) -> Value {
 }
 
 fn numeric_sign(inputs: &[Value]) -> Value {
-    let float_value = inputs[0].as_float();
+    let value = &inputs[0];
+    if value.data_type().is_int() {
+        let int_value = value.as_int();
+        return Value::Integer(int_value.signum());
+    }
+
+    let float_value = value.as_float();
     if float_value == 0.0 {
         Value::Integer(0)
     } else if float_value > 0.0 {
