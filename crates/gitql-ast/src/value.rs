@@ -85,57 +85,77 @@ impl Value {
         Ordering::Equal
     }
 
-    pub fn plus(&self, other: &Value) -> Value {
+    pub fn plus(&self, other: &Value) -> Result<Value, String> {
         let self_type = self.data_type();
         let other_type = other.data_type();
 
-        if self_type == DataType::Integer && other_type == DataType::Integer {
-            return Value::Integer(self.as_int() + other.as_int());
+        if self_type.is_int() && other_type.is_int() {
+            let lhs = self.as_int();
+            let rhs = other.as_int();
+
+            if let Some(sub) = lhs.checked_add(rhs) {
+                return Ok(Value::Integer(sub));
+            }
+
+            return Err(format!(
+                "Attempt to compute `{} + {}`, which would overflow",
+                lhs, rhs
+            ));
         }
 
-        if self_type == DataType::Float && other_type == DataType::Float {
-            return Value::Float(self.as_float() + other.as_float());
+        if self_type.is_float() && other_type.is_float() {
+            return Ok(Value::Float(self.as_float() + other.as_float()));
         }
 
-        if self_type == DataType::Integer && other_type == DataType::Float {
-            return Value::Float((self.as_int() as f64) + other.as_float());
+        if self_type.is_int() && other_type.is_float() {
+            return Ok(Value::Float((self.as_int() as f64) + other.as_float()));
         }
 
-        if self_type == DataType::Float && other_type == DataType::Integer {
-            return Value::Float(self.as_float() + (other.as_int() as f64));
+        if self_type.is_float() && other_type.is_int() {
+            return Ok(Value::Float(self.as_float() + (other.as_int() as f64)));
         }
 
-        Value::Integer(0)
+        Ok(Value::Integer(0))
     }
 
-    pub fn minus(&self, other: &Value) -> Value {
+    pub fn minus(&self, other: &Value) -> Result<Value, String> {
         let self_type = self.data_type();
         let other_type = other.data_type();
 
-        if self_type == DataType::Integer && other_type == DataType::Integer {
-            return Value::Integer(self.as_int() - other.as_int());
+        if self_type.is_int() && other_type.is_int() {
+            let lhs = self.as_int();
+            let rhs = other.as_int();
+
+            if let Some(sub) = lhs.checked_sub(rhs) {
+                return Ok(Value::Integer(sub));
+            }
+
+            return Err(format!(
+                "Attempt to compute `{} - {}`, which would overflow",
+                lhs, rhs
+            ));
         }
 
-        if self_type == DataType::Float && other_type == DataType::Float {
-            return Value::Float(self.as_float() - other.as_float());
+        if self_type.is_float() && other_type.is_float() {
+            return Ok(Value::Float(self.as_float() - other.as_float()));
         }
 
-        if self_type == DataType::Integer && other_type == DataType::Float {
-            return Value::Float((self.as_int() as f64) - other.as_float());
+        if self_type.is_int() && other_type.is_float() {
+            return Ok(Value::Float((self.as_int() as f64) - other.as_float()));
         }
 
-        if self_type == DataType::Float && other_type == DataType::Integer {
-            return Value::Float(self.as_float() - (other.as_int() as f64));
+        if self_type.is_float() && other_type.is_int() {
+            return Ok(Value::Float(self.as_float() - (other.as_int() as f64)));
         }
 
-        Value::Integer(0)
+        Ok(Value::Integer(0))
     }
 
     pub fn mul(&self, other: &Value) -> Result<Value, String> {
         let self_type = self.data_type();
         let other_type = other.data_type();
 
-        if self_type == DataType::Integer && other_type == DataType::Integer {
+        if self_type.is_int() && other_type.is_int() {
             let lhs = self.as_int();
             let rhs = other.as_int();
             let multi_result = lhs.overflowing_mul(rhs);
@@ -148,15 +168,15 @@ impl Value {
             return Ok(Value::Integer(multi_result.0));
         }
 
-        if self_type == DataType::Float && other_type == DataType::Float {
+        if self_type.is_float() && other_type.is_float() {
             return Ok(Value::Float(self.as_float() * other.as_float()));
         }
 
-        if self_type == DataType::Integer && other_type == DataType::Float {
+        if self_type.is_int() && other_type.is_float() {
             return Ok(Value::Float(other.as_float().mul(self.as_int() as f64)));
         }
 
-        if self_type == DataType::Float && other_type == DataType::Integer {
+        if self_type.is_float() && other_type.is_int() {
             return Ok(Value::Float(self.as_float().mul(other.as_int() as f64)));
         }
 
@@ -174,19 +194,19 @@ impl Value {
             }
         }
 
-        if self_type == DataType::Integer && other_type == DataType::Integer {
+        if self_type.is_int() && other_type.is_int() {
             return Ok(Value::Integer(self.as_int() / other.as_int()));
         }
 
-        if self_type == DataType::Float && other_type == DataType::Float {
+        if self_type.is_float() && other_type.is_float() {
             return Ok(Value::Float(self.as_float() / other.as_float()));
         }
 
-        if self_type == DataType::Integer && other_type == DataType::Float {
+        if self_type.is_int() && other_type.is_float() {
             return Ok(Value::Float(self.as_int() as f64 / other.as_float()));
         }
 
-        if self_type == DataType::Float && other_type == DataType::Integer {
+        if self_type.is_float() && other_type.is_int() {
             return Ok(Value::Float(self.as_float() / other.as_int() as f64));
         }
 
@@ -197,7 +217,7 @@ impl Value {
         let self_type = self.data_type();
         let other_type = other.data_type();
 
-        if other_type == DataType::Integer {
+        if other_type.is_int() {
             let other = other.as_int();
             if other == 0 {
                 return Err(format!(
@@ -207,19 +227,19 @@ impl Value {
             }
         }
 
-        if self_type == DataType::Integer && other_type == DataType::Integer {
+        if self_type.is_int() && other_type.is_int() {
             return Ok(Value::Integer(self.as_int() % other.as_int()));
         }
 
-        if self_type == DataType::Float && other_type == DataType::Float {
+        if self_type.is_float() && other_type.is_float() {
             return Ok(Value::Float(self.as_float() % other.as_float()));
         }
 
-        if self_type == DataType::Integer && other_type == DataType::Float {
+        if self_type.is_int() && other_type.is_float() {
             return Ok(Value::Float(self.as_int() as f64 % other.as_float()));
         }
 
-        if self_type == DataType::Float && other_type == DataType::Integer {
+        if self_type.is_float() && other_type.is_int() {
             return Ok(Value::Float(self.as_float() % other.as_int() as f64));
         }
 

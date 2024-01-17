@@ -256,8 +256,8 @@ fn evaluate_arithmetic(
     let rhs = evaluate_expression(env, &expr.right, titles, object)?;
 
     match expr.operator {
-        ArithmeticOperator::Plus => Ok(lhs.plus(&rhs)),
-        ArithmeticOperator::Minus => Ok(lhs.minus(&rhs)),
+        ArithmeticOperator::Plus => lhs.plus(&rhs),
+        ArithmeticOperator::Minus => lhs.minus(&rhs),
         ArithmeticOperator::Star => lhs.mul(&rhs),
         ArithmeticOperator::Slash => lhs.div(&rhs),
         ArithmeticOperator::Modulus => lhs.modulus(&rhs),

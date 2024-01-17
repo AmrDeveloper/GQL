@@ -107,10 +107,6 @@ impl PartialEq for DataType {
             return true;
         }
 
-        if self.is_number() && other.is_number() {
-            return true;
-        }
-
         if self.is_text() && other.is_text() {
             return true;
         }
