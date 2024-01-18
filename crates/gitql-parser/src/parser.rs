@@ -2143,6 +2143,7 @@ fn un_expected_expression_error(tokens: &Vec<Token>, position: &usize) -> Box<Di
     // Similar to SQL just `=` is used for equality comparisons
     if previous.kind == TokenKind::Equal && current.kind == TokenKind::Equal {
         return Diagnostic::error("Unexpected `==`, Just use `=` to check equality")
+            .add_help("Try to remove the extra `=`")
             .with_location(location)
             .as_boxed();
     }
@@ -2150,6 +2151,7 @@ fn un_expected_expression_error(tokens: &Vec<Token>, position: &usize) -> Box<Di
     // `< =` the user may mean to write `<=`
     if previous.kind == TokenKind::Greater && current.kind == TokenKind::Equal {
         return Diagnostic::error("Unexpected `> =`, do you mean `>=`?")
+            .add_help("Try to remove space between `> =`")
             .with_location(location)
             .as_boxed();
     }
@@ -2157,6 +2159,7 @@ fn un_expected_expression_error(tokens: &Vec<Token>, position: &usize) -> Box<Di
     // `> =` the user may mean to write `>=`
     if previous.kind == TokenKind::Less && current.kind == TokenKind::Equal {
         return Diagnostic::error("Unexpected `< =`, do you mean `<=`?")
+            .add_help("Try to remove space between `< =`")
             .with_location(location)
             .as_boxed();
     }
@@ -2164,6 +2167,7 @@ fn un_expected_expression_error(tokens: &Vec<Token>, position: &usize) -> Box<Di
     // `> >` the user may mean to write '>>'
     if previous.kind == TokenKind::Greater && current.kind == TokenKind::Greater {
         return Diagnostic::error("Unexpected `> >`, do you mean `>>`?")
+            .add_help("Try to remove space between `> >`")
             .with_location(location)
             .as_boxed();
     }
@@ -2171,6 +2175,7 @@ fn un_expected_expression_error(tokens: &Vec<Token>, position: &usize) -> Box<Di
     // `< <` the user may mean to write `<<`
     if previous.kind == TokenKind::Less && current.kind == TokenKind::Less {
         return Diagnostic::error("Unexpected `< <`, do you mean `<<`?")
+            .add_help("Try to remove space between `< <`")
             .with_location(location)
             .as_boxed();
     }
@@ -2178,6 +2183,7 @@ fn un_expected_expression_error(tokens: &Vec<Token>, position: &usize) -> Box<Di
     // `< >` the user may mean to write `<>`
     if previous.kind == TokenKind::Less && current.kind == TokenKind::Greater {
         return Diagnostic::error("Unexpected `< >`, do you mean `<>`?")
+            .add_help("Try to remove space between `< >`")
             .with_location(location)
             .as_boxed();
     }
