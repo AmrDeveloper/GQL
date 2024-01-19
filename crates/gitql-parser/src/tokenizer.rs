@@ -616,7 +616,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
         }
 
         return Err(Box::new(
-            Diagnostic::error("Un expected character").with_location_span(column_start, position),
+            Diagnostic::error("Unexpected character").with_location_span(column_start, position),
         ));
     }
 
