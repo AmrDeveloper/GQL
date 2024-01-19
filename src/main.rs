@@ -160,6 +160,11 @@ fn execute_gitql_query(
                     arguments.page_size,
                 );
             }
+            OutputFormat::JSON => {
+                if let Ok(json) = groups.as_json() {
+                    println!("{}", json);
+                }
+            }
             OutputFormat::CSV => {
                 if let Ok(csv) = groups.as_csv() {
                     println!("{}", csv);

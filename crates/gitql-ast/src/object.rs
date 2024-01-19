@@ -1,8 +1,7 @@
 use std::error::Error;
 
-use csv::Writer;
-
 use crate::value::Value;
+use csv::Writer;
 
 /// In memory representation of the list of [`Value`] in one Row
 #[derive(Default)]
@@ -55,6 +54,27 @@ impl GitQLObject {
     /// Returns the number of groups in this Object
     pub fn len(&self) -> usize {
         self.groups.len()
+    }
+
+    /// Export the GitQLObject as JSON String
+    pub fn as_json(&self) -> serde_json::Result<String> {
+        let mut elements: Vec<serde_json::Value> = vec![];
+
+        if let Some(group) = self.groups.get(0) {
+            let titles = &self.titles;
+            for row in &group.rows {
+                let mut object = serde_json::Map::new();
+                for (i, value) in row.values.iter().enumerate() {
+                    object.insert(
+                        titles[i].to_string(),
+                        serde_json::Value::String(value.to_string()),
+                    );
+                }
+                elements.push(serde_json::Value::Object(object));
+            }
+        }
+
+        serde_json::to_string(&serde_json::Value::Array(elements))
     }
 
     /// Export the GitQLObject as CSV String

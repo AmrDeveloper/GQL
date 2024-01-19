@@ -3,6 +3,8 @@
 pub enum OutputFormat {
     /// Render the output as table
     Render,
+    /// Print the output in json format
+    JSON,
     /// Print the output in csv format
     CSV,
 }
@@ -132,6 +134,8 @@ pub fn parse_arguments(args: &Vec<String>) -> Command {
                 let output_type = &args[arg_index].to_lowercase();
                 if output_type == "csv" {
                     arguments.output_format = OutputFormat::CSV;
+                } else if output_type == "json" {
+                    arguments.output_format = OutputFormat::JSON;
                 } else if output_type == "render" {
                     arguments.output_format = OutputFormat::Render;
                 } else {
@@ -179,7 +183,7 @@ pub fn print_help_list() {
     println!("-q,  --query <GQL Query>    GitQL query to run on selected repositories");
     println!("-p,  --pagination           Enable print result with pagination");
     println!("-ps, --pagesize             Set pagination page size [default: 10]");
-    println!("-o,  --output               Set output format [render, csv]");
+    println!("-o,  --output               Set output format [render, json, csv]");
     println!("-a,  --analysis             Print Query analysis");
     println!("-h,  --help                 Print GitQL help");
     println!("-v,  --version              Print GitQL Current Version");
