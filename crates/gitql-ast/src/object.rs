@@ -60,7 +60,7 @@ impl GitQLObject {
     pub fn as_json(&self) -> serde_json::Result<String> {
         let mut elements: Vec<serde_json::Value> = vec![];
 
-        if let Some(group) = self.groups.get(0) {
+        if let Some(group) = self.groups.first() {
             let titles = &self.titles;
             for row in &group.rows {
                 let mut object = serde_json::Map::new();
@@ -82,7 +82,7 @@ impl GitQLObject {
         let mut writer = Writer::from_writer(vec![]);
         writer.write_record(self.titles.clone())?;
         let row_len = self.titles.len();
-        if let Some(group) = self.groups.get(0) {
+        if let Some(group) = self.groups.first() {
             for row in &group.rows {
                 let mut values_row: Vec<String> = Vec::with_capacity(row_len);
                 for value in &row.values {
