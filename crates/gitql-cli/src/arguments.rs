@@ -1,3 +1,12 @@
+#[derive(Debug, PartialEq)]
+/// Represent the different type of available formats
+pub enum OutputFormat {
+    /// Render the output as table
+    Render,
+    /// Print the output in csv format
+    CSV,
+}
+
 /// Arguments for GitQL
 #[derive(Debug, PartialEq)]
 pub struct Arguments {
@@ -5,6 +14,7 @@ pub struct Arguments {
     pub analysis: bool,
     pub pagination: bool,
     pub page_size: usize,
+    pub output_format: OutputFormat,
 }
 
 /// Create a new instance of Arguments with the default settings
@@ -15,6 +25,7 @@ impl Arguments {
             analysis: false,
             pagination: false,
             page_size: 10,
+            output_format: OutputFormat::Render,
         }
     }
 }
@@ -111,6 +122,24 @@ pub fn parse_arguments(args: &Vec<String>) -> Command {
                 arguments.page_size = page_size;
                 arg_index += 1;
             }
+            "--output" | "-o" => {
+                arg_index += 1;
+                if arg_index >= args_len {
+                    let message = format!("Argument {} must be followed by output format", arg);
+                    return Command::Error(message);
+                }
+
+                let output_type = &args[arg_index].to_lowercase();
+                if output_type == "csv" {
+                    arguments.output_format = OutputFormat::CSV;
+                } else if output_type == "render" {
+                    arguments.output_format = OutputFormat::Render;
+                } else {
+                    return Command::Error("Invalid output format".to_string());
+                }
+
+                arg_index += 1;
+            }
             _ => return Command::Error(format!("Unknown command {}", arg)),
         }
     }
@@ -150,6 +179,7 @@ pub fn print_help_list() {
     println!("-q,  --query <GQL Query>    GitQL query to run on selected repositories");
     println!("-p,  --pagination           Enable print result with pagination");
     println!("-ps, --pagesize             Set pagination page size [default: 10]");
+    println!("-o,  --output               Set output format [render, csv]");
     println!("-a,  --analysis             Print Query analysis");
     println!("-h,  --help                 Print GitQL help");
     println!("-v,  --version              Print GitQL Current Version");
@@ -223,6 +253,28 @@ mod tests {
             "gitql".to_string(),
             "--pagesize".to_string(),
             "-".to_string(),
+        ];
+        let command = parse_arguments(&arguments);
+        assert!(matches!(command, Command::Error { .. }));
+    }
+
+    #[test]
+    fn test_arguments_with_valid_output_format() {
+        let arguments = vec![
+            "gitql".to_string(),
+            "--output".to_string(),
+            "csv".to_string(),
+        ];
+        let command = parse_arguments(&arguments);
+        assert!(!matches!(command, Command::Error { .. }));
+    }
+
+    #[test]
+    fn test_arguments_with_invalid_output_format() {
+        let arguments = vec![
+            "gitql".to_string(),
+            "--output".to_string(),
+            "text".to_string(),
         ];
         let command = parse_arguments(&arguments);
         assert!(matches!(command, Command::Error { .. }));
