@@ -66,6 +66,7 @@ SELECT UNICODE("AmrDeveloper")
 | MAKEDATE          | Integer, Integer          | Date     | Create and return a date based on a year and a number of days.             |
 | MAKETIME          | Integer, Integer, Integer | Time     | Create and return a time value based on an hour, minute, and second value. |
 | NOW               |                           | DateTime | Return current date time in `YYYY-MM-DD HH:MM:SS` format.                  |
+| Day               | Date                      | Integer  | Returns the index of the day (1 to 31) in the date.                        |
 | DAYNAME           | Date                      | Text     | Returns the name of the day given a timestamp.                             |
 | MONTHNAME         | Date                      | Text     | Returns the name of the month given a timestamp.                           |
 | HOUR              | DateTime                  | Integer  | Returns the hour part of a datetime.                                       |
