@@ -65,6 +65,11 @@ pub fn date_time_to_hour(date: i64) -> i64 {
     dt.hour() as i64
 }
 
+pub fn date_to_day_number_in_month(date: i64) -> u32 {
+    let parsed_date = NaiveDateTime::from_timestamp_opt(date, 0).unwrap();
+    parsed_date.day()
+}
+
 pub fn date_to_day_name(date: i64) -> String {
     let parsed_date = NaiveDateTime::from_timestamp_opt(date, 0).unwrap();
 
