@@ -2025,6 +2025,7 @@ fn check_function_call_arguments(
         let parameter_type = parameters.get(index).unwrap();
         let argument = arguments.get(index).unwrap();
         match is_expression_type_equals(env, argument, parameter_type) {
+            TypeCheckResult::Equals => {}
             TypeCheckResult::RightSideCasted(new_expr) => {
                 arguments[index] = new_expr;
             }
@@ -2039,7 +2040,7 @@ fn check_function_call_arguments(
                 ))
                 .with_location(location).as_boxed());
             }
-            _ => {}
+            TypeCheckResult::Error(error) => return Err(error),
         }
     }
 
@@ -2050,6 +2051,7 @@ fn check_function_call_arguments(
         for index in last_required_parameter_index..arguments_len {
             let argument = arguments.get(index).unwrap();
             match is_expression_type_equals(env, argument, last_parameter_type) {
+                TypeCheckResult::Equals => {}
                 TypeCheckResult::RightSideCasted(new_expr) => {
                     arguments[index] = new_expr;
                 }
@@ -2066,7 +2068,7 @@ fn check_function_call_arguments(
                         .with_location(location).as_boxed());
                     }
                 }
-                _ => {}
+                TypeCheckResult::Error(error) => return Err(error),
             }
         }
     }
