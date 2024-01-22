@@ -980,8 +980,8 @@ fn parse_logical_or_expression(
         return expression;
     }
 
-    let lhs = expression.ok().unwrap();
-    if tokens[*position].kind == TokenKind::LogicalOr {
+    let mut lhs = expression.ok().unwrap();
+    while *position < tokens.len() && tokens[*position].kind == TokenKind::LogicalOr {
         *position += 1;
 
         if lhs.expr_type(env) != DataType::Boolean {
@@ -1003,11 +1003,11 @@ fn parse_logical_or_expression(
             .as_boxed());
         }
 
-        return Ok(Box::new(LogicalExpression {
+        lhs = Box::new(LogicalExpression {
             left: lhs,
             operator: LogicalOperator::Or,
             right: rhs,
-        }));
+        });
     }
 
     Ok(lhs)
@@ -1024,8 +1024,8 @@ fn parse_logical_and_expression(
         return expression;
     }
 
-    let lhs = expression.ok().unwrap();
-    if tokens[*position].kind == TokenKind::LogicalAnd {
+    let mut lhs = expression.ok().unwrap();
+    while *position < tokens.len() && tokens[*position].kind == TokenKind::LogicalAnd {
         *position += 1;
 
         if lhs.expr_type(env) != DataType::Boolean {
@@ -1047,11 +1047,11 @@ fn parse_logical_and_expression(
             .as_boxed());
         }
 
-        return Ok(Box::new(LogicalExpression {
+        lhs = Box::new(LogicalExpression {
             left: lhs,
             operator: LogicalOperator::And,
             right: rhs,
-        }));
+        });
     }
 
     Ok(lhs)
@@ -1112,8 +1112,8 @@ fn parse_logical_xor_expression(
         return expression;
     }
 
-    let lhs = expression.ok().unwrap();
-    if tokens[*position].kind == TokenKind::LogicalXor {
+    let mut lhs = expression.ok().unwrap();
+    while *position < tokens.len() && tokens[*position].kind == TokenKind::LogicalXor {
         *position += 1;
 
         if lhs.expr_type(env) != DataType::Boolean {
@@ -1133,11 +1133,11 @@ fn parse_logical_xor_expression(
             ));
         }
 
-        return Ok(Box::new(LogicalExpression {
+        lhs = Box::new(LogicalExpression {
             left: lhs,
             operator: LogicalOperator::Xor,
             right: rhs,
-        }));
+        });
     }
 
     Ok(lhs)
@@ -1154,8 +1154,8 @@ fn parse_bitwise_and_expression(
         return expression;
     }
 
-    let lhs = expression.ok().unwrap();
-    if tokens[*position].kind == TokenKind::BitwiseAnd {
+    let mut lhs = expression.ok().unwrap();
+    if *position < tokens.len() && tokens[*position].kind == TokenKind::BitwiseAnd {
         *position += 1;
 
         if lhs.expr_type(env) != DataType::Boolean {
@@ -1175,11 +1175,11 @@ fn parse_bitwise_and_expression(
             ));
         }
 
-        return Ok(Box::new(BitwiseExpression {
+        lhs = Box::new(BitwiseExpression {
             left: lhs,
             operator: BitwiseOperator::And,
             right: rhs,
-        }));
+        });
     }
 
     Ok(lhs)
