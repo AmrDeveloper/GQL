@@ -1562,7 +1562,7 @@ fn parse_unary_expression(
 
         *position += 1;
 
-        let rhs = parse_expression(context, env, tokens, position)?;
+        let rhs = parse_unary_expression(context, env, tokens, position)?;
         let rhs_type = rhs.expr_type(env);
         if op == PrefixUnaryOperator::Bang && rhs_type != DataType::Boolean {
             return Err(type_mismatch_error(

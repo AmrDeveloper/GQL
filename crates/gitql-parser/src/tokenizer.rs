@@ -520,11 +520,10 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
                 continue;
             }
 
-            return Err(Box::new(
-                Diagnostic::error("Expect `=` after `:`")
-                    .add_help("Only token that has `:` is `:=` so make sure you add `=` after `:`")
-                    .with_location_span(column_start, position),
-            ));
+            return Err(Diagnostic::error("Expect `=` after `:`")
+                .add_help("Only token that has `:` is `:=` so make sure you add `=` after `:`")
+                .with_location_span(column_start, position)
+                .as_boxed());
         }
 
         // Bang or Bang Equal
@@ -615,9 +614,9 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
             continue;
         }
 
-        return Err(Box::new(
-            Diagnostic::error("Unexpected character").with_location_span(column_start, position),
-        ));
+        return Err(Diagnostic::error("Unexpected character")
+            .with_location_span(column_start, position)
+            .as_boxed());
     }
 
     Ok(tokens)
@@ -633,11 +632,12 @@ fn consume_global_variable_name(
 
     // Make sure first character is  alphabetic
     if *pos < chars.len() && !chars[*pos].is_alphabetic() {
-        return Err(Box::new(
+        return Err(
             Diagnostic::error("Global variable name must start with alphabetic character")
                 .add_help("Add at least one alphabetic character after @")
-                .with_location_span(*start, *pos),
-        ));
+                .with_location_span(*start, *pos)
+                .as_boxed(),
+        );
     }
 
     while *pos < chars.len() && (chars[*pos] == '_' || chars[*pos].is_alphanumeric()) {
@@ -733,11 +733,10 @@ fn consume_backticks_identifier(
     }
 
     if *pos >= chars.len() {
-        return Err(Box::new(
-            Diagnostic::error("Unterminated backticks")
-                .add_help("Add ` at the end of the identifier")
-                .with_location_span(*start, *pos),
-        ));
+        return Err(Diagnostic::error("Unterminated backticks")
+            .add_help("Add ` at the end of the identifier")
+            .with_location_span(*start, *pos)
+            .as_boxed());
     }
 
     *pos += 1;
@@ -771,12 +770,13 @@ fn consume_binary_number(
     }
 
     if !has_digit {
-        return Err(Box::new(
+        return Err(
             Diagnostic::error("Missing digits after the integer base prefix")
                 .add_help("Expect at least one binary digits after the prefix 0b")
                 .add_help("Binary digit mean 0 or 1")
-                .with_location_span(*start, *pos),
-        ));
+                .with_location_span(*start, *pos)
+                .as_boxed(),
+        );
     }
 
     let literal = &chars[*start..*pos];
@@ -785,9 +785,9 @@ fn consume_binary_number(
     let convert_result = i64::from_str_radix(&literal_num, 2);
 
     if convert_result.is_err() {
-        return Err(Box::new(
-            Diagnostic::error("Invalid binary number").with_location_span(*start, *pos),
-        ));
+        return Err(Diagnostic::error("Invalid binary number")
+            .with_location_span(*start, *pos)
+            .as_boxed());
     }
 
     let location = Location {
@@ -814,12 +814,13 @@ fn consume_octal_number(
     }
 
     if !has_digit {
-        return Err(Box::new(
+        return Err(
             Diagnostic::error("Missing digits after the integer base prefix")
                 .add_help("Expect at least one octal digits after the prefix 0o")
                 .add_help("Octal digit mean 0 to 8 number")
-                .with_location_span(*start, *pos),
-        ));
+                .with_location_span(*start, *pos)
+                .as_boxed(),
+        );
     }
 
     let literal = &chars[*start..*pos];
@@ -828,9 +829,9 @@ fn consume_octal_number(
     let convert_result = i64::from_str_radix(&literal_num, 8);
 
     if convert_result.is_err() {
-        return Err(Box::new(
-            Diagnostic::error("Invalid octal number").with_location_span(*start, *pos),
-        ));
+        return Err(Diagnostic::error("Invalid octal number")
+            .with_location_span(*start, *pos)
+            .as_boxed());
     }
 
     let location = Location {
@@ -857,12 +858,13 @@ fn consume_hex_number(
     }
 
     if !has_digit {
-        return Err(Box::new(
+        return Err(
             Diagnostic::error("Missing digits after the integer base prefix")
                 .add_help("Expect at least one hex digits after the prefix 0x")
                 .add_help("Hex digit mean 0 to 9 and a to f")
-                .with_location_span(*start, *pos),
-        ));
+                .with_location_span(*start, *pos)
+                .as_boxed(),
+        );
     }
 
     let literal = &chars[*start..*pos];
@@ -871,9 +873,9 @@ fn consume_hex_number(
     let convert_result = i64::from_str_radix(&literal_num, 16);
 
     if convert_result.is_err() {
-        return Err(Box::new(
-            Diagnostic::error("Invalid hex decimal number").with_location_span(*start, *pos),
-        ));
+        return Err(Diagnostic::error("Invalid hex decimal number")
+            .with_location_span(*start, *pos)
+            .as_boxed());
     }
 
     let location = Location {
@@ -900,11 +902,10 @@ fn consume_string(
     }
 
     if *pos >= chars.len() {
-        return Err(Box::new(
-            Diagnostic::error("Unterminated double quote string")
-                .add_help("Add \" at the end of the String literal")
-                .with_location_span(*start, *pos),
-        ));
+        return Err(Diagnostic::error("Unterminated double quote string")
+            .add_help("Add \" at the end of the String literal")
+            .with_location_span(*start, *pos)
+            .as_boxed());
     }
 
     *pos += 1;
@@ -944,11 +945,10 @@ fn ignore_c_style_comment(chars: &Vec<char>, pos: &mut usize) -> Result<(), Box<
     }
 
     if *pos + 2 > chars.len() {
-        return Err(Box::new(
-            Diagnostic::error("C Style comment must end with */")
-                .add_help("Add */ at the end of C Style comments")
-                .with_location_span(*pos, *pos),
-        ));
+        return Err(Diagnostic::error("C Style comment must end with */")
+            .add_help("Add */ at the end of C Style comments")
+            .with_location_span(*pos, *pos)
+            .as_boxed());
     }
 
     *pos += 2;

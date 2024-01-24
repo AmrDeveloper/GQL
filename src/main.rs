@@ -126,6 +126,10 @@ fn execute_gitql_query(
     }
 
     let tokens = tokenizer_result.ok().unwrap();
+    if tokens.is_empty() {
+        return;
+    }
+
     let parser_result = parser::parse_gql(tokens, env);
     if parser_result.is_err() {
         let diagnostic = parser_result.err().unwrap();
