@@ -1,14 +1,14 @@
 [package]
 name = "gitql-cli"
 authors = ["AmrDeveloper"]
-version = "0.12.0"
+version = "0.13.0"
 edition = "2021"
 description = "GitQL Command line interface (CLI) components"
 repository = "https://github.com/amrdeveloper/gql/tree/main/crates/gitql-cli"
 license = "MIT"
 
 [dependencies]
-gitql-ast = { path = "../gitql-ast", version = "0.10.0" }
-gitql-parser = { path = "../gitql-parser", version = "0.11.0" }
+gitql-ast = { path = "../gitql-ast", version = "0.11.0" }
+gitql-parser = { path = "../gitql-parser", version = "0.12.0" }
 comfy-table = "7.1.0"
 termcolor = "1.4.1"

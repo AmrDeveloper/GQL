@@ -1,7 +1,7 @@
 [package]
 name = "gitql"
 authors = ["AmrDeveloper"]
-version = "0.12.0"
+version = "0.13.0"
 edition = "2021"
 description = "A SQL like query language to perform queries on .git files"
 license = "MIT"
@@ -21,12 +21,12 @@ members = [
 ]
 
 [workspace.dependencies]
-gix = { version = "0.57.0", default-features = false }
+gix = { version = "0.58.0", default-features = false }
 
 [dependencies]
-gitql-ast = { path = "./crates/gitql-ast", version = "0.10.0" }
-gitql-parser = { path = "./crates/gitql-parser", version = "0.11.0" }
-gitql-engine = { path = "./crates/gitql-engine", version = "0.12.0" }
-gitql-cli = { path = "./crates/gitql-cli", version = "0.12.0" }
+gitql-ast = { path = "./crates/gitql-ast", version = "0.11.0" }
+gitql-parser = { path = "./crates/gitql-parser", version = "0.12.0" }
+gitql-engine = { path = "./crates/gitql-engine", version = "0.13.0" }
+gitql-cli = { path = "./crates/gitql-cli", version = "0.13.0" }
 gix = { workspace = true, features = ["max-performance"] }
 atty = "0.2.14"

@@ -1,7 +1,7 @@
 [package]
 name = "gitql-ast"
 authors = ["AmrDeveloper"]
-version = "0.10.0"
+version = "0.11.0"
 edition = "2021"
 description = "GitQL Abstract syntax tree (AST)"
 repository = "https://github.com/amrdeveloper/gql/tree/main/crates/gitql-ast"

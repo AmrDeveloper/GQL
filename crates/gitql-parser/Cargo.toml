@@ -1,12 +1,12 @@
 [package]
 name = "gitql-parser"
 authors = ["AmrDeveloper"]
-version = "0.11.0"
+version = "0.12.0"
 edition = "2021"
 description = "GitQL parser"
 repository = "https://github.com/amrdeveloper/gql/tree/main/crates/gitql-parser"
 license = "MIT"
 
 [dependencies]
-gitql-ast = { path = "../gitql-ast", version = "0.10.0" }
+gitql-ast = { path = "../gitql-ast", version = "0.11.0" }
 lazy_static = "1.4.0"

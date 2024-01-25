@@ -1,13 +1,13 @@
 [package]
 name = "gitql-engine"
 authors = ["AmrDeveloper"]
-version = "0.12.0"
+version = "0.13.0"
 edition = "2021"
 description = "GitQL Engine"
 repository = "https://github.com/amrdeveloper/gql/tree/main/crates/gitql-engine"
 license = "MIT"
 
 [dependencies]
-gitql-ast = { path = "../gitql-ast", version = "0.10.0" }
+gitql-ast = { path = "../gitql-ast", version = "0.11.0" }
 regex = "1.10.2"
 gix = { workspace = true, features = ["blob-diff"] }
