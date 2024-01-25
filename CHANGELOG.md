@@ -1,6 +1,19 @@
 Change Log
 ==========
 
+Version 0.13.0 *(2024-01-25)*
+-----------------------------
+
+* Make `SING` function accept Int or Float type.
+* Implement `CONCAT_WS` Text function.
+* Fix Minus unary operator for f64.
+* Implement exporting data as `JSON`, `CSV`.
+* Implemnet `DAY` Date function
+* Fix not reporting diagnostic when date or time format has number out of range.
+* Perform projection operator before export as `JSON`, `CSV`.
+* Fix the order of parsing prefix unary with binary expression.
+* Handle passing 0 tokens to the parser.
+
 Version 0.12.0 *(2024-01-13)*
 -----------------------------
 
@@ -13,9 +26,9 @@ Version 0.12.0 *(2024-01-13)*
 * Optimize `in` expression in case of empty list.
 * Add Support for `NOT IN` expression.
 * Report error if user write un expected content after valid statement.
-* Fix Date and DateTime incorrect equals #71
+* Fix Date and DateTime incorrect equals #71.
 * Allow `BETWEEN` to work with any type.
-* Fix ArithmeticExpression expr_type if any side is float
+* Fix ArithmeticExpression expr_type if any side is float.
 
 Version 0.11.0 *(2023-12-29)*
 -----------------------------
@@ -57,7 +70,7 @@ Version 0.9.0 *(2023-11-25)*
 * Preallocate the attributes hash with row length.
 * Fix Clippy comments and setup CI for Lint and Format.
 * Implement `typeof` function.
-* Implement `ROUND` function
+* Implement `ROUND` function.
 * Make Identifiers case-insensitive.
 * Support `<=>` operator.
 * Implement `SIN` function.
@@ -71,7 +84,7 @@ Version 0.8.0 *(2023-11-10)*
 
 * Support `GLOB` keyword.
 * Support `DISTINCT` keyword.
-* Make sure `SELECT *` used with specific table
+* Make sure `SELECT *` used with specific table.
 * Migrate from Prettytables-rs to comfy-table for render tables.
 * Support optional Pagination with user custom page size.
 * Support `<>` Operator.
@@ -127,8 +140,8 @@ Version 0.6.0 *(2023-09-06)*
 * Use aggregation function after select statement.
 * Don't allow using aggregation in where statement.
 * Fix hidden selections.
-* Alias the same name twice
-* Fix evaluate function before argument
+* Alias the same name twice.
+* Fix evaluate function before argument.
 
 Version 0.5.0 *(2023-08-23)*
 -----------------------------
@@ -159,7 +172,7 @@ Version 0.4.0 *(2023-07-14)*
 * Support Merging group if it only select aggregations.
 * Implement Aggregation functions `avg`.
 * Improve render performance.
-* Allow calling aggregation function with upper or lowre cases.
+* Allow calling aggregation function with upper or lower cases.
 
 Version 0.3.0 *(2023-07-07)*
 -----------------------------
