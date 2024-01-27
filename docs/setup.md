@@ -45,3 +45,19 @@ cargo run <repository_path>
 cargo run -- --repo <repository_path> <repository_path> ...etc
 cargo run -- -r <repository_path> <repository_path> ...etc
 ```
+
+# Command line arguments
+
+```
+Usage: gitql [OPTIONS]
+
+Options:
+-r,  --repos <REPOS>        Path for local repositories to run query on
+-q,  --query <GQL Query>    GitQL query to run on selected repositories
+-p,  --pagination           Enable print result with pagination
+-ps, --pagesize             Set pagination page size [default: 10]
+-o,  --output               Set output format [render, json, csv]
+-a,  --analysis             Print Query analysis
+-h,  --help                 Print GitQL help
+-v,  --version              Print GitQL Current Version
+```
