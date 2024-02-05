@@ -6,6 +6,8 @@
 cargo install gitql
 ```
 
+> Note that from version `0.10.0` installing from Cargo require `Cmake` to be installed so it can build the dependencies.
+
 ## Winget on Windows
 
 ```sh
