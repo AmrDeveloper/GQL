@@ -92,7 +92,7 @@ SELECT HOUR(NOW())
 | ------ | ---------------- | ------- | ---------------------------------------------------------------------------- |
 | PI     |                  | Float   | Return the value of PI.                                                      |
 | FLOOR  | Float            | Integer | Returns the largest integer value that is smaller than or equal to a number. |
-| ROUND  | Float            | Integer | Returns the nearest integer value.                                           |
+| ROUND  | Float, Integer?  | Float   | Returns a number rounded to a specified number of decimal places.            |
 | SQUARE | Integer          | Integer | Returns the square of an integer value.                                      |
 | ABS    | Integer          | Integer | Returns the absolute value of an integer value.                              |
 | SIN    | Float            | Float   | Returns the sine of a number.                                                |
@@ -109,7 +109,7 @@ SELECT HOUR(NOW())
 ```sql
 SELECT PI()
 SELECT FLOOR(1.6)
-SELECT ROUND(1.5)
+SELECT ROUND(1.5), ROUND(135.375, 2), ROUND(345.156, 0)
 SELECT SQUARE(64)
 SELECT ABS(-1)
 SELECT SIN(2.0)

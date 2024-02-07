@@ -358,8 +358,8 @@ lazy_static! {
         map.insert(
             "round",
             Prototype {
-                parameters: vec![DataType::Float],
-                result: DataType::Integer,
+                parameters: vec![DataType::Float, DataType::Optional(Box::new(DataType::Integer))],
+                result: DataType::Float,
             },
         );
         map.insert(
@@ -788,8 +788,15 @@ fn numeric_floor(inputs: &[Value]) -> Value {
 }
 
 fn numeric_round(inputs: &[Value]) -> Value {
-    let float_value = inputs[0].as_float();
-    Value::Integer(float_value.round() as i64)
+    let number = inputs[0].as_float();
+    let decimal_places = if inputs.len() == 2 {
+        inputs[1].as_int()
+    } else {
+        0
+    };
+    let multiplier = 10_f64.powi(decimal_places.try_into().unwrap());
+    let result = (number * multiplier).round() / multiplier;
+    Value::Float(result)
 }
 
 fn numeric_square(inputs: &[Value]) -> Value {
