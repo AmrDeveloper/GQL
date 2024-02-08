@@ -65,7 +65,7 @@ pub fn render_objects(
     }
 }
 
-fn print_group_as_table(titles: &Vec<&str>, table_headers: Vec<comfy_table::Cell>, rows: &[Row]) {
+fn print_group_as_table(titles: &[&str], table_headers: Vec<comfy_table::Cell>, rows: &[Row]) {
     let mut table = comfy_table::Table::new();
 
     // Setup table style

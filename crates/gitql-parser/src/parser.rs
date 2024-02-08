@@ -55,7 +55,7 @@ pub fn parse_gql(tokens: Vec<Token>, env: &mut Environment) -> Result<Query, Box
 
 fn parse_set_query(
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Query, Box<Diagnostic>> {
     let len = tokens.len();
@@ -111,7 +111,7 @@ fn parse_set_query(
 
 fn parse_select_query(
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Query, Box<Diagnostic>> {
     let len = tokens.len();
@@ -299,7 +299,7 @@ fn parse_select_query(
 fn parse_select_statement(
     context: &mut ParserContext,
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Statement>, Box<Diagnostic>> {
     // Consume select keyword
@@ -470,7 +470,7 @@ fn parse_select_statement(
 fn parse_where_statement(
     context: &mut ParserContext,
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Statement>, Box<Diagnostic>> {
     *position += 1;
@@ -516,7 +516,7 @@ fn parse_where_statement(
 fn parse_group_by_statement(
     context: &mut ParserContext,
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Statement>, Box<Diagnostic>> {
     *position += 1;
@@ -554,7 +554,7 @@ fn parse_group_by_statement(
 fn parse_having_statement(
     context: &mut ParserContext,
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Statement>, Box<Diagnostic>> {
     *position += 1;
@@ -587,7 +587,7 @@ fn parse_having_statement(
 }
 
 fn parse_limit_statement(
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Statement>, Box<Diagnostic>> {
     *position += 1;
@@ -629,7 +629,7 @@ fn parse_limit_statement(
 }
 
 fn parse_offset_statement(
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Statement>, Box<Diagnostic>> {
     *position += 1;
@@ -672,7 +672,7 @@ fn parse_offset_statement(
 fn parse_order_by_statement(
     context: &mut ParserContext,
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Statement>, Box<Diagnostic>> {
     // Consume `ORDER` keyword
@@ -725,7 +725,7 @@ fn parse_order_by_statement(
 fn parse_expression(
     context: &mut ParserContext,
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     let aggregations_count_before = context.aggregations.len();
@@ -754,7 +754,7 @@ fn parse_expression(
 fn parse_assignment_expression(
     context: &mut ParserContext,
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     let expression = parse_is_null_expression(context, env, tokens, position)?;
@@ -791,7 +791,7 @@ fn parse_assignment_expression(
 fn parse_is_null_expression(
     context: &mut ParserContext,
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     let expression = parse_in_expression(context, env, tokens, position)?;
@@ -832,7 +832,7 @@ fn parse_is_null_expression(
 fn parse_in_expression(
     context: &mut ParserContext,
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     let expression = parse_between_expression(context, env, tokens, position)?;
@@ -913,7 +913,7 @@ fn parse_in_expression(
 fn parse_between_expression(
     context: &mut ParserContext,
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     let expression = parse_logical_or_expression(context, env, tokens, position)?;
@@ -972,7 +972,7 @@ fn parse_between_expression(
 fn parse_logical_or_expression(
     context: &mut ParserContext,
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     let expression = parse_logical_and_expression(context, env, tokens, position);
@@ -1016,7 +1016,7 @@ fn parse_logical_or_expression(
 fn parse_logical_and_expression(
     context: &mut ParserContext,
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     let expression = parse_bitwise_or_expression(context, env, tokens, position);
@@ -1060,7 +1060,7 @@ fn parse_logical_and_expression(
 fn parse_bitwise_or_expression(
     context: &mut ParserContext,
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     let expression = parse_logical_xor_expression(context, env, tokens, position);
@@ -1104,7 +1104,7 @@ fn parse_bitwise_or_expression(
 fn parse_logical_xor_expression(
     context: &mut ParserContext,
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     let expression = parse_bitwise_and_expression(context, env, tokens, position);
@@ -1146,7 +1146,7 @@ fn parse_logical_xor_expression(
 fn parse_bitwise_and_expression(
     context: &mut ParserContext,
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     let expression = parse_equality_expression(context, env, tokens, position);
@@ -1188,7 +1188,7 @@ fn parse_bitwise_and_expression(
 fn parse_equality_expression(
     context: &mut ParserContext,
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     let expression = parse_comparison_expression(context, env, tokens, position);
@@ -1252,7 +1252,7 @@ fn parse_equality_expression(
 fn parse_comparison_expression(
     context: &mut ParserContext,
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     let expression = parse_bitwise_shift_expression(context, env, tokens, position);
@@ -1317,7 +1317,7 @@ fn parse_comparison_expression(
 fn parse_bitwise_shift_expression(
     context: &mut ParserContext,
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     let mut lhs = parse_term_expression(context, env, tokens, position)?;
@@ -1357,7 +1357,7 @@ fn parse_bitwise_shift_expression(
 fn parse_term_expression(
     context: &mut ParserContext,
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     let mut lhs = parse_factor_expression(context, env, tokens, position)?;
@@ -1414,7 +1414,7 @@ fn parse_term_expression(
 fn parse_factor_expression(
     context: &mut ParserContext,
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     let expression = parse_like_expression(context, env, tokens, position);
@@ -1462,7 +1462,7 @@ fn parse_factor_expression(
 fn parse_like_expression(
     context: &mut ParserContext,
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     let expression = parse_glob_expression(context, env, tokens, position);
@@ -1506,7 +1506,7 @@ fn parse_like_expression(
 fn parse_glob_expression(
     context: &mut ParserContext,
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     let expression = parse_unary_expression(context, env, tokens, position);
@@ -1550,7 +1550,7 @@ fn parse_glob_expression(
 fn parse_unary_expression(
     context: &mut ParserContext,
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     if *position < tokens.len() && is_prefix_unary_operator(&tokens[*position]) {
@@ -1589,7 +1589,7 @@ fn parse_unary_expression(
 fn parse_function_call_expression(
     context: &mut ParserContext,
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     let expression = parse_primary_expression(context, env, tokens, position)?;
@@ -1686,7 +1686,7 @@ fn parse_function_call_expression(
 fn parse_arguments_expressions(
     context: &mut ParserContext,
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Vec<Box<dyn Expression>>, Box<Diagnostic>> {
     let mut arguments: Vec<Box<dyn Expression>> = vec![];
@@ -1727,7 +1727,7 @@ fn parse_arguments_expressions(
 fn parse_primary_expression(
     context: &mut ParserContext,
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     if *position >= tokens.len() {
@@ -1810,7 +1810,7 @@ fn parse_primary_expression(
 fn parse_group_expression(
     context: &mut ParserContext,
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     *position += 1;
@@ -1828,7 +1828,7 @@ fn parse_group_expression(
 fn parse_case_expression(
     context: &mut ParserContext,
     env: &mut Environment,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     let mut conditions: Vec<Box<dyn Expression>> = vec![];
@@ -1947,8 +1947,8 @@ fn parse_case_expression(
 
 fn check_function_call_arguments(
     env: &mut Environment,
-    arguments: &mut Vec<Box<dyn Expression>>,
-    parameters: &Vec<DataType>,
+    arguments: &mut [Box<dyn Expression>],
+    parameters: &[DataType],
     function_name: String,
     location: Location,
 ) -> Result<(), Box<Diagnostic>> {
@@ -2080,7 +2080,7 @@ fn type_check_selected_fields(
     env: &mut Environment,
     table_name: &str,
     fields_names: &Vec<String>,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: usize,
 ) -> Result<(), Box<Diagnostic>> {
     for field_name in fields_names {
@@ -2123,7 +2123,7 @@ fn un_expected_statement_error(tokens: &[Token], position: &mut usize) -> Box<Di
         .as_boxed()
 }
 
-fn un_expected_expression_error(tokens: &Vec<Token>, position: &usize) -> Box<Diagnostic> {
+fn un_expected_expression_error(tokens: &[Token], position: &usize) -> Box<Diagnostic> {
     let location = get_safe_location(tokens, *position);
 
     if *position == 0 || *position >= tokens.len() {
@@ -2199,7 +2199,7 @@ fn un_expected_expression_error(tokens: &Vec<Token>, position: &usize) -> Box<Di
 /// Report error message for extra content after the end of current statement
 fn un_expected_content_after_correct_statement(
     statement_name: &str,
-    tokens: &Vec<Token>,
+    tokens: &[Token],
     position: &mut usize,
 ) -> Box<Diagnostic> {
     let error_message = &format!(
@@ -2271,7 +2271,7 @@ fn select_all_table_fields(
 }
 
 #[inline(always)]
-fn consume_kind(tokens: &Vec<Token>, position: usize, kind: TokenKind) -> Result<&Token, ()> {
+fn consume_kind(tokens: &[Token], position: usize, kind: TokenKind) -> Result<&Token, ()> {
     if position < tokens.len() && tokens[position].kind == kind {
         return Ok(&tokens[position]);
     }
@@ -2279,7 +2279,7 @@ fn consume_kind(tokens: &Vec<Token>, position: usize, kind: TokenKind) -> Result
 }
 
 #[inline(always)]
-fn get_safe_location(tokens: &Vec<Token>, position: usize) -> Location {
+fn get_safe_location(tokens: &[Token], position: usize) -> Location {
     if position < tokens.len() {
         return tokens[position].location;
     }

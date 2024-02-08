@@ -251,7 +251,7 @@ pub fn are_types_equals(
 /// If they has the same type, return it or return None
 pub fn check_all_values_are_same_type(
     env: &mut Environment,
-    arguments: &Vec<Box<dyn Expression>>,
+    arguments: &[Box<dyn Expression>],
 ) -> Option<DataType> {
     let arguments_count = arguments.len();
     if arguments_count == 0 {

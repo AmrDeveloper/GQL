@@ -14,7 +14,7 @@ pub fn select_gql_objects(
     env: &mut Environment,
     repo: &gix::Repository,
     table: String,
-    fields_names: &Vec<String>,
+    fields_names: &[String],
     titles: &[String],
     fields_values: &[Box<dyn Expression>],
 ) -> Result<Group, String> {
@@ -31,7 +31,7 @@ pub fn select_gql_objects(
 fn select_references(
     env: &mut Environment,
     repo: &gix::Repository,
-    fields_names: &Vec<String>,
+    fields_names: &[String],
     titles: &[String],
     fields_values: &[Box<dyn Expression>],
 ) -> Result<Group, String> {
@@ -114,7 +114,7 @@ fn select_references(
 fn select_commits(
     env: &mut Environment,
     repo: &gix::Repository,
-    fields_names: &Vec<String>,
+    fields_names: &[String],
     titles: &[String],
     fields_values: &[Box<dyn Expression>],
 ) -> Result<Group, String> {
@@ -207,7 +207,7 @@ fn select_commits(
 fn select_branches(
     env: &mut Environment,
     repo: &gix::Repository,
-    fields_names: &Vec<String>,
+    fields_names: &[String],
     titles: &[String],
     fields_values: &[Box<dyn Expression>],
 ) -> Result<Group, String> {
@@ -301,7 +301,7 @@ fn select_branches(
 fn select_diffs(
     env: &mut Environment,
     repo: &gix::Repository,
-    fields_names: &Vec<String>,
+    fields_names: &[String],
     titles: &[String],
     fields_values: &[Box<dyn Expression>],
 ) -> Result<Group, String> {
@@ -433,7 +433,7 @@ fn select_diffs(
 fn select_tags(
     env: &mut Environment,
     repo: &gix::Repository,
-    fields_names: &Vec<String>,
+    fields_names: &[String],
     titles: &[String],
     fields_values: &[Box<dyn Expression>],
 ) -> Result<Group, String> {

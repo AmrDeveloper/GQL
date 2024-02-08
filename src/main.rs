@@ -19,7 +19,7 @@ fn main() {
         std::env::set_var("RUST_LIB_BACKTRACE", "1");
     }
 
-    let args = std::env::args().collect();
+    let args: Vec<String> = std::env::args().collect();
     let command = arguments::parse_arguments(&args);
 
     match command {

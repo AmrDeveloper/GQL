@@ -41,7 +41,7 @@ pub enum Command {
     Error(String),
 }
 
-pub fn parse_arguments(args: &Vec<String>) -> Command {
+pub fn parse_arguments(args: &[String]) -> Command {
     let args_len = args.len();
 
     if args.iter().any(|i| i == "--help" || i == "-h") {

@@ -623,7 +623,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
 }
 
 fn consume_global_variable_name(
-    chars: &Vec<char>,
+    chars: &[char],
     pos: &mut usize,
     start: &mut usize,
 ) -> Result<Token, Box<Diagnostic>> {
@@ -662,7 +662,7 @@ fn consume_global_variable_name(
     })
 }
 
-fn consume_identifier(chars: &Vec<char>, pos: &mut usize, start: &mut usize) -> Token {
+fn consume_identifier(chars: &[char], pos: &mut usize, start: &mut usize) -> Token {
     while *pos < chars.len() && (chars[*pos] == '_' || chars[*pos].is_alphanumeric()) {
         *pos += 1;
     }
@@ -686,7 +686,7 @@ fn consume_identifier(chars: &Vec<char>, pos: &mut usize, start: &mut usize) -> 
 }
 
 fn consume_number(
-    chars: &Vec<char>,
+    chars: &[char],
     pos: &mut usize,
     start: &mut usize,
 ) -> Result<Token, Box<Diagnostic>> {
@@ -722,7 +722,7 @@ fn consume_number(
 }
 
 fn consume_backticks_identifier(
-    chars: &Vec<char>,
+    chars: &[char],
     pos: &mut usize,
     start: &mut usize,
 ) -> Result<Token, Box<Diagnostic>> {
@@ -759,7 +759,7 @@ fn consume_backticks_identifier(
 }
 
 fn consume_binary_number(
-    chars: &Vec<char>,
+    chars: &[char],
     pos: &mut usize,
     start: &mut usize,
 ) -> Result<Token, Box<Diagnostic>> {
@@ -803,7 +803,7 @@ fn consume_binary_number(
 }
 
 fn consume_octal_number(
-    chars: &Vec<char>,
+    chars: &[char],
     pos: &mut usize,
     start: &mut usize,
 ) -> Result<Token, Box<Diagnostic>> {
@@ -847,7 +847,7 @@ fn consume_octal_number(
 }
 
 fn consume_hex_number(
-    chars: &Vec<char>,
+    chars: &[char],
     pos: &mut usize,
     start: &mut usize,
 ) -> Result<Token, Box<Diagnostic>> {
@@ -891,7 +891,7 @@ fn consume_hex_number(
 }
 
 fn consume_string(
-    chars: &Vec<char>,
+    chars: &[char],
     pos: &mut usize,
     start: &mut usize,
 ) -> Result<Token, Box<Diagnostic>> {
@@ -927,7 +927,7 @@ fn consume_string(
     Ok(string_literal)
 }
 
-fn ignore_single_line_comment(chars: &Vec<char>, pos: &mut usize) {
+fn ignore_single_line_comment(chars: &[char], pos: &mut usize) {
     *pos += 2;
 
     while *pos < chars.len() && chars[*pos] != '\n' {
@@ -937,7 +937,7 @@ fn ignore_single_line_comment(chars: &Vec<char>, pos: &mut usize) {
     *pos += 1;
 }
 
-fn ignore_c_style_comment(chars: &Vec<char>, pos: &mut usize) -> Result<(), Box<Diagnostic>> {
+fn ignore_c_style_comment(chars: &[char], pos: &mut usize) -> Result<(), Box<Diagnostic>> {
     *pos += 2;
 
     while *pos + 1 < chars.len() && (chars[*pos] != '*' && chars[*pos + 1] != '/') {
