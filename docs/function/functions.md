@@ -103,6 +103,7 @@ SELECT HOUR(NOW())
 | ATAN   | FLOAT            | FLOAT   | Returns the arc tangent of a number.                                         |
 | ATN2   | FLOAT, FLOAT     | FLOAT   | Returns the arc tangent of two values.                                       |
 | SIGN   | Integer or FLOAT | Integer | Returns the sign of a number.                                                |
+| MOD    | Integer, Integer | Integer | Returns the remainder of a number divided by another number.                 |
 
 ### Numeric functions samples
 
@@ -115,6 +116,7 @@ SELECT ABS(-1)
 SELECT SIN(2.0)
 SELECT SIN(2)
 SELECT ATN2(0.50, 1.0)
+SELECT MOD(25, 5)
 ```
 
 ### General functions

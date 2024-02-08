@@ -5,6 +5,7 @@ use crate::value::Value;
 use lazy_static::lazy_static;
 use std::cmp::Ordering;
 use std::collections::HashMap;
+use std::ops::Rem;
 
 type Function = fn(&[Value]) -> Value;
 
@@ -70,6 +71,7 @@ lazy_static! {
         map.insert("atan", numeric_atan);
         map.insert("atn2", numeric_atn2);
         map.insert("sign", numeric_sign);
+        map.insert("mod", numeric_mod);
 
         // Other Functions
         map.insert("isnull", general_is_null);
@@ -422,6 +424,13 @@ lazy_static! {
             "sign",
             Prototype {
                 parameters: vec![DataType::Variant(vec![DataType::Integer, DataType::Float])],
+                result: DataType::Integer,
+            },
+        );
+        map.insert(
+            "mod",
+            Prototype {
+                parameters: vec![DataType::Integer, DataType::Integer],
                 result: DataType::Integer,
             },
         );
@@ -855,6 +864,16 @@ fn numeric_sign(inputs: &[Value]) -> Value {
     } else {
         Value::Integer(-1)
     }
+}
+
+fn numeric_mod(inputs: &[Value]) -> Value {
+    let other = &inputs[1];
+    if other.as_int() == 0 {
+        return Value::Null;
+    }
+
+    let first = &inputs[0];
+    Value::Integer(first.as_int().rem(other.as_int()))
 }
 
 // General functions
