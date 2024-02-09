@@ -1,4 +1,5 @@
 use atty::Stream;
+use git_data_provider::GitDataProvider;
 use gitql_ast::environment::Environment;
 use gitql_cli::arguments;
 use gitql_cli::arguments::Arguments;
@@ -7,11 +8,14 @@ use gitql_cli::arguments::OutputFormat;
 use gitql_cli::diagnostic_reporter;
 use gitql_cli::diagnostic_reporter::DiagnosticReporter;
 use gitql_cli::render;
+use gitql_engine::data_provider::DataProvider;
 use gitql_engine::engine;
 use gitql_engine::engine::EvaluationResult::SelectedGroups;
 use gitql_parser::diagnostic::Diagnostic;
 use gitql_parser::parser;
 use gitql_parser::tokenizer;
+
+mod git_data_provider;
 
 fn main() {
     if cfg!(debug_assertions) {
@@ -141,7 +145,8 @@ fn execute_gitql_query(
     let front_duration = front_start.elapsed();
 
     let engine_start = std::time::Instant::now();
-    let evaluation_result = engine::evaluate(env, repos, query_node);
+    let provider: Box<dyn DataProvider> = Box::new(GitDataProvider::new(repos.to_vec()));
+    let evaluation_result = engine::evaluate(env, &provider, query_node);
 
     // Report Runtime exceptions if they exists
     if evaluation_result.is_err() {

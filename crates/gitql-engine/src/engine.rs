@@ -13,6 +13,7 @@ use gitql_ast::statement::GQLQuery;
 use gitql_ast::statement::Query;
 use gitql_ast::statement::SelectStatement;
 
+use crate::data_provider::DataProvider;
 use crate::engine_executor::execute_global_variable_statement;
 use crate::engine_executor::execute_statement;
 
@@ -32,13 +33,14 @@ pub enum EvaluationResult {
     SetGlobalVariable,
 }
 
+#[allow(clippy::borrowed_box)]
 pub fn evaluate(
     env: &mut Environment,
-    repos: &[gix::Repository],
+    data_provider: &Box<dyn DataProvider>,
     query: Query,
 ) -> Result<EvaluationResult, String> {
     match query {
-        Query::Select(gql_query) => evaluate_select_query(env, repos, gql_query),
+        Query::Select(gql_query) => evaluate_select_query(env, data_provider, gql_query),
         Query::GlobalVariableDeclaration(global_variable) => {
             execute_global_variable_statement(env, &global_variable)?;
             Ok(EvaluationResult::SetGlobalVariable)
@@ -46,9 +48,10 @@ pub fn evaluate(
     }
 }
 
+#[allow(clippy::borrowed_box)]
 pub fn evaluate_select_query(
     env: &mut Environment,
-    repos: &[gix::Repository],
+    data_provider: &Box<dyn DataProvider>,
     query: GQLQuery,
 ) -> Result<EvaluationResult, String> {
     let mut gitql_object = GitQLObject::default();
@@ -56,12 +59,10 @@ pub fn evaluate_select_query(
 
     let hidden_selections = query.hidden_selections;
     let mut statements_map = query.statements;
-    let first_repo = repos.first().unwrap();
 
     for gql_command in GQL_COMMANDS_IN_ORDER {
         if statements_map.contains_key(gql_command) {
             let statement = statements_map.get_mut(gql_command).unwrap();
-
             match gql_command {
                 "select" => {
                     // Select statement should be performed on all repositories, can be executed in parallel
@@ -70,39 +71,14 @@ pub fn evaluate_select_query(
                         .downcast_ref::<SelectStatement>()
                         .unwrap();
 
-                    // If table name is empty no need to perform it on each repository
-                    if select_statement.table_name.is_empty() {
-                        execute_statement(
-                            env,
-                            statement,
-                            &repos[0],
-                            &mut gitql_object,
-                            &mut alias_table,
-                            &hidden_selections,
-                        )?;
-
-                        // If the main group is empty, no need to perform other statements
-                        if gitql_object.is_empty() || gitql_object.groups[0].is_empty() {
-                            return Ok(EvaluationResult::SelectedGroups(
-                                gitql_object,
-                                hidden_selections,
-                            ));
-                        }
-
-                        continue;
-                    }
-
-                    // If table name is not empty, must perform it on each repository
-                    for repo in repos {
-                        execute_statement(
-                            env,
-                            statement,
-                            repo,
-                            &mut gitql_object,
-                            &mut alias_table,
-                            &hidden_selections,
-                        )?;
-                    }
+                    execute_statement(
+                        env,
+                        statement,
+                        data_provider,
+                        &mut gitql_object,
+                        &mut alias_table,
+                        &hidden_selections,
+                    )?;
 
                     // If the main group is empty, no need to perform other statements
                     if gitql_object.is_empty() || gitql_object.groups[0].is_empty() {
@@ -118,11 +94,10 @@ pub fn evaluate_select_query(
                     }
                 }
                 _ => {
-                    // Any other statement can be performed on first or non repository
                     execute_statement(
                         env,
                         statement,
-                        first_repo,
+                        data_provider,
                         &mut gitql_object,
                         &mut alias_table,
                         &hidden_selections,

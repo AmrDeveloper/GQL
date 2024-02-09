@@ -22,15 +22,14 @@ use gitql_ast::statement::StatementKind::*;
 use gitql_ast::statement::WhereStatement;
 use gitql_ast::value::Value;
 
+use crate::data_provider::DataProvider;
 use crate::engine_evaluator::evaluate_expression;
-use crate::engine_function::get_column_name;
-use crate::engine_function::select_gql_objects;
 
 #[allow(clippy::borrowed_box)]
 pub fn execute_statement(
     env: &mut Environment,
     statement: &Box<dyn Statement>,
-    repo: &gix::Repository,
+    data_provider: &Box<dyn DataProvider>,
     gitql_object: &mut GitQLObject,
     alias_table: &mut HashMap<String, String>,
     hidden_selection: &Vec<String>,
@@ -47,7 +46,13 @@ pub fn execute_statement(
                 alias_table.insert(alias.0.to_string(), alias.1.to_string());
             }
 
-            execute_select_statement(env, statement, repo, gitql_object, hidden_selection)
+            execute_select_statement(
+                env,
+                statement,
+                data_provider,
+                gitql_object,
+                hidden_selection,
+            )
         }
         Where => {
             let statement = statement.as_any().downcast_ref::<WhereStatement>().unwrap();
@@ -102,10 +107,11 @@ pub fn execute_statement(
     }
 }
 
+#[allow(clippy::borrowed_box)]
 fn execute_select_statement(
     env: &mut Environment,
     statement: &SelectStatement,
-    repo: &gix::Repository,
+    data_provider: &Box<dyn DataProvider>,
     gitql_object: &mut GitQLObject,
     hidden_selections: &Vec<String>,
 ) -> Result<(), String> {
@@ -127,21 +133,24 @@ fn execute_select_statement(
     }
 
     // Select objects from the target table
-    let mut objects = select_gql_objects(
+    let mut provided_object = data_provider.provide(
         env,
-        repo,
-        statement.table_name.to_string(),
+        &statement.table_name,
         &fields_names,
         &gitql_object.titles,
         &statement.fields_values,
-    )?;
+    );
+
+    gitql_object.groups.append(&mut provided_object.groups);
 
     // Push the selected elements as a first group
+    /*
     if gitql_object.is_empty() {
         gitql_object.groups.push(objects);
     } else {
         gitql_object.groups[0].rows.append(&mut objects.rows);
     }
+    */
 
     Ok(())
 }
@@ -465,4 +474,12 @@ pub fn execute_global_variable_statement(
     let value = evaluate_expression(env, &statement.value, &[], &vec![])?;
     env.globals.insert(statement.name.to_string(), value);
     Ok(())
+}
+
+#[inline(always)]
+pub fn get_column_name(alias_table: &HashMap<String, String>, name: &str) -> String {
+    alias_table
+        .get(name)
+        .unwrap_or(&name.to_string())
+        .to_string()
 }
