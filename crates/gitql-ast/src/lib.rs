@@ -4,6 +4,7 @@ pub mod environment;
 pub mod expression;
 pub mod function;
 pub mod object;
+pub mod schema;
 pub mod statement;
 pub mod types;
 pub mod value;

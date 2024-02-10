@@ -1,6 +1,9 @@
 use atty::Stream;
 use git_data_provider::GitDataProvider;
+use git_schema::TABLES_FIELDS_NAMES;
+use git_schema::TABLES_FIELDS_TYPES;
 use gitql_ast::environment::Environment;
+use gitql_ast::schema::Schema;
 use gitql_cli::arguments;
 use gitql_cli::arguments::Arguments;
 use gitql_cli::arguments::Command;
@@ -16,6 +19,7 @@ use gitql_parser::parser;
 use gitql_parser::tokenizer;
 
 mod git_data_provider;
+mod git_schema;
 
 fn main() {
     if cfg!(debug_assertions) {
@@ -42,7 +46,11 @@ fn main() {
             }
 
             let repos = git_repos_result.ok().unwrap();
-            let mut env = Environment::default();
+            let schema = Schema {
+                tables_fields_names: TABLES_FIELDS_NAMES.to_owned(),
+                tables_fields_types: TABLES_FIELDS_TYPES.to_owned(),
+            };
+            let mut env = Environment::new(schema);
             execute_gitql_query(query, &arguments, &repos, &mut env, &mut reporter);
         }
         Command::Help => {
@@ -68,7 +76,12 @@ fn launch_gitql_repl(arguments: Arguments) {
         return;
     }
 
-    let mut global_env = Environment::default();
+    let schema = Schema {
+        tables_fields_names: TABLES_FIELDS_NAMES.to_owned(),
+        tables_fields_types: TABLES_FIELDS_TYPES.to_owned(),
+    };
+
+    let mut global_env = Environment::new(schema);
     let git_repositories = git_repos_result.ok().unwrap();
 
     let mut input = String::new();

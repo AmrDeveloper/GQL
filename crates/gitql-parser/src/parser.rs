@@ -1,5 +1,4 @@
 use gitql_ast::environment::Environment;
-use gitql_ast::environment::TABLES_FIELDS_NAMES;
 use gitql_ast::value::Value;
 use std::collections::HashMap;
 use std::num::IntErrorKind;
@@ -23,7 +22,6 @@ use gitql_ast::function::FUNCTIONS;
 use gitql_ast::function::PROTOTYPES;
 use gitql_ast::statement::*;
 use gitql_ast::types::DataType;
-use gitql_ast::types::TABLES_FIELDS_TYPES;
 
 pub fn parse_gql(tokens: Vec<Token>, env: &mut Environment) -> Result<Query, Box<Diagnostic>> {
     let mut position = 0;
@@ -416,14 +414,14 @@ fn parse_select_statement(
         *position += 1;
 
         table_name = &table_name_token.ok().unwrap().literal;
-        if !TABLES_FIELDS_NAMES.contains_key(table_name) {
+        if !env.schema.tables_fields_names.contains_key(table_name) {
             return Err(Diagnostic::error("Unresolved table name")
                 .add_help("Check the documentations to see available tables")
                 .with_location(get_safe_location(tokens, *position))
                 .as_boxed());
         }
 
-        register_current_table_fields_types(table_name, env);
+        register_current_table_fields_types(env, table_name);
     }
 
     // Make sure `SELECT *` used with specific table
@@ -448,6 +446,7 @@ fn parse_select_statement(
     // If it `select *` make all table fields selectable
     if is_select_all {
         select_all_table_fields(
+            env,
             table_name,
             &mut context.selected_fields,
             &mut fields_names,
@@ -2237,23 +2236,24 @@ fn get_expression_name(expression: &Box<dyn Expression>) -> Result<String, ()> {
 }
 
 #[inline(always)]
-fn register_current_table_fields_types(table_name: &str, symbol_table: &mut Environment) {
-    let table_fields_names = &TABLES_FIELDS_NAMES[table_name];
+fn register_current_table_fields_types(env: &mut Environment, table_name: &str) {
+    let table_fields_names = &env.schema.tables_fields_names[table_name].clone();
     for field_name in table_fields_names {
-        let field_type = TABLES_FIELDS_TYPES[field_name].clone();
-        symbol_table.define(field_name.to_string(), field_type);
+        let field_type = env.schema.tables_fields_types[field_name].clone();
+        env.define(field_name.to_string(), field_type);
     }
 }
 
 #[inline(always)]
 fn select_all_table_fields(
+    env: &mut Environment,
     table_name: &str,
     selected_fields: &mut Vec<String>,
     fields_names: &mut Vec<String>,
     fields_values: &mut Vec<Box<dyn Expression>>,
 ) {
-    if TABLES_FIELDS_NAMES.contains_key(table_name) {
-        let table_fields = &TABLES_FIELDS_NAMES[table_name];
+    if env.schema.tables_fields_names.contains_key(table_name) {
+        let table_fields = &env.schema.tables_fields_names[table_name];
 
         for field in table_fields {
             if !fields_names.contains(&field.to_string()) {

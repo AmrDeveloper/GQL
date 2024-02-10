@@ -459,6 +459,7 @@ dependencies = [
  "gitql-engine",
  "gitql-parser",
  "gix",
+ "lazy_static",
 ]
 
 [[package]]
@@ -495,7 +496,6 @@ name = "gitql-parser"
 version = "0.12.0"
 dependencies = [
  "gitql-ast",
- "lazy_static",
 ]
 
 [[package]]

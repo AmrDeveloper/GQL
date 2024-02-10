@@ -1,48 +1,12 @@
-use lazy_static::lazy_static;
 use std::collections::HashMap;
 
+use crate::schema::Schema;
 use crate::types::DataType;
 use crate::value::Value;
 
-lazy_static! {
-    pub static ref TABLES_FIELDS_NAMES: HashMap<&'static str, Vec<&'static str>> = {
-        let mut map = HashMap::new();
-        map.insert("refs", vec!["name", "full_name", "type", "repo"]);
-        map.insert(
-            "commits",
-            vec![
-                "commit_id",
-                "title",
-                "message",
-                "name",
-                "email",
-                "datetime",
-                "repo",
-            ],
-        );
-        map.insert(
-            "branches",
-            vec!["name", "commit_count", "is_head", "is_remote", "repo"],
-        );
-        map.insert(
-            "diffs",
-            vec![
-                "commit_id",
-                "name",
-                "email",
-                "insertions",
-                "deletions",
-                "files_changed",
-                "repo",
-            ],
-        );
-        map.insert("tags", vec!["name", "repo"]);
-        map
-    };
-}
-
-#[derive(Default)]
 pub struct Environment {
+    /// Data schema information contains table, fields names and types
+    pub schema: Schema,
     /// All Global Variables values that can life for this program session
     pub globals: HashMap<String, Value>,
     /// All Global Variables Types that can life for this program session
@@ -52,6 +16,16 @@ pub struct Environment {
 }
 
 impl Environment {
+    /// Create new [`Environment`] instance with Data Schema
+    pub fn new(schema: Schema) -> Self {
+        Self {
+            schema,
+            globals: HashMap::default(),
+            globals_types: HashMap::default(),
+            scopes: HashMap::default(),
+        }
+    }
+
     /// Define in the current scope
     pub fn define(&mut self, str: String, data_type: DataType) {
         self.scopes.insert(str, data_type);

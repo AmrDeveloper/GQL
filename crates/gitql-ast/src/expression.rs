@@ -2,7 +2,7 @@ use std::any::Any;
 
 use crate::environment::Environment;
 use crate::function::PROTOTYPES;
-use crate::types::{DataType, TABLES_FIELDS_TYPES};
+use crate::types::DataType;
 use crate::value::Value;
 
 #[derive(PartialEq)]
@@ -109,8 +109,12 @@ impl Expression for SymbolExpression {
         }
 
         // Search in static table fields types
-        if TABLES_FIELDS_TYPES.contains_key(&self.value.as_str()) {
-            return TABLES_FIELDS_TYPES[&self.value.as_str()].clone();
+        if scope
+            .schema
+            .tables_fields_types
+            .contains_key(&self.value.as_str())
+        {
+            return scope.schema.tables_fields_types[&self.value.as_str()].clone();
         }
 
         DataType::Undefined

@@ -1,28 +1,4 @@
-use lazy_static::lazy_static;
-use std::collections::HashMap;
 use std::fmt;
-
-lazy_static! {
-    pub static ref TABLES_FIELDS_TYPES: HashMap<&'static str, DataType> = {
-        let mut map = HashMap::new();
-        map.insert("commit_id", DataType::Text);
-        map.insert("title", DataType::Text);
-        map.insert("message", DataType::Text);
-        map.insert("name", DataType::Text);
-        map.insert("full_name", DataType::Text);
-        map.insert("insertions", DataType::Integer);
-        map.insert("deletions", DataType::Integer);
-        map.insert("files_changed", DataType::Integer);
-        map.insert("email", DataType::Text);
-        map.insert("type", DataType::Text);
-        map.insert("datetime", DataType::DateTime);
-        map.insert("is_head", DataType::Boolean);
-        map.insert("is_remote", DataType::Boolean);
-        map.insert("commit_count", DataType::Integer);
-        map.insert("repo", DataType::Text);
-        map
-    };
-}
 
 /// Represent the data types for values to be used in type checker
 #[derive(Clone)]
