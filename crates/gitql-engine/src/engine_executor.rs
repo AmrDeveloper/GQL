@@ -142,16 +142,6 @@ fn execute_select_statement(
     );
 
     gitql_object.groups.append(&mut provided_object.groups);
-
-    // Push the selected elements as a first group
-    /*
-    if gitql_object.is_empty() {
-        gitql_object.groups.push(objects);
-    } else {
-        gitql_object.groups[0].rows.append(&mut objects.rows);
-    }
-    */
-
     Ok(())
 }
 

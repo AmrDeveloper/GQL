@@ -29,6 +29,9 @@ pub enum DataType {
     Optional(Box<DataType>),
     /// Represent variable arguments so can pass 0 or more value with spastic type, must be last parameter
     Varargs(Box<DataType>),
+    /// Represent dynamic type that calculated depending on other types (for example depending on Parameters)
+    /// For now the main use case is to use it to calculate return type of function that has many variants
+    Dynamic(fn(&[DataType]) -> DataType),
 }
 
 impl PartialEq for DataType {
@@ -140,6 +143,9 @@ impl fmt::Display for DataType {
             DataType::Varargs(data_type) => {
                 write!(f, "...{}", data_type)
             }
+            DataType::Dynamic(_function) => {
+                write!(f, "DynamicType")
+            }
         }
     }
 }
@@ -200,4 +206,10 @@ impl DataType {
     pub fn is_varargs(&self) -> bool {
         matches!(self, DataType::Varargs(_))
     }
+}
+
+/// Function to used with Dynamic Data type
+/// The result is the same type as the first parameter
+pub fn same_type_as_first_parameter(parameters: &[DataType]) -> DataType {
+    parameters[0].clone()
 }

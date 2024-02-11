@@ -1,4 +1,5 @@
 use crate::object::Group;
+use crate::types::same_type_as_first_parameter;
 use crate::types::DataType;
 use crate::value::Value;
 
@@ -39,7 +40,7 @@ lazy_static! {
                     DataType::Time,
                     DataType::DateTime,
                 ]),
-                result: DataType::Integer,
+                result: DataType::Dynamic(same_type_as_first_parameter),
             },
         );
         map.insert(
@@ -53,7 +54,7 @@ lazy_static! {
                     DataType::Time,
                     DataType::DateTime,
                 ]),
-                result: DataType::Integer,
+                result: DataType::Dynamic(same_type_as_first_parameter),
             },
         );
         map.insert(
