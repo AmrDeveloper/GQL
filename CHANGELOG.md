@@ -1,6 +1,15 @@
 Change Log
 ==========
 
+Version 0.14.0 *(2024-02-16)*
+-----------------------------
+
+* Implement DataProvider interface to allow custom data.
+* Implement Data Schema component to allow custom data schema.
+* Improve `ROUND` implementation to supports decimal places.
+* Implement `MOD` function.
+* Implement Dynamic DataType to be calculated depending on other types.
+
 Version 0.13.0 *(2024-01-25)*
 -----------------------------
 
