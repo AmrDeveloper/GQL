@@ -808,7 +808,7 @@ fn consume_octal_number(
     start: &mut usize,
 ) -> Result<Token, Box<Diagnostic>> {
     let mut has_digit = false;
-    while *pos < chars.len() && ((chars[*pos] >= '0' || chars[*pos] < '8') || chars[*pos] == '_') {
+    while *pos < chars.len() && ((chars[*pos] >= '0' && chars[*pos] < '8') || chars[*pos] == '_') {
         *pos += 1;
         has_digit = true;
     }
