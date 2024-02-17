@@ -248,7 +248,7 @@ pub fn are_types_equals(
 }
 
 /// Checks if all values has the same type
-/// If they has the same type, return it or return None
+/// If they have the same type, return it or return None
 pub fn check_all_values_are_same_type(
     env: &mut Environment,
     arguments: &[Box<dyn Expression>],
