@@ -644,7 +644,7 @@ fn consume_global_variable_name(
         *pos += 1;
     }
 
-    // Identifier is be case-insensitive by default, convert to lowercase to be easy to compare and lookup
+    // Identifier is being case-insensitive by default, convert to lowercase to be easy to compare and lookup
     let literal = &chars[*start..*pos];
     let string = String::from_utf8(literal.iter().map(|&c| c as u8).collect())
         .unwrap()
@@ -667,7 +667,7 @@ fn consume_identifier(chars: &[char], pos: &mut usize, start: &mut usize) -> Tok
         *pos += 1;
     }
 
-    // Identifier is be case-insensitive by default, convert to lowercase to be easy to compare and lookup
+    // Identifier is being case-insensitive by default, convert to lowercase to be easy to compare and lookup``
     let literal = &chars[*start..*pos];
     let string = String::from_utf8(literal.iter().map(|&c| c as u8).collect())
         .unwrap()
