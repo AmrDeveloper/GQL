@@ -2195,6 +2195,14 @@ fn un_expected_expression_error(tokens: &[Token], position: &usize) -> Box<Diagn
             .as_boxed();
     }
 
+    // `<= >` the user may mean to write `<=>`
+    if previous.kind == TokenKind::LessEqual && current.kind == TokenKind::Greater {
+        return Diagnostic::error("Unexpected `<= >`, do you mean `<=>`?")
+            .add_help("Try to remove space between `<= >`")
+            .with_location(location)
+            .as_boxed();
+    }
+
     // Default error message
     Diagnostic::error("Can't complete parsing this expression")
         .with_location(location)
