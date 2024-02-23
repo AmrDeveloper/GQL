@@ -56,6 +56,7 @@ lazy_static! {
         map.insert("monthname", date_monthname);
         map.insert("hour", date_hour);
         map.insert("isdate", date_is_date);
+        map.insert("dayofyear", date_day_of_year);
 
         // Numeric functions
         map.insert("abs", numeric_abs);
@@ -333,6 +334,13 @@ lazy_static! {
             Prototype {
                 parameters: vec![DataType::Any],
                 result: DataType::Boolean,
+            }
+        );
+        map.insert(
+            "dayofyear",
+            Prototype {
+                parameters: vec![DataType::Date],
+                result: DataType::Integer,
             }
         );
         // Numeric functions
@@ -777,6 +785,11 @@ fn date_hour(inputs: &[Value]) -> Value {
 
 fn date_is_date(inputs: &[Value]) -> Value {
     Value::Boolean(inputs[0].data_type().is_date())
+}
+
+fn date_day_of_year(inputs: &[Value]) -> Value {
+    let date = inputs[0].as_date();
+    Value::Integer(date_utils::date_to_day_of_the_year(date).into())
 }
 
 // Numeric functions
