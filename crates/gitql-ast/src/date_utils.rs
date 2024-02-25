@@ -118,6 +118,12 @@ pub fn date_to_month_name(date: i64) -> String {
     month_name.to_string()
 }
 
+pub fn date_to_quarter_index(date: i64) -> i64 {
+    let parsed_date = NaiveDateTime::from_timestamp_opt(date, 0).unwrap();
+    let month = parsed_date.month() as i64;
+    (month - 1) / 3 + 1
+}
+
 pub fn time_stamp_from_year_and_day(year: i32, day_of_year: u32) -> i64 {
     let date = NaiveDate::from_yo_opt(year, day_of_year).unwrap();
     let datetime = date.and_hms_opt(0, 0, 0).unwrap();

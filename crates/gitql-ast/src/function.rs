@@ -56,10 +56,10 @@ lazy_static! {
         map.insert("monthname", date_monthname);
         map.insert("hour", date_hour);
         map.insert("isdate", date_is_date);
-
         map.insert("dayofweek", date_day_of_week);
         map.insert("dayofmonth", date_day_of_month);
         map.insert("dayofyear", date_day_of_year);
+        map.insert("quarter", date_quarter);
 
         // Numeric functions
         map.insert("abs", numeric_abs);
@@ -355,6 +355,13 @@ lazy_static! {
         );
         map.insert(
             "dayofyear",
+            Prototype {
+                parameters: vec![DataType::Date],
+                result: DataType::Integer,
+            }
+        );
+        map.insert(
+            "quarter",
             Prototype {
                 parameters: vec![DataType::Date],
                 result: DataType::Integer,
@@ -817,6 +824,11 @@ fn date_day_of_month(inputs: &[Value]) -> Value {
 fn date_day_of_year(inputs: &[Value]) -> Value {
     let date = inputs[0].as_date();
     Value::Integer(date_utils::date_to_day_number_in_year(date).into())
+}
+
+fn date_quarter(inputs: &[Value]) -> Value {
+    let date = inputs[0].as_date();
+    Value::Integer(date_utils::date_to_quarter_index(date))
 }
 
 // Numeric functions

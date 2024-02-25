@@ -58,22 +58,23 @@ SELECT UNICODE("AmrDeveloper")
 
 ### Date functions
 
-| Name              | Parameters                | Return   | Description                                                                |
-| ----------------- | ------------------------- | -------- | -------------------------------------------------------------------------- |
-| CURRENT_TIME      |                           | Time     | Return current time in `HH:MM:SS` format.                                  |
-| CURRENT_DATE      |                           | Date     | Return current date in `YYYY-MM-DD` format.                                |
-| CURRENT_TIMESTAMP |                           | DateTime | Return current date time in `YYYY-MM-DD HH:MM:SS` format.                  |
-| MAKEDATE          | Integer, Integer          | Date     | Create and return a date based on a year and a number of days.             |
-| MAKETIME          | Integer, Integer, Integer | Time     | Create and return a time value based on an hour, minute, and second value. |
-| NOW               |                           | DateTime | Return current date time in `YYYY-MM-DD HH:MM:SS` format.                  |
-| Day               | Date                      | Integer  | Returns the index of the day (1 to 31) in the date.                        |
-| DAYNAME           | Date                      | Text     | Returns the name of the day given a timestamp.                             |
-| MONTHNAME         | Date                      | Text     | Returns the name of the month given a timestamp.                           |
-| HOUR              | DateTime                  | Integer  | Returns the hour part of a datetime.                                       |
-| ISDATE            | Any                       | Boolean  | Return TRUE if the argument type is Date.                                  |
-| DAYOFWEEK         | Date                      | Integer  | Returns the day of the week for a given date (a number from 1 to 7)        |
-| DAYOFMONTH        | Date                      | Integer  | Returns the day of the month for a given date (a number from 1 to 31)      |
-| DAYOFYEAR         | Date                      | Integer  | Returns the day of the year for a given date (a number from 1 to 366)      |
+| Name              | Parameters                | Return   | Description                                                                   |
+| ----------------- | ------------------------- | -------- | ----------------------------------------------------------------------------- |
+| CURRENT_TIME      |                           | Time     | Return current time in `HH:MM:SS` format.                                     |
+| CURRENT_DATE      |                           | Date     | Return current date in `YYYY-MM-DD` format.                                   |
+| CURRENT_TIMESTAMP |                           | DateTime | Return current date time in `YYYY-MM-DD HH:MM:SS` format.                     |
+| MAKEDATE          | Integer, Integer          | Date     | Create and return a date based on a year and a number of days.                |
+| MAKETIME          | Integer, Integer, Integer | Time     | Create and return a time value based on an hour, minute, and second value.    |
+| NOW               |                           | DateTime | Return current date time in `YYYY-MM-DD HH:MM:SS` format.                     |
+| Day               | Date                      | Integer  | Returns the index of the day (1 to 31) in the date.                           |
+| DAYNAME           | Date                      | Text     | Returns the name of the day given a timestamp.                                |
+| MONTHNAME         | Date                      | Text     | Returns the name of the month given a timestamp.                              |
+| HOUR              | DateTime                  | Integer  | Returns the hour part of a datetime.                                          |
+| ISDATE            | Any                       | Boolean  | Return TRUE if the argument type is Date.                                     |
+| DAYOFWEEK         | Date                      | Integer  | Returns the day of the week for a given date (a number from 1 to 7)           |
+| DAYOFMONTH        | Date                      | Integer  | Returns the day of the month for a given date (a number from 1 to 31)         |
+| DAYOFYEAR         | Date                      | Integer  | Returns the day of the year for a given date (a number from 1 to 366)         |
+| QUARTER           | Date                      | Integer  | Returns the quarter of the year for a given date value (a number from 1 to 4) |
 
 ### Date functions samples
 
