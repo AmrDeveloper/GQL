@@ -1698,7 +1698,7 @@ fn parse_arguments_expressions(
     if consume_kind(tokens, *position, TokenKind::LeftParen).is_ok() {
         *position += 1;
 
-        while tokens[*position].kind != TokenKind::RightParen {
+        while *position < tokens.len() && tokens[*position].kind != TokenKind::RightParen {
             let argument = parse_expression(context, env, tokens, position)?;
             let argument_literal = get_expression_name(&argument);
             if argument_literal.is_ok() {
@@ -1708,7 +1708,7 @@ fn parse_arguments_expressions(
 
             arguments.push(argument);
 
-            if tokens[*position].kind == TokenKind::Comma {
+            if *position < tokens.len() && tokens[*position].kind == TokenKind::Comma {
                 *position += 1;
             } else {
                 break;
