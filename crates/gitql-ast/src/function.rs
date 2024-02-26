@@ -43,6 +43,7 @@ lazy_static! {
         map.insert("concat_ws", text_concat_ws);
         map.insert("unicode", text_unicode);
         map.insert("strcmp", text_strcmp);
+        map.insert("quotename", text_quotename);
 
         // Date functions
         map.insert("current_date", date_current_date);
@@ -260,6 +261,13 @@ lazy_static! {
              },
         );
         map.insert("strcmp", Prototype { parameters: vec![DataType::Text, DataType::Text], result: DataType::Integer });
+        map.insert(
+            "quotename",
+            Prototype {
+                parameters: vec![DataType::Text, DataType::Optional(Box::new(DataType::Text))],
+                result: DataType::Text
+            }
+        );
 
         // Date functions
         map.insert(
@@ -750,6 +758,21 @@ fn text_strcmp(inputs: &[Value]) -> Value {
         std::cmp::Ordering::Equal => 2,
         std::cmp::Ordering::Greater => 0,
     })
+}
+
+fn text_quotename(inputs: &[Value]) -> Value {
+    let str = inputs[0].as_text();
+    let quote = inputs
+        .get(1)
+        .map(Value::as_text)
+        .map(|str| str.chars().collect())
+        .unwrap_or_else(|| vec!['[', ']']);
+
+    match quote.as_slice() {
+        [single] => Value::Text(format!("{single}{str}{single}")),
+        [start, end] => Value::Text(format!("{start}{str}{end}")),
+        _ => Value::Null,
+    }
 }
 
 // Date functions

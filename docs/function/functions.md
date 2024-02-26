@@ -30,6 +30,7 @@ note that all functions names are case-insensitive.
 | CONCAT_WS  | Text, Any, Any, ...Any       | Text    | Add several string representations of values together together with separate.                                                                                        |
 | UNICODE    | Text                         | Integer | Return an integer value (the Unicode value), for the first character of the input expression.                                                                        |
 | STRCMP     | Text , Text                  | Integer | Return 0 If string1 = string2, -1 if string1 < string2, this function returns -1, and 1 if string1 > string2                                                         |
+| QUOTENAME  | Text , Text                  | Text    | Returns the string (first argument) with specified delimiters (second argument), defaulting to []                                                                    |
 
 ### String functions samples
 
@@ -54,6 +55,9 @@ SELECT SOUNDEX("AmrDeveloper") as code
 SELECT CONCAT("amrdeveloper", ".github.io")
 SELECT CONCAT_WS("_", "Git", "Query", "Language"); 
 SELECT UNICODE("AmrDeveloper")
+SELECT QUOTENAME("AmrDeveloper")
+SELECT QUOTENAME("AmrDeveloper", ".")
+SELECT QUOTENAME("AmrDeveloper", "{}")
 ```
 
 ### Date functions
