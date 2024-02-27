@@ -80,6 +80,7 @@ SELECT QUOTENAME("AmrDeveloper", "{}")
 | DAYOFYEAR         | Date                      | Integer  | Returns the day of the year for a given date (a number from 1 to 366)         |
 | QUARTER           | Date                      | Integer  | Returns the quarter of the year for a given date value (a number from 1 to 4) |
 | YEAR              | Date                      | Integer  | Returns the year part of the date                                             |
+| TO_DAYS           | Date                      | Integer  | Returns the number of days between a date and date "0000-00-00"               |
 
 ### Date functions samples
 

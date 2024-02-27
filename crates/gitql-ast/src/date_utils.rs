@@ -129,6 +129,15 @@ pub fn date_to_year(date: i64) -> i32 {
     parsed_date.year()
 }
 
+pub fn date_to_days_count(date: i64) -> i64 {
+    let parsed_date = NaiveDateTime::from_timestamp_opt(date, 0).unwrap();
+    let days_since_year_0 = parsed_date.ordinal0() as i64;
+    let year = parsed_date.year() as i64;
+    let leap_years = (year - 1) / 4 - (year - 1) / 100 + (year - 1) / 400;
+    let non_leap_years = year - leap_years;
+    365 * non_leap_years + 366 * leap_years + days_since_year_0
+}
+
 pub fn time_stamp_from_year_and_day(year: i32, day_of_year: u32) -> i64 {
     let date = NaiveDate::from_yo_opt(year, day_of_year).unwrap();
     let datetime = date.and_hms_opt(0, 0, 0).unwrap();
