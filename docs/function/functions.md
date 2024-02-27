@@ -79,6 +79,7 @@ SELECT QUOTENAME("AmrDeveloper", "{}")
 | DAYOFMONTH        | Date                      | Integer  | Returns the day of the month for a given date (a number from 1 to 31)         |
 | DAYOFYEAR         | Date                      | Integer  | Returns the day of the year for a given date (a number from 1 to 366)         |
 | QUARTER           | Date                      | Integer  | Returns the quarter of the year for a given date value (a number from 1 to 4) |
+| YEAR              | Date                      | Integer  | Returns the year part of the date                                             |
 
 ### Date functions samples
 
