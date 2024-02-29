@@ -47,9 +47,7 @@ pub fn evaluate(
             execute_global_variable_statement(env, &global_variable)?;
             Ok(EvaluationResult::SetGlobalVariable)
         }
-        Query::Describe(describe_statement) => {
-            evaluate_describe_query(env, data_provider, describe_statement)
-        }
+        Query::Describe(describe_statement) => evaluate_describe_query(env, describe_statement),
     }
 }
 
@@ -186,7 +184,6 @@ fn apply_distinct_on_objects_group(gitql_object: &mut GitQLObject, hidden_select
 
 pub fn evaluate_describe_query(
     env: &mut Environment,
-    _: &Box<dyn DataProvider>,
     stmt: DescribeStatement,
 ) -> Result<EvaluationResult, String> {
     let mut gitql_object = GitQLObject::default();
@@ -197,7 +194,7 @@ pub fn evaluate_describe_query(
         .tables_fields_names
         .get(&stmt.table_name.as_str());
 
-    if let None = table_fields {
+    if table_fields.is_none() {
         return Err(format!("Table {:?} doesnt exist", &stmt.table_name));
     }
 
@@ -220,8 +217,8 @@ pub fn evaluate_describe_query(
         })
     }
 
-    return Ok(EvaluationResult::SelectedGroups(
+    Ok(EvaluationResult::SelectedGroups(
         gitql_object,
         hidden_selections,
-    ));
+    ))
 }
