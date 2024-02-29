@@ -195,8 +195,13 @@ pub fn evaluate_describe_query(
     let table_fields = env
         .schema
         .tables_fields_names
-        .get(&stmt.table_name.as_str())
-        .unwrap();
+        .get(&stmt.table_name.as_str());
+
+    if let None = table_fields {
+        return Err(format!("Table {:?} doesnt exist", &stmt.table_name));
+    }
+
+    let table_fields = table_fields.unwrap();
 
     for title in ["Field", "Type"] {
         gitql_object.titles.push(title.to_owned());
