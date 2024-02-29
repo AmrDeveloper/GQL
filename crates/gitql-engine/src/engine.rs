@@ -46,7 +46,7 @@ pub fn evaluate(
             execute_global_variable_statement(env, &global_variable)?;
             Ok(EvaluationResult::SetGlobalVariable)
         }
-        Query::ShowTables => evaluate_show_tables_query(env, data_provider),
+        Query::ShowTables => evaluate_show_tables_query(env),
     }
 }
 
@@ -181,10 +181,7 @@ fn apply_distinct_on_objects_group(gitql_object: &mut GitQLObject, hidden_select
     }
 }
 
-pub fn evaluate_show_tables_query(
-    env: &mut Environment,
-    _: &Box<dyn DataProvider>,
-) -> Result<EvaluationResult, String> {
+pub fn evaluate_show_tables_query(env: &mut Environment) -> Result<EvaluationResult, String> {
     let mut gitql_object = GitQLObject::default();
     let hidden_selections = vec![];
 
@@ -198,8 +195,8 @@ pub fn evaluate_show_tables_query(
         })
     }
 
-    return Ok(EvaluationResult::SelectedGroups(
+    Ok(EvaluationResult::SelectedGroups(
         gitql_object,
         hidden_selections,
-    ));
+    ))
 }
