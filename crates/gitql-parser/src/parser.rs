@@ -29,6 +29,7 @@ pub fn parse_gql(tokens: Vec<Token>, env: &mut Environment) -> Result<Query, Box
     let query_result = match &first_token.kind {
         TokenKind::Set => parse_set_query(env, &tokens, &mut position),
         TokenKind::Select => parse_select_query(env, &tokens, &mut position),
+        TokenKind::Describe => parse_describe_query(env, &tokens, &mut position),
         _ => Err(un_expected_statement_error(&tokens, &mut position)),
     };
 
@@ -104,6 +105,31 @@ fn parse_set_query(
     Ok(Query::GlobalVariableDeclaration(GlobalVariableStatement {
         name: name.to_string(),
         value,
+    }))
+}
+
+fn parse_describe_query(
+    _: &mut Environment,
+    tokens: &[Token],
+    position: &mut usize,
+) -> Result<Query, Box<Diagnostic>> {
+    let len = tokens.len();
+
+    // Consume Set keyword
+    *position += 1;
+
+    if *position >= len || tokens[*position].kind != TokenKind::Symbol {
+        return Err(Diagnostic::error("Expect table name after DESC Statement")
+            .with_location(get_safe_location(tokens, *position - 1))
+            .as_boxed());
+    }
+
+    let name = &tokens[*position].literal;
+
+    *position += 1;
+
+    Ok(Query::Describe(DescribeStatement {
+        table_name: name.to_string(),
     }))
 }
 

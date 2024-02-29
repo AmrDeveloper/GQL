@@ -23,6 +23,7 @@ pub trait Statement {
 pub enum Query {
     Select(GQLQuery),
     GlobalVariableDeclaration(GlobalVariableStatement),
+    Describe(DescribeStatement),
 }
 
 pub struct GQLQuery {
@@ -173,4 +174,9 @@ impl Statement for GlobalVariableStatement {
     fn kind(&self) -> StatementKind {
         StatementKind::GlobalVariable
     }
+}
+
+#[derive(Debug)]
+pub struct DescribeStatement {
+    pub table_name: String,
 }

@@ -16,6 +16,7 @@ pub enum TokenKind {
     Not,
     Like,
     Glob,
+    Describe,
 
     Case,
     When,
@@ -980,6 +981,7 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "not" => TokenKind::Not,
         "like" => TokenKind::Like,
         "glob" => TokenKind::Glob,
+        "describe" => TokenKind::Describe,
 
         // Logical Operators
         "or" => TokenKind::LogicalOr,
