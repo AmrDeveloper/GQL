@@ -9,9 +9,11 @@ use gitql_ast::environment::Environment;
 use gitql_ast::object::GitQLObject;
 use gitql_ast::object::Group;
 use gitql_ast::object::Row;
+use gitql_ast::statement::DescribeStatement;
 use gitql_ast::statement::GQLQuery;
 use gitql_ast::statement::Query;
 use gitql_ast::statement::SelectStatement;
+use gitql_ast::value::Value;
 
 use crate::data_provider::DataProvider;
 use crate::engine_executor::execute_global_variable_statement;
@@ -44,6 +46,9 @@ pub fn evaluate(
         Query::GlobalVariableDeclaration(global_variable) => {
             execute_global_variable_statement(env, &global_variable)?;
             Ok(EvaluationResult::SetGlobalVariable)
+        }
+        Query::Describe(describe_statement) => {
+            evaluate_describe_query(env, data_provider, describe_statement)
         }
     }
 }
@@ -177,4 +182,41 @@ fn apply_distinct_on_objects_group(gitql_object: &mut GitQLObject, hidden_select
         gitql_object.groups[0].rows.clear();
         gitql_object.groups[0].rows.append(&mut new_objects.rows);
     }
+}
+
+pub fn evaluate_describe_query(
+    env: &mut Environment,
+    _: &Box<dyn DataProvider>,
+    stmt: DescribeStatement,
+) -> Result<EvaluationResult, String> {
+    let mut gitql_object = GitQLObject::default();
+    let hidden_selections = vec![];
+
+    let table_fields = env
+        .schema
+        .tables_fields_names
+        .get(&stmt.table_name.as_str())
+        .unwrap();
+
+    for title in ["Field", "Type"] {
+        gitql_object.titles.push(title.to_owned());
+    }
+
+    for field in table_fields {
+        let value = env.schema.tables_fields_types.get(field).unwrap();
+
+        gitql_object.groups.push(Group {
+            rows: vec![Row {
+                values: vec![
+                    Value::Text(field.to_owned().to_owned()),
+                    Value::Text(value.to_string()),
+                ],
+            }],
+        })
+    }
+
+    return Ok(EvaluationResult::SelectedGroups(
+        gitql_object,
+        hidden_selections,
+    ));
 }
