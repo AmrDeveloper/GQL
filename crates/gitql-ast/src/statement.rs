@@ -23,6 +23,7 @@ pub trait Statement {
 pub enum Query {
     Select(GQLQuery),
     GlobalVariableDeclaration(GlobalVariableStatement),
+    ShowTables,
 }
 
 pub struct GQLQuery {
