@@ -1,4 +1,12 @@
-## GQL Tables 
+## GQL Tables
+
+You can see list of all tables directly in the repl using
+
+```sql
+show tables
+
+```
+
 ---
 
 ### References table

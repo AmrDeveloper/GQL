@@ -24,6 +24,7 @@ pub enum Query {
     Select(GQLQuery),
     GlobalVariableDeclaration(GlobalVariableStatement),
     Describe(DescribeStatement),
+    ShowTables,
 }
 
 pub struct GQLQuery {

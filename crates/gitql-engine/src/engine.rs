@@ -48,6 +48,7 @@ pub fn evaluate(
             Ok(EvaluationResult::SetGlobalVariable)
         }
         Query::Describe(describe_statement) => evaluate_describe_query(env, describe_statement),
+        Query::ShowTables => evaluate_show_tables_query(env),
     }
 }
 
@@ -213,6 +214,26 @@ pub fn evaluate_describe_query(
                     Value::Text(field.to_owned().to_owned()),
                     Value::Text(value.to_string()),
                 ],
+            }],
+        })
+    }
+
+    Ok(EvaluationResult::SelectedGroups(
+        gitql_object,
+        hidden_selections,
+    ))
+}
+
+pub fn evaluate_show_tables_query(env: &mut Environment) -> Result<EvaluationResult, String> {
+    let mut gitql_object = GitQLObject::default();
+    let hidden_selections = vec![];
+
+    gitql_object.titles.push("Tables".to_owned());
+
+    for table in env.schema.tables_fields_names.keys() {
+        gitql_object.groups.push(Group {
+            rows: vec![Row {
+                values: vec![Value::Text(table.to_owned().to_owned())],
             }],
         })
     }
