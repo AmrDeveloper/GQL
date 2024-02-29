@@ -12,6 +12,7 @@ use gitql_ast::object::Row;
 use gitql_ast::statement::GQLQuery;
 use gitql_ast::statement::Query;
 use gitql_ast::statement::SelectStatement;
+use gitql_ast::value::Value;
 
 use crate::data_provider::DataProvider;
 use crate::engine_executor::execute_global_variable_statement;
@@ -45,6 +46,7 @@ pub fn evaluate(
             execute_global_variable_statement(env, &global_variable)?;
             Ok(EvaluationResult::SetGlobalVariable)
         }
+        Query::ShowTables => evaluate_show_tables_query(env, data_provider),
     }
 }
 
@@ -177,4 +179,27 @@ fn apply_distinct_on_objects_group(gitql_object: &mut GitQLObject, hidden_select
         gitql_object.groups[0].rows.clear();
         gitql_object.groups[0].rows.append(&mut new_objects.rows);
     }
+}
+
+pub fn evaluate_show_tables_query(
+    env: &mut Environment,
+    _: &Box<dyn DataProvider>,
+) -> Result<EvaluationResult, String> {
+    let mut gitql_object = GitQLObject::default();
+    let hidden_selections = vec![];
+
+    gitql_object.titles.push("Tables".to_owned());
+
+    for table in env.schema.tables_fields_names.keys() {
+        gitql_object.groups.push(Group {
+            rows: vec![Row {
+                values: vec![Value::Text(table.to_owned().to_owned())],
+            }],
+        })
+    }
+
+    return Ok(EvaluationResult::SelectedGroups(
+        gitql_object,
+        hidden_selections,
+    ));
 }
