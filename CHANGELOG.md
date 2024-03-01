@@ -1,6 +1,16 @@
 Change Log
 ==========
 
+Version 0.15.0 *(2024-03-01)*
+-----------------------------
+
+* implement 'describe table_name' to show fields and types of a table.
+* Add mysql like `show tables` statement to list all available tables.
+* Implement `DAYOFWEEK`, `DAYOFMONTH` and `DAYOFYEAR` Date functions.
+* Implement `QUARTER`, `YEAR` and  `TO_DAYS` Date function.
+* Implement `QUOTENAME` String function.
+* Fix Parsing function without right paren at the end
+
 Version 0.14.0 *(2024-02-16)*
 -----------------------------
 
