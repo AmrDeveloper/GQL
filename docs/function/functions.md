@@ -82,6 +82,7 @@ SELECT QUOTENAME("AmrDeveloper", "{}")
 | YEAR              | Date                      | Integer  | Returns the year part of the date                                             |
 | MONTH             | Date                      | Integer  | Returns the month part of the date (a number from 1 to 12)                    |
 | TO_DAYS           | Date                      | Integer  | Returns the number of days between a date and date "0000-00-00"               |
+| LAST_DAY          | Date                      | Date     | Returns the last day of the month for a given date                            |
 
 ### Date functions samples
 

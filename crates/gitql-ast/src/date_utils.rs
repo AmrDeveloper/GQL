@@ -143,6 +143,24 @@ pub fn date_to_days_count(date: i64) -> i64 {
     365 * non_leap_years + 366 * leap_years + days_since_year_0
 }
 
+pub fn date_last_day(date: i64) -> i64 {
+    let parsed_date = NaiveDateTime::from_timestamp_opt(date, 0).unwrap();
+    let (year, month) = (parsed_date.year(), parsed_date.month());
+
+    let curr_month_start = NaiveDate::from_ymd_opt(year, month, 1).unwrap();
+    let next_month_start = if month < 12 {
+        NaiveDate::from_ymd_opt(year, month + 1, 1)
+    } else {
+        NaiveDate::from_ymd_opt(year + 1, 1, 1)
+    }
+    .unwrap();
+    let days_in_month = next_month_start - curr_month_start;
+
+    let parsed_date = parsed_date.with_day(1).unwrap();
+    let last_day = parsed_date + days_in_month - chrono::Duration::days(1);
+    last_day.timestamp()
+}
+
 pub fn time_stamp_from_year_and_day(year: i32, day_of_year: u32) -> i64 {
     let date = NaiveDate::from_yo_opt(year, day_of_year).unwrap();
     let datetime = date.and_hms_opt(0, 0, 0).unwrap();
