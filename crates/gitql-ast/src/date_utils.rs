@@ -129,6 +129,11 @@ pub fn date_to_year(date: i64) -> i32 {
     parsed_date.year()
 }
 
+pub fn date_to_month(date: i64) -> u32 {
+    let parsed_date = NaiveDateTime::from_timestamp_opt(date, 0).unwrap();
+    parsed_date.month()
+}
+
 pub fn date_to_days_count(date: i64) -> i64 {
     let parsed_date = NaiveDateTime::from_timestamp_opt(date, 0).unwrap();
     let days_since_year_0 = parsed_date.ordinal0() as i64;
