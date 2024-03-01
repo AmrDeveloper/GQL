@@ -63,6 +63,7 @@ lazy_static! {
         map.insert("quarter", date_quarter);
         map.insert("year", date_year);
         map.insert("to_days", date_to_days);
+        map.insert("last_day", date_last_day);
 
         // Numeric functions
         map.insert("abs", numeric_abs);
@@ -389,6 +390,13 @@ lazy_static! {
             Prototype {
                 parameters: vec![DataType::Date],
                 result: DataType::Integer,
+            }
+        );
+        map.insert(
+            "last_day",
+            Prototype {
+                parameters: vec![DataType::Date],
+                result: DataType::Date,
             }
         );
         // Numeric functions
@@ -878,6 +886,11 @@ fn date_year(inputs: &[Value]) -> Value {
 fn date_to_days(inputs: &[Value]) -> Value {
     let date = inputs[0].as_date();
     Value::Integer(date_utils::date_to_days_count(date))
+}
+
+fn date_last_day(inputs: &[Value]) -> Value {
+    let date = inputs[0].as_date();
+    Value::Date(date_utils::date_last_day(date))
 }
 
 // Numeric functions
