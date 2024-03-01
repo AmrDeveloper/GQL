@@ -56,6 +56,7 @@ lazy_static! {
         map.insert("dayname", date_dayname);
         map.insert("monthname", date_monthname);
         map.insert("hour", date_hour);
+        map.insert("minute", date_minute);
         map.insert("isdate", date_is_date);
         map.insert("dayofweek", date_day_of_week);
         map.insert("dayofmonth", date_day_of_month);
@@ -337,6 +338,13 @@ lazy_static! {
         );
         map.insert(
             "hour",
+            Prototype {
+                parameters: vec![DataType::DateTime],
+                result: DataType::Integer,
+            }
+        );
+        map.insert(
+            "minute",
             Prototype {
                 parameters: vec![DataType::DateTime],
                 result: DataType::Integer,
@@ -844,6 +852,12 @@ fn date_hour(inputs: &[Value]) -> Value {
     let date = inputs[0].as_date_time();
     let hour = date_utils::date_time_to_hour(date);
     Value::Integer(hour)
+}
+
+fn date_minute(inputs: &[Value]) -> Value {
+    let date = inputs[0].as_date_time();
+    let minute = date_utils::date_time_to_minute(date);
+    Value::Integer(minute)
 }
 
 fn date_is_date(inputs: &[Value]) -> Value {

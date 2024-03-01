@@ -65,6 +65,12 @@ pub fn date_time_to_hour(date: i64) -> i64 {
     dt.hour() as i64
 }
 
+pub fn date_time_to_minute(date: i64) -> i64 {
+    let date_time = NaiveDateTime::from_timestamp_opt(date, 0);
+    let dt = date_time.unwrap().time();
+    dt.minute() as i64
+}
+
 pub fn date_to_day_number_in_week(date: i64) -> u32 {
     let parsed_date = NaiveDateTime::from_timestamp_opt(date, 0).unwrap();
     parsed_date.weekday().number_from_sunday()
