@@ -64,6 +64,7 @@ lazy_static! {
         map.insert("quarter", date_quarter);
         map.insert("year", date_year);
         map.insert("month", date_month);
+        map.insert("weekday", date_weekday);
         map.insert("to_days", date_to_days);
         map.insert("last_day", date_last_day);
 
@@ -396,6 +397,13 @@ lazy_static! {
         );
         map.insert(
             "month",
+            Prototype {
+                parameters: vec![DataType::Date],
+                result: DataType::Integer,
+            }
+        );
+        map.insert(
+            "weekday",
             Prototype {
                 parameters: vec![DataType::Date],
                 result: DataType::Integer,
@@ -908,6 +916,11 @@ fn date_year(inputs: &[Value]) -> Value {
 fn date_month(inputs: &[Value]) -> Value {
     let date = inputs[0].as_date();
     Value::Integer(date_utils::date_to_month(date).into())
+}
+
+fn date_weekday(inputs: &[Value]) -> Value {
+    let date = inputs[0].as_date();
+    Value::Integer(date_utils::date_to_weekday(date).into())
 }
 
 fn date_to_days(inputs: &[Value]) -> Value {

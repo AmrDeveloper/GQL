@@ -140,6 +140,11 @@ pub fn date_to_month(date: i64) -> u32 {
     parsed_date.month()
 }
 
+pub fn date_to_weekday(date: i64) -> u32 {
+    let parsed_date = NaiveDateTime::from_timestamp_opt(date, 0).unwrap();
+    parsed_date.weekday().number_from_monday() - 1
+}
+
 pub fn date_to_days_count(date: i64) -> i64 {
     let parsed_date = NaiveDateTime::from_timestamp_opt(date, 0).unwrap();
     let days_since_year_0 = parsed_date.ordinal0() as i64;
