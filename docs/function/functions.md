@@ -79,6 +79,7 @@ SELECT QUOTENAME("AmrDeveloper", "{}")
 | DAYOFWEEK         | Date                      | Integer  | Returns the day of the week for a given date (a number from 1 to 7)           |
 | DAYOFMONTH        | Date                      | Integer  | Returns the day of the month for a given date (a number from 1 to 31)         |
 | DAYOFYEAR         | Date                      | Integer  | Returns the day of the year for a given date (a number from 1 to 366)         |
+| DAYOFWEEK         | Date                      | Integer  | Returns the week number for a given date (a number from 1 to 53).             |
 | QUARTER           | Date                      | Integer  | Returns the quarter of the year for a given date value (a number from 1 to 4) |
 | YEAR              | Date                      | Integer  | Returns the year part of the date                                             |
 | MONTH             | Date                      | Integer  | Returns the month part of the date (a number from 1 to 12)                    |

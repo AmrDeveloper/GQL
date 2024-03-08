@@ -86,6 +86,22 @@ pub fn date_to_day_number_in_year(date: i64) -> u32 {
     parsed_date.ordinal()
 }
 
+pub fn date_to_week_number_in_year(date: i64) -> u32 {
+    let parsed_date = NaiveDateTime::from_timestamp_opt(date, 0).unwrap();
+    let native_date = parsed_date.date();
+    let first_day_of_year = NaiveDate::from_ymd_opt(native_date.year(), 1, 1).unwrap();
+    let days_diff = native_date
+        .signed_duration_since(first_day_of_year)
+        .num_days();
+    let week_offset = match first_day_of_year.weekday() {
+        Weekday::Mon => 0,
+        _ => 1,
+    };
+
+    let days_with_offset = days_diff + week_offset;
+    (days_with_offset / 7) as u32 + 1
+}
+
 pub fn date_to_day_name(date: i64) -> String {
     let parsed_date = NaiveDateTime::from_timestamp_opt(date, 0).unwrap();
 
