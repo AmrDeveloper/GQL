@@ -64,6 +64,7 @@ SELECT QUOTENAME("AmrDeveloper", "{}")
 
 | Name              | Parameters                | Return   | Description                                                                   |
 | ----------------- | ------------------------- | -------- | ----------------------------------------------------------------------------- |
+| Date              | DateTime                  | Date     | Extracts the date part from a datetime expression.                            |
 | CURRENT_TIME      |                           | Time     | Return current time in `HH:MM:SS` format.                                     |
 | CURRENT_DATE      |                           | Date     | Return current date in `YYYY-MM-DD` format.                                   |
 | CURRENT_TIMESTAMP |                           | DateTime | Return current date time in `YYYY-MM-DD HH:MM:SS` format.                     |

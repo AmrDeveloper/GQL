@@ -46,6 +46,7 @@ lazy_static! {
         map.insert("quotename", text_quotename);
 
         // Date functions
+        map.insert("date", date_extract_date);
         map.insert("current_date", date_current_date);
         map.insert("current_time", date_current_time);
         map.insert("current_timestamp", date_current_timestamp);
@@ -278,6 +279,13 @@ lazy_static! {
         );
 
         // Date functions
+        map.insert(
+            "date",
+            Prototype {
+                parameters: vec![DataType::DateTime],
+                result: DataType::Date,
+            },
+        );
         map.insert(
             "current_date",
             Prototype {
@@ -840,6 +848,10 @@ fn text_quotename(inputs: &[Value]) -> Value {
 }
 
 // Date functions
+fn date_extract_date(inputs: &[Value]) -> Value {
+    let timestamp = inputs[0].as_date_time();
+    Value::Date(timestamp)
+}
 
 fn date_current_date(_inputs: &[Value]) -> Value {
     let time_stamp = date_utils::get_unix_timestamp_ms();
