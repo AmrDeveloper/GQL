@@ -68,6 +68,7 @@ lazy_static! {
         map.insert("weekday", date_weekday);
         map.insert("to_days", date_to_days);
         map.insert("last_day", date_last_day);
+        map.insert("yearweek", date_year_and_week);
 
         // Numeric functions
         map.insert("abs", numeric_abs);
@@ -429,6 +430,13 @@ lazy_static! {
             Prototype {
                 parameters: vec![DataType::Date],
                 result: DataType::Date,
+            }
+        );
+        map.insert(
+            "yearweek",
+            Prototype {
+                parameters: vec![DataType::Date],
+                result: DataType::Text,
             }
         );
         // Numeric functions
@@ -914,6 +922,13 @@ fn date_day_of_year(inputs: &[Value]) -> Value {
 fn date_week_of_year(inputs: &[Value]) -> Value {
     let date = inputs[0].as_date();
     Value::Integer(date_utils::date_to_week_number_in_year(date).into())
+}
+
+fn date_year_and_week(inputs: &[Value]) -> Value {
+    let date = inputs[0].as_date();
+    let year = date_utils::date_to_year(date);
+    let week_number = date_utils::date_to_week_number_in_year(date);
+    Value::Text(format!("{}{}", year, week_number))
 }
 
 fn date_quarter(inputs: &[Value]) -> Value {

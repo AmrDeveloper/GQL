@@ -86,6 +86,7 @@ SELECT QUOTENAME("AmrDeveloper", "{}")
 | WEEKDAY           | Date                      | Integer  | Returns the weekday number of the date (from 0 monday to 6 sunday)            |
 | TO_DAYS           | Date                      | Integer  | Returns the number of days between a date and date "0000-00-00"               |
 | LAST_DAY          | Date                      | Date     | Returns the last day of the month for a given date                            |
+| YEARWEEK          | Date                      | Text     | Returns the year and week number (a number from 0 to 53) for a given date     |
 
 ### Date functions samples
 
