@@ -282,7 +282,7 @@ lazy_static! {
         map.insert(
             "date",
             Prototype {
-                parameters: vec![DataType::DateTime],
+                parameters: vec![DataType::Variant(vec![DataType::Date, DataType::DateTime])],
                 result: DataType::Date,
             },
         );
@@ -849,6 +849,10 @@ fn text_quotename(inputs: &[Value]) -> Value {
 
 // Date functions
 fn date_extract_date(inputs: &[Value]) -> Value {
+    let argument_type = inputs[0].data_type();
+    if argument_type.is_date() {
+        return inputs[0].clone();
+    }
     let timestamp = inputs[0].as_date_time();
     Value::Date(timestamp)
 }

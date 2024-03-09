@@ -199,6 +199,13 @@ impl DataType {
         matches!(self, DataType::Variant(_))
     }
 
+    pub fn is_variant_with(&self, data_type: &DataType) -> bool {
+        match self {
+            DataType::Variant(types) => types.contains(data_type),
+            _ => false,
+        }
+    }
+
     pub fn is_optional(&self) -> bool {
         matches!(self, DataType::Optional(_))
     }

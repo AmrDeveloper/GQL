@@ -40,7 +40,10 @@ pub fn is_expression_type_equals(
     }
 
     // Cast expr type from Text literal to time
-    if data_type.is_time() && expr_type.is_text() && expr.kind() == ExpressionKind::String {
+    if (data_type.is_time() || data_type.is_variant_with(&DataType::Time))
+        && expr_type.is_text()
+        && expr.kind() == ExpressionKind::String
+    {
         let literal = expr.as_any().downcast_ref::<StringExpression>().unwrap();
         let string_literal_value = &literal.value;
         if !is_valid_time_format(string_literal_value) {
@@ -61,7 +64,10 @@ pub fn is_expression_type_equals(
     }
 
     // Cast expr type from Text literal to Date
-    if data_type.is_date() && expr_type.is_text() && expr.kind() == ExpressionKind::String {
+    if (data_type.is_date() || data_type.is_variant_with(&DataType::Date))
+        && expr_type.is_text()
+        && expr.kind() == ExpressionKind::String
+    {
         let literal = expr.as_any().downcast_ref::<StringExpression>().unwrap();
         let string_literal_value = &literal.value;
         if !is_valid_date_format(string_literal_value) {
@@ -82,7 +88,10 @@ pub fn is_expression_type_equals(
     }
 
     // Cast right hand side type from Text literal to DateTime
-    if data_type.is_datetime() && expr_type.is_text() && expr.kind() == ExpressionKind::String {
+    if (data_type.is_datetime() || data_type.is_variant_with(&DataType::DateTime))
+        && expr_type.is_text()
+        && expr.kind() == ExpressionKind::String
+    {
         let literal = expr.as_any().downcast_ref::<StringExpression>().unwrap();
         let string_literal_value = &literal.value;
         if !is_valid_datetime_format(string_literal_value) {
@@ -121,7 +130,10 @@ pub fn are_types_equals(
     }
 
     // Cast right hand side type from Text literal to time
-    if lhs_type.is_time() && rhs_type.is_text() && rhs.kind() == ExpressionKind::String {
+    if (lhs_type.is_time() || lhs_type.is_variant_with(&DataType::Time))
+        && rhs_type.is_text()
+        && rhs.kind() == ExpressionKind::String
+    {
         let expr = rhs.as_any().downcast_ref::<StringExpression>().unwrap();
         let string_literal_value = &expr.value;
         if !is_valid_time_format(string_literal_value) {
@@ -142,7 +154,10 @@ pub fn are_types_equals(
     }
 
     // Cast left hand side type from Text literal to time
-    if lhs_type.is_text() && rhs_type.is_time() && lhs.kind() == ExpressionKind::String {
+    if lhs_type.is_text()
+        && (rhs_type.is_time() || rhs_type.is_variant_with(&DataType::Time))
+        && lhs.kind() == ExpressionKind::String
+    {
         let expr = lhs.as_any().downcast_ref::<StringExpression>().unwrap();
         let string_literal_value = &expr.value;
         if !is_valid_time_format(string_literal_value) {
@@ -163,7 +178,10 @@ pub fn are_types_equals(
     }
 
     // Cast right hand side type from Text literal to Date
-    if lhs_type.is_date() && rhs_type.is_text() && rhs.kind() == ExpressionKind::String {
+    if (lhs_type.is_date() || lhs_type.is_variant_with(&DataType::Date))
+        && rhs_type.is_text()
+        && rhs.kind() == ExpressionKind::String
+    {
         let expr = rhs.as_any().downcast_ref::<StringExpression>().unwrap();
         let string_literal_value = &expr.value;
         if !is_valid_date_format(string_literal_value) {
@@ -184,7 +202,10 @@ pub fn are_types_equals(
     }
 
     // Cast left hand side type from Text literal to Date
-    if lhs_type.is_text() && rhs_type.is_date() && lhs.kind() == ExpressionKind::String {
+    if lhs_type.is_text()
+        && (rhs_type.is_date() || rhs_type.is_variant_with(&DataType::Date))
+        && lhs.kind() == ExpressionKind::String
+    {
         let expr = lhs.as_any().downcast_ref::<StringExpression>().unwrap();
         let string_literal_value = &expr.value;
         if !is_valid_date_format(string_literal_value) {
@@ -205,7 +226,10 @@ pub fn are_types_equals(
     }
 
     // Cast right hand side type from Text literal to DateTime
-    if lhs_type.is_datetime() && rhs_type.is_text() && rhs.kind() == ExpressionKind::String {
+    if (lhs_type.is_datetime() || lhs_type.is_variant_with(&DataType::DateTime))
+        && rhs_type.is_text()
+        && rhs.kind() == ExpressionKind::String
+    {
         let expr = rhs.as_any().downcast_ref::<StringExpression>().unwrap();
         let string_literal_value = &expr.value;
         if !is_valid_datetime_format(string_literal_value) {
@@ -225,7 +249,10 @@ pub fn are_types_equals(
     }
 
     // Cast Left hand side type from Text literal to DateTime
-    if lhs_type.is_text() && rhs_type.is_datetime() && lhs.kind() == ExpressionKind::String {
+    if lhs_type.is_text()
+        && (rhs_type.is_datetime() || rhs_type.is_variant_with(&DataType::DateTime))
+        && lhs.kind() == ExpressionKind::String
+    {
         let expr = lhs.as_any().downcast_ref::<StringExpression>().unwrap();
         let string_literal_value = &expr.value;
         if !is_valid_datetime_format(string_literal_value) {
