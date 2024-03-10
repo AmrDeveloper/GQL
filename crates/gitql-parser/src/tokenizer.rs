@@ -985,6 +985,10 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "describe" => TokenKind::Describe,
         "show" => TokenKind::Show,
 
+        // Integer division and Modulo operator
+        "div" => TokenKind::Slash,
+        "mod" => TokenKind::Percentage,
+
         // Logical Operators
         "or" => TokenKind::LogicalOr,
         "and" => TokenKind::LogicalAnd,
