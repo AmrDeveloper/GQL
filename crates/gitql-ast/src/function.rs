@@ -1,4 +1,5 @@
-use crate::date_utils;
+use crate::date_utils as GitQLDate;
+use crate::regex_utils as GitQLRegex;
 use crate::types::DataType;
 use crate::value::Value;
 
@@ -93,6 +94,9 @@ lazy_static! {
         map.insert("typeof", general_type_of);
         map.insert("greatest", general_greatest);
         map.insert("least", general_least);
+
+        // Regex Functions
+        map.insert("regexp_instr", regex_instr);
         map
     };
 }
@@ -582,6 +586,15 @@ lazy_static! {
                 result: DataType::Any
              },
         );
+
+        // Regex functions
+        map.insert(
+            "regexp_instr",
+            Prototype {
+                parameters: vec![DataType::Text, DataType::Text],
+                result: DataType::Integer,
+            },
+        );
         map
     };
 }
@@ -858,25 +871,25 @@ fn date_extract_date(inputs: &[Value]) -> Value {
 }
 
 fn date_current_date(_inputs: &[Value]) -> Value {
-    let time_stamp = date_utils::get_unix_timestamp_ms();
+    let time_stamp = GitQLDate::get_unix_timestamp_ms();
     Value::Date(time_stamp)
 }
 
 fn date_current_time(_inputs: &[Value]) -> Value {
-    let time_stamp = date_utils::get_unix_timestamp_ms();
-    let time = date_utils::time_stamp_to_time(time_stamp);
+    let time_stamp = GitQLDate::get_unix_timestamp_ms();
+    let time = GitQLDate::time_stamp_to_time(time_stamp);
     Value::Time(time)
 }
 
 fn date_current_timestamp(_inputs: &[Value]) -> Value {
-    let time_stamp = date_utils::get_unix_timestamp_ms();
+    let time_stamp = GitQLDate::get_unix_timestamp_ms();
     Value::DateTime(time_stamp)
 }
 
 fn date_make_date(inputs: &[Value]) -> Value {
     let year = inputs[0].as_int() as i32;
     let day_of_year = inputs[1].as_int() as u32;
-    let time_stamp = date_utils::time_stamp_from_year_and_day(year, day_of_year);
+    let time_stamp = GitQLDate::time_stamp_from_year_and_day(year, day_of_year);
     Value::Date(time_stamp)
 }
 
@@ -889,30 +902,30 @@ fn date_make_time(inputs: &[Value]) -> Value {
 
 fn date_day(inputs: &[Value]) -> Value {
     let date = inputs[0].as_date();
-    Value::Integer(date_utils::date_to_day_number_in_month(date).into())
+    Value::Integer(GitQLDate::date_to_day_number_in_month(date).into())
 }
 
 fn date_dayname(inputs: &[Value]) -> Value {
     let date = inputs[0].as_date();
-    let date_str = date_utils::date_to_day_name(date);
+    let date_str = GitQLDate::date_to_day_name(date);
     Value::Text(date_str)
 }
 
 fn date_monthname(inputs: &[Value]) -> Value {
     let date = inputs[0].as_date();
-    let month_str = date_utils::date_to_month_name(date);
+    let month_str = GitQLDate::date_to_month_name(date);
     Value::Text(month_str)
 }
 
 fn date_hour(inputs: &[Value]) -> Value {
     let date = inputs[0].as_date_time();
-    let hour = date_utils::date_time_to_hour(date);
+    let hour = GitQLDate::date_time_to_hour(date);
     Value::Integer(hour)
 }
 
 fn date_minute(inputs: &[Value]) -> Value {
     let date = inputs[0].as_date_time();
-    let minute = date_utils::date_time_to_minute(date);
+    let minute = GitQLDate::date_time_to_minute(date);
     Value::Integer(minute)
 }
 
@@ -922,59 +935,59 @@ fn date_is_date(inputs: &[Value]) -> Value {
 
 fn date_day_of_week(inputs: &[Value]) -> Value {
     let date = inputs[0].as_date();
-    Value::Integer(date_utils::date_to_day_number_in_week(date).into())
+    Value::Integer(GitQLDate::date_to_day_number_in_week(date).into())
 }
 
 fn date_day_of_month(inputs: &[Value]) -> Value {
     let date = inputs[0].as_date();
-    Value::Integer(date_utils::date_to_day_number_in_month(date).into())
+    Value::Integer(GitQLDate::date_to_day_number_in_month(date).into())
 }
 
 fn date_day_of_year(inputs: &[Value]) -> Value {
     let date = inputs[0].as_date();
-    Value::Integer(date_utils::date_to_day_number_in_year(date).into())
+    Value::Integer(GitQLDate::date_to_day_number_in_year(date).into())
 }
 
 fn date_week_of_year(inputs: &[Value]) -> Value {
     let date = inputs[0].as_date();
-    Value::Integer(date_utils::date_to_week_number_in_year(date).into())
+    Value::Integer(GitQLDate::date_to_week_number_in_year(date).into())
 }
 
 fn date_year_and_week(inputs: &[Value]) -> Value {
     let date = inputs[0].as_date();
-    let year = date_utils::date_to_year(date);
-    let week_number = date_utils::date_to_week_number_in_year(date);
+    let year = GitQLDate::date_to_year(date);
+    let week_number = GitQLDate::date_to_week_number_in_year(date);
     Value::Text(format!("{}{}", year, week_number))
 }
 
 fn date_quarter(inputs: &[Value]) -> Value {
     let date = inputs[0].as_date();
-    Value::Integer(date_utils::date_to_quarter_index(date))
+    Value::Integer(GitQLDate::date_to_quarter_index(date))
 }
 
 fn date_year(inputs: &[Value]) -> Value {
     let date = inputs[0].as_date();
-    Value::Integer(date_utils::date_to_year(date).into())
+    Value::Integer(GitQLDate::date_to_year(date).into())
 }
 
 fn date_month(inputs: &[Value]) -> Value {
     let date = inputs[0].as_date();
-    Value::Integer(date_utils::date_to_month(date).into())
+    Value::Integer(GitQLDate::date_to_month(date).into())
 }
 
 fn date_weekday(inputs: &[Value]) -> Value {
     let date = inputs[0].as_date();
-    Value::Integer(date_utils::date_to_weekday(date).into())
+    Value::Integer(GitQLDate::date_to_weekday(date).into())
 }
 
 fn date_to_days(inputs: &[Value]) -> Value {
     let date = inputs[0].as_date();
-    Value::Integer(date_utils::date_to_days_count(date))
+    Value::Integer(GitQLDate::date_to_days_count(date))
 }
 
 fn date_last_day(inputs: &[Value]) -> Value {
     let date = inputs[0].as_date();
-    Value::Date(date_utils::date_last_day(date))
+    Value::Date(GitQLDate::date_last_day(date))
 }
 
 // Numeric functions
@@ -1112,4 +1125,13 @@ fn general_least(inputs: &[Value]) -> Value {
     }
 
     least.to_owned()
+}
+
+// Regex functions
+
+fn regex_instr(inputs: &[Value]) -> Value {
+    let input = inputs[0].as_text();
+    let pattern = inputs[1].as_text();
+    let position = GitQLRegex::regexp_pattern_position(&input, &pattern);
+    Value::Integer(position)
 }

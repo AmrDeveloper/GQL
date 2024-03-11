@@ -9,5 +9,5 @@ license = "MIT"
 
 [dependencies]
 gitql-ast = { path = "../gitql-ast", version = "0.13.0" }
-regex = "1.10.2"
+regex = "1.10.3"
 gix = { workspace = true, features = ["blob-diff"] }

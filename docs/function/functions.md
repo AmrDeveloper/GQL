@@ -153,3 +153,13 @@ SELECT TYPEOF(""), TYPEOF(1), TYPEOF(null)
 SELECT GREATEST(1, 2, 3, 4)
 SELECT LEAST(1, 2, 3, 4)
 ```
+
+### Regex functions
+
+| Name         | Parameters | Return  | Description                                                     |
+| ------------ | ---------- | ------- | --------------------------------------------------------------- |
+| REGEXP_INSTR | Text, Text | Integer | Return starting index of substring matching regular expression. |
+
+```sql
+SELECT REGEXP_INSTR("dog cat dog", "dog");
+```
