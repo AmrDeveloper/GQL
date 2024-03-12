@@ -146,6 +146,8 @@ SELECT MOD(25, 5)
 | GREATEST  | ANY, Any, ...Any | Any     | Return the greatest value from list of values |
 | LEAST     | ANY, Any, ...Any | Any     | Return the smallest value from list of values |
 
+### General functions samples
+
 ```sql
 SELECT ISNULL(null), ISNULL(1)
 SELECT ISNUMERIC(null), ISNUMERIC(1), ISNUMERIC(1.1), ISNUMERIC(false)
@@ -160,6 +162,8 @@ SELECT LEAST(1, 2, 3, 4)
 | ------------ | ---------- | ------- | ------------------------------------------------------------------------------------- |
 | REGEXP_INSTR | Text, Text | Integer | Return starting index of substring matching regular expression.                       |
 | REGEXP_LIKE  | Text, Text | Integer | Returns 1 if the string expr matches the regular expression specified by the pattern. |
+
+### Regex functions samples
 
 ```sql
 SELECT REGEXP_INSTR("dog cat dog", "dog");
