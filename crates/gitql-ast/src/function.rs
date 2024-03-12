@@ -96,7 +96,8 @@ lazy_static! {
         map.insert("least", general_least);
 
         // Regex Functions
-        map.insert("regexp_instr", regex_instr);
+        map.insert("regexp_instr", regexp_instr);
+        map.insert("regexp_like", regexp_like);
         map
     };
 }
@@ -590,6 +591,13 @@ lazy_static! {
         // Regex functions
         map.insert(
             "regexp_instr",
+            Prototype {
+                parameters: vec![DataType::Text, DataType::Text],
+                result: DataType::Integer,
+            },
+        );
+        map.insert(
+            "regexp_like",
             Prototype {
                 parameters: vec![DataType::Text, DataType::Text],
                 result: DataType::Integer,
@@ -1129,9 +1137,19 @@ fn general_least(inputs: &[Value]) -> Value {
 
 // Regex functions
 
-fn regex_instr(inputs: &[Value]) -> Value {
+fn regexp_instr(inputs: &[Value]) -> Value {
     let input = inputs[0].as_text();
     let pattern = inputs[1].as_text();
     let position = GitQLRegex::regexp_pattern_position(&input, &pattern);
     Value::Integer(position)
+}
+
+fn regexp_like(inputs: &[Value]) -> Value {
+    let input = inputs[0].as_text();
+    let pattern = inputs[1].as_text();
+    Value::Integer(if GitQLRegex::regex_is_match(&input, &pattern) {
+        1
+    } else {
+        0
+    })
 }

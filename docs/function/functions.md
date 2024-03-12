@@ -156,10 +156,12 @@ SELECT LEAST(1, 2, 3, 4)
 
 ### Regex functions
 
-| Name         | Parameters | Return  | Description                                                     |
-| ------------ | ---------- | ------- | --------------------------------------------------------------- |
-| REGEXP_INSTR | Text, Text | Integer | Return starting index of substring matching regular expression. |
+| Name         | Parameters | Return  | Description                                                                           |
+| ------------ | ---------- | ------- | ------------------------------------------------------------------------------------- |
+| REGEXP_INSTR | Text, Text | Integer | Return starting index of substring matching regular expression.                       |
+| REGEXP_LIKE  | Text, Text | Integer | Returns 1 if the string expr matches the regular expression specified by the pattern. |
 
 ```sql
 SELECT REGEXP_INSTR("dog cat dog", "dog");
+SELECT REGEXP_LIKE('a', '^[a-d]');
 ```

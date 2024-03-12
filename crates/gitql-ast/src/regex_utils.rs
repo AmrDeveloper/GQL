@@ -11,3 +11,11 @@ pub fn regexp_pattern_position(input: &str, pattern: &str) -> i64 {
     }
     -1
 }
+
+/// Return true if a match is found, overwise return false
+pub fn regex_is_match(input: &str, pattern: &str) -> bool {
+    if let Ok(regex) = Regex::new(pattern) {
+        return regex.is_match(input);
+    }
+    false
+}
