@@ -19,3 +19,12 @@ pub fn regex_is_match(input: &str, pattern: &str) -> bool {
     }
     false
 }
+
+/// Return the input after replacing pattern with new content
+/// Or return the same input if the pattern is invalid
+pub fn regex_replace(input: &str, pattern: &str, replacement: &str) -> String {
+    if let Ok(regex) = Regex::new(pattern) {
+        return regex.replace_all(input, replacement).to_string();
+    }
+    input.to_string()
+}
