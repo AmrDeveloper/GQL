@@ -1,6 +1,16 @@
 Change Log
 ==========
 
+Version 0.16.0 *(2024-03-15)*
+-----------------------------
+
+* Fix Implicit casting with variant type.
+* Support `DIV` and `MOD` keywords.
+* Implement `REGEXP_INSTR`, `REGEXP_LIKE`, `REGEXP_REPLACE` and `REGEXP_SUBSTR` Regex function.
+* Implement `DATE`, `MINUTE`, `MONTH`, `LAST_DAY` Date functions.
+* Implement `WEEKOFYEAR`, `WEEKDAY`, `YEARWEEK` Date functions.
+* Update `gix` version to `0.60.0`.
+
 Version 0.15.0 *(2024-03-01)*
 -----------------------------
 

@@ -169,7 +169,7 @@ SELECT LEAST(1, 2, 3, 4)
 
 ```sql
 SELECT REGEXP_INSTR("dog cat dog", "dog");
-SELECT REGEXP_LIKE('a', '^[a-d]');
+SELECT REGEXP_LIKE("a", "^[a-d]");
 SELECT REGEXP_REPLACE("a b c", "b", "X");
 SELECT REGEXP_SUBSTR("abc def ghi", "[a-z]+");
 ```
