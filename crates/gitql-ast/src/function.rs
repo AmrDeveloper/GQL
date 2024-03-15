@@ -99,6 +99,7 @@ lazy_static! {
         map.insert("regexp_instr", regexp_instr);
         map.insert("regexp_like", regexp_like);
         map.insert("regexp_replace", regexp_replace);
+        map.insert("regexp_substr", regexp_substr);
         map
     };
 }
@@ -608,6 +609,13 @@ lazy_static! {
             "regexp_replace",
             Prototype {
                 parameters: vec![DataType::Text, DataType::Text, DataType::Text],
+                result: DataType::Text,
+            },
+        );
+        map.insert(
+            "regexp_substr",
+            Prototype {
+                parameters: vec![DataType::Text, DataType::Text],
                 result: DataType::Text,
             },
         );
@@ -1167,4 +1175,10 @@ fn regexp_replace(inputs: &[Value]) -> Value {
     let pattern = inputs[1].as_text();
     let replacement = inputs[2].as_text();
     Value::Text(GitQLRegex::regex_replace(&input, &pattern, &replacement))
+}
+
+fn regexp_substr(inputs: &[Value]) -> Value {
+    let input = inputs[0].as_text();
+    let pattern = inputs[1].as_text();
+    Value::Text(GitQLRegex::regex_substr(&input, &pattern))
 }

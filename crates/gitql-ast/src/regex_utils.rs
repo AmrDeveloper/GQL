@@ -28,3 +28,13 @@ pub fn regex_replace(input: &str, pattern: &str, replacement: &str) -> String {
     }
     input.to_string()
 }
+
+/// Return substring matching regular expression or empty string if no match found
+pub fn regex_substr(input: &str, pattern: &str) -> String {
+    if let Ok(regex) = Regex::new(pattern) {
+        if let Some(mat) = regex.find(input) {
+            return mat.as_str().to_string();
+        }
+    }
+    "".to_string()
+}

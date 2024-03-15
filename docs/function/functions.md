@@ -163,11 +163,13 @@ SELECT LEAST(1, 2, 3, 4)
 | REGEXP_INSTR   | Text, Text       | Integer | Return starting index of substring matching regular expression.                       |
 | REGEXP_LIKE    | Text, Text       | Integer | Returns 1 if the string expr matches the regular expression specified by the pattern. |
 | REGEXP_REPLACE | Text, Text, Text | Text    | Returns the input after replacing pattern with new content.                           |
+| REGEXP_SUBSTR  | Text, Text       | Text    | Returns substring matching regular expression .                                       |
 
 ### Regex functions samples
 
 ```sql
 SELECT REGEXP_INSTR("dog cat dog", "dog");
 SELECT REGEXP_LIKE('a', '^[a-d]');
-SELECT REGEXP_REPLACE("a b c", "b", "X"); 
+SELECT REGEXP_REPLACE("a b c", "b", "X");
+SELECT REGEXP_SUBSTR("abc def ghi", "[a-z]+");
 ```
