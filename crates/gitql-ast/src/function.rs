@@ -1,5 +1,6 @@
 use crate::date_utils as GitQLDate;
 use crate::regex_utils as GitQLRegex;
+use crate::types::same_type_as_first_parameter;
 use crate::types::DataType;
 use crate::value::Value;
 
@@ -458,8 +459,8 @@ lazy_static! {
         map.insert(
             "abs",
             Prototype {
-                parameters: vec![DataType::Integer],
-                result: DataType::Integer,
+                parameters: vec![DataType::Variant(vec![DataType::Integer, DataType::Float])],
+                result: DataType::Dynamic(same_type_as_first_parameter),
             },
         );
         map.insert(
@@ -1017,8 +1018,11 @@ fn date_last_day(inputs: &[Value]) -> Value {
 // Numeric functions
 
 fn numeric_abs(inputs: &[Value]) -> Value {
-    let value = inputs[0].as_int();
-    Value::Integer(value.abs())
+    let input_type = inputs[0].data_type();
+    if input_type.is_float() {
+        return Value::Float(inputs[0].as_float().abs());
+    }
+    Value::Integer(inputs[0].as_int().abs())
 }
 
 fn numeric_pi(_inputs: &[Value]) -> Value {
