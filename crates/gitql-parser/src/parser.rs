@@ -1621,7 +1621,7 @@ fn parse_unary_expression(
             ));
         }
 
-        if op == PrefixUnaryOperator::Minus && rhs_type != DataType::Integer {
+        if op == PrefixUnaryOperator::Minus && !rhs_type.is_number() {
             return Err(type_mismatch_error(
                 get_safe_location(tokens, *position - 1),
                 DataType::Integer,
