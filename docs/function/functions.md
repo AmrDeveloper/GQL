@@ -121,6 +121,7 @@ SELECT HOUR(NOW())
 | ATN2   | FLOAT, FLOAT     | FLOAT   | Returns the arc tangent of two values.                                       |
 | SIGN   | Number           | Integer | Returns the sign of a number.                                                |
 | MOD    | Integer, Integer | Integer | Returns the remainder of a number divided by another number.                 |
+| RAND   | Float?           | Float   | Returns a random number between 0 (inclusive) and 1 (exclusive).             |
 
 ### Numeric functions samples
 
@@ -134,6 +135,8 @@ SELECT SIN(2.0)
 SELECT SIN(2)
 SELECT ATN2(0.50, 1.0)
 SELECT MOD(25, 5)
+SELECT RAND(6);
+SELECT RAND() * (10-5) + 5; 
 ```
 
 ### General functions

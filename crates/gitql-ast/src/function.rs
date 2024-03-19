@@ -5,6 +5,10 @@ use crate::types::DataType;
 use crate::value::Value;
 
 use lazy_static::lazy_static;
+use rand::distributions::Uniform;
+use rand::rngs::StdRng;
+use rand::Rng;
+use rand::SeedableRng;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::ops::Rem;
@@ -88,6 +92,7 @@ lazy_static! {
         map.insert("atn2", numeric_atn2);
         map.insert("sign", numeric_sign);
         map.insert("mod", numeric_mod);
+        map.insert("rand", numeric_rand);
 
         // Other Functions
         map.insert("isnull", general_is_null);
@@ -552,6 +557,13 @@ lazy_static! {
             Prototype {
                 parameters: vec![DataType::Integer, DataType::Integer],
                 result: DataType::Integer,
+            },
+        );
+        map.insert(
+            "rand",
+            Prototype {
+                parameters: vec![DataType::Optional(Box::new(DataType::Float))],
+                result: DataType::Float,
             },
         );
         // General functions
@@ -1113,6 +1125,14 @@ fn numeric_mod(inputs: &[Value]) -> Value {
 
     let first = &inputs[0];
     Value::Integer(first.as_int().rem(other.as_int()))
+}
+
+fn numeric_rand(inputs: &[Value]) -> Value {
+    let mut rng: StdRng = match inputs.first() {
+        Some(s) => SeedableRng::seed_from_u64(s.as_int().try_into().unwrap()),
+        None => SeedableRng::from_entropy(),
+    };
+    Value::Float(rng.sample(Uniform::from(0.0..1.0)))
 }
 
 // General functions
