@@ -1687,7 +1687,7 @@ fn parse_function_call_expression(
         if AGGREGATIONS.contains_key(function_name.as_str()) {
             let mut arguments = parse_arguments_expressions(context, env, tokens, position)?;
             let prototype = AGGREGATIONS_PROTOS.get(function_name.as_str()).unwrap();
-            let parameters = &vec![prototype.parameter.clone()];
+            let parameters = &[prototype.parameter.clone()];
             let mut return_type = prototype.result.clone();
             if let DataType::Dynamic(calculate_type) = return_type {
                 return_type = calculate_type(parameters);
