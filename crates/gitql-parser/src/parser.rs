@@ -806,7 +806,7 @@ fn parse_assignment_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
-    let expression = parse_is_null_expression(context, env, tokens, position)?;
+    let expression = parse_regex_expression(context, env, tokens, position)?;
     if *position < tokens.len() && tokens[*position].kind == TokenKind::ColonEqual {
         if expression.kind() != ExpressionKind::GlobalVariable {
             return Err(Diagnostic::error(
@@ -826,7 +826,7 @@ fn parse_assignment_expression(
         // Consume `:=` operator
         *position += 1;
 
-        let value = parse_is_null_expression(context, env, tokens, position)?;
+        let value = parse_regex_expression(context, env, tokens, position)?;
         env.define_global(variable_name.clone(), value.expr_type(env));
 
         return Ok(Box::new(AssignmentExpression {
@@ -834,6 +834,44 @@ fn parse_assignment_expression(
             value,
         }));
     }
+    Ok(expression)
+}
+
+fn parse_regex_expression(
+    context: &mut ParserContext,
+    env: &mut Environment,
+    tokens: &[Token],
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
+    let expression = parse_is_null_expression(context, env, tokens, position)?;
+
+    if *position < tokens.len() && tokens[*position].kind == TokenKind::RegExp {
+        if !expression.expr_type(env).is_text() {
+            return Err(
+                Diagnostic::error("`REGEXP` left hand side must be `Text` Type")
+                    .with_location(tokens[*position].location)
+                    .as_boxed(),
+            );
+        }
+
+        *position += 1;
+
+        let pattern = parse_is_null_expression(context, env, tokens, position)?;
+        if !pattern.expr_type(env).is_text() {
+            return Err(
+                Diagnostic::error("`REGEXP` right hand side must be `Text` Type")
+                    .with_location(tokens[*position].location)
+                    .as_boxed(),
+            );
+        }
+
+        return Ok(Box::new(CallExpression {
+            function_name: "regexp_like".to_owned(),
+            arguments: vec![expression, pattern],
+            is_aggregation: false,
+        }));
+    }
+
     Ok(expression)
 }
 

@@ -18,6 +18,7 @@ pub enum TokenKind {
     Glob,
     Describe,
     Show,
+    RegExp,
 
     Case,
     When,
@@ -984,6 +985,7 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "glob" => TokenKind::Glob,
         "describe" => TokenKind::Describe,
         "show" => TokenKind::Show,
+        "regexp" => TokenKind::RegExp,
 
         // Integer division and Modulo operator
         "div" => TokenKind::Slash,
