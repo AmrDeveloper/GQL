@@ -460,9 +460,6 @@ fn parse_select_statement(
                 .as_boxed());
         }
 
-        // Consume table name
-        *position += 1;
-
         table_name = &table_name_token.ok().unwrap().literal;
         if !env.schema.tables_fields_names.contains_key(table_name) {
             return Err(Diagnostic::error("Unresolved table name")
@@ -470,6 +467,9 @@ fn parse_select_statement(
                 .with_location(get_safe_location(tokens, *position))
                 .as_boxed());
         }
+
+        // Consume table name
+        *position += 1;
 
         register_current_table_fields_types(env, table_name);
     }
