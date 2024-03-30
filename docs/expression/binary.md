@@ -84,4 +84,13 @@ Returns true if any one or more values are equal to the argument
 
 ```SQL
 SELECT "One" IN ("One", "Two", "Three")
+SELECT "One" NOT IN ("One", "Two", "Three")
+```
+
+### Regex Expression
+Returns true if the string expr matches the regular expression specified by the pattern
+
+```SQL
+SELECT "a" REGEXP "^[a-d]";
+SELECT "a" NOT REGEXP "^[a-d]";
 ```

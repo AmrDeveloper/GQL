@@ -615,7 +615,7 @@ lazy_static! {
             "regexp_like",
             Prototype {
                 parameters: vec![DataType::Text, DataType::Text],
-                result: DataType::Integer,
+                result: DataType::Boolean,
             },
         );
         map.insert(
@@ -1187,11 +1187,7 @@ fn regexp_instr(inputs: &[Value]) -> Value {
 fn regexp_like(inputs: &[Value]) -> Value {
     let input = inputs[0].as_text();
     let pattern = inputs[1].as_text();
-    Value::Integer(if GitQLRegex::regex_is_match(&input, &pattern) {
-        1
-    } else {
-        0
-    })
+    Value::Boolean(GitQLRegex::regex_is_match(&input, &pattern))
 }
 
 fn regexp_replace(inputs: &[Value]) -> Value {

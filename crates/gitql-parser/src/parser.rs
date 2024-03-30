@@ -316,6 +316,16 @@ fn parse_select_query(
                 let statement = parse_order_by_statement(&mut context, env, tokens, position)?;
                 statements.insert("order", statement);
             }
+            TokenKind::Not => {
+                return Err(Diagnostic::error(
+                    "Expects `REGEXP` or `IN` expression after this `NOT` keyword",
+                )
+                .add_help("Try to use `REGEXP` or `IN` expression after NOT keyword")
+                .add_help("Try to remove `NOT` keyword")
+                .add_note("Expect to see `NOT` then `IN` keyword with a list of values")
+                .with_location(get_safe_location(tokens, *position))
+                .as_boxed())
+            }
             _ => break,
         }
     }
@@ -845,6 +855,17 @@ fn parse_regex_expression(
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     let expression = parse_is_null_expression(context, env, tokens, position)?;
 
+    // Consume NOT if current token is `RegExp` and next one is `IN`
+    let has_not_keyword = if *position < tokens.len() - 1
+        && tokens[*position].kind == TokenKind::Not
+        && tokens[*position + 1].kind == TokenKind::RegExp
+    {
+        *position += 1;
+        true
+    } else {
+        false
+    };
+
     if *position < tokens.len() && tokens[*position].kind == TokenKind::RegExp {
         if !expression.expr_type(env).is_text() {
             return Err(
@@ -865,11 +886,20 @@ fn parse_regex_expression(
             );
         }
 
-        return Ok(Box::new(CallExpression {
+        let regex_expr = Box::new(CallExpression {
             function_name: "regexp_like".to_owned(),
             arguments: vec![expression, pattern],
             is_aggregation: false,
-        }));
+        });
+
+        return Ok(if has_not_keyword {
+            Box::new(PrefixUnary {
+                right: regex_expr,
+                op: PrefixUnaryOperator::Bang,
+            })
+        } else {
+            regex_expr
+        });
     }
 
     Ok(expression)
@@ -924,8 +954,11 @@ fn parse_in_expression(
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     let expression = parse_between_expression(context, env, tokens, position)?;
 
-    // Consume `NOT` keyword if IN Expression prefixed with `NOT` for example `expr NOT IN (...values)`
-    let has_not_keyword = if *position < tokens.len() && tokens[*position].kind == TokenKind::Not {
+    // Consume NOT if current token is `NOT` and next one is `IN`
+    let has_not_keyword = if *position < tokens.len() - 1
+        && tokens[*position].kind == TokenKind::Not
+        && tokens[*position + 1].kind == TokenKind::In
+    {
         *position += 1;
         true
     } else {
@@ -980,18 +1013,6 @@ fn parse_in_expression(
             values_type,
             has_not_keyword,
         }));
-    }
-
-    // Report error if user write `NOT` with no `IN` keyword after it
-    if has_not_keyword {
-        return Err(
-            Diagnostic::error("Expects `IN` expression after this `NOT` keyword")
-                .add_help("Try to use `IN` expression after NOT keyword")
-                .add_help("Try to remove `NOT` keyword")
-                .add_note("Expect to see `NOT` then `IN` keyword with a list of values")
-                .with_location(get_safe_location(tokens, *position - 1))
-                .as_boxed(),
-        );
     }
 
     Ok(expression)
