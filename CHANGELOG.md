@@ -1,6 +1,15 @@
 Change Log
 ==========
 
+Version 0.17.0 *(2024-04-05)*
+-----------------------------
+
+* Implement `RAND` Math functions.
+* Implement `REGEXPR` expression.
+* Implement `NOT REGEXPR` expression.
+* fix: Diagnostic position for invalid table name.
+* Update `gix` version to `0.61.0`.
+
 Version 0.16.0 *(2024-03-15)*
 -----------------------------
 

@@ -1,7 +1,7 @@
 [package]
 name = "gitql-ast"
 authors = ["AmrDeveloper"]
-version = "0.14.0"
+version = "0.15.0"
 edition = "2021"
 description = "GitQL Abstract syntax tree (AST)"
 repository = "https://github.com/amrdeveloper/gql/tree/main/crates/gitql-ast"
@@ -10,7 +10,7 @@ license = "MIT"
 [dependencies]
 lazy_static = "1.4.0"
 chrono = "0.4.31"
-serde_json = "1.0.111"
+serde_json = "1.0.115"
 csv = "1.3.0"
-regex = "1.10.3"
+regex = "1.10.4"
 rand = "0.8.5"
