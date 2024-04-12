@@ -749,8 +749,8 @@ fn text_replace(inputs: &[Value]) -> Value {
 
 fn text_substring(inputs: &[Value]) -> Value {
     let text = inputs[0].as_text();
-    //according to the specs, a stirng starts at position 1.
-    //but in Rust, the index of a string starts from 0
+    // According to the specs, a string starts at position 1.
+    // but in Rust, the index of a string starts from 0
     let start = inputs[1].as_int() as usize - 1;
     let length = inputs[2].as_int();
 
@@ -761,7 +761,10 @@ fn text_substring(inputs: &[Value]) -> Value {
         return Value::Text("".to_string());
     }
 
-    Value::Text(text[start..(start + length as usize)].to_string())
+    // Convert it to Vec<Char> to be easy to substring with support of unicode
+    let chars: Vec<char> = text.chars().collect();
+    let slice = &chars[start..(start + length as usize)];
+    Value::Text(slice.iter().collect())
 }
 
 fn text_stuff(inputs: &[Value]) -> Value {
