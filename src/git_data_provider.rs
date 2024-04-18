@@ -282,7 +282,7 @@ fn select_branches(
     let values_len = fields_values.len() as i64;
     let padding = names_len - values_len;
 
-    for branch in local_and_remote_branches.flatten() {
+    for mut branch in local_and_remote_branches.flatten() {
         let mut values: Vec<Value> = Vec::with_capacity(fields_names.len());
 
         for index in 0..names_len {
@@ -314,6 +314,28 @@ fn select_branches(
                     -1
                 };
                 values.push(Value::Integer(commit_count));
+                continue;
+            }
+
+            if field_name == "updated" {
+                if let Ok(top_commit_id) = branch.peel_to_id_in_place() {
+                    let revwalk = top_commit_id.ancestors().all().unwrap();
+                    if let Some(commit_info) = revwalk.into_iter().next() {
+                        let commit_info = commit_info.unwrap();
+                        if let Some(commit_timestamp) = commit_info.commit_time {
+                            values.push(Value::DateTime(commit_timestamp));
+                            continue;
+                        }
+
+                        let commit = repo.find_object(commit_info.id).unwrap().into_commit();
+                        let commit = commit.decode().unwrap();
+                        let time_stamp = commit.time().seconds;
+                        values.push(Value::DateTime(time_stamp));
+                        continue;
+                    }
+                }
+
+                values.push(Value::Null);
                 continue;
             }
 

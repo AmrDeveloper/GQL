@@ -50,13 +50,14 @@ show tables
 
 ### Branches table
 
-| Name         | Type   | Description                      |
-| ------------ | ------ | -------------------------------- |
-| name         | Text   | Branch name                      |
-| commit_count | Number | Number of commits in this branch |
-| is_head      | Bool   | Is the head branch               |
-| is_remote    | Bool   | Is a remote branch               |
-| repo         | Text   | Repository full path             |
+| Name         | Type     | Description                      |
+| ------------ | -------- | -------------------------------- |
+| name         | Text     | Branch name                      |
+| commit_count | Number   | Number of commits in this branch |
+| is_head      | Bool     | Is the head branch               |
+| is_remote    | Bool     | Is a remote branch               |
+| updated      | DateTime | Last update Commit date time     |
+| repo         | Text     | Repository full path             |
 
 ---
 

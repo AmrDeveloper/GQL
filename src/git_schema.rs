@@ -19,6 +19,7 @@ lazy_static! {
         map.insert("is_head", DataType::Boolean);
         map.insert("is_remote", DataType::Boolean);
         map.insert("commit_count", DataType::Integer);
+        map.insert("updated", DataType::DateTime);
         map.insert("repo", DataType::Text);
         map
     };
@@ -42,7 +43,14 @@ lazy_static! {
         );
         map.insert(
             "branches",
-            vec!["name", "commit_count", "is_head", "is_remote", "repo"],
+            vec![
+                "name",
+                "commit_count",
+                "is_head",
+                "is_remote",
+                "updated",
+                "repo",
+            ],
         );
         map.insert(
             "diffs",
