@@ -1,6 +1,14 @@
 Change Log
 ==========
 
+Version 0.18.0 *(2024-04-26)*
+-----------------------------
+
+* Support unicode in the tokenizer.
+* Migrate to latest chrono and make clippy happy.
+* Support query branch last active date as `updated` column.
+* Update `gix` version to `0.62.0`.
+
 Version 0.17.0 *(2024-04-05)*
 -----------------------------
 
