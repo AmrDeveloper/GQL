@@ -171,9 +171,19 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
             continue;
         }
 
-        // String literal
+        // String literal between single quotes '...'
+        if char == '\'' {
+            tokens.push(consume_string_in_single_quotes(
+                &characters,
+                &mut position,
+                &mut column_start,
+            )?);
+            continue;
+        }
+
+        // String literal between double quotes "..."
         if char == '"' {
-            tokens.push(consume_string(
+            tokens.push(consume_string_in_double_quotes(
                 &characters,
                 &mut position,
                 &mut column_start,
@@ -890,7 +900,44 @@ fn consume_hex_number(
     })
 }
 
-fn consume_string(
+fn consume_string_in_single_quotes(
+    chars: &[char],
+    pos: &mut usize,
+    start: &mut usize,
+) -> Result<Token, Box<Diagnostic>> {
+    *pos += 1;
+
+    while *pos < chars.len() && chars[*pos] != '\'' {
+        *pos += 1;
+    }
+
+    if *pos >= chars.len() {
+        return Err(Diagnostic::error("Unterminated single quote string")
+            .add_help("Add \' at the end of the String literal")
+            .with_location_span(*start, *pos)
+            .as_boxed());
+    }
+
+    *pos += 1;
+
+    let literal = &chars[*start + 1..*pos - 1];
+    let string: String = literal.iter().collect();
+
+    let location = Location {
+        start: *start,
+        end: *pos,
+    };
+
+    let string_literal = Token {
+        location,
+        kind: TokenKind::String,
+        literal: string,
+    };
+
+    Ok(string_literal)
+}
+
+fn consume_string_in_double_quotes(
     chars: &[char],
     pos: &mut usize,
     start: &mut usize,
