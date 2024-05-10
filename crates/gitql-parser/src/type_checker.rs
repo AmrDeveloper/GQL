@@ -9,6 +9,7 @@ use gitql_ast::expression::StringValueType;
 use gitql_ast::types::DataType;
 
 use crate::diagnostic::Diagnostic;
+use crate::tokenizer::Location;
 
 /// The return result after performing types checking with implicit casting option
 pub enum TypeCheckResult {
@@ -294,4 +295,165 @@ pub fn check_all_values_are_same_type(
     }
 
     Some(data_type)
+}
+
+/// Check That function call arguments types are matches the parameter types
+/// Return a Diagnostic Error if anything is wrong
+pub fn check_function_call_arguments(
+    env: &mut Environment,
+    arguments: &mut [Box<dyn Expression>],
+    parameters: &[DataType],
+    function_name: String,
+    location: Location,
+) -> Result<(), Box<Diagnostic>> {
+    let parameters_len = parameters.len();
+    let arguments_len = arguments.len();
+
+    let mut has_optional_parameter = false;
+    let mut has_varargs_parameter = false;
+
+    if !parameters.is_empty() {
+        let last_parameter = parameters.last().unwrap();
+        has_optional_parameter = last_parameter.is_optional();
+        has_varargs_parameter = last_parameter.is_varargs();
+    }
+
+    // Has Optional parameter type at the end
+    if has_optional_parameter {
+        // If function last parameter is optional make sure it at least has
+        if arguments_len < parameters_len - 1 {
+            return Err(Diagnostic::error(&format!(
+                "Function `{}` expects at least `{}` arguments but got `{}`",
+                function_name,
+                parameters_len - 1,
+                arguments_len
+            ))
+            .with_location(location)
+            .as_boxed());
+        }
+
+        // Make sure function with optional parameter not called with too much arguments
+        if arguments_len > parameters_len {
+            return Err(Diagnostic::error(&format!(
+                "Function `{}` expects at most `{}` arguments but got `{}`",
+                function_name, parameters_len, arguments_len
+            ))
+            .with_location(location)
+            .as_boxed());
+        }
+    }
+    // Has Variable arguments parameter type at the end
+    else if has_varargs_parameter {
+        // If function last parameter is optional make sure it at least has
+        if arguments_len < parameters_len - 1 {
+            return Err(Diagnostic::error(&format!(
+                "Function `{}` expects at least `{}` arguments but got `{}`",
+                function_name,
+                parameters_len - 1,
+                arguments_len
+            ))
+            .with_location(location)
+            .as_boxed());
+        }
+    }
+    // No Optional or Variable arguments but has invalid number of arguments passed
+    else if arguments_len != parameters_len {
+        return Err(Diagnostic::error(&format!(
+            "Function `{}` expects `{}` arguments but got `{}`",
+            function_name, parameters_len, arguments_len
+        ))
+        .with_location(location)
+        .as_boxed());
+    }
+
+    let mut last_required_parameter_index = parameters_len;
+    if has_optional_parameter || has_varargs_parameter {
+        last_required_parameter_index -= 1;
+    }
+
+    // Check each argument vs parameter type
+    for index in 0..last_required_parameter_index {
+        let parameter_type = parameters.get(index).unwrap();
+        let argument = arguments.get(index).unwrap();
+        match is_expression_type_equals(env, argument, parameter_type) {
+            TypeCheckResult::Equals => {}
+            TypeCheckResult::RightSideCasted(new_expr) => {
+                arguments[index] = new_expr;
+            }
+            TypeCheckResult::LeftSideCasted(new_expr) => {
+                arguments[index] = new_expr;
+            }
+            TypeCheckResult::NotEqualAndCantImplicitCast => {
+                let argument_type = argument.expr_type(env);
+                return Err(Diagnostic::error(&format!(
+                    "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
+                    function_name, index, argument_type, parameter_type
+                ))
+                .with_location(location).as_boxed());
+            }
+            TypeCheckResult::Error(error) => return Err(error),
+        }
+    }
+
+    // Check the optional or varargs parameters if exists
+    if has_optional_parameter || has_varargs_parameter {
+        let last_parameter_type = parameters.get(last_required_parameter_index).unwrap();
+
+        for index in last_required_parameter_index..arguments_len {
+            let argument = arguments.get(index).unwrap();
+            match is_expression_type_equals(env, argument, last_parameter_type) {
+                TypeCheckResult::Equals => {}
+                TypeCheckResult::RightSideCasted(new_expr) => {
+                    arguments[index] = new_expr;
+                }
+                TypeCheckResult::LeftSideCasted(new_expr) => {
+                    arguments[index] = new_expr;
+                }
+                TypeCheckResult::NotEqualAndCantImplicitCast => {
+                    let argument_type = arguments.get(index).unwrap().expr_type(env);
+                    if !last_parameter_type.eq(&argument_type) {
+                        return Err(Diagnostic::error(&format!(
+                            "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
+                            function_name, index, argument_type, last_parameter_type
+                        ))
+                        .with_location(location).as_boxed());
+                    }
+                }
+                TypeCheckResult::Error(error) => return Err(error),
+            }
+        }
+    }
+
+    Ok(())
+}
+
+/// Check that all selected fields types are defined correctly
+/// Return a Diagnostic Error if anything is wrong
+pub fn type_check_selected_fields(
+    env: &mut Environment,
+    table_name: &str,
+    fields_names: &Vec<String>,
+    location: Location,
+) -> Result<(), Box<Diagnostic>> {
+    for field_name in fields_names {
+        if let Some(data_type) = env.resolve_type(field_name) {
+            if data_type.is_undefined() {
+                return Err(
+                    Diagnostic::error(&format!("No field with name `{}`", field_name))
+                        .with_location(location)
+                        .as_boxed(),
+                );
+            }
+            continue;
+        }
+
+        return Err(Diagnostic::error(&format!(
+            "Table `{}` has no field with name `{}`",
+            table_name, field_name
+        ))
+        .add_help("Check the documentations to see available fields for each tables")
+        .with_location(location)
+        .as_boxed());
+    }
+    Ok(())
 }
