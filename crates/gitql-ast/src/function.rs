@@ -12,6 +12,7 @@ use rand::SeedableRng;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::ops::Rem;
+use uuid::Uuid;
 
 type Function = fn(&[Value]) -> Value;
 
@@ -94,12 +95,13 @@ lazy_static! {
         map.insert("mod", numeric_mod);
         map.insert("rand", numeric_rand);
 
-        // Other Functions
+        // General Functions
         map.insert("isnull", general_is_null);
         map.insert("isnumeric", general_is_numeric);
         map.insert("typeof", general_type_of);
         map.insert("greatest", general_greatest);
         map.insert("least", general_least);
+        map.insert("uuid", general_uuid);
 
         // Regex Functions
         map.insert("regexp_instr", regexp_instr);
@@ -601,6 +603,13 @@ lazy_static! {
                 parameters: vec![DataType::Any, DataType::Any, DataType::Varargs(Box::new(DataType::Any))],
                 result: DataType::Any
              },
+        );
+        map.insert(
+            "uuid",
+            Prototype {
+                parameters: vec![],
+                result: DataType::Text,
+            },
         );
 
         // Regex functions
@@ -1176,6 +1185,11 @@ fn general_least(inputs: &[Value]) -> Value {
     }
 
     least.to_owned()
+}
+
+fn general_uuid(_inputs: &[Value]) -> Value {
+    let uuid = Uuid::new_v4();
+    Value::Text(uuid.to_string())
 }
 
 // Regex functions
