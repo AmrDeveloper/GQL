@@ -1725,7 +1725,7 @@ fn parse_function_call_expression(
             let mut arguments = parse_arguments_expressions(context, env, tokens, position)?;
             let prototype = PROTOTYPES.get(function_name.as_str()).unwrap();
             let parameters = &prototype.parameters;
-            let mut return_type = prototype.result.clone();
+            let mut return_type = prototype.return_type.clone();
             if let DataType::Dynamic(calculate_type) = return_type {
                 return_type = calculate_type(parameters);
             }
@@ -1752,8 +1752,8 @@ fn parse_function_call_expression(
         if AGGREGATIONS.contains_key(function_name.as_str()) {
             let mut arguments = parse_arguments_expressions(context, env, tokens, position)?;
             let prototype = AGGREGATIONS_PROTOS.get(function_name.as_str()).unwrap();
-            let parameters = &[prototype.parameter.clone()];
-            let mut return_type = prototype.result.clone();
+            let parameters = &prototype.parameters.clone();
+            let mut return_type = prototype.return_type.clone();
             if let DataType::Dynamic(calculate_type) = return_type {
                 return_type = calculate_type(parameters);
             }

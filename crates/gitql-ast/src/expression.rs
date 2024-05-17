@@ -384,7 +384,7 @@ impl Expression for CallExpression {
 
     fn expr_type(&self, _scope: &Environment) -> DataType {
         let prototype = PROTOTYPES.get(&self.function_name.as_str()).unwrap();
-        prototype.result.clone()
+        prototype.return_type.clone()
     }
 
     fn as_any(&self) -> &dyn Any {

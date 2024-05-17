@@ -1,5 +1,6 @@
 use crate::date_utils as GitQLDate;
 use crate::regex_utils as GitQLRegex;
+use crate::signature::Signature;
 use crate::types::same_type_as_first_parameter;
 use crate::types::DataType;
 use crate::value::Value;
@@ -15,11 +16,6 @@ use std::ops::Rem;
 use uuid::Uuid;
 
 type Function = fn(&[Value]) -> Value;
-
-pub struct Prototype {
-    pub parameters: Vec<DataType>,
-    pub result: DataType,
-}
 
 lazy_static! {
     pub static ref FUNCTIONS: HashMap<&'static str, Function> = {
@@ -113,532 +109,532 @@ lazy_static! {
 }
 
 lazy_static! {
-    pub static ref PROTOTYPES: HashMap<&'static str, Prototype> = {
-        let mut map: HashMap<&'static str, Prototype> = HashMap::new();
+    pub static ref PROTOTYPES: HashMap<&'static str, Signature> = {
+        let mut map: HashMap<&'static str, Signature> = HashMap::new();
         // String functions
         map.insert(
             "lower",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Text],
-                result: DataType::Text,
+                return_type: DataType::Text,
             },
         );
         map.insert(
             "upper",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Text],
-                result: DataType::Text,
+                return_type: DataType::Text,
             },
         );
         map.insert(
             "reverse",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Text],
-                result: DataType::Text,
+                return_type: DataType::Text,
             },
         );
         map.insert(
             "replicate",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Text, DataType::Integer],
-                result: DataType::Text,
+                return_type: DataType::Text,
             },
         );
         map.insert(
             "space",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Integer],
-                result: DataType::Text,
+                return_type: DataType::Text,
             },
         );
         map.insert(
             "trim",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Text],
-                result: DataType::Text,
+                return_type: DataType::Text,
             },
         );
         map.insert(
             "ltrim",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Text],
-                result: DataType::Text,
+                return_type: DataType::Text,
             },
         );
         map.insert(
             "rtrim",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Text],
-                result: DataType::Text,
+                return_type: DataType::Text,
             },
         );
         map.insert(
             "len",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Text],
-                result: DataType::Integer,
+                return_type: DataType::Integer,
             },
         );
         map.insert(
             "ascii",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Text],
-                result: DataType::Integer,
+                return_type: DataType::Integer,
             },
         );
         map.insert(
             "left",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Text, DataType::Integer],
-                result: DataType::Text,
+                return_type: DataType::Text,
             },
         );
         map.insert(
             "datalength",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Text],
-                result: DataType::Integer,
+                return_type: DataType::Integer,
             },
         );
         map.insert(
             "char",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Integer],
-                result: DataType::Text,
+                return_type: DataType::Text,
             },
         );
         map.insert(
             "nchar",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Integer],
-                result: DataType::Text,
+                return_type: DataType::Text,
             },
         );
         map.insert(
             "charindex",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Text, DataType::Text],
-                result: DataType::Integer,
+                return_type: DataType::Integer,
             }
         );
         map.insert(
             "replace",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Text, DataType::Text, DataType::Text],
-                result: DataType::Text
+                return_type: DataType::Text
           },
         );
         map.insert(
             "substring",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Text, DataType::Integer, DataType::Integer],
-                result: DataType::Text,
+                return_type: DataType::Text,
             },
         );
         map.insert(
             "stuff",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Text, DataType::Integer, DataType::Integer, DataType::Text],
-                result: DataType::Text,
+                return_type: DataType::Text,
             },
         );
         map.insert(
             "right",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Text, DataType::Integer],
-                result: DataType::Text
+                return_type: DataType::Text
              },
         );
         map.insert(
             "translate",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Text, DataType::Text, DataType::Text],
-                result: DataType::Text
+                return_type: DataType::Text
              },
         );
         map.insert(
             "soundex",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Text],
-                result: DataType::Text,
+                return_type: DataType::Text,
             },
         );
         map.insert(
             "concat",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Any, DataType::Any, DataType::Varargs(Box::new(DataType::Any))],
-                result: DataType::Text
+                return_type: DataType::Text
              },
         );
         map.insert(
             "concat_ws",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Text, DataType::Any, DataType::Any, DataType::Varargs(Box::new(DataType::Any))],
-                result: DataType::Text
+                return_type: DataType::Text
              },
         );
         map.insert(
             "unicode",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Text],
-                result: DataType::Integer
+                return_type: DataType::Integer
              },
         );
-        map.insert("strcmp", Prototype { parameters: vec![DataType::Text, DataType::Text], result: DataType::Integer });
+        map.insert("strcmp", Signature { parameters: vec![DataType::Text, DataType::Text], return_type: DataType::Integer });
         map.insert(
             "quotename",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Text, DataType::Optional(Box::new(DataType::Text))],
-                result: DataType::Text
+                return_type: DataType::Text
             }
         );
 
         // Date functions
         map.insert(
             "date",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Variant(vec![DataType::Date, DataType::DateTime])],
-                result: DataType::Date,
+                return_type: DataType::Date,
             },
         );
         map.insert(
             "current_date",
-            Prototype {
+            Signature {
                 parameters: vec![],
-                result: DataType::Date,
+                return_type: DataType::Date,
             },
         );
         map.insert(
             "current_time",
-            Prototype {
+            Signature {
                 parameters: vec![],
-                result: DataType::Time,
+                return_type: DataType::Time,
             },
         );
         map.insert(
             "current_timestamp",
-            Prototype {
+            Signature {
                 parameters: vec![],
-                result: DataType::DateTime,
+                return_type: DataType::DateTime,
             },
         );
         map.insert(
             "now",
-            Prototype {
+            Signature {
                 parameters: vec![],
-                result: DataType::DateTime,
+                return_type: DataType::DateTime,
             },
         );
         map.insert(
             "makedate",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Integer, DataType::Integer],
-                result: DataType::Date,
+                return_type: DataType::Date,
             },
         );
         map.insert(
             "maketime",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Integer, DataType::Integer, DataType::Integer],
-                result: DataType::Time,
+                return_type: DataType::Time,
             },
         );
         map.insert(
             "dayname",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Date],
-                result: DataType::Text,
+                return_type: DataType::Text,
             }
         );
         map.insert(
             "day",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Date],
-                result: DataType::Integer,
+                return_type: DataType::Integer,
             }
         );
         map.insert(
             "monthname",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Date],
-                result: DataType::Text,
+                return_type: DataType::Text,
             }
         );
         map.insert(
             "hour",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::DateTime],
-                result: DataType::Integer,
+                return_type: DataType::Integer,
             }
         );
         map.insert(
             "minute",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::DateTime],
-                result: DataType::Integer,
+                return_type: DataType::Integer,
             }
         );
         map.insert(
             "isdate",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Any],
-                result: DataType::Boolean,
+                return_type: DataType::Boolean,
             }
         );
         map.insert(
             "dayofweek",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Date],
-                result: DataType::Integer,
+                return_type: DataType::Integer,
             }
         );
         map.insert(
             "dayofmonth",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Date],
-                result: DataType::Integer,
+                return_type: DataType::Integer,
             }
         );
         map.insert(
             "dayofyear",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Date],
-                result: DataType::Integer,
+                return_type: DataType::Integer,
             }
         );
         map.insert(
             "weekofyear",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Date],
-                result: DataType::Integer,
+                return_type: DataType::Integer,
             }
         );
         map.insert(
             "quarter",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Date],
-                result: DataType::Integer,
+                return_type: DataType::Integer,
             }
         );
         map.insert(
             "year",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Date],
-                result: DataType::Integer,
+                return_type: DataType::Integer,
             }
         );
         map.insert(
             "month",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Date],
-                result: DataType::Integer,
+                return_type: DataType::Integer,
             }
         );
         map.insert(
             "weekday",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Date],
-                result: DataType::Integer,
+                return_type: DataType::Integer,
             }
         );
         map.insert(
             "to_days",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Date],
-                result: DataType::Integer,
+                return_type: DataType::Integer,
             }
         );
         map.insert(
             "last_day",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Date],
-                result: DataType::Date,
+                return_type: DataType::Date,
             }
         );
         map.insert(
             "yearweek",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Date],
-                result: DataType::Text,
+                return_type: DataType::Text,
             }
         );
         // Numeric functions
         map.insert(
             "abs",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Variant(vec![DataType::Integer, DataType::Float])],
-                result: DataType::Dynamic(same_type_as_first_parameter),
+                return_type: DataType::Dynamic(same_type_as_first_parameter),
             },
         );
         map.insert(
             "pi",
-            Prototype {
+            Signature {
                 parameters: vec![],
-                result: DataType::Float,
+                return_type: DataType::Float,
             },
         );
         map.insert(
             "floor",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Float],
-                result: DataType::Integer,
+                return_type: DataType::Integer,
             },
         );
         map.insert(
             "round",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Float, DataType::Optional(Box::new(DataType::Integer))],
-                result: DataType::Float,
+                return_type: DataType::Float,
             },
         );
         map.insert(
             "square",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Integer],
-                result: DataType::Integer,
+                return_type: DataType::Integer,
             },
         );
         map.insert(
             "sin",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Float],
-                result: DataType::Float,
+                return_type: DataType::Float,
             },
         );
         map.insert(
             "asin",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Float],
-                result: DataType::Float,
+                return_type: DataType::Float,
             },
         );
         map.insert(
             "cos",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Float],
-                result: DataType::Float,
+                return_type: DataType::Float,
             },
         );
         map.insert(
             "acos",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Float],
-                result: DataType::Float,
+                return_type: DataType::Float,
             },
         );
         map.insert(
             "tan",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Float],
-                result: DataType::Float,
+                return_type: DataType::Float,
             },
         );
         map.insert(
             "atan",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Float],
-                result: DataType::Float,
+                return_type: DataType::Float,
             },
         );
         map.insert(
             "atn2",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Float, DataType::Float],
-                result: DataType::Float,
+                return_type: DataType::Float,
             },
         );
         map.insert(
             "sign",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Variant(vec![DataType::Integer, DataType::Float])],
-                result: DataType::Integer,
+                return_type: DataType::Integer,
             },
         );
         map.insert(
             "mod",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Integer, DataType::Integer],
-                result: DataType::Integer,
+                return_type: DataType::Integer,
             },
         );
         map.insert(
             "rand",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Optional(Box::new(DataType::Float))],
-                result: DataType::Float,
+                return_type: DataType::Float,
             },
         );
         // General functions
         map.insert(
             "isnull",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Any],
-                result: DataType::Boolean,
+                return_type: DataType::Boolean,
             },
         );
         map.insert(
             "isnumeric",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Any],
-                result: DataType::Boolean,
+                return_type: DataType::Boolean,
             },
         );
         map.insert(
             "typeof",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Any],
-                result: DataType::Text,
+                return_type: DataType::Text,
             },
         );
         map.insert(
             "greatest",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Any, DataType::Any, DataType::Varargs(Box::new(DataType::Any))],
-                result: DataType::Any
+                return_type: DataType::Any
              },
         );
         map.insert(
             "least",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Any, DataType::Any, DataType::Varargs(Box::new(DataType::Any))],
-                result: DataType::Any
+                return_type: DataType::Any
              },
         );
         map.insert(
             "uuid",
-            Prototype {
+            Signature {
                 parameters: vec![],
-                result: DataType::Text,
+                return_type: DataType::Text,
             },
         );
 
         // Regex functions
         map.insert(
             "regexp_instr",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Text, DataType::Text],
-                result: DataType::Integer,
+                return_type: DataType::Integer,
             },
         );
         map.insert(
             "regexp_like",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Text, DataType::Text],
-                result: DataType::Boolean,
+                return_type: DataType::Boolean,
             },
         );
         map.insert(
             "regexp_replace",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Text, DataType::Text, DataType::Text],
-                result: DataType::Text,
+                return_type: DataType::Text,
             },
         );
         map.insert(
             "regexp_substr",
-            Prototype {
+            Signature {
                 parameters: vec![DataType::Text, DataType::Text],
-                result: DataType::Text,
+                return_type: DataType::Text,
             },
         );
         map

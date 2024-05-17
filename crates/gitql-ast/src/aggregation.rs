@@ -1,4 +1,5 @@
 use crate::object::Group;
+use crate::signature::Signature;
 use crate::types::same_type_as_first_parameter;
 use crate::types::DataType;
 use crate::value::Value;
@@ -8,11 +9,6 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 
 type Aggregation = fn(&str, &[String], &Group) -> Value;
-
-pub struct AggregationPrototype {
-    pub parameter: DataType,
-    pub result: DataType,
-}
 
 lazy_static! {
     pub static ref AGGREGATIONS: HashMap<&'static str, Aggregation> = {
@@ -27,55 +23,55 @@ lazy_static! {
 }
 
 lazy_static! {
-    pub static ref AGGREGATIONS_PROTOS: HashMap<&'static str, AggregationPrototype> = {
-        let mut map: HashMap<&'static str, AggregationPrototype> = HashMap::new();
+    pub static ref AGGREGATIONS_PROTOS: HashMap<&'static str, Signature> = {
+        let mut map: HashMap<&'static str, Signature> = HashMap::new();
         map.insert(
             "max",
-            AggregationPrototype {
-                parameter: DataType::Variant(vec![
+            Signature {
+                parameters: vec![DataType::Variant(vec![
                     DataType::Integer,
                     DataType::Float,
                     DataType::Text,
                     DataType::Date,
                     DataType::Time,
                     DataType::DateTime,
-                ]),
-                result: DataType::Dynamic(same_type_as_first_parameter),
+                ])],
+                return_type: DataType::Dynamic(same_type_as_first_parameter),
             },
         );
         map.insert(
             "min",
-            AggregationPrototype {
-                parameter: DataType::Variant(vec![
+            Signature {
+                parameters: vec![DataType::Variant(vec![
                     DataType::Integer,
                     DataType::Float,
                     DataType::Text,
                     DataType::Date,
                     DataType::Time,
                     DataType::DateTime,
-                ]),
-                result: DataType::Dynamic(same_type_as_first_parameter),
+                ])],
+                return_type: DataType::Dynamic(same_type_as_first_parameter),
             },
         );
         map.insert(
             "sum",
-            AggregationPrototype {
-                parameter: DataType::Integer,
-                result: DataType::Integer,
+            Signature {
+                parameters: vec![DataType::Integer],
+                return_type: DataType::Integer,
             },
         );
         map.insert(
             "avg",
-            AggregationPrototype {
-                parameter: DataType::Integer,
-                result: DataType::Integer,
+            Signature {
+                parameters: vec![DataType::Integer],
+                return_type: DataType::Integer,
             },
         );
         map.insert(
             "count",
-            AggregationPrototype {
-                parameter: DataType::Any,
-                result: DataType::Integer,
+            Signature {
+                parameters: vec![DataType::Integer],
+                return_type: DataType::Integer,
             },
         );
         map

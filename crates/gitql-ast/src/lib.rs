@@ -6,6 +6,7 @@ pub mod function;
 pub mod object;
 pub mod regex_utils;
 pub mod schema;
+pub mod signature;
 pub mod statement;
 pub mod types;
 pub mod value;
