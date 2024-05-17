@@ -306,73 +306,48 @@ pub fn check_function_call_arguments(
     function_name: String,
     location: Location,
 ) -> Result<(), Box<Diagnostic>> {
-    let parameters_len = parameters.len();
-    let arguments_len = arguments.len();
+    let parameters_count = parameters.len();
+    let arguments_count = arguments.len();
 
-    let mut has_optional_parameter = false;
     let mut has_varargs_parameter = false;
-
-    if !parameters.is_empty() {
+    let mut optional_parameters_count = 0;
+    if parameters_count != 0 {
         let last_parameter = parameters.last().unwrap();
-        has_optional_parameter = last_parameter.is_optional();
         has_varargs_parameter = last_parameter.is_varargs();
+
+        // Count number of optional parameters
+        for parameter_type in parameters.iter().take(parameters_count) {
+            if parameter_type.is_optional() {
+                optional_parameters_count += 1;
+            }
+        }
     }
 
-    // Has Optional parameter type at the end
-    if has_optional_parameter {
-        // If function last parameter is optional make sure it at least has
-        if arguments_len < parameters_len - 1 {
-            return Err(Diagnostic::error(&format!(
-                "Function `{}` expects at least `{}` arguments but got `{}`",
-                function_name,
-                parameters_len - 1,
-                arguments_len
-            ))
-            .with_location(location)
-            .as_boxed());
-        }
+    let mut min_arguments_count = parameters_count - optional_parameters_count;
+    if has_varargs_parameter {
+        min_arguments_count -= 1;
+    }
 
-        // Make sure function with optional parameter not called with too much arguments
-        if arguments_len > parameters_len {
-            return Err(Diagnostic::error(&format!(
-                "Function `{}` expects at most `{}` arguments but got `{}`",
-                function_name, parameters_len, arguments_len
-            ))
-            .with_location(location)
-            .as_boxed());
-        }
-    }
-    // Has Variable arguments parameter type at the end
-    else if has_varargs_parameter {
-        // If function last parameter is optional make sure it at least has
-        if arguments_len < parameters_len - 1 {
-            return Err(Diagnostic::error(&format!(
-                "Function `{}` expects at least `{}` arguments but got `{}`",
-                function_name,
-                parameters_len - 1,
-                arguments_len
-            ))
-            .with_location(location)
-            .as_boxed());
-        }
-    }
-    // No Optional or Variable arguments but has invalid number of arguments passed
-    else if arguments_len != parameters_len {
+    if arguments_count < min_arguments_count {
         return Err(Diagnostic::error(&format!(
-            "Function `{}` expects `{}` arguments but got `{}`",
-            function_name, parameters_len, arguments_len
+            "Function `{}` expects at least `{}` arguments but got `{}`",
+            function_name, min_arguments_count, arguments_count
         ))
         .with_location(location)
         .as_boxed());
     }
 
-    let mut last_required_parameter_index = parameters_len;
-    if has_optional_parameter || has_varargs_parameter {
-        last_required_parameter_index -= 1;
+    if !has_varargs_parameter && arguments_count > parameters_count {
+        return Err(Diagnostic::error(&format!(
+            "Function `{}` expects `{}` arguments but got `{}`",
+            function_name, arguments_count, parameters_count
+        ))
+        .with_location(location)
+        .as_boxed());
     }
 
-    // Check each argument vs parameter type
-    for index in 0..last_required_parameter_index {
+    // Type check the min required arguments
+    for index in 0..min_arguments_count {
         let parameter_type = parameters.get(index).unwrap();
         let argument = arguments.get(index).unwrap();
         match is_expression_type_equals(env, argument, parameter_type) {
@@ -395,13 +370,41 @@ pub fn check_function_call_arguments(
         }
     }
 
-    // Check the optional or varargs parameters if exists
-    if has_optional_parameter || has_varargs_parameter {
-        let last_parameter_type = parameters.get(last_required_parameter_index).unwrap();
+    // Type check the optional parameters
+    let last_optional_param_index = min_arguments_count + optional_parameters_count;
+    for index in min_arguments_count..last_optional_param_index {
+        if index >= arguments_count {
+            return Ok(());
+        }
 
-        for index in last_required_parameter_index..arguments_len {
+        let parameter_type = parameters.get(index).unwrap();
+        let argument = arguments.get(index).unwrap();
+        match is_expression_type_equals(env, argument, parameter_type) {
+            TypeCheckResult::Equals => {}
+            TypeCheckResult::RightSideCasted(new_expr) => {
+                arguments[index] = new_expr;
+            }
+            TypeCheckResult::LeftSideCasted(new_expr) => {
+                arguments[index] = new_expr;
+            }
+            TypeCheckResult::NotEqualAndCantImplicitCast => {
+                let argument_type = argument.expr_type(env);
+                return Err(Diagnostic::error(&format!(
+                    "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
+                    function_name, index, argument_type, parameter_type
+                ))
+                .with_location(location).as_boxed());
+            }
+            TypeCheckResult::Error(error) => return Err(error),
+        }
+    }
+
+    // Type check the variable parameters if exists
+    if has_varargs_parameter {
+        let varargs_type = parameters.last().unwrap();
+        for index in last_optional_param_index..arguments_count {
             let argument = arguments.get(index).unwrap();
-            match is_expression_type_equals(env, argument, last_parameter_type) {
+            match is_expression_type_equals(env, argument, varargs_type) {
                 TypeCheckResult::Equals => {}
                 TypeCheckResult::RightSideCasted(new_expr) => {
                     arguments[index] = new_expr;
@@ -410,14 +413,12 @@ pub fn check_function_call_arguments(
                     arguments[index] = new_expr;
                 }
                 TypeCheckResult::NotEqualAndCantImplicitCast => {
-                    let argument_type = arguments.get(index).unwrap().expr_type(env);
-                    if !last_parameter_type.eq(&argument_type) {
-                        return Err(Diagnostic::error(&format!(
-                            "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
-                            function_name, index, argument_type, last_parameter_type
-                        ))
-                        .with_location(location).as_boxed());
-                    }
+                    let argument_type = argument.expr_type(env);
+                    return Err(Diagnostic::error(&format!(
+                        "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
+                        function_name, index, argument_type, varargs_type
+                    ))
+                    .with_location(location).as_boxed());
                 }
                 TypeCheckResult::Error(error) => return Err(error),
             }
