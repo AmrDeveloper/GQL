@@ -31,6 +31,7 @@ note that all functions names are case-insensitive.
 | UNICODE    | Text                         | Integer | Return an integer value (the Unicode value), for the first character of the input expression.                                                                        |
 | STRCMP     | Text , Text                  | Integer | Return 0 If string1 = string2, -1 if string1 < string2, this function returns -1, and 1 if string1 > string2                                                         |
 | QUOTENAME  | Text , Text                  | Text    | Returns the string (first argument) with specified delimiters (second argument), defaulting to []                                                                    |
+| STR        | Text, Integer?, Integer?     | Text    | Returns a number as a string with optionals length and decimals.                                                                                                     |
 
 ### String functions samples
 
@@ -58,6 +59,10 @@ SELECT UNICODE("AmrDeveloper")
 SELECT QUOTENAME("AmrDeveloper")
 SELECT QUOTENAME("AmrDeveloper", ".")
 SELECT QUOTENAME("AmrDeveloper", "{}")
+SELECT STR(185);
+SELECT STR(185.5);
+SELECT STR(185.476, 6);
+SELECT STR(185.476, 6, 2);
 ```
 
 ### Date functions

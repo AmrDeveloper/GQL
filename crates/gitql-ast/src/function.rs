@@ -47,6 +47,7 @@ lazy_static! {
         map.insert("unicode", text_unicode);
         map.insert("strcmp", text_strcmp);
         map.insert("quotename", text_quotename);
+        map.insert("str", text_str);
 
         // Date functions
         map.insert("date", date_extract_date);
@@ -285,6 +286,17 @@ lazy_static! {
             "quotename",
             Signature {
                 parameters: vec![DataType::Text, DataType::Optional(Box::new(DataType::Text))],
+                return_type: DataType::Text
+            }
+        );
+        map.insert(
+            "str",
+            Signature {
+                parameters: vec![
+                    DataType::Variant(vec![DataType::Integer, DataType::Float]),
+                    DataType::Optional(Box::new(DataType::Integer)),
+                    DataType::Optional(Box::new(DataType::Integer))
+                ],
                 return_type: DataType::Text
             }
         );
@@ -903,6 +915,46 @@ fn text_quotename(inputs: &[Value]) -> Value {
         [start, end] => Value::Text(format!("{start}{str}{end}")),
         _ => Value::Null,
     }
+}
+
+fn text_str(inputs: &[Value]) -> Value {
+    let value = &inputs[0];
+    let length = if inputs.len() == 3 {
+        inputs[1].as_int()
+    } else {
+        10
+    };
+
+    let decimals = if inputs.len() == 3 {
+        inputs[2].as_int()
+    } else {
+        0
+    };
+
+    if value.data_type().is_int() {
+        let int_value = value.as_int();
+        let number_string = format!("{:.dec$}", int_value, dec = decimals as usize);
+        if length > 0 {
+            if (length as usize) < number_string.len() {
+                return Value::Text(number_string[..length as usize].to_owned());
+            } else {
+                return Value::Text(format!("{:<len$}", number_string, len = length as usize));
+            }
+        }
+        return Value::Text(number_string.clone());
+    }
+
+    let float_value = value.as_float();
+    let number_string = format!("{:.dec$}", float_value, dec = decimals as usize);
+    if length > 0 {
+        if (length as usize) < number_string.len() {
+            return Value::Text(number_string[..length as usize].to_owned());
+        } else {
+            return Value::Text(format!("{:<len$}", number_string, len = length as usize));
+        }
+    }
+
+    Value::Text(number_string.clone())
 }
 
 // Date functions
