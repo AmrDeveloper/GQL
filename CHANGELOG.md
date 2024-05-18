@@ -1,6 +1,15 @@
 Change Log
 ==========
 
+Version 0.19.0 *(2024-05-18)*
+-----------------------------
+
+* Improve the structure of the parser.
+* Support string literal with single quotes.
+* Improve the Type checker to allow mix of optional and varargs parameters.
+* Implement `UUID` general function.
+* Implement `STR` TExt function.
+
 Version 0.18.0 *(2024-04-26)*
 -----------------------------
 
