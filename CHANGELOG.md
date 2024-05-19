@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+Version 0.19.1 *(2024-05-19)*
+-----------------------------
+
+* Fix Count aggregation function parameter type.
+
 Version 0.19.0 *(2024-05-18)*
 -----------------------------
 
