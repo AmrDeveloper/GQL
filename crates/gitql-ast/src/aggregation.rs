@@ -70,7 +70,7 @@ lazy_static! {
         map.insert(
             "count",
             Signature {
-                parameters: vec![DataType::Integer],
+                parameters: vec![DataType::Any],
                 return_type: DataType::Integer,
             },
         );
