@@ -1758,6 +1758,7 @@ fn parse_function_call_expression(
                 return_type = calculate_type(parameters);
             }
 
+            // Perform type checking and implicit casting if needed for function arguments
             check_function_call_arguments(
                 env,
                 &mut arguments,
@@ -1766,8 +1767,18 @@ fn parse_function_call_expression(
                 function_name_location,
             )?;
 
-            let argument_result = get_expression_name(&arguments[0]);
-            if argument_result.is_err() {
+            // If type checker passed correctly and function has no argument or optional argument
+            // Ignore calling expression name and pass argument as empty string
+            // This case is useful to handle `SELECT COUNT()`
+            let is_arguments_empty = arguments.is_empty();
+            let argument_literal_result = if is_arguments_empty {
+                Err(())
+            } else {
+                get_expression_name(&arguments[0])
+            };
+
+            // Make sure the non optional argument is a column name
+            if !is_arguments_empty && argument_literal_result.is_err() {
                 return Err(Diagnostic::error("Invalid Aggregation function argument")
                     .add_help("Try to use field name as Aggregation function argument")
                     .add_note("Aggregation function accept field name as argument")
@@ -1775,7 +1786,7 @@ fn parse_function_call_expression(
                     .as_boxed());
             }
 
-            let argument = argument_result.ok().unwrap();
+            let argument = argument_literal_result.unwrap_or("".to_owned());
             let column_name = context.generate_column_name();
 
             context.hidden_selections.push(column_name.to_string());
@@ -1788,6 +1799,7 @@ fn parse_function_call_expression(
                 AggregateValue::Function(function_name.to_string(), argument),
             );
 
+            // Return a Symbol that reference to the aggregation function generated name
             return Ok(Box::new(SymbolExpression { value: column_name }));
         }
 
