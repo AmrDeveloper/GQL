@@ -601,6 +601,10 @@ fn parse_group_by_statement(
     }
 
     let field_name = tokens[*position].literal.to_string();
+    if !context.selected_fields.contains(&field_name) {
+        context.hidden_selections.push(field_name.to_string());
+    }
+
     *position += 1;
 
     if !env.contains(&field_name) {
