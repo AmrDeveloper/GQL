@@ -30,4 +30,3 @@ gitql-engine = { path = "./crates/gitql-engine", version = "0.19.1" }
 gitql-cli = { path = "./crates/gitql-cli", version = "0.19.1" }
 gix = { workspace = true, features = ["max-performance"] }
 atty = "0.2.14"
-lazy_static = "1.4.0"

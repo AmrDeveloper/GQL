@@ -459,7 +459,6 @@ dependencies = [
  "gitql-engine",
  "gitql-parser",
  "gix",
- "lazy_static",
 ]
 
 [[package]]
@@ -468,7 +467,6 @@ version = "0.17.1"
 dependencies = [
  "chrono",
  "csv",
- "lazy_static",
  "rand",
  "regex",
  "serde_json",
@@ -1265,12 +1263,6 @@ checksum = "ec3066350882a1cd6d950d055997f379ac37fd39f81cd4d8ed186032eb3c5747"
 dependencies = [
  "static_assertions",
 ]
-
-[[package]]
-name = "lazy_static"
-version = "1.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "libc"

@@ -27,7 +27,7 @@ use gitql_ast::expression::PrefixUnaryOperator;
 use gitql_ast::expression::StringExpression;
 use gitql_ast::expression::StringValueType;
 use gitql_ast::expression::SymbolExpression;
-use gitql_ast::function::FUNCTIONS;
+use gitql_ast::function::standard_functions;
 use gitql_ast::value::Value;
 
 use regex::Regex;
@@ -418,7 +418,7 @@ fn evaluate_call(
     object: &Vec<Value>,
 ) -> Result<Value, String> {
     let function_name = expr.function_name.as_str();
-    let function = FUNCTIONS.get(function_name).unwrap();
+    let function = standard_functions().get(function_name).unwrap();
 
     let mut arguments = Vec::with_capacity(expr.arguments.len());
     for arg in expr.arguments.iter() {

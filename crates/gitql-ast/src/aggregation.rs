@@ -4,14 +4,15 @@ use crate::types::same_type_as_first_parameter;
 use crate::types::DataType;
 use crate::value::Value;
 
-use lazy_static::lazy_static;
 use std::cmp::Ordering;
 use std::collections::HashMap;
+use std::sync::OnceLock;
 
 type Aggregation = fn(&str, &[String], &Group) -> Value;
 
-lazy_static! {
-    pub static ref AGGREGATIONS: HashMap<&'static str, Aggregation> = {
+pub fn aggregation_functions() -> &'static HashMap<&'static str, Aggregation> {
+    static HASHMAP: OnceLock<HashMap<&'static str, Aggregation>> = OnceLock::new();
+    HASHMAP.get_or_init(|| {
         let mut map: HashMap<&'static str, Aggregation> = HashMap::new();
         map.insert("max", aggregation_max);
         map.insert("min", aggregation_min);
@@ -19,11 +20,12 @@ lazy_static! {
         map.insert("avg", aggregation_average);
         map.insert("count", aggregation_count);
         map
-    };
+    })
 }
 
-lazy_static! {
-    pub static ref AGGREGATIONS_PROTOS: HashMap<&'static str, Signature> = {
+pub fn aggregation_function_signatures() -> &'static HashMap<&'static str, Signature> {
+    static HASHMAP: OnceLock<HashMap<&'static str, Signature>> = OnceLock::new();
+    HASHMAP.get_or_init(|| {
         let mut map: HashMap<&'static str, Signature> = HashMap::new();
         map.insert(
             "max",
@@ -75,7 +77,7 @@ lazy_static! {
             },
         );
         map
-    };
+    })
 }
 
 fn aggregation_max(field_name: &str, titles: &[String], objects: &Group) -> Value {

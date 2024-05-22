@@ -2,7 +2,7 @@ use std::cmp;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 
-use gitql_ast::aggregation::AGGREGATIONS;
+use gitql_ast::aggregation::aggregation_functions;
 use gitql_ast::environment::Environment;
 use gitql_ast::object::GitQLObject;
 use gitql_ast::object::Group;
@@ -406,7 +406,7 @@ fn execute_aggregation_function_statement(
                     .unwrap();
 
                 // Get the target aggregation function
-                let aggregation_function = AGGREGATIONS.get(function.as_str()).unwrap();
+                let aggregation_function = aggregation_functions().get(function.as_str()).unwrap();
                 let result =
                     &aggregation_function(&argument.to_string(), &gitql_object.titles, group);
 

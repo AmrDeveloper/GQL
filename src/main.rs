@@ -1,7 +1,8 @@
+use crate::git_schema::tables_fields_names;
+use crate::git_schema::tables_fields_types;
+
 use atty::Stream;
 use git_data_provider::GitDataProvider;
-use git_schema::TABLES_FIELDS_NAMES;
-use git_schema::TABLES_FIELDS_TYPES;
 use gitql_ast::environment::Environment;
 use gitql_ast::schema::Schema;
 use gitql_cli::arguments;
@@ -47,8 +48,8 @@ fn main() {
 
             let repos = git_repos_result.ok().unwrap();
             let schema = Schema {
-                tables_fields_names: TABLES_FIELDS_NAMES.to_owned(),
-                tables_fields_types: TABLES_FIELDS_TYPES.to_owned(),
+                tables_fields_names: tables_fields_names().to_owned(),
+                tables_fields_types: tables_fields_types().to_owned(),
             };
             let mut env = Environment::new(schema);
             execute_gitql_query(query, &arguments, &repos, &mut env, &mut reporter);
@@ -77,8 +78,8 @@ fn launch_gitql_repl(arguments: Arguments) {
     }
 
     let schema = Schema {
-        tables_fields_names: TABLES_FIELDS_NAMES.to_owned(),
-        tables_fields_types: TABLES_FIELDS_TYPES.to_owned(),
+        tables_fields_names: tables_fields_names().clone(),
+        tables_fields_types: tables_fields_types().clone(),
     };
 
     let mut global_env = Environment::new(schema);

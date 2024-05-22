@@ -1,7 +1,7 @@
 use std::any::Any;
 
 use crate::environment::Environment;
-use crate::function::PROTOTYPES;
+use crate::function::standard_function_signatures;
 use crate::types::DataType;
 use crate::value::Value;
 
@@ -383,7 +383,9 @@ impl Expression for CallExpression {
     }
 
     fn expr_type(&self, _scope: &Environment) -> DataType {
-        let prototype = PROTOTYPES.get(&self.function_name.as_str()).unwrap();
+        let prototype = standard_function_signatures()
+            .get(&self.function_name.as_str())
+            .unwrap();
         prototype.return_type.clone()
     }
 

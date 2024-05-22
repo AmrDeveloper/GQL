@@ -1,4 +1,8 @@
+use gitql_ast::aggregation::aggregation_function_signatures;
+use gitql_ast::aggregation::aggregation_functions;
 use gitql_ast::environment::Environment;
+use gitql_ast::function::standard_function_signatures;
+use gitql_ast::function::standard_functions;
 use gitql_ast::value::Value;
 use std::collections::HashMap;
 use std::num::IntErrorKind;
@@ -16,11 +20,7 @@ use crate::type_checker::check_function_call_arguments;
 use crate::type_checker::type_check_selected_fields;
 use crate::type_checker::TypeCheckResult;
 
-use gitql_ast::aggregation::AGGREGATIONS;
-use gitql_ast::aggregation::AGGREGATIONS_PROTOS;
 use gitql_ast::expression::*;
-use gitql_ast::function::FUNCTIONS;
-use gitql_ast::function::PROTOTYPES;
 use gitql_ast::statement::*;
 use gitql_ast::types::DataType;
 
@@ -1721,9 +1721,11 @@ fn parse_function_call_expression(
         let function_name = &symbol_expression.unwrap().value;
 
         // Check if this function is a Standard library functions
-        if FUNCTIONS.contains_key(function_name.as_str()) {
+        if standard_functions().contains_key(function_name.as_str()) {
             let mut arguments = parse_arguments_expressions(context, env, tokens, position)?;
-            let prototype = PROTOTYPES.get(function_name.as_str()).unwrap();
+            let prototype = standard_function_signatures()
+                .get(function_name.as_str())
+                .unwrap();
             let parameters = &prototype.parameters;
             let mut return_type = prototype.return_type.clone();
             if let DataType::Dynamic(calculate_type) = return_type {
@@ -1749,9 +1751,11 @@ fn parse_function_call_expression(
         }
 
         // Check if this function is an Aggregation functions
-        if AGGREGATIONS.contains_key(function_name.as_str()) {
+        if aggregation_functions().contains_key(function_name.as_str()) {
             let mut arguments = parse_arguments_expressions(context, env, tokens, position)?;
-            let prototype = AGGREGATIONS_PROTOS.get(function_name.as_str()).unwrap();
+            let prototype = aggregation_function_signatures()
+                .get(function_name.as_str())
+                .unwrap();
             let parameters = &prototype.parameters.clone();
             let mut return_type = prototype.return_type.clone();
             if let DataType::Dynamic(calculate_type) = return_type {

@@ -5,7 +5,6 @@ use crate::types::same_type_as_first_parameter;
 use crate::types::DataType;
 use crate::value::Value;
 
-use lazy_static::lazy_static;
 use rand::distributions::Uniform;
 use rand::rngs::StdRng;
 use rand::Rng;
@@ -13,12 +12,14 @@ use rand::SeedableRng;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::ops::Rem;
+use std::sync::OnceLock;
 use uuid::Uuid;
 
 type Function = fn(&[Value]) -> Value;
 
-lazy_static! {
-    pub static ref FUNCTIONS: HashMap<&'static str, Function> = {
+pub fn standard_functions() -> &'static HashMap<&'static str, Function> {
+    static HASHMAP: OnceLock<HashMap<&'static str, Function>> = OnceLock::new();
+    HASHMAP.get_or_init(|| {
         let mut map: HashMap<&'static str, Function> = HashMap::new();
         // String functions
         map.insert("lower", text_lowercase);
@@ -106,11 +107,12 @@ lazy_static! {
         map.insert("regexp_replace", regexp_replace);
         map.insert("regexp_substr", regexp_substr);
         map
-    };
+    })
 }
 
-lazy_static! {
-    pub static ref PROTOTYPES: HashMap<&'static str, Signature> = {
+pub fn standard_function_signatures() -> &'static HashMap<&'static str, Signature> {
+    static HASHMAP: OnceLock<HashMap<&'static str, Signature>> = OnceLock::new();
+    HASHMAP.get_or_init(|| {
         let mut map: HashMap<&'static str, Signature> = HashMap::new();
         // String functions
         map.insert(
@@ -216,14 +218,14 @@ lazy_static! {
             Signature {
                 parameters: vec![DataType::Text, DataType::Text],
                 return_type: DataType::Integer,
-            }
+            },
         );
         map.insert(
             "replace",
             Signature {
                 parameters: vec![DataType::Text, DataType::Text, DataType::Text],
-                return_type: DataType::Text
-          },
+                return_type: DataType::Text,
+            },
         );
         map.insert(
             "substring",
@@ -235,7 +237,12 @@ lazy_static! {
         map.insert(
             "stuff",
             Signature {
-                parameters: vec![DataType::Text, DataType::Integer, DataType::Integer, DataType::Text],
+                parameters: vec![
+                    DataType::Text,
+                    DataType::Integer,
+                    DataType::Integer,
+                    DataType::Text,
+                ],
                 return_type: DataType::Text,
             },
         );
@@ -243,15 +250,15 @@ lazy_static! {
             "right",
             Signature {
                 parameters: vec![DataType::Text, DataType::Integer],
-                return_type: DataType::Text
-             },
+                return_type: DataType::Text,
+            },
         );
         map.insert(
             "translate",
             Signature {
                 parameters: vec![DataType::Text, DataType::Text, DataType::Text],
-                return_type: DataType::Text
-             },
+                return_type: DataType::Text,
+            },
         );
         map.insert(
             "soundex",
@@ -263,31 +270,46 @@ lazy_static! {
         map.insert(
             "concat",
             Signature {
-                parameters: vec![DataType::Any, DataType::Any, DataType::Varargs(Box::new(DataType::Any))],
-                return_type: DataType::Text
-             },
+                parameters: vec![
+                    DataType::Any,
+                    DataType::Any,
+                    DataType::Varargs(Box::new(DataType::Any)),
+                ],
+                return_type: DataType::Text,
+            },
         );
         map.insert(
             "concat_ws",
             Signature {
-                parameters: vec![DataType::Text, DataType::Any, DataType::Any, DataType::Varargs(Box::new(DataType::Any))],
-                return_type: DataType::Text
-             },
+                parameters: vec![
+                    DataType::Text,
+                    DataType::Any,
+                    DataType::Any,
+                    DataType::Varargs(Box::new(DataType::Any)),
+                ],
+                return_type: DataType::Text,
+            },
         );
         map.insert(
             "unicode",
             Signature {
                 parameters: vec![DataType::Text],
-                return_type: DataType::Integer
-             },
+                return_type: DataType::Integer,
+            },
         );
-        map.insert("strcmp", Signature { parameters: vec![DataType::Text, DataType::Text], return_type: DataType::Integer });
+        map.insert(
+            "strcmp",
+            Signature {
+                parameters: vec![DataType::Text, DataType::Text],
+                return_type: DataType::Integer,
+            },
+        );
         map.insert(
             "quotename",
             Signature {
                 parameters: vec![DataType::Text, DataType::Optional(Box::new(DataType::Text))],
-                return_type: DataType::Text
-            }
+                return_type: DataType::Text,
+            },
         );
         map.insert(
             "str",
@@ -295,10 +317,10 @@ lazy_static! {
                 parameters: vec![
                     DataType::Variant(vec![DataType::Integer, DataType::Float]),
                     DataType::Optional(Box::new(DataType::Integer)),
-                    DataType::Optional(Box::new(DataType::Integer))
+                    DataType::Optional(Box::new(DataType::Integer)),
                 ],
-                return_type: DataType::Text
-            }
+                return_type: DataType::Text,
+            },
         );
 
         // Date functions
@@ -356,119 +378,119 @@ lazy_static! {
             Signature {
                 parameters: vec![DataType::Date],
                 return_type: DataType::Text,
-            }
+            },
         );
         map.insert(
             "day",
             Signature {
                 parameters: vec![DataType::Date],
                 return_type: DataType::Integer,
-            }
+            },
         );
         map.insert(
             "monthname",
             Signature {
                 parameters: vec![DataType::Date],
                 return_type: DataType::Text,
-            }
+            },
         );
         map.insert(
             "hour",
             Signature {
                 parameters: vec![DataType::DateTime],
                 return_type: DataType::Integer,
-            }
+            },
         );
         map.insert(
             "minute",
             Signature {
                 parameters: vec![DataType::DateTime],
                 return_type: DataType::Integer,
-            }
+            },
         );
         map.insert(
             "isdate",
             Signature {
                 parameters: vec![DataType::Any],
                 return_type: DataType::Boolean,
-            }
+            },
         );
         map.insert(
             "dayofweek",
             Signature {
                 parameters: vec![DataType::Date],
                 return_type: DataType::Integer,
-            }
+            },
         );
         map.insert(
             "dayofmonth",
             Signature {
                 parameters: vec![DataType::Date],
                 return_type: DataType::Integer,
-            }
+            },
         );
         map.insert(
             "dayofyear",
             Signature {
                 parameters: vec![DataType::Date],
                 return_type: DataType::Integer,
-            }
+            },
         );
         map.insert(
             "weekofyear",
             Signature {
                 parameters: vec![DataType::Date],
                 return_type: DataType::Integer,
-            }
+            },
         );
         map.insert(
             "quarter",
             Signature {
                 parameters: vec![DataType::Date],
                 return_type: DataType::Integer,
-            }
+            },
         );
         map.insert(
             "year",
             Signature {
                 parameters: vec![DataType::Date],
                 return_type: DataType::Integer,
-            }
+            },
         );
         map.insert(
             "month",
             Signature {
                 parameters: vec![DataType::Date],
                 return_type: DataType::Integer,
-            }
+            },
         );
         map.insert(
             "weekday",
             Signature {
                 parameters: vec![DataType::Date],
                 return_type: DataType::Integer,
-            }
+            },
         );
         map.insert(
             "to_days",
             Signature {
                 parameters: vec![DataType::Date],
                 return_type: DataType::Integer,
-            }
+            },
         );
         map.insert(
             "last_day",
             Signature {
                 parameters: vec![DataType::Date],
                 return_type: DataType::Date,
-            }
+            },
         );
         map.insert(
             "yearweek",
             Signature {
                 parameters: vec![DataType::Date],
                 return_type: DataType::Text,
-            }
+            },
         );
         // Numeric functions
         map.insert(
@@ -495,7 +517,10 @@ lazy_static! {
         map.insert(
             "round",
             Signature {
-                parameters: vec![DataType::Float, DataType::Optional(Box::new(DataType::Integer))],
+                parameters: vec![
+                    DataType::Float,
+                    DataType::Optional(Box::new(DataType::Integer)),
+                ],
                 return_type: DataType::Float,
             },
         );
@@ -601,16 +626,24 @@ lazy_static! {
         map.insert(
             "greatest",
             Signature {
-                parameters: vec![DataType::Any, DataType::Any, DataType::Varargs(Box::new(DataType::Any))],
-                return_type: DataType::Any
-             },
+                parameters: vec![
+                    DataType::Any,
+                    DataType::Any,
+                    DataType::Varargs(Box::new(DataType::Any)),
+                ],
+                return_type: DataType::Any,
+            },
         );
         map.insert(
             "least",
             Signature {
-                parameters: vec![DataType::Any, DataType::Any, DataType::Varargs(Box::new(DataType::Any))],
-                return_type: DataType::Any
-             },
+                parameters: vec![
+                    DataType::Any,
+                    DataType::Any,
+                    DataType::Varargs(Box::new(DataType::Any)),
+                ],
+                return_type: DataType::Any,
+            },
         );
         map.insert(
             "uuid",
@@ -650,7 +683,7 @@ lazy_static! {
             },
         );
         map
-    };
+    })
 }
 
 // String functions
