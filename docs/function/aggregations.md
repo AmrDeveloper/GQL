@@ -34,3 +34,10 @@ The function count() is an aggregate function that returns the number of items i
 ```sql
 SELECT name, max(name) FROM commits GROUP BY name
 ```
+
+### Aggregation `group_concat`
+The function group_concat() is an aggregate function that returns a string with concatenated non-NULL value from a group
+
+```sql
+SELECT GROUP_CONCAT(email) FROM commits GROUP BY name
+```

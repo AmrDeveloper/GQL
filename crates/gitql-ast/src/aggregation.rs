@@ -19,6 +19,7 @@ pub fn aggregation_functions() -> &'static HashMap<&'static str, Aggregation> {
         map.insert("sum", aggregation_sum);
         map.insert("avg", aggregation_average);
         map.insert("count", aggregation_count);
+        map.insert("group_concat", aggregation_group_concat);
         map
     })
 }
@@ -76,6 +77,13 @@ pub fn aggregation_function_signatures() -> &'static HashMap<&'static str, Signa
                 return_type: DataType::Integer,
             },
         );
+        map.insert(
+            "group_concat",
+            Signature {
+                parameters: vec![DataType::Any],
+                return_type: DataType::Text,
+            },
+        );
         map
     })
 }
@@ -128,4 +136,18 @@ fn aggregation_average(field_name: &str, titles: &[String], objects: &Group) -> 
 
 fn aggregation_count(_field_name: &str, _titles: &[String], objects: &Group) -> Value {
     Value::Integer(objects.len() as i64)
+}
+
+fn aggregation_group_concat(field_name: &str, titles: &[String], objects: &Group) -> Value {
+    let column_index = titles.iter().position(|r| r.eq(&field_name)).unwrap();
+    let rows_count = objects.rows.len();
+    let mut string_values: Vec<String> = Vec::with_capacity(rows_count);
+    for row in &objects.rows {
+        let field_value = &row.values.get(column_index).unwrap();
+        if field_value.data_type().is_null() {
+            continue;
+        }
+        string_values.push(field_value.to_string());
+    }
+    Value::Text(string_values.concat())
 }
