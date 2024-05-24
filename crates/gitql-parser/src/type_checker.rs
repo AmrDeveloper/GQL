@@ -350,6 +350,19 @@ pub fn check_function_call_arguments(
     for index in 0..min_arguments_count {
         let parameter_type = parameters.get(index).unwrap();
         let argument = arguments.get(index).unwrap();
+
+        // Catch undefined arguments
+        if argument.expr_type(env).is_undefined() {
+            return Err(Diagnostic::error(&format!(
+                "Function `{}` argument number {} has Undefined type",
+                function_name, index,
+            ))
+            .add_help("Make sure you used a correct field name")
+            .add_help("Check column names for each table from docs website")
+            .with_location(location)
+            .as_boxed());
+        }
+
         match is_expression_type_equals(env, argument, parameter_type) {
             TypeCheckResult::Equals => {}
             TypeCheckResult::RightSideCasted(new_expr) => {
@@ -379,6 +392,19 @@ pub fn check_function_call_arguments(
 
         let parameter_type = parameters.get(index).unwrap();
         let argument = arguments.get(index).unwrap();
+
+        // Catch undefined arguments
+        if argument.expr_type(env).is_undefined() {
+            return Err(Diagnostic::error(&format!(
+                "Function `{}` argument number {} has Undefined type",
+                function_name, index,
+            ))
+            .add_help("Make sure you used a correct field name")
+            .add_help("Check column names for each table from docs website")
+            .with_location(location)
+            .as_boxed());
+        }
+
         match is_expression_type_equals(env, argument, parameter_type) {
             TypeCheckResult::Equals => {}
             TypeCheckResult::RightSideCasted(new_expr) => {
@@ -404,6 +430,19 @@ pub fn check_function_call_arguments(
         let varargs_type = parameters.last().unwrap();
         for index in last_optional_param_index..arguments_count {
             let argument = arguments.get(index).unwrap();
+
+            // Catch undefined arguments
+            if argument.expr_type(env).is_undefined() {
+                return Err(Diagnostic::error(&format!(
+                    "Function `{}` argument number {} has Undefined type",
+                    function_name, index,
+                ))
+                .add_help("Make sure you used a correct field name")
+                .add_help("Check column names for each table from docs website")
+                .with_location(location)
+                .as_boxed());
+            }
+
             match is_expression_type_equals(env, argument, varargs_type) {
                 TypeCheckResult::Equals => {}
                 TypeCheckResult::RightSideCasted(new_expr) => {
