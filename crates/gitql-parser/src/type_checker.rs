@@ -1,6 +1,3 @@
-use gitql_ast::date_utils::is_valid_date_format;
-use gitql_ast::date_utils::is_valid_datetime_format;
-use gitql_ast::date_utils::is_valid_time_format;
 use gitql_ast::environment::Environment;
 use gitql_ast::expression::Expression;
 use gitql_ast::expression::ExpressionKind;
@@ -9,6 +6,9 @@ use gitql_ast::expression::StringValueType;
 use gitql_ast::types::DataType;
 
 use crate::diagnostic::Diagnostic;
+use crate::format_checker::is_valid_date_format;
+use crate::format_checker::is_valid_datetime_format;
+use crate::format_checker::is_valid_time_format;
 use crate::tokenizer::Location;
 
 /// The return result after performing types checking with implicit casting option
