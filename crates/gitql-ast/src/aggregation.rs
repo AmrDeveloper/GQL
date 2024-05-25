@@ -103,7 +103,7 @@ fn aggregation_max(group_values: Vec<Vec<Value>>) -> Value {
     for row_values in &group_values {
         let single_value = &row_values[0];
         if max_value.compare(single_value) == Ordering::Greater {
-            max_value = &single_value;
+            max_value = single_value;
         }
     }
     max_value.clone()
@@ -114,7 +114,7 @@ fn aggregation_min(group_values: Vec<Vec<Value>>) -> Value {
     for row_values in &group_values {
         let single_value = &row_values[0];
         if min_value.compare(single_value) == Ordering::Less {
-            min_value = &single_value;
+            min_value = single_value;
         }
     }
     min_value.clone()
