@@ -899,7 +899,7 @@ fn parse_regex_expression(
         let regex_expr = Box::new(CallExpression {
             function_name: "regexp_like".to_owned(),
             arguments: vec![expression, pattern],
-            is_aggregation: false,
+            return_type: DataType::Boolean,
         });
 
         return Ok(if has_not_keyword {
@@ -1745,12 +1745,12 @@ fn parse_function_call_expression(
             )?;
 
             // Register function name with return type
-            env.define(function_name.to_string(), return_type);
+            env.define(function_name.to_string(), return_type.clone());
 
             return Ok(Box::new(CallExpression {
                 function_name: function_name.to_string(),
                 arguments,
-                is_aggregation: false,
+                return_type,
             }));
         }
 

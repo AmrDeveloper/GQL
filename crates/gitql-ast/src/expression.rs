@@ -1,7 +1,6 @@
 use std::any::Any;
 
 use crate::environment::Environment;
-use crate::function::standard_function_signatures;
 use crate::types::DataType;
 use crate::value::Value;
 
@@ -374,7 +373,7 @@ impl Expression for BitwiseExpression {
 pub struct CallExpression {
     pub function_name: String,
     pub arguments: Vec<Box<dyn Expression>>,
-    pub is_aggregation: bool,
+    pub return_type: DataType,
 }
 
 impl Expression for CallExpression {
@@ -383,10 +382,7 @@ impl Expression for CallExpression {
     }
 
     fn expr_type(&self, _scope: &Environment) -> DataType {
-        let prototype = standard_function_signatures()
-            .get(&self.function_name.as_str())
-            .unwrap();
-        prototype.return_type.clone()
+        self.return_type.clone()
     }
 
     fn as_any(&self) -> &dyn Any {
