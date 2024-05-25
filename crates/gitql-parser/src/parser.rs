@@ -1756,10 +1756,23 @@ fn parse_function_call_expression(
 
         // Check if this function is an Aggregation functions
         if aggregation_functions().contains_key(function_name.as_str()) {
+            let aggregations_count_before = context.aggregations.len();
             let mut arguments = parse_arguments_expressions(context, env, tokens, position)?;
+            let has_aggregations = context.aggregations.len() != aggregations_count_before;
+
+            // Prevent calling aggregation function with aggregation values as argument
+            if has_aggregations {
+                return Err(Diagnostic::error(
+                    "Aggregated values can't as used for aggregation function argument",
+                )
+                .with_location(function_name_location)
+                .as_boxed());
+            }
+
             let prototype = aggregation_function_signatures()
                 .get(function_name.as_str())
                 .unwrap();
+
             let parameters = &prototype.parameters.clone();
             let mut return_type = prototype.return_type.clone();
             if let DataType::Dynamic(calculate_type) = return_type {
@@ -1775,28 +1788,7 @@ fn parse_function_call_expression(
                 function_name_location,
             )?;
 
-            // If type checker passed correctly and function has no argument or optional argument
-            // Ignore calling expression name and pass argument as empty string
-            // This case is useful to handle `SELECT COUNT()`
-            let is_arguments_empty = arguments.is_empty();
-            let argument_literal_result = if is_arguments_empty {
-                Err(())
-            } else {
-                get_expression_name(&arguments[0])
-            };
-
-            // Make sure the non optional argument is a column name
-            if !is_arguments_empty && argument_literal_result.is_err() {
-                return Err(Diagnostic::error("Invalid Aggregation function argument")
-                    .add_help("Try to use field name as Aggregation function argument")
-                    .add_note("Aggregation function accept field name as argument")
-                    .with_location(function_name_location)
-                    .as_boxed());
-            }
-
-            let argument = argument_literal_result.unwrap_or("".to_owned());
             let column_name = context.generate_column_name();
-
             context.hidden_selections.push(column_name.to_string());
 
             // Register aggregation generated name with return type
@@ -1804,7 +1796,7 @@ fn parse_function_call_expression(
 
             context.aggregations.insert(
                 column_name.clone(),
-                AggregateValue::Function(function_name.to_string(), argument),
+                AggregateValue::Function(function_name.to_string(), arguments),
             );
 
             // Return a Symbol that reference to the aggregation function generated name

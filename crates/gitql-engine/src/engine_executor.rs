@@ -393,7 +393,7 @@ fn execute_aggregation_function_statement(
 
         // Resolve all aggregations functions first
         for aggregation in aggregations_map {
-            if let AggregateValue::Function(function, argument) = aggregation.1 {
+            if let AggregateValue::Function(function, arguments) = aggregation.1 {
                 // Get alias name if exists or column name by default
 
                 let result_column_name = aggregation.0;
@@ -405,10 +405,27 @@ fn execute_aggregation_function_statement(
                     .position(|r| r.eq(&column_name))
                     .unwrap();
 
+                // Evaluate the Arguments to Values
+                let mut group_values: Vec<Vec<Value>> = Vec::with_capacity(group.rows.len());
+                for object in &mut group.rows {
+                    let mut row_values: Vec<Value> = Vec::with_capacity(object.values.len());
+                    for argument in arguments {
+                        let value = evaluate_expression(
+                            env,
+                            argument,
+                            &gitql_object.titles,
+                            &object.values,
+                        )?;
+
+                        row_values.push(value);
+                    }
+
+                    group_values.push(row_values);
+                }
+
                 // Get the target aggregation function
                 let aggregation_function = aggregation_functions().get(function.as_str()).unwrap();
-                let result =
-                    &aggregation_function(&argument.to_string(), &gitql_object.titles, group);
+                let result = &aggregation_function(group_values);
 
                 // Insert the calculated value in the group objects
                 for object in &mut group.rows {

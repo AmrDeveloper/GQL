@@ -1,4 +1,3 @@
-use crate::object::Group;
 use crate::signature::Signature;
 use crate::types::same_type_as_first_parameter;
 use crate::types::DataType;
@@ -8,7 +7,18 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
-type Aggregation = fn(&str, &[String], &Group) -> Value;
+/// Aggregation function accept a selected row values for each row in group and return single [`Value`]
+///
+/// [`Vec<Vec<Value>>`] represent the selected values from each row in group
+///
+/// For Example if we have three rows in group and select name and email from each one
+///
+/// [[name, email], [name, email], [name, email]]
+///
+/// This implementation allow aggregation function to accept more than one parameter,
+/// and also accept any Expression not only field name
+///
+type Aggregation = fn(Vec<Vec<Value>>) -> Value;
 
 pub fn aggregation_functions() -> &'static HashMap<&'static str, Aggregation> {
     static HASHMAP: OnceLock<HashMap<&'static str, Aggregation>> = OnceLock::new();
@@ -80,7 +90,7 @@ pub fn aggregation_function_signatures() -> &'static HashMap<&'static str, Signa
         map.insert(
             "group_concat",
             Signature {
-                parameters: vec![DataType::Any],
+                parameters: vec![DataType::Varargs(Box::new(DataType::Any))],
                 return_type: DataType::Text,
             },
         );
@@ -88,66 +98,55 @@ pub fn aggregation_function_signatures() -> &'static HashMap<&'static str, Signa
     })
 }
 
-fn aggregation_max(field_name: &str, titles: &[String], objects: &Group) -> Value {
-    let column_index = titles.iter().position(|r| r.eq(&field_name)).unwrap();
-    let mut max_value = objects.rows[0].values.get(column_index).unwrap();
-    for row in &objects.rows {
-        let field_value = &row.values.get(column_index).unwrap();
-        if max_value.compare(field_value) == Ordering::Greater {
-            max_value = field_value;
+fn aggregation_max(group_values: Vec<Vec<Value>>) -> Value {
+    let mut max_value = &group_values[0][0];
+    for row_values in &group_values {
+        let single_value = &row_values[0];
+        if max_value.compare(single_value) == Ordering::Greater {
+            max_value = &single_value;
         }
     }
     max_value.clone()
 }
 
-fn aggregation_min(field_name: &str, titles: &[String], objects: &Group) -> Value {
-    let column_index = titles.iter().position(|r| r.eq(&field_name)).unwrap();
-    let mut min_value = objects.rows[0].values.get(column_index).unwrap();
-    for row in &objects.rows {
-        let field_value = &row.values.get(column_index).unwrap();
-        if min_value.compare(field_value) == Ordering::Less {
-            min_value = field_value;
+fn aggregation_min(group_values: Vec<Vec<Value>>) -> Value {
+    let mut min_value = &group_values[0][0];
+    for row_values in &group_values {
+        let single_value = &row_values[0];
+        if min_value.compare(single_value) == Ordering::Less {
+            min_value = &single_value;
         }
     }
     min_value.clone()
 }
 
-fn aggregation_sum(field_name: &str, titles: &[String], objects: &Group) -> Value {
+fn aggregation_sum(group_values: Vec<Vec<Value>>) -> Value {
     let mut sum: i64 = 0;
-    let column_index = titles.iter().position(|r| r.eq(&field_name)).unwrap();
-    for row in &objects.rows {
-        let field_value = &row.values.get(column_index).unwrap();
-        sum += field_value.as_int();
+    for row_values in group_values {
+        sum += &row_values[0].as_int();
     }
     Value::Integer(sum)
 }
 
-fn aggregation_average(field_name: &str, titles: &[String], objects: &Group) -> Value {
+fn aggregation_average(group_values: Vec<Vec<Value>>) -> Value {
     let mut sum: i64 = 0;
-    let count: i64 = objects.len().try_into().unwrap();
-    let column_index = titles.iter().position(|r| r.eq(&field_name)).unwrap();
-    for row in &objects.rows {
-        let field_value = &row.values.get(column_index).unwrap();
-        sum += field_value.as_int();
+    for row_values in &group_values {
+        sum += &row_values[0].as_int();
     }
-    let avg = sum / count;
-    Value::Integer(avg)
+    let count: i64 = group_values[0].len().try_into().unwrap();
+    Value::Integer(sum / count)
 }
 
-fn aggregation_count(_field_name: &str, _titles: &[String], objects: &Group) -> Value {
-    Value::Integer(objects.len() as i64)
+fn aggregation_count(group_values: Vec<Vec<Value>>) -> Value {
+    Value::Integer(group_values.len() as i64)
 }
 
-fn aggregation_group_concat(field_name: &str, titles: &[String], objects: &Group) -> Value {
-    let column_index = titles.iter().position(|r| r.eq(&field_name)).unwrap();
-    let rows_count = objects.rows.len();
-    let mut string_values: Vec<String> = Vec::with_capacity(rows_count);
-    for row in &objects.rows {
-        let field_value = &row.values.get(column_index).unwrap();
-        if field_value.data_type().is_null() {
-            continue;
+fn aggregation_group_concat(group_values: Vec<Vec<Value>>) -> Value {
+    let mut string_values: Vec<String> = vec![];
+    for row_values in group_values {
+        for value in row_values {
+            string_values.push(value.to_string());
         }
-        string_values.push(field_value.to_string());
     }
     Value::Text(string_values.concat())
 }

@@ -145,7 +145,7 @@ impl Statement for GroupByStatement {
 
 pub enum AggregateValue {
     Expression(Box<dyn Expression>),
-    Function(String, String),
+    Function(String, Vec<Box<dyn Expression>>),
 }
 
 pub struct AggregationsStatement {
