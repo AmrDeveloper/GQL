@@ -24,6 +24,7 @@ use gitql_ast::expression::LogicalOperator;
 use gitql_ast::expression::NumberExpression;
 use gitql_ast::expression::PrefixUnary;
 use gitql_ast::expression::PrefixUnaryOperator;
+use gitql_ast::expression::RegexExpression;
 use gitql_ast::expression::StringExpression;
 use gitql_ast::expression::StringValueType;
 use gitql_ast::expression::SymbolExpression;
@@ -107,6 +108,13 @@ pub fn evaluate_expression(
                 .downcast_ref::<LikeExpression>()
                 .unwrap();
             evaluate_like(env, expr, titles, object)
+        }
+        Regex => {
+            let expr = expression
+                .as_any()
+                .downcast_ref::<RegexExpression>()
+                .unwrap();
+            evaluate_regex(env, expr, titles, object)
         }
         Glob => {
             let expr = expression
@@ -336,6 +344,28 @@ fn evaluate_like(
         .as_text()
         .to_lowercase();
     Ok(Value::Boolean(regex.is_match(&lhs)))
+}
+
+fn evaluate_regex(
+    env: &mut Environment,
+    expr: &RegexExpression,
+    titles: &[String],
+    object: &Vec<Value>,
+) -> Result<Value, String> {
+    let rhs = evaluate_expression(env, &expr.pattern, titles, object)?.as_text();
+    let pattern = &format!(
+        "^{}$",
+        rhs.to_lowercase().replace('%', ".*").replace('_', ".")
+    );
+    let regex_result = Regex::new(pattern);
+    if regex_result.is_err() {
+        return Err(regex_result.err().unwrap().to_string());
+    }
+    let regex = regex_result.ok().unwrap();
+    let input = evaluate_expression(env, &expr.input, titles, object)?
+        .as_text()
+        .to_lowercase();
+    Ok(Value::Boolean(regex.is_match(&input)))
 }
 
 fn evaluate_glob(

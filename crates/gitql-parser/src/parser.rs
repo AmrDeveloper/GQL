@@ -896,10 +896,9 @@ fn parse_regex_expression(
             );
         }
 
-        let regex_expr = Box::new(CallExpression {
-            function_name: "regexp_like".to_owned(),
-            arguments: vec![expression, pattern],
-            return_type: DataType::Boolean,
+        let regex_expr = Box::new(RegexExpression {
+            input: expression,
+            pattern,
         });
 
         return Ok(if has_not_keyword {
