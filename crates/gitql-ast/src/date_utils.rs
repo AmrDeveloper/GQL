@@ -10,10 +10,10 @@ use chrono::Timelike;
 use chrono::Utc;
 use chrono::Weekday;
 
-static CHRONO_TIME_FORMAT: &str = "%H:%M:%S";
-static CHRONO_DATE_FORMAT: &str = "%Y-%m-%d";
-static CHRONO_DATE_TIME_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
-static CHRONO_DATE_TIME_FULL_FORMAT: &str = "%Y-%m-%d %H:%M:%S%.3f";
+const CHRONO_TIME_FORMAT: &str = "%H:%M:%S";
+const CHRONO_DATE_FORMAT: &str = "%Y-%m-%d";
+const CHRONO_DATE_TIME_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
+const CHRONO_DATE_TIME_FULL_FORMAT: &str = "%Y-%m-%d %H:%M:%S%.3f";
 
 pub fn get_unix_timestamp_ms() -> i64 {
     Utc::now().timestamp()

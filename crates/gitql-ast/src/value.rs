@@ -1,10 +1,12 @@
+use chrono::DateTime;
 use std::cmp::Ordering;
 use std::fmt;
 use std::ops::Mul;
 
-use crate::date_utils::time_stamp_to_date;
-use crate::date_utils::time_stamp_to_date_time;
 use crate::types::DataType;
+
+const VALUE_DATE_FORMAT: &str = "%Y-%m-%d";
+const VALUE_DATE_TIME_FORMAT: &str = "%Y-%m-%d %H:%M:%S%.3f";
 
 #[derive(Clone)]
 pub enum Value {
@@ -25,8 +27,14 @@ impl fmt::Display for Value {
             Value::Float(f64) => write!(f, "{}", f64),
             Value::Text(s) => write!(f, "{}", s),
             Value::Boolean(b) => write!(f, "{}", b),
-            Value::DateTime(dt) => write!(f, "{}", time_stamp_to_date_time(*dt)),
-            Value::Date(d) => write!(f, "{}", time_stamp_to_date(*d)),
+            Value::DateTime(dt) => {
+                let datetime = DateTime::from_timestamp(*dt, 0).unwrap();
+                write!(f, "{}", datetime.format(VALUE_DATE_TIME_FORMAT))
+            }
+            Value::Date(d) => {
+                let date_time = DateTime::from_timestamp(*d, 0).unwrap();
+                write!(f, "{}", date_time.format(VALUE_DATE_FORMAT))
+            }
             Value::Time(t) => write!(f, "{}", t),
             Value::Null => write!(f, "Null"),
         }
