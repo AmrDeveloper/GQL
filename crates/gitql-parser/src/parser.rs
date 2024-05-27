@@ -140,21 +140,19 @@ fn parse_show_query(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Query, Box<Diagnostic>> {
-    let len = tokens.len();
-
-    // lets advance
+    // Consume SHOW keyword
     *position += 1;
 
-    if *position >= len || tokens[*position].literal != "tables" {
+    if *position >= tokens.len() || tokens[*position].literal != "tables" {
         return Err(
             Diagnostic::error("Show can not be followed by names other than tables")
+                .add_help("A correct statement will be `SHOW TABLES`")
                 .with_location(get_safe_location(tokens, *position - 1))
                 .as_boxed(),
         );
     }
 
     *position += 1;
-
     Ok(Query::ShowTables)
 }
 
