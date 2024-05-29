@@ -7,14 +7,22 @@ use crate::signature::Signature;
 use crate::types::DataType;
 use crate::value::Value;
 
+/// Environment that track schema, functions, scopes and types
+/// to be used in different places in the query engine
 pub struct Environment {
     /// Data schema information contains table, fields names and types
     pub schema: Schema,
 
+    /// Standard function signatures
     pub std_signatures: HashMap<&'static str, Signature>,
+
+    /// Standard function references
     pub std_functions: HashMap<&'static str, Function>,
 
+    /// Aggregation function signatures
     pub aggregation_signatures: HashMap<&'static str, Signature>,
+
+    /// Aggregation function references
     pub aggregation_functions: HashMap<&'static str, Aggregation>,
 
     /// All Global Variables values that can life for this program session
@@ -42,6 +50,7 @@ impl Environment {
         }
     }
 
+    /// Register standard functions signatures and references
     pub fn with_standard_functions(
         &mut self,
         signatures: &HashMap<&'static str, Signature>,
@@ -51,6 +60,7 @@ impl Environment {
         self.std_functions.extend(functions.to_owned());
     }
 
+    /// Register aggregation functions signatures and references
     pub fn with_aggregation_functions(
         &mut self,
         signatures: &HashMap<&'static str, Signature>,
@@ -60,26 +70,32 @@ impl Environment {
         self.aggregation_functions.extend(aggregation.to_owned());
     }
 
+    /// Return true if this name is a valid standard function
     pub fn is_std_function(&self, str: &str) -> bool {
         self.std_functions.contains_key(str)
     }
 
+    /// Return Standard function signature by name
     pub fn std_signature(&self, str: &str) -> Option<&Signature> {
         self.std_signatures.get(str)
     }
 
+    /// Return Standard function reference by name
     pub fn std_function(&self, str: &str) -> Option<&Function> {
         self.std_functions.get(str)
     }
 
+    /// Return true if this name is a valid aggregation function
     pub fn is_aggregation_function(&self, str: &str) -> bool {
         self.aggregation_signatures.contains_key(str)
     }
 
+    /// Return Aggregation function signature by name
     pub fn aggregation_signature(&self, str: &str) -> Option<&Signature> {
         self.aggregation_signatures.get(str)
     }
 
+    /// Return Aggregation function reference by name
     pub fn aggregation_function(&self, str: &str) -> Option<&Aggregation> {
         self.aggregation_functions.get(str)
     }
