@@ -1,6 +1,7 @@
 use crate::types::DataType;
 use crate::value::Value;
 
+/// Standard function accept array of values and return single [`Value`]
 pub type Function = fn(&[Value]) -> Value;
 
 /// Aggregation function accept a selected row values for each row in group and return single [`Value`]
