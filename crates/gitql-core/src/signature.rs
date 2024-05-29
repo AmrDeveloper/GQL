@@ -1,4 +1,20 @@
 use crate::types::DataType;
+use crate::value::Value;
+
+pub type Function = fn(&[Value]) -> Value;
+
+/// Aggregation function accept a selected row values for each row in group and return single [`Value`]
+///
+/// [`Vec<Vec<Value>>`] represent the selected values from each row in group
+///
+/// For Example if we have three rows in group and select name and email from each one
+///
+/// [[name, email], [name, email], [name, email]]
+///
+/// This implementation allow aggregation function to accept more than one parameter,
+/// and also accept any Expression not only field name
+///
+pub type Aggregation = fn(Vec<Vec<Value>>) -> Value;
 
 /// Signature struct is a representation of function type
 ///
@@ -15,6 +31,7 @@ use crate::types::DataType;
 ///
 /// The return type can be a static [`DataType`] such as Int, Flow or Dynamic
 /// so you can return a dynamic type depending on parameters.
+#[derive(Clone)]
 pub struct Signature {
     pub parameters: Vec<DataType>,
     pub return_type: DataType,

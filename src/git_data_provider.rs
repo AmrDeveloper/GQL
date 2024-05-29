@@ -1,15 +1,14 @@
-use gitql_ast::environment::Environment;
 use gitql_ast::expression::Expression;
-use gitql_ast::object::GitQLObject;
-use gitql_ast::object::Group;
-use gitql_ast::object::Row;
+use gitql_ast::expression::SymbolExpression;
+use gitql_core::environment::Environment;
+use gitql_core::object::GitQLObject;
+use gitql_core::object::Group;
+use gitql_core::object::Row;
+use gitql_core::value::Value;
 use gitql_engine::data_provider::select_values;
 use gitql_engine::data_provider::DataProvider;
 use gitql_engine::engine_evaluator::evaluate_expression;
 use gix::refs::Category;
-
-use gitql_ast::expression::SymbolExpression;
-use gitql_ast::value::Value;
 
 pub struct GitDataProvider {
     pub repos: Vec<gix::Repository>,

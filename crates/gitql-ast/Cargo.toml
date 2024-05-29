@@ -6,11 +6,8 @@ edition = "2021"
 description = "GitQL Abstract syntax tree (AST)"
 repository = "https://github.com/amrdeveloper/gql/tree/main/crates/gitql-ast"
 license = "MIT"
+keywords = ["cli", "gql", "language", "git", "sql"]
+categories = ["command-line-utilities"]
 
 [dependencies]
-chrono = "0.4.38"
-serde_json = "1.0.115"
-csv = "1.3.0"
-regex = "1.10.4"
-rand = "0.8.5"
-uuid = { version = "1.8.0", features = ["v4"] }
+gitql-core = { path = "../gitql-core", version = "0.1.0" }

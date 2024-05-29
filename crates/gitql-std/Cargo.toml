@@ -1,16 +1,17 @@
 [package]
-name = "gitql-engine"
+name = "gitql-std"
 authors = ["AmrDeveloper"]
-version = "0.19.1"
+version = "0.1.0"
 edition = "2021"
-description = "GitQL Engine"
-repository = "https://github.com/amrdeveloper/gql/tree/main/crates/gitql-engine"
+description = "GitQL Standard and Aggregation functions"
+repository = "https://github.com/amrdeveloper/gql/tree/main/crates/gitql-cli"
 license = "MIT"
 keywords = ["cli", "gql", "language", "git", "sql"]
 categories = ["command-line-utilities"]
 
 [dependencies]
 gitql-core = { path = "../gitql-core", version = "0.1.0" }
-gitql-ast = { path = "../gitql-ast", version = "0.17.1" }
-regex = "1.10.4"
 chrono = "0.4.38"
+regex = "1.10.4"
+rand = "0.8.5"
+uuid = { version = "1.8.0", features = ["v4"] }

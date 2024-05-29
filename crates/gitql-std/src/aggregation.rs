@@ -1,24 +1,11 @@
-use crate::signature::Signature;
-use crate::types::same_type_as_first_parameter;
-use crate::types::DataType;
-use crate::value::Value;
-
+use gitql_core::signature::Aggregation;
+use gitql_core::signature::Signature;
+use gitql_core::types::same_type_as_first_parameter;
+use gitql_core::types::DataType;
+use gitql_core::value::Value;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::sync::OnceLock;
-
-/// Aggregation function accept a selected row values for each row in group and return single [`Value`]
-///
-/// [`Vec<Vec<Value>>`] represent the selected values from each row in group
-///
-/// For Example if we have three rows in group and select name and email from each one
-///
-/// [[name, email], [name, email], [name, email]]
-///
-/// This implementation allow aggregation function to accept more than one parameter,
-/// and also accept any Expression not only field name
-///
-type Aggregation = fn(Vec<Vec<Value>>) -> Value;
 
 pub fn aggregation_functions() -> &'static HashMap<&'static str, Aggregation> {
     static HASHMAP: OnceLock<HashMap<&'static str, Aggregation>> = OnceLock::new();
@@ -98,7 +85,7 @@ pub fn aggregation_function_signatures() -> &'static HashMap<&'static str, Signa
     })
 }
 
-fn aggregation_max(group_values: Vec<Vec<Value>>) -> Value {
+pub fn aggregation_max(group_values: Vec<Vec<Value>>) -> Value {
     let mut max_value = &group_values[0][0];
     for row_values in &group_values {
         let single_value = &row_values[0];
@@ -109,7 +96,7 @@ fn aggregation_max(group_values: Vec<Vec<Value>>) -> Value {
     max_value.clone()
 }
 
-fn aggregation_min(group_values: Vec<Vec<Value>>) -> Value {
+pub fn aggregation_min(group_values: Vec<Vec<Value>>) -> Value {
     let mut min_value = &group_values[0][0];
     for row_values in &group_values {
         let single_value = &row_values[0];
@@ -120,7 +107,7 @@ fn aggregation_min(group_values: Vec<Vec<Value>>) -> Value {
     min_value.clone()
 }
 
-fn aggregation_sum(group_values: Vec<Vec<Value>>) -> Value {
+pub fn aggregation_sum(group_values: Vec<Vec<Value>>) -> Value {
     let mut sum: i64 = 0;
     for row_values in group_values {
         sum += &row_values[0].as_int();
@@ -128,7 +115,7 @@ fn aggregation_sum(group_values: Vec<Vec<Value>>) -> Value {
     Value::Integer(sum)
 }
 
-fn aggregation_average(group_values: Vec<Vec<Value>>) -> Value {
+pub fn aggregation_average(group_values: Vec<Vec<Value>>) -> Value {
     let mut sum: i64 = 0;
     for row_values in &group_values {
         sum += &row_values[0].as_int();
@@ -137,11 +124,11 @@ fn aggregation_average(group_values: Vec<Vec<Value>>) -> Value {
     Value::Integer(sum / count)
 }
 
-fn aggregation_count(group_values: Vec<Vec<Value>>) -> Value {
+pub fn aggregation_count(group_values: Vec<Vec<Value>>) -> Value {
     Value::Integer(group_values.len() as i64)
 }
 
-fn aggregation_group_concat(group_values: Vec<Vec<Value>>) -> Value {
+pub fn aggregation_group_concat(group_values: Vec<Vec<Value>>) -> Value {
     let mut string_values: Vec<String> = vec![];
     for row_values in group_values {
         for value in row_values {

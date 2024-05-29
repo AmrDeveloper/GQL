@@ -1,4 +1,4 @@
-<h1 align="center">GQL - Git Query Language Execution Engine</h1></br>
+<h1 align="center">GQL - Git Query Language Standard and Aggregation functions</h1></br>
 
 <p align="center">
   <img alt="Crates.io" src="https://img.shields.io/crates/v/gitql?style=flat-square">

@@ -1,10 +1,6 @@
 <h1 align="center">GQL - Git Query Language Parser</h1></br>
 
 <p align="center">
-<img src="../../media/gql_logo.svg" width="20%" height="20%"/>
-</p>
-
-<p align="center">
   <img alt="Crates.io" src="https://img.shields.io/crates/v/gitql?style=flat-square">
   <img alt="Deps" src="https://deps.rs/repo/github/amrdeveloper/gql/status.svg">
   <img alt="Release" src="https://github.com/AmrDeveloper/GQL/actions/workflows/release.yaml/badge.svg">

@@ -3,8 +3,6 @@ use crate::git_schema::tables_fields_types;
 
 use atty::Stream;
 use git_data_provider::GitDataProvider;
-use gitql_ast::environment::Environment;
-use gitql_ast::schema::Schema;
 use gitql_cli::arguments;
 use gitql_cli::arguments::Arguments;
 use gitql_cli::arguments::Command;
@@ -12,12 +10,18 @@ use gitql_cli::arguments::OutputFormat;
 use gitql_cli::diagnostic_reporter;
 use gitql_cli::diagnostic_reporter::DiagnosticReporter;
 use gitql_cli::render;
+use gitql_core::environment::Environment;
+use gitql_core::schema::Schema;
 use gitql_engine::data_provider::DataProvider;
 use gitql_engine::engine;
 use gitql_engine::engine::EvaluationResult::SelectedGroups;
 use gitql_parser::diagnostic::Diagnostic;
 use gitql_parser::parser;
 use gitql_parser::tokenizer;
+use gitql_std::aggregation::aggregation_function_signatures;
+use gitql_std::aggregation::aggregation_functions;
+use gitql_std::function::standard_function_signatures;
+use gitql_std::function::standard_functions;
 
 mod git_data_provider;
 mod git_schema;
@@ -51,7 +55,17 @@ fn main() {
                 tables_fields_names: tables_fields_names().to_owned(),
                 tables_fields_types: tables_fields_types().to_owned(),
             };
+
+            let std_signatures = standard_function_signatures();
+            let std_functions = standard_functions();
+
+            let aggregation_signatures = aggregation_function_signatures();
+            let aggregation_functions = aggregation_functions();
+
             let mut env = Environment::new(schema);
+            env.with_standard_functions(std_signatures, std_functions);
+            env.with_aggregation_functions(aggregation_signatures, aggregation_functions);
+
             execute_gitql_query(query, &arguments, &repos, &mut env, &mut reporter);
         }
         Command::Help => {
@@ -82,7 +96,16 @@ fn launch_gitql_repl(arguments: Arguments) {
         tables_fields_types: tables_fields_types().clone(),
     };
 
+    let std_signatures = standard_function_signatures();
+    let std_functions = standard_functions();
+
+    let aggregation_signatures = aggregation_function_signatures();
+    let aggregation_functions = aggregation_functions();
+
     let mut global_env = Environment::new(schema);
+    global_env.with_standard_functions(std_signatures, std_functions);
+    global_env.with_aggregation_functions(aggregation_signatures, aggregation_functions);
+
     let git_repositories = git_repos_result.ok().unwrap();
 
     let mut input = String::new();

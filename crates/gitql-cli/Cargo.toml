@@ -6,8 +6,11 @@ edition = "2021"
 description = "GitQL Command line interface (CLI) components"
 repository = "https://github.com/amrdeveloper/gql/tree/main/crates/gitql-cli"
 license = "MIT"
+keywords = ["cli", "gql", "language", "git", "sql"]
+categories = ["command-line-utilities"]
 
 [dependencies]
+gitql-core = { path = "../gitql-core", version = "0.1.0" }
 gitql-ast = { path = "../gitql-ast", version = "0.17.1" }
 gitql-parser = { path = "../gitql-parser", version = "0.18.1" }
 comfy-table = "7.1.0"

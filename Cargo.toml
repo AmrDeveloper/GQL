@@ -14,6 +14,8 @@ exclude = [".github/**", "docs/**", "media/**", "scripts/**"]
 
 [workspace]
 members = [
+    "crates/gitql-core",
+    "crates/gitql-std",
     "crates/gitql-ast",
     "crates/gitql-cli",
     "crates/gitql-parser",
@@ -24,9 +26,11 @@ members = [
 gix = { version = "0.63.0", default-features = false }
 
 [dependencies]
+gitql-core = { path = "./crates/gitql-core", version = "0.1.0" }
+gitql-std = { path = "./crates/gitql-std", version = "0.1.0" }
 gitql-ast = { path = "./crates/gitql-ast", version = "0.17.1" }
 gitql-parser = { path = "./crates/gitql-parser", version = "0.18.1" }
 gitql-engine = { path = "./crates/gitql-engine", version = "0.19.1" }
 gitql-cli = { path = "./crates/gitql-cli", version = "0.19.1" }
-gix = { workspace = true, features = ["max-performance"] }
+gix = { workspace = true, features = ["blob-diff", "max-performance"] }
 atty = "0.2.14"

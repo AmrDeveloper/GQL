@@ -6,6 +6,9 @@ edition = "2021"
 description = "GitQL parser"
 repository = "https://github.com/amrdeveloper/gql/tree/main/crates/gitql-parser"
 license = "MIT"
+keywords = ["cli", "gql", "language", "git", "sql"]
+categories = ["command-line-utilities"]
 
 [dependencies]
+gitql-core = { path = "../gitql-core", version = "0.1.0" }
 gitql-ast = { path = "../gitql-ast", version = "0.17.1" }

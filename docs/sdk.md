@@ -3,6 +3,8 @@ The architecture for GitQL designed to enable you to embedded the full engine wi
 ## SDK Components
 | Component    |                  Description                  |                      Install |
 | ------------ | :-------------------------------------------: | ---------------------------: |
+| gitql-core   |       Core components Types and Values        |   `cargo install gitql-core` |
+| gitql-std    |      Standard and Aggregation functions       |    `cargo install gitql-std` |
 | gitql-cli    | CLI components like args parser, cli reporter |    `cargo install gitql-cli` |
 | gitql-ast    | structures components such as AST, functions  |    `cargo install gitql-ast` |
 | gitql-parser |      Parser and Type checker components       | `cargo install gitql-parser` |
@@ -210,7 +212,16 @@ let schema = Schema {
     tables_fields_types: TABLES_FIELDS_TYPES.to_owned(),
 };
 
+// Register default standard and aggregation function or add your own with modifications
+let std_signatures = standard_function_signatures();
+let std_functions = standard_functions();
+
+let aggregation_signatures = aggregation_function_signatures();
+let aggregation_functions = aggregation_functions();
+
 let mut env = Environment::new(schema);
+env.with_standard_functions(std_signatures, std_functions);
+env.with_aggregation_functions(aggregation_signatures, aggregation_functions);
 
 let mut reporter = DiagnosticReporter::default();
 let tokenizer_result = tokenizer::tokenize(query.to_owned());

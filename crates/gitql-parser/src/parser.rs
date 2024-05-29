@@ -1,9 +1,5 @@
-use gitql_ast::aggregation::aggregation_function_signatures;
-use gitql_ast::aggregation::aggregation_functions;
-use gitql_ast::environment::Environment;
-use gitql_ast::function::standard_function_signatures;
-use gitql_ast::function::standard_functions;
-use gitql_ast::value::Value;
+use gitql_core::environment::Environment;
+use gitql_core::value::Value;
 use std::collections::HashMap;
 use std::num::IntErrorKind;
 use std::num::ParseIntError;
@@ -22,7 +18,7 @@ use crate::type_checker::TypeCheckResult;
 
 use gitql_ast::expression::*;
 use gitql_ast::statement::*;
-use gitql_ast::types::DataType;
+use gitql_core::types::DataType;
 
 pub fn parse_gql(tokens: Vec<Token>, env: &mut Environment) -> Result<Query, Box<Diagnostic>> {
     let mut position = 0;
@@ -1722,11 +1718,9 @@ fn parse_function_call_expression(
         let function_name = &symbol_expression.unwrap().value;
 
         // Check if this function is a Standard library functions
-        if standard_functions().contains_key(function_name.as_str()) {
+        if env.is_std_function(function_name.as_str()) {
             let mut arguments = parse_arguments_expressions(context, env, tokens, position)?;
-            let prototype = standard_function_signatures()
-                .get(function_name.as_str())
-                .unwrap();
+            let prototype = env.std_signature(function_name.as_str()).unwrap();
             let parameters = &prototype.parameters;
             let mut return_type = prototype.return_type.clone();
             if let DataType::Dynamic(calculate_type) = return_type {
@@ -1752,7 +1746,7 @@ fn parse_function_call_expression(
         }
 
         // Check if this function is an Aggregation functions
-        if aggregation_functions().contains_key(function_name.as_str()) {
+        if env.is_aggregation_function(function_name.as_str()) {
             let aggregations_count_before = context.aggregations.len();
             let mut arguments = parse_arguments_expressions(context, env, tokens, position)?;
             let has_aggregations = context.aggregations.len() != aggregations_count_before;
@@ -1766,9 +1760,7 @@ fn parse_function_call_expression(
                 .as_boxed());
             }
 
-            let prototype = aggregation_function_signatures()
-                .get(function_name.as_str())
-                .unwrap();
+            let prototype = env.aggregation_signature(function_name.as_str()).unwrap();
 
             let parameters = &prototype.parameters.clone();
             let mut return_type = prototype.return_type.clone();

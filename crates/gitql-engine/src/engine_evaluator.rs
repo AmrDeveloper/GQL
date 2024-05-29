@@ -1,6 +1,3 @@
-use gitql_ast::date_utils::date_time_to_time_stamp;
-use gitql_ast::date_utils::date_to_time_stamp;
-use gitql_ast::environment::Environment;
 use gitql_ast::expression::ArithmeticExpression;
 use gitql_ast::expression::ArithmeticOperator;
 use gitql_ast::expression::AssignmentExpression;
@@ -28,8 +25,8 @@ use gitql_ast::expression::RegexExpression;
 use gitql_ast::expression::StringExpression;
 use gitql_ast::expression::StringValueType;
 use gitql_ast::expression::SymbolExpression;
-use gitql_ast::function::standard_functions;
-use gitql_ast::value::Value;
+use gitql_core::environment::Environment;
+use gitql_core::value::Value;
 
 use regex::Regex;
 use std::string::String;
@@ -188,15 +185,35 @@ fn evaluate_string(expr: &StringExpression) -> Result<Value, String> {
     match expr.value_type {
         StringValueType::Text => Ok(Value::Text(expr.value.to_owned())),
         StringValueType::Time => Ok(Value::Time(expr.value.to_owned())),
-        StringValueType::Date => {
-            let timestamp = date_to_time_stamp(&expr.value);
-            Ok(Value::Date(timestamp))
-        }
-        StringValueType::DateTime => {
-            let timestamp = date_time_to_time_stamp(&expr.value);
-            Ok(Value::DateTime(timestamp))
-        }
+        StringValueType::Date => Ok(string_literal_to_date(&expr.value)),
+        StringValueType::DateTime => Ok(string_literal_to_date_time(&expr.value)),
     }
+}
+
+fn string_literal_to_date(date: &str) -> Value {
+    let date_time = chrono::NaiveDate::parse_from_str(date, "%Y-%m-%d").ok();
+    let timestamp = if let Some(date) = date_time {
+        let zero_time = chrono::NaiveTime::from_hms_opt(0, 0, 0).unwrap();
+        date.and_time(zero_time).and_utc().timestamp()
+    } else {
+        0
+    };
+    Value::Date(timestamp)
+}
+
+fn string_literal_to_date_time(date: &str) -> Value {
+    let date_time_format = if date.contains('.') {
+        "%Y-%m-%d %H:%M:%S%.3f"
+    } else {
+        "%Y-%m-%d %H:%M:%S"
+    };
+
+    let date_time = chrono::NaiveDateTime::parse_from_str(date, date_time_format);
+    if date_time.is_err() {
+        return Value::DateTime(0);
+    }
+
+    Value::DateTime(date_time.ok().unwrap().and_utc().timestamp())
 }
 
 fn evaluate_symbol(
@@ -448,13 +465,12 @@ fn evaluate_call(
     object: &Vec<Value>,
 ) -> Result<Value, String> {
     let function_name = expr.function_name.as_str();
-    let function = standard_functions().get(function_name).unwrap();
-
     let mut arguments = Vec::with_capacity(expr.arguments.len());
     for arg in expr.arguments.iter() {
         arguments.push(evaluate_expression(env, arg, titles, object)?);
     }
 
+    let function = env.std_function(function_name).unwrap();
     Ok(function(&arguments))
 }
 

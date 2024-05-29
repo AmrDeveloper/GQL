@@ -5,15 +5,15 @@ use std::hash::Hash;
 use std::hash::Hasher;
 use std::vec;
 
-use gitql_ast::environment::Environment;
-use gitql_ast::object::GitQLObject;
-use gitql_ast::object::Group;
-use gitql_ast::object::Row;
 use gitql_ast::statement::DescribeStatement;
 use gitql_ast::statement::GQLQuery;
 use gitql_ast::statement::Query;
 use gitql_ast::statement::SelectStatement;
-use gitql_ast::value::Value;
+use gitql_core::environment::Environment;
+use gitql_core::object::GitQLObject;
+use gitql_core::object::Group;
+use gitql_core::object::Row;
+use gitql_core::value::Value;
 
 use crate::data_provider::DataProvider;
 use crate::engine_executor::execute_global_variable_statement;

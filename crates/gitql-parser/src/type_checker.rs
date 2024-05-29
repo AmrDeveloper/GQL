@@ -1,9 +1,9 @@
-use gitql_ast::environment::Environment;
 use gitql_ast::expression::Expression;
 use gitql_ast::expression::ExpressionKind;
 use gitql_ast::expression::StringExpression;
 use gitql_ast::expression::StringValueType;
-use gitql_ast::types::DataType;
+use gitql_core::environment::Environment;
+use gitql_core::types::DataType;
 
 use crate::diagnostic::Diagnostic;
 use crate::format_checker::is_valid_date_format;
@@ -300,7 +300,7 @@ pub fn check_all_values_are_same_type(
 /// Check That function call arguments types are matches the parameter types
 /// Return a Diagnostic Error if anything is wrong
 pub fn check_function_call_arguments(
-    env: &mut Environment,
+    env: &Environment,
     arguments: &mut [Box<dyn Expression>],
     parameters: &[DataType],
     function_name: String,

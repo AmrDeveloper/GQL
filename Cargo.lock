@@ -445,8 +445,10 @@ dependencies = [
  "atty",
  "gitql-ast",
  "gitql-cli",
+ "gitql-core",
  "gitql-engine",
  "gitql-parser",
+ "gitql-std",
  "gix",
 ]
 
@@ -454,12 +456,7 @@ dependencies = [
 name = "gitql-ast"
 version = "0.17.1"
 dependencies = [
- "chrono",
- "csv",
- "rand",
- "regex",
- "serde_json",
- "uuid",
+ "gitql-core",
 ]
 
 [[package]]
@@ -468,16 +465,27 @@ version = "0.19.1"
 dependencies = [
  "comfy-table",
  "gitql-ast",
+ "gitql-core",
  "gitql-parser",
  "termcolor",
+]
+
+[[package]]
+name = "gitql-core"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "csv",
+ "serde_json",
 ]
 
 [[package]]
 name = "gitql-engine"
 version = "0.19.1"
 dependencies = [
+ "chrono",
  "gitql-ast",
- "gix",
+ "gitql-core",
  "regex",
 ]
 
@@ -486,6 +494,18 @@ name = "gitql-parser"
 version = "0.18.1"
 dependencies = [
  "gitql-ast",
+ "gitql-core",
+]
+
+[[package]]
+name = "gitql-std"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "gitql-core",
+ "rand",
+ "regex",
+ "uuid",
 ]
 
 [[package]]

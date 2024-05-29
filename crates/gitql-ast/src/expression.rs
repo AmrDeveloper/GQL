@@ -1,8 +1,8 @@
 use std::any::Any;
 
-use crate::environment::Environment;
-use crate::types::DataType;
-use crate::value::Value;
+use gitql_core::environment::Environment;
+use gitql_core::types::DataType;
+use gitql_core::value::Value;
 
 #[derive(PartialEq)]
 pub enum ExpressionKind {

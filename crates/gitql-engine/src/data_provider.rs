@@ -1,8 +1,8 @@
-use gitql_ast::environment::Environment;
 use gitql_ast::expression::Expression;
-use gitql_ast::object::GitQLObject;
-use gitql_ast::object::Group;
-use gitql_ast::object::Row;
+use gitql_core::environment::Environment;
+use gitql_core::object::GitQLObject;
+use gitql_core::object::Group;
+use gitql_core::object::Row;
 
 use crate::engine_evaluator::evaluate_expression;
 

@@ -1,5 +1,5 @@
-use gitql_ast::object::GitQLObject;
-use gitql_ast::object::Row;
+use gitql_core::object::GitQLObject;
+use gitql_core::object::Row;
 
 enum PaginationInput {
     NextPage,

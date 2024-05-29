@@ -1,4 +1,4 @@
-use gitql_ast::types::DataType;
+use gitql_core::types::DataType;
 use std::collections::HashMap;
 use std::sync::OnceLock;
 

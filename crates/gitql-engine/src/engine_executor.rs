@@ -2,11 +2,6 @@ use std::cmp;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 
-use gitql_ast::aggregation::aggregation_functions;
-use gitql_ast::environment::Environment;
-use gitql_ast::object::GitQLObject;
-use gitql_ast::object::Group;
-use gitql_ast::object::Row;
 use gitql_ast::statement::AggregateValue;
 use gitql_ast::statement::AggregationsStatement;
 use gitql_ast::statement::GlobalVariableStatement;
@@ -20,7 +15,11 @@ use gitql_ast::statement::SortingOrder;
 use gitql_ast::statement::Statement;
 use gitql_ast::statement::StatementKind::*;
 use gitql_ast::statement::WhereStatement;
-use gitql_ast::value::Value;
+use gitql_core::environment::Environment;
+use gitql_core::object::GitQLObject;
+use gitql_core::object::Group;
+use gitql_core::object::Row;
+use gitql_core::value::Value;
 
 use crate::data_provider::DataProvider;
 use crate::engine_evaluator::evaluate_expression;
@@ -424,7 +423,7 @@ fn execute_aggregation_function_statement(
                 }
 
                 // Get the target aggregation function
-                let aggregation_function = aggregation_functions().get(function.as_str()).unwrap();
+                let aggregation_function = env.aggregation_function(function.as_str()).unwrap();
                 let result = &aggregation_function(group_values);
 
                 // Insert the calculated value in the group objects
