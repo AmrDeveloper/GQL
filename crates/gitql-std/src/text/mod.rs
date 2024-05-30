@@ -1,5 +1,10 @@
 use gitql_core::value::Value;
 
+pub fn text_bin(inputs: &[Value]) -> Value {
+    let number = inputs[0].as_int();
+    Value::Text(format!("{number:b}"))
+}
+
 pub fn text_lowercase(inputs: &[Value]) -> Value {
     Value::Text(inputs[0].as_text().to_lowercase())
 }

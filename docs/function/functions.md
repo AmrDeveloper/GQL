@@ -5,6 +5,7 @@ note that all functions names are case-insensitive.
 
 | Name       | Parameters                   | Return  | Description                                                                                                                                                          |
 | ---------- | ---------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| BIN        | Integer                      | Text    | Return a string containing binary representation of a Integer.                                                                                                       |
 | LOWER      | Text                         | Text    | Return Text in lower case.                                                                                                                                           |
 | UPPER      | Text                         | Text    | Return Text in upper case.                                                                                                                                           |
 | REVERSE    | Text                         | Text    | Return a reversed string.                                                                                                                                            |

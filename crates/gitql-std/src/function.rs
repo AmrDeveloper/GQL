@@ -16,6 +16,7 @@ pub fn standard_functions() -> &'static HashMap<&'static str, Function> {
     HASHMAP.get_or_init(|| {
         let mut map: HashMap<&'static str, Function> = HashMap::new();
         // String functions
+        map.insert("bin", text_bin);
         map.insert("lower", text_lowercase);
         map.insert("upper", text_uppercase);
         map.insert("reverse", text_reverse);
@@ -109,6 +110,13 @@ pub fn standard_function_signatures() -> &'static HashMap<&'static str, Signatur
     HASHMAP.get_or_init(|| {
         let mut map: HashMap<&'static str, Signature> = HashMap::new();
         // String functions
+        map.insert(
+            "bin",
+            Signature {
+                parameters: vec![DataType::Integer],
+                return_type: DataType::Text,
+            },
+        );
         map.insert(
             "lower",
             Signature {
