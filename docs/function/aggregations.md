@@ -48,3 +48,10 @@ The function bool_and() is an aggregate function that returns true if all input 
 ```sql
 SELECT bool_and(is_remote) FROM branches;
 ```
+
+### Aggregation `bool_or`
+The function bool_or() is an aggregate function that returns  	true if at least one input value is true, otherwise false
+
+```sql
+SELECT bool_or(is_remote) FROM branches;
+```
