@@ -41,3 +41,10 @@ The function group_concat() is an aggregate function that returns a string with 
 ```sql
 SELECT GROUP_CONCAT(name, "-", email) FROM commits GROUP BY name;
 ```
+
+### Aggregation `bool_and`
+The function bool_and() is an aggregate function that returns true if all input values are true, otherwise false
+
+```sql
+SELECT bool_and(is_remote) FROM branches;
+```

@@ -17,6 +17,7 @@ pub fn aggregation_functions() -> &'static HashMap<&'static str, Aggregation> {
         map.insert("avg", aggregation_average);
         map.insert("count", aggregation_count);
         map.insert("group_concat", aggregation_group_concat);
+        map.insert("bool_and", aggregation_bool_and);
         map
     })
 }
@@ -81,6 +82,13 @@ pub fn aggregation_function_signatures() -> &'static HashMap<&'static str, Signa
                 return_type: DataType::Text,
             },
         );
+        map.insert(
+            "bool_and",
+            Signature {
+                parameters: vec![DataType::Boolean],
+                return_type: DataType::Boolean,
+            },
+        );
         map
     })
 }
@@ -136,4 +144,13 @@ pub fn aggregation_group_concat(group_values: Vec<Vec<Value>>) -> Value {
         }
     }
     Value::Text(string_values.concat())
+}
+
+pub fn aggregation_bool_and(group_values: Vec<Vec<Value>>) -> Value {
+    for row_values in group_values {
+        if !row_values[0].as_bool() {
+            return Value::Boolean(false);
+        }
+    }
+    Value::Boolean(true)
 }
