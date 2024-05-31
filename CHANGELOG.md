@@ -1,6 +1,20 @@
 Change Log
 ==========
 
+Version 0.20.0 *(2024-05-31)*
+-----------------------------
+
+* Make `COUNT()` aggregation argument to be `Option<Any>`.
+* Replace `lazy_static` crate by `std::sync::OnceLock`.
+* Migrate to gix `0.63.0`.
+* Fix hidden selection in group by statement.
+* Implement `GROUP_CONCAT` Aggregation function.
+* Catching function argument with undefined type.
+* Update Regex expression implementation to not converted to call.
+* Introduce `gitql-core` and `gitql-std` to allow dynamic std.
+* Implement `BIN` Text function.
+* Implement `bool_and` and `bool_or` aggregation functions.
+
 Version 0.19.1 *(2024-05-19)*
 -----------------------------
 
