@@ -1,9 +1,13 @@
-use gitql_core::environment::Environment;
-use gitql_core::value::Value;
 use std::collections::HashMap;
 use std::num::IntErrorKind;
 use std::num::ParseIntError;
 use std::vec;
+
+use gitql_ast::expression::*;
+use gitql_ast::statement::*;
+use gitql_core::environment::Environment;
+use gitql_core::types::DataType;
+use gitql_core::value::Value;
 
 use crate::context::ParserContext;
 use crate::diagnostic::Diagnostic;
@@ -16,14 +20,11 @@ use crate::type_checker::check_function_call_arguments;
 use crate::type_checker::type_check_selected_fields;
 use crate::type_checker::TypeCheckResult;
 
-use gitql_ast::expression::*;
-use gitql_ast::statement::*;
-use gitql_core::types::DataType;
-
 pub fn parse_gql(tokens: Vec<Token>, env: &mut Environment) -> Result<Query, Box<Diagnostic>> {
     let mut position = 0;
     let first_token = &tokens[position];
     let query_result = match &first_token.kind {
+        TokenKind::Do => parse_do_query(env, &tokens, &mut position),
         TokenKind::Set => parse_set_query(env, &tokens, &mut position),
         TokenKind::Select => parse_select_query(env, &tokens, &mut position),
         TokenKind::Describe => parse_describe_query(env, &tokens, &mut position),
@@ -48,6 +49,27 @@ pub fn parse_gql(tokens: Vec<Token>, env: &mut Environment) -> Result<Query, Box
     }
 
     query_result
+}
+
+fn parse_do_query(
+    env: &mut Environment,
+    tokens: &[Token],
+    position: &mut usize,
+) -> Result<Query, Box<Diagnostic>> {
+    // Consume Do keyword
+    *position += 1;
+
+    if *position >= tokens.len() {
+        return Err(
+            Diagnostic::error("Expect expression after Do Statement keyword")
+                .with_location(get_safe_location(tokens, *position - 1))
+                .as_boxed(),
+        );
+    }
+
+    let mut context = ParserContext::default();
+    let expression = parse_expression(&mut context, env, tokens, position)?;
+    Ok(Query::Do(DoStatement { expression }))
 }
 
 fn parse_set_query(

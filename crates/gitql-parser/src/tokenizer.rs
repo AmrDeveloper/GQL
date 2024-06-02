@@ -1,5 +1,6 @@
 #[derive(PartialEq)]
 pub enum TokenKind {
+    Do,
     Set,
     Select,
     Distinct,
@@ -1005,6 +1006,7 @@ fn ignore_c_style_comment(chars: &[char], pos: &mut usize) -> Result<(), Box<Dia
 fn resolve_symbol_kind(literal: String) -> TokenKind {
     match literal.to_lowercase().as_str() {
         // Reserved keywords
+        "do" => TokenKind::Do,
         "set" => TokenKind::Set,
         "select" => TokenKind::Select,
         "distinct" => TokenKind::Distinct,

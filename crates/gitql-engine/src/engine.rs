@@ -6,7 +6,9 @@ use std::hash::Hasher;
 use std::vec;
 
 use gitql_ast::statement::DescribeStatement;
+use gitql_ast::statement::DoStatement;
 use gitql_ast::statement::GQLQuery;
+use gitql_ast::statement::GlobalVariableStatement;
 use gitql_ast::statement::Query;
 use gitql_ast::statement::SelectStatement;
 use gitql_core::environment::Environment;
@@ -16,6 +18,7 @@ use gitql_core::object::Row;
 use gitql_core::value::Value;
 
 use crate::data_provider::DataProvider;
+use crate::engine_evaluator::evaluate_expression;
 use crate::engine_executor::execute_global_variable_statement;
 use crate::engine_executor::execute_statement;
 
@@ -31,6 +34,7 @@ const GQL_COMMANDS_IN_ORDER: [&str; 8] = [
 ];
 
 pub enum EvaluationResult {
+    Do(Value),
     SelectedGroups(GitQLObject, Vec<std::string::String>),
     SetGlobalVariable,
 }
@@ -42,18 +46,28 @@ pub fn evaluate(
     query: Query,
 ) -> Result<EvaluationResult, String> {
     match query {
+        Query::Do(do_statement) => evaluate_do_query(env, &do_statement),
         Query::Select(gql_query) => evaluate_select_query(env, data_provider, gql_query),
-        Query::GlobalVariableDeclaration(global_variable) => {
-            execute_global_variable_statement(env, &global_variable)?;
-            Ok(EvaluationResult::SetGlobalVariable)
-        }
+        Query::GlobalVariableDeclaration(global) => evaluate_global_declaration_query(env, &global),
         Query::Describe(describe_statement) => evaluate_describe_query(env, describe_statement),
         Query::ShowTables => evaluate_show_tables_query(env),
     }
 }
 
+fn evaluate_do_query(
+    env: &mut Environment,
+    do_statement: &DoStatement,
+) -> Result<EvaluationResult, String> {
+    Ok(EvaluationResult::Do(evaluate_expression(
+        env,
+        &do_statement.expression,
+        &[],
+        &vec![],
+    )?))
+}
+
 #[allow(clippy::borrowed_box)]
-pub fn evaluate_select_query(
+fn evaluate_select_query(
     env: &mut Environment,
     data_provider: &Box<dyn DataProvider>,
     query: GQLQuery,
@@ -183,7 +197,15 @@ fn apply_distinct_on_objects_group(gitql_object: &mut GitQLObject, hidden_select
     }
 }
 
-pub fn evaluate_describe_query(
+fn evaluate_global_declaration_query(
+    env: &mut Environment,
+    statement: &GlobalVariableStatement,
+) -> Result<EvaluationResult, String> {
+    execute_global_variable_statement(env, statement)?;
+    Ok(EvaluationResult::SetGlobalVariable)
+}
+
+fn evaluate_describe_query(
     env: &mut Environment,
     stmt: DescribeStatement,
 ) -> Result<EvaluationResult, String> {
@@ -224,7 +246,7 @@ pub fn evaluate_describe_query(
     ))
 }
 
-pub fn evaluate_show_tables_query(env: &mut Environment) -> Result<EvaluationResult, String> {
+fn evaluate_show_tables_query(env: &mut Environment) -> Result<EvaluationResult, String> {
     let mut gitql_object = GitQLObject::default();
     let hidden_selections = vec![];
 

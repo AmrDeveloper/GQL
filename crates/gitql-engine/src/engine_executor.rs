@@ -4,6 +4,7 @@ use std::collections::HashMap;
 
 use gitql_ast::statement::AggregateValue;
 use gitql_ast::statement::AggregationsStatement;
+use gitql_ast::statement::DoStatement;
 use gitql_ast::statement::GlobalVariableStatement;
 use gitql_ast::statement::GroupByStatement;
 use gitql_ast::statement::HavingStatement;
@@ -34,6 +35,10 @@ pub fn execute_statement(
     hidden_selection: &Vec<String>,
 ) -> Result<(), String> {
     match statement.kind() {
+        Do => {
+            let statement = statement.as_any().downcast_ref::<DoStatement>().unwrap();
+            execute_do_statement(env, statement, gitql_object)
+        }
         Select => {
             let statement = statement
                 .as_any()
@@ -104,6 +109,16 @@ pub fn execute_statement(
             execute_global_variable_statement(env, statement)
         }
     }
+}
+
+fn execute_do_statement(
+    env: &mut Environment,
+    statement: &DoStatement,
+    gitql_object: &mut GitQLObject,
+) -> Result<(), String> {
+    let row_values = &gitql_object.groups[0].rows[0].values;
+    evaluate_expression(env, &statement.expression, &gitql_object.titles, row_values)?;
+    Ok(())
 }
 
 #[allow(clippy::borrowed_box)]

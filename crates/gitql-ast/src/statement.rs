@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use crate::expression::Expression;
 
 pub enum StatementKind {
+    Do,
     Select,
     Where,
     Having,
@@ -21,6 +22,7 @@ pub trait Statement {
 }
 
 pub enum Query {
+    Do(DoStatement),
     Select(GQLQuery),
     GlobalVariableDeclaration(GlobalVariableStatement),
     Describe(DescribeStatement),
@@ -32,6 +34,20 @@ pub struct GQLQuery {
     pub has_aggregation_function: bool,
     pub has_group_by_statement: bool,
     pub hidden_selections: Vec<String>,
+}
+
+pub struct DoStatement {
+    pub expression: Box<dyn Expression>,
+}
+
+impl Statement for DoStatement {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn kind(&self) -> StatementKind {
+        StatementKind::Do
+    }
 }
 
 pub struct SelectStatement {

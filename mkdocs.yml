@@ -69,6 +69,7 @@ nav:
       - Types: structure/types.md
   - Statement:
       - Variables: statement/variables.md
+      - Do: statement/do.md
       - Select: statement/select.md
       - Where: statement/where.md
       - Group by: statement/group_by.md
