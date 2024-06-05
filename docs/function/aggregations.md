@@ -50,8 +50,15 @@ SELECT bool_and(is_remote) FROM branches;
 ```
 
 ### Aggregation `bool_or`
-The function bool_or() is an aggregate function that returns  	true if at least one input value is true, otherwise false
+The function bool_or() is an aggregate function that returns true if at least one input value is true, otherwise false
 
 ```sql
 SELECT bool_or(is_remote) FROM branches;
+```
+
+### Aggregation `bit_and`
+The function bit_and() is an aggregate function that returns the bitwise AND of all non-null input values, or null if none
+
+```sql
+SELECT bit_and(commits_count) FROM branches;
 ```

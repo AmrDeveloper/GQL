@@ -20,6 +20,7 @@ pub fn aggregation_functions() -> &'static HashMap<&'static str, Aggregation> {
         map.insert("group_concat", aggregation_group_concat);
         map.insert("bool_and", aggregation_bool_and);
         map.insert("bool_or", aggregation_bool_or);
+        map.insert("bit_and", aggregation_bit_and);
         map
     })
 }
@@ -98,6 +99,13 @@ pub fn aggregation_function_signatures() -> &'static HashMap<&'static str, Signa
                 return_type: DataType::Boolean,
             },
         );
+        map.insert(
+            "bit_and",
+            Signature {
+                parameters: vec![DataType::Integer],
+                return_type: DataType::Integer,
+            },
+        );
         map
     })
 }
@@ -171,4 +179,22 @@ pub fn aggregation_bool_or(group_values: Vec<Vec<Value>>) -> Value {
         }
     }
     Value::Boolean(false)
+}
+
+pub fn aggregation_bit_and(group_values: Vec<Vec<Value>>) -> Value {
+    let mut value: i64 = 1;
+    let mut has_non_null = false;
+    for row_values in group_values {
+        if row_values[0].data_type().is_null() {
+            continue;
+        }
+        value &= row_values[0].as_int();
+        has_non_null = true;
+    }
+
+    if has_non_null {
+        Value::Integer(value)
+    } else {
+        Value::Null
+    }
 }
