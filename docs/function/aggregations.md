@@ -62,3 +62,10 @@ The function bit_and() is an aggregate function that returns the bitwise AND of 
 ```sql
 SELECT bit_and(commits_count) FROM branches;
 ```
+
+### Aggregation `bit_or`
+The function bit_or() is an aggregate function that returns the bitwise OR of all non-null input values, or null if none
+
+```sql
+SELECT bit_or(commits_count) FROM branches;
+```
