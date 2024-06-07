@@ -1,7 +1,7 @@
 [package]
 name = "gitql-ast"
 authors = ["AmrDeveloper"]
-version = "0.18.0"
+version = "0.19.0"
 edition = "2021"
 description = "GitQL Abstract syntax tree (AST)"
 repository = "https://github.com/amrdeveloper/gql/tree/main/crates/gitql-ast"
@@ -10,4 +10,4 @@ keywords = ["cli", "gql", "language", "git", "sql"]
 categories = ["command-line-utilities"]
 
 [dependencies]
-gitql-core = { path = "../gitql-core", version = "0.1.0" }
+gitql-core = { path = "../gitql-core", version = "0.2.0" }

@@ -1,6 +1,16 @@
 Change Log
 ==========
 
+Version 0.21.0 *(2024-06-07)*
+-----------------------------
+
+* Implement `bit_and`  and `bit_or` Aggregation function.
+* Implement Array literal and Index expression.
+* Implement Index expression for Multi dimensions arrays.
+* Implement Index expression and fix exception handling.
+* Implement `array_length` Array function.
+* Fix runtime exception handling.
+
 Version 0.20.0 *(2024-05-31)*
 -----------------------------
 
