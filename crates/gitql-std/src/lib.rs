@@ -1,4 +1,5 @@
 pub mod aggregation;
+pub mod array;
 pub mod datetime;
 pub mod function;
 pub mod general;

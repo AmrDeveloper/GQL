@@ -184,3 +184,15 @@ SELECT REGEXP_LIKE("a", "^[a-d]");
 SELECT REGEXP_REPLACE("a b c", "b", "X");
 SELECT REGEXP_SUBSTR("abc def ghi", "[a-z]+");
 ```
+
+### Array functions
+
+| Name         | Parameters | Return  | Description                 |
+| ------------ | ---------- | ------- | --------------------------- |
+| ARRAY_LENGTH | ARRAY      | Integer | Return the length of Array. |
+
+
+### Array functions samples
+
+```sql
+SELECT ARRAY_LENGTH([1, 2, 3]);

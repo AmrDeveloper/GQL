@@ -4,6 +4,12 @@ use gitql_core::environment::Environment;
 use gitql_core::types::DataType;
 use gitql_core::value::Value;
 
+use crate::operator::ArithmeticOperator;
+use crate::operator::BitwiseOperator;
+use crate::operator::ComparisonOperator;
+use crate::operator::LogicalOperator;
+use crate::operator::PrefixUnaryOperator;
+
 #[derive(PartialEq)]
 pub enum ExpressionKind {
     Assignment,
@@ -203,12 +209,6 @@ impl Expression for BooleanExpression {
     }
 }
 
-#[derive(PartialEq)]
-pub enum PrefixUnaryOperator {
-    Minus,
-    Bang,
-}
-
 pub struct PrefixUnary {
     pub right: Box<dyn Expression>,
     pub op: PrefixUnaryOperator,
@@ -251,15 +251,6 @@ impl Expression for IndexExpression {
     }
 }
 
-#[derive(PartialEq)]
-pub enum ArithmeticOperator {
-    Plus,
-    Minus,
-    Star,
-    Slash,
-    Modulus,
-}
-
 pub struct ArithmeticExpression {
     pub left: Box<dyn Expression>,
     pub operator: ArithmeticOperator,
@@ -281,17 +272,6 @@ impl Expression for ArithmeticExpression {
     fn as_any(&self) -> &dyn Any {
         self
     }
-}
-
-#[derive(PartialEq)]
-pub enum ComparisonOperator {
-    Greater,
-    GreaterEqual,
-    Less,
-    LessEqual,
-    Equal,
-    NotEqual,
-    NullSafeEqual,
 }
 
 pub struct ComparisonExpression {
@@ -375,13 +355,6 @@ impl Expression for GlobExpression {
     }
 }
 
-#[derive(PartialEq)]
-pub enum LogicalOperator {
-    Or,
-    And,
-    Xor,
-}
-
 pub struct LogicalExpression {
     pub left: Box<dyn Expression>,
     pub operator: LogicalOperator,
@@ -400,14 +373,6 @@ impl Expression for LogicalExpression {
     fn as_any(&self) -> &dyn Any {
         self
     }
-}
-
-#[derive(PartialEq)]
-pub enum BitwiseOperator {
-    Or,
-    And,
-    RightShift,
-    LeftShift,
 }
 
 pub struct BitwiseExpression {

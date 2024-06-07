@@ -1,3 +1,4 @@
+use crate::array::*;
 use crate::datetime::*;
 use crate::general::*;
 use crate::number::*;
@@ -101,6 +102,9 @@ pub fn standard_functions() -> &'static HashMap<&'static str, Function> {
         map.insert("regexp_like", regexp_like);
         map.insert("regexp_replace", regexp_replace);
         map.insert("regexp_substr", regexp_substr);
+
+        // Array Functions
+        map.insert("array_length", array_length);
         map
     })
 }
@@ -684,6 +688,16 @@ pub fn standard_function_signatures() -> &'static HashMap<&'static str, Signatur
                 return_type: DataType::Text,
             },
         );
+
+        // Array functions
+        map.insert(
+            "array_length",
+            Signature {
+                parameters: vec![DataType::Array(Box::new(DataType::Any))],
+                return_type: DataType::Integer,
+            },
+        );
+
         map
     })
 }
