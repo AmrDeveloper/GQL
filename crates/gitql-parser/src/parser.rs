@@ -1686,9 +1686,9 @@ fn parse_index_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
-    let expression = parse_unary_expression(context, env, tokens, position)?;
+    let mut expression = parse_unary_expression(context, env, tokens, position)?;
 
-    if *position < tokens.len() && tokens[*position].kind == TokenKind::LeftBracket {
+    while *position < tokens.len() && tokens[*position].kind == TokenKind::LeftBracket {
         // Consume Left Bracket `[`
         *position += 1;
 
@@ -1719,15 +1719,15 @@ fn parse_index_expression(
                 .as_boxed());
             }
 
-            return Ok(Box::new(IndexExpression {
+            expression = Box::new(IndexExpression {
                 right: expression,
                 index,
-            }));
+            });
+        } else {
+            return Err(Diagnostic::error("Expect `]` left index expression")
+                .with_location(get_safe_location(tokens, *position))
+                .as_boxed());
         }
-
-        return Err(Diagnostic::error("Expect `]` left index expression")
-            .with_location(get_safe_location(tokens, *position))
-            .as_boxed());
     }
 
     Ok(expression)
