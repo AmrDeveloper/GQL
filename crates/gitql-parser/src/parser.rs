@@ -3,7 +3,17 @@ use std::num::IntErrorKind;
 use std::num::ParseIntError;
 use std::vec;
 
+use gitql_ast::expression::ArithmeticExpression;
+use gitql_ast::expression::ArrayExpression;
+use gitql_ast::expression::AssignmentExpression;
+use gitql_ast::expression::BetweenExpression;
+use gitql_ast::expression::BitwiseExpression;
 use gitql_ast::expression::*;
+use gitql_ast::operator::ArithmeticOperator;
+use gitql_ast::operator::BitwiseOperator;
+use gitql_ast::operator::ComparisonOperator;
+use gitql_ast::operator::LogicalOperator;
+use gitql_ast::operator::PrefixUnaryOperator;
 use gitql_ast::statement::*;
 use gitql_core::environment::Environment;
 use gitql_core::types::DataType;
