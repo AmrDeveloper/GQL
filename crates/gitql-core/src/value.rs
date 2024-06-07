@@ -17,6 +17,7 @@ pub enum Value {
     DateTime(i64),
     Date(i64),
     Time(String),
+    Array(DataType, Vec<Value>),
     Null,
 }
 
@@ -27,6 +28,17 @@ impl fmt::Display for Value {
             Value::Float(f64) => write!(f, "{}", f64),
             Value::Text(s) => write!(f, "{}", s),
             Value::Boolean(b) => write!(f, "{}", b),
+            Value::Array(_data_type, elements) => {
+                let last_position = elements.len() - 1;
+                write!(f, "[")?;
+                for (pos, element) in elements.iter().enumerate() {
+                    write!(f, "{}", element)?;
+                    if pos != last_position {
+                        write!(f, ", ")?;
+                    }
+                }
+                write!(f, "]")
+            }
             Value::DateTime(dt) => {
                 let datetime = DateTime::from_timestamp(*dt, 0).unwrap();
                 write!(f, "{}", datetime.format(VALUE_DATE_TIME_FORMAT))
@@ -260,6 +272,7 @@ impl Value {
             Value::Float(_) => DataType::Float,
             Value::Text(_) => DataType::Text,
             Value::Boolean(_) => DataType::Boolean,
+            Value::Array(data_type, _) => DataType::Array(Box::new(data_type.clone())),
             Value::DateTime(_) => DataType::DateTime,
             Value::Date(_) => DataType::Date,
             Value::Time(_) => DataType::Time,

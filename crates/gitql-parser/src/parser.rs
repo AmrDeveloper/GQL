@@ -1944,10 +1944,74 @@ fn parse_primary_expression(
             *position += 1;
             Ok(Box::new(NullExpression {}))
         }
+        TokenKind::Array => parse_array_value_expression(context, env, tokens, position),
+        TokenKind::LeftBracket => parse_array_value_expression(context, env, tokens, position),
         TokenKind::LeftParen => parse_group_expression(context, env, tokens, position),
         TokenKind::Case => parse_case_expression(context, env, tokens, position),
         _ => Err(un_expected_expression_error(tokens, position)),
     }
+}
+
+fn parse_array_value_expression(
+    context: &mut ParserContext,
+    env: &mut Environment,
+    tokens: &[Token],
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
+    // Consume the Optional Array keyword
+    if *position < tokens.len() && tokens[*position].kind == TokenKind::Array {
+        // Consume Array keyword
+        *position += 1;
+
+        // Make sure Array keyword followed by [
+        if *position >= tokens.len() || tokens[*position].kind != TokenKind::LeftBracket {
+            return Err(Diagnostic::error("Expect `[` after `ARRAY` keyword")
+                .with_location(get_safe_location(tokens, *position))
+                .add_help("Try to add '[' after `ARRAY` keyword")
+                .as_boxed());
+        }
+    }
+
+    // Consume Left Bracket `[`
+    *position += 1;
+
+    // Parse array values
+    let mut array_values: Vec<Box<dyn Expression>> = vec![];
+    let mut array_data_type = DataType::Any;
+    while *position < tokens.len() && tokens[*position].kind != TokenKind::RightBracket {
+        let value = parse_expression(context, env, tokens, position)?;
+        let value_type = value.expr_type(env);
+        if value_type != array_data_type {
+            return Err(Diagnostic::error("Expect Array values to have same types")
+                .with_location(get_safe_location(tokens, *position))
+                .as_boxed());
+        }
+
+        array_data_type = value_type;
+        array_values.push(value);
+
+        if *position < tokens.len() && tokens[*position].kind == TokenKind::Comma {
+            *position += 1;
+        } else {
+            break;
+        }
+    }
+
+    // Make sure Array values end with by ]
+    if *position >= tokens.len() || tokens[*position].kind != TokenKind::RightBracket {
+        return Err(Diagnostic::error("Expect `]` at the end of array values")
+            .with_location(get_safe_location(tokens, *position))
+            .add_help("Try to add ']' at the end of array values")
+            .as_boxed());
+    }
+
+    // Consume Right Bracket `]`
+    *position += 1;
+
+    Ok(Box::new(ArrayExpression {
+        values: array_values,
+        element_type: array_data_type,
+    }))
 }
 
 fn parse_group_expression(

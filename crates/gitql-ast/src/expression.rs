@@ -9,6 +9,7 @@ pub enum ExpressionKind {
     Assignment,
     String,
     Symbol,
+    Array,
     GlobalVariable,
     Number,
     Boolean,
@@ -118,6 +119,25 @@ impl Expression for SymbolExpression {
         }
 
         DataType::Undefined
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+pub struct ArrayExpression {
+    pub values: Vec<Box<dyn Expression>>,
+    pub element_type: DataType,
+}
+
+impl Expression for ArrayExpression {
+    fn kind(&self) -> ExpressionKind {
+        ExpressionKind::Array
+    }
+
+    fn expr_type(&self, _scope: &Environment) -> DataType {
+        self.element_type.clone()
     }
 
     fn as_any(&self) -> &dyn Any {

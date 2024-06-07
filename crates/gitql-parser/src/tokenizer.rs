@@ -41,8 +41,14 @@ pub enum TokenKind {
 
     As,
 
+    /// Left parenthesis `(`
     LeftParen,
+    /// Right parenthesis `)`
     RightParen,
+    /// Left bracket `[`
+    LeftBracket,
+    /// Right bracket `]`
+    RightBracket,
 
     LogicalOr,
     LogicalAnd,
@@ -58,6 +64,7 @@ pub enum TokenKind {
     Integer,
     Float,
     String,
+    Array,
 
     True,
     False,
@@ -604,6 +611,42 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
             continue;
         }
 
+        // Left Bracket
+        if char == '[' {
+            let location = Location {
+                start: column_start,
+                end: position,
+            };
+
+            let token = Token {
+                location,
+                kind: TokenKind::LeftBracket,
+                literal: "[".to_owned(),
+            };
+
+            tokens.push(token);
+            position += 1;
+            continue;
+        }
+
+        // Right Bracket
+        if char == ']' {
+            let location = Location {
+                start: column_start,
+                end: position,
+            };
+
+            let token = Token {
+                location,
+                kind: TokenKind::RightBracket,
+                literal: "]".to_owned(),
+            };
+
+            tokens.push(token);
+            position += 1;
+            continue;
+        }
+
         // Semicolon
         if char == ';' {
             let location = Location {
@@ -1047,7 +1090,11 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "false" => TokenKind::False,
         "null" => TokenKind::Null,
 
+        // As for alias
         "as" => TokenKind::As,
+
+        // Array data type
+        "array" => TokenKind::Array,
 
         // Order by DES and ASC
         "asc" => TokenKind::Ascending,

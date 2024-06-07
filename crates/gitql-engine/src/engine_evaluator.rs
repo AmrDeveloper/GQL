@@ -1,5 +1,6 @@
 use gitql_ast::expression::ArithmeticExpression;
 use gitql_ast::expression::ArithmeticOperator;
+use gitql_ast::expression::ArrayExpression;
 use gitql_ast::expression::AssignmentExpression;
 use gitql_ast::expression::BetweenExpression;
 use gitql_ast::expression::BitwiseExpression;
@@ -59,6 +60,13 @@ pub fn evaluate_expression(
                 .downcast_ref::<SymbolExpression>()
                 .unwrap();
             evaluate_symbol(expr, titles, object)
+        }
+        Array => {
+            let expr = expression
+                .as_any()
+                .downcast_ref::<ArrayExpression>()
+                .unwrap();
+            evaluate_array(expr, env, titles, object)
         }
         GlobalVariable => {
             let expr = expression
@@ -227,6 +235,20 @@ fn evaluate_symbol(
         }
     }
     Err(format!("Invalid column name `{}`", &expr.value))
+}
+
+fn evaluate_array(
+    expr: &ArrayExpression,
+    env: &mut Environment,
+    titles: &[String],
+    object: &Vec<Value>,
+) -> Result<Value, String> {
+    let data_type = &expr.element_type;
+    let mut values: Vec<Value> = Vec::with_capacity(expr.values.len());
+    for value in &expr.values {
+        values.push(evaluate_expression(env, value, titles, object)?);
+    }
+    Ok(Value::Array(data_type.clone(), values))
 }
 
 fn evaluate_global_variable(

@@ -19,10 +19,8 @@ pub enum DataType {
     Time,
     /// Represent Date with Time type
     DateTime,
-    /// Represent `Undefined` value
-    Undefined,
-    /// Represent `NULL` value
-    Null,
+    /// Represent an Array type
+    Array(Box<DataType>),
     /// Represent a set of valid variant of types
     Variant(Vec<DataType>),
     /// Represent an optional type so it can passed or not, must be last parameter
@@ -32,12 +30,32 @@ pub enum DataType {
     /// Represent dynamic type that calculated depending on other types (for example depending on Parameters)
     /// For now the main use case is to use it to calculate return type of function that has many variants
     Dynamic(fn(&[DataType]) -> DataType),
+    /// Represent `Undefined` value
+    Undefined,
+    /// Represent `NULL` value
+    Null,
 }
 
 impl PartialEq for DataType {
     fn eq(&self, other: &Self) -> bool {
         if self.is_any() || other.is_any() {
             return true;
+        }
+
+        if let DataType::Array(self_type) = self {
+            return if let DataType::Array(other_type) = other {
+                self_type == other_type
+            } else {
+                false
+            };
+        }
+
+        if let DataType::Array(other_type) = other {
+            return if let DataType::Array(self_type) = self {
+                self_type == other_type
+            } else {
+                false
+            };
         }
 
         if let DataType::Variant(types) = self {
@@ -125,13 +143,15 @@ impl fmt::Display for DataType {
             DataType::Date => write!(f, "Date"),
             DataType::Time => write!(f, "Time"),
             DataType::DateTime => write!(f, "DateTime"),
-            DataType::Undefined => write!(f, "Undefined"),
-            DataType::Null => write!(f, "Null"),
+            DataType::Array(data_type) => {
+                write!(f, "{}[]", data_type)
+            }
             DataType::Variant(types) => {
+                let last_position = types.len() - 1;
                 write!(f, "[")?;
                 for (pos, data_type) in types.iter().enumerate() {
                     write!(f, "{}", data_type)?;
-                    if pos != types.len() - 1 {
+                    if pos != last_position {
                         write!(f, " | ")?;
                     }
                 }
@@ -146,6 +166,8 @@ impl fmt::Display for DataType {
             DataType::Dynamic(_function) => {
                 write!(f, "DynamicType")
             }
+            DataType::Undefined => write!(f, "Undefined"),
+            DataType::Null => write!(f, "Null"),
         }
     }
 }
@@ -187,12 +209,8 @@ impl DataType {
         matches!(self, DataType::DateTime)
     }
 
-    pub fn is_null(&self) -> bool {
-        matches!(self, DataType::Null)
-    }
-
-    pub fn is_undefined(&self) -> bool {
-        matches!(self, DataType::Undefined)
+    pub fn is_array(&self) -> bool {
+        matches!(self, DataType::Array(_))
     }
 
     pub fn is_variant(&self) -> bool {
@@ -212,6 +230,14 @@ impl DataType {
 
     pub fn is_varargs(&self) -> bool {
         matches!(self, DataType::Varargs(_))
+    }
+
+    pub fn is_null(&self) -> bool {
+        matches!(self, DataType::Null)
+    }
+
+    pub fn is_undefined(&self) -> bool {
+        matches!(self, DataType::Undefined)
     }
 }
 
