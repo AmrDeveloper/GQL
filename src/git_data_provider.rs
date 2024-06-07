@@ -28,32 +28,30 @@ impl DataProvider for GitDataProvider {
         fields_names: &[String],
         titles: &[String],
         fields_values: &[Box<dyn Expression>],
-    ) -> GitQLObject {
+    ) -> Result<GitQLObject, String> {
         let mut groups: Vec<Group> = vec![];
 
         for repository in &self.repos {
-            let repository_group = select_gql_objects(
+            let mut repository_group = select_gql_objects(
                 env,
                 repository,
                 table.to_string(),
                 fields_names,
                 titles,
                 fields_values,
-            );
+            )?;
 
-            if let Ok(mut group) = repository_group {
-                if groups.is_empty() {
-                    groups.push(group);
-                } else {
-                    groups[0].rows.append(&mut group.rows);
-                }
+            if groups.is_empty() {
+                groups.push(repository_group);
+            } else {
+                groups[0].rows.append(&mut repository_group.rows);
             }
         }
 
-        GitQLObject {
+        Ok(GitQLObject {
             titles: titles.to_vec(),
             groups,
-        }
+        })
     }
 }
 

@@ -308,6 +308,13 @@ impl Value {
         false
     }
 
+    pub fn as_array(&self) -> Vec<Value> {
+        if let Value::Array(_, elements) = self {
+            return elements.to_vec();
+        }
+        vec![]
+    }
+
     pub fn as_date_time(&self) -> i64 {
         if let Value::DateTime(d) = self {
             return *d;

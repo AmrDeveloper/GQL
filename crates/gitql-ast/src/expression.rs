@@ -14,6 +14,7 @@ pub enum ExpressionKind {
     Number,
     Boolean,
     PrefixUnary,
+    Index,
     Arithmetic,
     Comparison,
     Like,
@@ -137,7 +138,7 @@ impl Expression for ArrayExpression {
     }
 
     fn expr_type(&self, _scope: &Environment) -> DataType {
-        self.element_type.clone()
+        DataType::Array(Box::new(self.element_type.clone()))
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -224,6 +225,25 @@ impl Expression for PrefixUnary {
         } else {
             DataType::Integer
         }
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+pub struct IndexExpression {
+    pub right: Box<dyn Expression>,
+    pub index: Box<dyn Expression>,
+}
+
+impl Expression for IndexExpression {
+    fn kind(&self) -> ExpressionKind {
+        ExpressionKind::Index
+    }
+
+    fn expr_type(&self, scope: &Environment) -> DataType {
+        self.right.expr_type(scope)
     }
 
     fn as_any(&self) -> &dyn Any {

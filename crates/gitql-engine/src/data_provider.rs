@@ -17,7 +17,7 @@ pub trait DataProvider {
         fields_names: &[String],
         titles: &[String],
         fields_values: &[Box<dyn Expression>],
-    ) -> GitQLObject;
+    ) -> Result<GitQLObject, String>;
 }
 
 pub fn select_values(

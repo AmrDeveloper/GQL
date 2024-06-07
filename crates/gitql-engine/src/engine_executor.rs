@@ -153,7 +153,7 @@ fn execute_select_statement(
         &fields_names,
         &gitql_object.titles,
         &statement.fields_values,
-    );
+    )?;
 
     gitql_object.groups.append(&mut provided_object.groups);
     Ok(())

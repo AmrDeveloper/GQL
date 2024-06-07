@@ -99,7 +99,7 @@ impl DataProvider for FileDataProvider {
         fields_names: &[String],
         titles: &[String],
         fields_values: &[Box<dyn Expression>],
-    ) -> GitQLObject {
+    ) -> Result<GitQLObject, String> {
         let files = traverse_file_path(&self.base_path);
         let mut groups: Vec<Group> = vec![];
         let mut rows: Vec<Row> = vec![];
@@ -165,10 +165,10 @@ impl DataProvider for FileDataProvider {
         }
 
         groups.push(Group { rows });
-        GitQLObject {
+        Ok(GitQLObject {
             titles: titles.to_vec(),
             groups,
-        }
+        })
     }
 }
 

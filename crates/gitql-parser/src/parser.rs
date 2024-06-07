@@ -1642,7 +1642,7 @@ fn parse_glob_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
-    let expression = parse_unary_expression(context, env, tokens, position);
+    let expression = parse_index_expression(context, env, tokens, position);
     if expression.is_err() || *position >= tokens.len() {
         return expression;
     }
@@ -1661,7 +1661,7 @@ fn parse_glob_expression(
             .as_boxed());
         }
 
-        let pattern = parse_unary_expression(context, env, tokens, position)?;
+        let pattern = parse_index_expression(context, env, tokens, position)?;
         if !pattern.expr_type(env).is_text() {
             return Err(Diagnostic::error(&format!(
                 "Expect `GLOB` right hand side to be `TEXT` but got {}",
@@ -1678,6 +1678,59 @@ fn parse_glob_expression(
     }
 
     Ok(lhs)
+}
+
+fn parse_index_expression(
+    context: &mut ParserContext,
+    env: &mut Environment,
+    tokens: &[Token],
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
+    let expression = parse_unary_expression(context, env, tokens, position)?;
+
+    if *position < tokens.len() && tokens[*position].kind == TokenKind::LeftBracket {
+        // Consume Left Bracket `[`
+        *position += 1;
+
+        let index = parse_unary_expression(context, env, tokens, position)?;
+        if *position < tokens.len() && tokens[*position].kind == TokenKind::RightBracket {
+            // Consume Left Bracket `]`
+            *position += 1;
+
+            // Make sure right hand side is an Array
+            let rhs_type = expression.expr_type(env);
+            if !rhs_type.is_array() {
+                return Err(Diagnostic::error(&format!(
+                    "Expect right side of index expression to be Array but got {}",
+                    rhs_type
+                ))
+                .with_location(get_safe_location(tokens, *position))
+                .as_boxed());
+            }
+
+            // Make sure index is integer type
+            let index_type = index.expr_type(env);
+            if !index_type.is_int() {
+                return Err(Diagnostic::error(&format!(
+                    "Expect Index value to be Int but got {}",
+                    index_type
+                ))
+                .with_location(get_safe_location(tokens, *position))
+                .as_boxed());
+            }
+
+            return Ok(Box::new(IndexExpression {
+                right: expression,
+                index,
+            }));
+        }
+
+        return Err(Diagnostic::error("Expect `]` left index expression")
+            .with_location(get_safe_location(tokens, *position))
+            .as_boxed());
+    }
+
+    Ok(expression)
 }
 
 fn parse_unary_expression(

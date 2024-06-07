@@ -15,6 +15,7 @@ use gitql_ast::expression::ExpressionKind::*;
 use gitql_ast::expression::GlobExpression;
 use gitql_ast::expression::GlobalVariableExpression;
 use gitql_ast::expression::InExpression;
+use gitql_ast::expression::IndexExpression;
 use gitql_ast::expression::IsNullExpression;
 use gitql_ast::expression::LikeExpression;
 use gitql_ast::expression::LogicalExpression;
@@ -66,7 +67,7 @@ pub fn evaluate_expression(
                 .as_any()
                 .downcast_ref::<ArrayExpression>()
                 .unwrap();
-            evaluate_array(expr, env, titles, object)
+            evaluate_array(env, expr, titles, object)
         }
         GlobalVariable => {
             let expr = expression
@@ -92,6 +93,13 @@ pub fn evaluate_expression(
         PrefixUnary => {
             let expr = expression.as_any().downcast_ref::<PrefixUnary>().unwrap();
             evaluate_prefix_unary(env, expr, titles, object)
+        }
+        Index => {
+            let expr = expression
+                .as_any()
+                .downcast_ref::<IndexExpression>()
+                .unwrap();
+            evaluate_index(env, expr, titles, object)
         }
         Arithmetic => {
             let expr = expression
@@ -238,8 +246,8 @@ fn evaluate_symbol(
 }
 
 fn evaluate_array(
-    expr: &ArrayExpression,
     env: &mut Environment,
+    expr: &ArrayExpression,
     titles: &[String],
     object: &Vec<Value>,
 ) -> Result<Value, String> {
@@ -272,6 +280,33 @@ fn evaluate_number(expr: &NumberExpression) -> Result<Value, String> {
 
 fn evaluate_boolean(expr: &BooleanExpression) -> Result<Value, String> {
     Ok(Value::Boolean(expr.is_true))
+}
+
+fn evaluate_index(
+    env: &mut Environment,
+    expr: &IndexExpression,
+    titles: &[String],
+    object: &Vec<Value>,
+) -> Result<Value, String> {
+    let array = evaluate_expression(env, &expr.right, titles, object)?;
+    let index = evaluate_expression(env, &expr.index, titles, object)?;
+
+    let elements = array.as_array();
+    let position = index.as_int() - 1;
+
+    if position < 0 {
+        return Err("Array position must be larger than or equal 1".to_string());
+    }
+
+    if position as usize >= elements.len() {
+        return Err(format!(
+            "Array position is larger than array length {} and {}",
+            position + 1,
+            elements.len()
+        ));
+    }
+
+    Ok(elements[position as usize].clone())
 }
 
 fn evaluate_prefix_unary(
