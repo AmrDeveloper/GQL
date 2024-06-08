@@ -288,7 +288,7 @@ fn evaluate_index(
     titles: &[String],
     object: &Vec<Value>,
 ) -> Result<Value, String> {
-    let array = evaluate_expression(env, &expr.right, titles, object)?;
+    let array = evaluate_expression(env, &expr.collection, titles, object)?;
     let index = evaluate_expression(env, &expr.index, titles, object)?;
 
     let elements = array.as_array();

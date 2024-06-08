@@ -1702,6 +1702,16 @@ fn parse_index_expression(
         // Consume Left Bracket `[`
         *position += 1;
 
+        let expression_type = expression.expr_type(env);
+
+        if !expression_type.is_array() {
+            return Err(
+                Diagnostic::error("Expect Right side of index expression to be Array")
+                    .with_location(get_safe_location(tokens, *position))
+                    .as_boxed(),
+            );
+        }
+
         let index = parse_unary_expression(context, env, tokens, position)?;
         if *position < tokens.len() && tokens[*position].kind == TokenKind::RightBracket {
             // Consume Left Bracket `]`
@@ -1729,8 +1739,14 @@ fn parse_index_expression(
                 .as_boxed());
             }
 
+            let array_element_type = match expression_type {
+                DataType::Array(element_type) => *element_type.clone(),
+                _ => DataType::Any,
+            };
+
             expression = Box::new(IndexExpression {
-                right: expression,
+                collection: expression,
+                element_type: array_element_type,
                 index,
             });
         } else {

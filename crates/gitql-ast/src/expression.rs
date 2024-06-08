@@ -233,7 +233,8 @@ impl Expression for PrefixUnary {
 }
 
 pub struct IndexExpression {
-    pub right: Box<dyn Expression>,
+    pub collection: Box<dyn Expression>,
+    pub element_type: DataType,
     pub index: Box<dyn Expression>,
 }
 
@@ -242,8 +243,8 @@ impl Expression for IndexExpression {
         ExpressionKind::Index
     }
 
-    fn expr_type(&self, scope: &Environment) -> DataType {
-        self.right.expr_type(scope)
+    fn expr_type(&self, _scope: &Environment) -> DataType {
+        self.element_type.clone()
     }
 
     fn as_any(&self) -> &dyn Any {
