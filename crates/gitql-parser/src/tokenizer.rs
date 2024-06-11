@@ -70,6 +70,7 @@ pub enum TokenKind {
     False,
     Null,
 
+    Colon,
     ColonEqual,
 
     Plus,
@@ -522,14 +523,14 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
             continue;
         }
 
-        // Colon Equal
+        // Colon or Colon Equal
         if char == ':' {
-            if position + 1 < len && characters[position + 1] == '=' {
-                let location = Location {
-                    start: column_start,
-                    end: position,
-                };
+            let location = Location {
+                start: column_start,
+                end: position,
+            };
 
+            if position + 1 < len && characters[position + 1] == '=' {
                 let token = Token {
                     location,
                     kind: TokenKind::ColonEqual,
@@ -541,10 +542,15 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
                 continue;
             }
 
-            return Err(Diagnostic::error("Expect `=` after `:`")
-                .add_help("Only token that has `:` is `:=` so make sure you add `=` after `:`")
-                .with_location_span(column_start, position)
-                .as_boxed());
+            let token = Token {
+                location,
+                kind: TokenKind::Colon,
+                literal: ":".to_owned(),
+            };
+
+            tokens.push(token);
+            position += 1;
+            continue;
         }
 
         // Bang or Bang Equal

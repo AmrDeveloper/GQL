@@ -25,6 +25,11 @@ SELECT LEN("Git Query Language")
 SELECT "One" IN ("One", "Two", "Three")
 SELECT "Git Query Language" LIKE "%Query%"
 
+SET @arr = [1, 2, 3];
+SELECT [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
+SELECT @arr[1], @arr[2], @arr[3], ARRAY_LENGTH(@arr);
+SELECT @arr[1:2], @arr[2:], @arr[:2];
+
 SELECT DISTINCT title AS tt FROM commits
 SELECT name, COUNT(name) AS commit_num FROM commits GROUP BY name ORDER BY commit_num DESC LIMIT 10
 SELECT commit_count FROM branches WHERE commit_count BETWEEN 0 .. 10

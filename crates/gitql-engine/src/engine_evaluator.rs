@@ -19,6 +19,7 @@ use gitql_ast::expression::LogicalExpression;
 use gitql_ast::expression::NumberExpression;
 use gitql_ast::expression::PrefixUnary;
 use gitql_ast::expression::RegexExpression;
+use gitql_ast::expression::SliceExpression;
 use gitql_ast::expression::StringExpression;
 use gitql_ast::expression::StringValueType;
 use gitql_ast::expression::SymbolExpression;
@@ -28,6 +29,7 @@ use gitql_ast::operator::ComparisonOperator;
 use gitql_ast::operator::LogicalOperator;
 use gitql_ast::operator::PrefixUnaryOperator;
 use gitql_core::environment::Environment;
+use gitql_core::types::DataType;
 use gitql_core::value::Value;
 
 use regex::Regex;
@@ -99,7 +101,14 @@ pub fn evaluate_expression(
                 .as_any()
                 .downcast_ref::<IndexExpression>()
                 .unwrap();
-            evaluate_index(env, expr, titles, object)
+            evaluate_collection_index(env, expr, titles, object)
+        }
+        Slice => {
+            let expr = expression
+                .as_any()
+                .downcast_ref::<SliceExpression>()
+                .unwrap();
+            evaluate_collection_slice(env, expr, titles, object)
         }
         Arithmetic => {
             let expr = expression
@@ -282,7 +291,7 @@ fn evaluate_boolean(expr: &BooleanExpression) -> Result<Value, String> {
     Ok(Value::Boolean(expr.is_true))
 }
 
-fn evaluate_index(
+fn evaluate_collection_index(
     env: &mut Environment,
     expr: &IndexExpression,
     titles: &[String],
@@ -307,6 +316,51 @@ fn evaluate_index(
     }
 
     Ok(elements[position as usize].clone())
+}
+
+fn evaluate_collection_slice(
+    env: &mut Environment,
+    expr: &SliceExpression,
+    titles: &[String],
+    object: &Vec<Value>,
+) -> Result<Value, String> {
+    let array = evaluate_expression(env, &expr.collection, titles, object)?;
+    let elements = array.as_array();
+    let len = elements.len() as i64;
+
+    let start = if let Some(start_expr) = &expr.start {
+        evaluate_expression(env, start_expr, titles, object)?.as_int()
+    } else {
+        1
+    };
+
+    if start < 1 || start >= len {
+        return Err("Slice start must be between 1 and length of collection".to_string());
+    }
+
+    let end = if let Some(end_expr) = &expr.end {
+        evaluate_expression(env, end_expr, titles, object)?.as_int()
+    } else {
+        len
+    };
+
+    if end < 1 || end > len {
+        return Err("Slice end must be between 1 and length of collection".to_string());
+    }
+
+    if start > end {
+        return Err("Slice end must be larger then start".to_string());
+    }
+
+    let usize_start = (start - 1) as usize;
+    let usize_end: usize = (end) as usize;
+    let slice: Vec<Value> = elements[usize_start..usize_end].to_vec();
+    let element_type = match expr.expr_type(env) {
+        DataType::Array(element_type) => *element_type,
+        _ => DataType::Any,
+    };
+
+    Ok(Value::Array(element_type, slice))
 }
 
 fn evaluate_prefix_unary(

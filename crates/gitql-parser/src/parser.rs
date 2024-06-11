@@ -1652,7 +1652,7 @@ fn parse_glob_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
-    let expression = parse_index_expression(context, env, tokens, position);
+    let expression = parse_index_or_slice_expression(context, env, tokens, position);
     if expression.is_err() || *position >= tokens.len() {
         return expression;
     }
@@ -1671,7 +1671,7 @@ fn parse_glob_expression(
             .as_boxed());
         }
 
-        let pattern = parse_index_expression(context, env, tokens, position)?;
+        let pattern = parse_index_or_slice_expression(context, env, tokens, position)?;
         if !pattern.expr_type(env).is_text() {
             return Err(Diagnostic::error(&format!(
                 "Expect `GLOB` right hand side to be `TEXT` but got {}",
@@ -1690,7 +1690,7 @@ fn parse_glob_expression(
     Ok(lhs)
 }
 
-fn parse_index_expression(
+fn parse_index_or_slice_expression(
     context: &mut ParserContext,
     env: &mut Environment,
     tokens: &[Token],
@@ -1712,48 +1712,139 @@ fn parse_index_expression(
             );
         }
 
-        let index = parse_unary_expression(context, env, tokens, position)?;
-        if *position < tokens.len() && tokens[*position].kind == TokenKind::RightBracket {
-            // Consume Left Bracket `]`
+        // Make sure right hand side is an Array
+        let rhs_type = expression.expr_type(env);
+        if !rhs_type.is_array() {
+            return Err(Diagnostic::error(&format!(
+                "Expect right side of index expression to be Array but got {}",
+                rhs_type
+            ))
+            .with_location(get_safe_location(tokens, *position))
+            .as_boxed());
+        }
+
+        // Slice with end only range [:end]
+        if *position < tokens.len() && tokens[*position].kind == TokenKind::Colon {
+            // Consume Colon `:`
             *position += 1;
 
-            // Make sure right hand side is an Array
-            let rhs_type = expression.expr_type(env);
-            if !rhs_type.is_array() {
+            let slice_end = parse_unary_expression(context, env, tokens, position)?;
+            let end_type = slice_end.expr_type(env);
+            if !end_type.is_int() {
                 return Err(Diagnostic::error(&format!(
-                    "Expect right side of index expression to be Array but got {}",
-                    rhs_type
+                    "Expect Slice expression end value to be Int but got {}",
+                    end_type
                 ))
                 .with_location(get_safe_location(tokens, *position))
                 .as_boxed());
             }
 
-            // Make sure index is integer type
-            let index_type = index.expr_type(env);
-            if !index_type.is_int() {
-                return Err(Diagnostic::error(&format!(
-                    "Expect Index value to be Int but got {}",
-                    index_type
-                ))
-                .with_location(get_safe_location(tokens, *position))
-                .as_boxed());
+            if *position < tokens.len() && tokens[*position].kind == TokenKind::RightBracket {
+                // Consume Right Bracket `]`
+                *position += 1;
+            } else {
+                return Err(Diagnostic::error("Expect `]` After Slice expression")
+                    .with_location(get_safe_location(tokens, *position))
+                    .as_boxed());
             }
 
-            let array_element_type = match expression_type {
-                DataType::Array(element_type) => *element_type.clone(),
-                _ => DataType::Any,
-            };
-
-            expression = Box::new(IndexExpression {
+            expression = Box::new(SliceExpression {
                 collection: expression,
-                element_type: array_element_type,
-                index,
+                start: None,
+                end: Some(slice_end),
             });
+            continue;
+        }
+
+        let index = parse_unary_expression(context, env, tokens, position)?;
+
+        // Slice Expression with Start and End range [start:end]
+        if *position < tokens.len() && tokens[*position].kind == TokenKind::Colon {
+            // Consume Colon `:`
+            *position += 1;
+
+            let start_type = index.expr_type(env);
+            if !start_type.is_int() {
+                return Err(Diagnostic::error(&format!(
+                    "Expect Slice expression start value to be Int but got {}",
+                    start_type
+                ))
+                .with_location(get_safe_location(tokens, *position))
+                .as_boxed());
+            }
+
+            // Slice with start only range [start:]
+            if *position < tokens.len() && tokens[*position].kind == TokenKind::RightBracket {
+                // Consume Right Bracket `]`
+                *position += 1;
+
+                expression = Box::new(SliceExpression {
+                    collection: expression,
+                    start: Some(index),
+                    end: None,
+                });
+                continue;
+            }
+
+            let slice_end = parse_unary_expression(context, env, tokens, position)?;
+            let end_type = slice_end.expr_type(env);
+            if !end_type.is_int() {
+                return Err(Diagnostic::error(&format!(
+                    "Expect Slice expression end value to be Int but got {}",
+                    end_type
+                ))
+                .with_location(get_safe_location(tokens, *position))
+                .as_boxed());
+            }
+
+            if *position < tokens.len() && tokens[*position].kind == TokenKind::RightBracket {
+                // Consume Right Bracket `]`
+                *position += 1;
+            } else {
+                return Err(Diagnostic::error("Expect `]` After Slice expression")
+                    .with_location(get_safe_location(tokens, *position))
+                    .as_boxed());
+            }
+
+            expression = Box::new(SliceExpression {
+                collection: expression,
+                start: Some(index),
+                end: Some(slice_end),
+            });
+            continue;
+        }
+
+        // Index Expression
+        // Make sure index is integer type
+        let index_type = index.expr_type(env);
+        if !index_type.is_int() {
+            return Err(Diagnostic::error(&format!(
+                "Expect Index value to be Int but got {}",
+                index_type
+            ))
+            .with_location(get_safe_location(tokens, *position))
+            .as_boxed());
+        }
+
+        let array_element_type = match expression_type {
+            DataType::Array(element_type) => *element_type,
+            _ => DataType::Any,
+        };
+
+        if *position < tokens.len() && tokens[*position].kind == TokenKind::RightBracket {
+            // Consume Left Right `]`
+            *position += 1;
         } else {
-            return Err(Diagnostic::error("Expect `]` left index expression")
+            return Err(Diagnostic::error("Expect `]` after index expression")
                 .with_location(get_safe_location(tokens, *position))
                 .as_boxed());
         }
+
+        expression = Box::new(IndexExpression {
+            collection: expression,
+            element_type: array_element_type,
+            index,
+        });
     }
 
     Ok(expression)

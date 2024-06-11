@@ -21,6 +21,7 @@ pub enum ExpressionKind {
     Boolean,
     PrefixUnary,
     Index,
+    Slice,
     Arithmetic,
     Comparison,
     Like,
@@ -245,6 +246,26 @@ impl Expression for IndexExpression {
 
     fn expr_type(&self, _scope: &Environment) -> DataType {
         self.element_type.clone()
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+pub struct SliceExpression {
+    pub collection: Box<dyn Expression>,
+    pub start: Option<Box<dyn Expression>>,
+    pub end: Option<Box<dyn Expression>>,
+}
+
+impl Expression for SliceExpression {
+    fn kind(&self) -> ExpressionKind {
+        ExpressionKind::Slice
+    }
+
+    fn expr_type(&self, scope: &Environment) -> DataType {
+        self.collection.expr_type(scope)
     }
 
     fn as_any(&self) -> &dyn Any {
