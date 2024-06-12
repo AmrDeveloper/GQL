@@ -31,6 +31,7 @@ pub enum Query {
 
 pub struct GQLQuery {
     pub statements: HashMap<&'static str, Box<dyn Statement>>,
+    pub alias_table: HashMap<String, String>,
     pub has_aggregation_function: bool,
     pub has_group_by_statement: bool,
     pub hidden_selections: Vec<String>,
@@ -54,7 +55,6 @@ pub struct SelectStatement {
     pub table_name: String,
     pub fields_names: Vec<String>,
     pub fields_values: Vec<Box<dyn Expression>>,
-    pub alias_table: HashMap<String, String>,
     pub is_distinct: bool,
 }
 

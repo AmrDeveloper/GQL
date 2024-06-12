@@ -45,14 +45,10 @@ pub fn execute_statement(
                 .downcast_ref::<SelectStatement>()
                 .unwrap();
 
-            // Copy alias table to be last later for Aggregations functions
-            for alias in &statement.alias_table {
-                alias_table.insert(alias.0.to_string(), alias.1.to_string());
-            }
-
             execute_select_statement(
                 env,
                 statement,
+                alias_table,
                 data_provider,
                 gitql_object,
                 hidden_selection,
@@ -125,6 +121,7 @@ fn execute_do_statement(
 fn execute_select_statement(
     env: &mut Environment,
     statement: &SelectStatement,
+    alias_table: &HashMap<String, String>,
     data_provider: &Box<dyn DataProvider>,
     gitql_object: &mut GitQLObject,
     hidden_selections: &Vec<String>,
@@ -143,7 +140,7 @@ fn execute_select_statement(
     for field_name in &fields_names {
         gitql_object
             .titles
-            .push(get_column_name(&statement.alias_table, field_name));
+            .push(get_column_name(alias_table, field_name));
     }
 
     // Select objects from the target table

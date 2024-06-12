@@ -73,7 +73,7 @@ fn evaluate_select_query(
     query: GQLQuery,
 ) -> Result<EvaluationResult, String> {
     let mut gitql_object = GitQLObject::default();
-    let mut alias_table: HashMap<String, String> = HashMap::new();
+    let mut alias_table: HashMap<String, String> = query.alias_table;
 
     let hidden_selections = query.hidden_selections;
     let mut statements_map = query.statements;

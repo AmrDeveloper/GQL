@@ -379,6 +379,7 @@ fn parse_select_query(
         has_aggregation_function: context.is_single_value_query,
         has_group_by_statement: context.has_group_by_statement,
         hidden_selections,
+        alias_table: context.name_alias_table,
     }))
 }
 
@@ -402,7 +403,6 @@ fn parse_select_statement(
     let mut table_name = "";
     let mut fields_names: Vec<String> = Vec::new();
     let mut fields_values: Vec<Box<dyn Expression>> = Vec::new();
-    let mut alias_table: HashMap<String, String> = HashMap::new();
     let mut is_select_all = false;
     let mut is_distinct = false;
 
@@ -449,7 +449,7 @@ fn parse_select_statement(
                 // Register alias name
                 let alias_name = alias_name_token.ok().unwrap().literal.to_string();
                 if context.selected_fields.contains(&alias_name)
-                    || alias_table.contains_key(&alias_name)
+                    || context.name_alias_table.contains_key(&alias_name)
                 {
                     return Err(
                         Diagnostic::error("You already have field with the same name")
@@ -466,7 +466,9 @@ fn parse_select_statement(
                 env.define(alias_name.to_string(), expr_type.clone());
 
                 context.selected_fields.push(alias_name.clone());
-                alias_table.insert(field_name.to_string(), alias_name);
+                context
+                    .name_alias_table
+                    .insert(field_name.to_string(), alias_name.to_string());
             }
 
             // Register field type
@@ -554,7 +556,6 @@ fn parse_select_statement(
         table_name: table_name.to_string(),
         fields_names,
         fields_values,
-        alias_table,
         is_distinct,
     }))
 }
@@ -2046,6 +2047,13 @@ fn parse_primary_expression(
     }
 
     match tokens[*position].kind {
+        TokenKind::Integer => parse_const_integer_expression(tokens, position),
+        TokenKind::Float => parse_const_float_expression(tokens, position),
+        TokenKind::Symbol => parse_symbol_expression(context, env, tokens, position),
+        TokenKind::Array => parse_array_value_expression(context, env, tokens, position),
+        TokenKind::LeftBracket => parse_array_value_expression(context, env, tokens, position),
+        TokenKind::LeftParen => parse_group_expression(context, env, tokens, position),
+        TokenKind::Case => parse_case_expression(context, env, tokens, position),
         TokenKind::String => {
             *position += 1;
             Ok(Box::new(StringExpression {
@@ -2053,63 +2061,10 @@ fn parse_primary_expression(
                 value_type: StringValueType::Text,
             }))
         }
-        TokenKind::Symbol => {
-            let value = tokens[*position].literal.to_string();
-            *position += 1;
-
-            if context.has_select_statement {
-                if !env.scopes.contains_key(&value) {
-                    return Err(Diagnostic::error("Unresolved column or variable name")
-                        .add_help("Please check schema from docs website or SHOW query")
-                        .with_location(tokens[*position].location)
-                        .as_boxed());
-                }
-
-                if !context.selected_fields.contains(&value) {
-                    context.hidden_selections.push(value.to_string());
-                }
-            }
-
-            Ok(Box::new(SymbolExpression { value }))
-        }
         TokenKind::GlobalVariable => {
             let name = tokens[*position].literal.to_string();
             *position += 1;
             Ok(Box::new(GlobalVariableExpression { name }))
-        }
-        TokenKind::Integer => {
-            if let Ok(integer) = tokens[*position].literal.parse::<i64>() {
-                *position += 1;
-                let value = Value::Integer(integer);
-                return Ok(Box::new(NumberExpression { value }));
-            }
-
-            Err(Diagnostic::error("Too big Integer value")
-                .add_help("Try to use smaller value")
-                .add_note(&format!(
-                    "Integer value must be between {} and {}",
-                    i64::MIN,
-                    i64::MAX
-                ))
-                .with_location(tokens[*position].location)
-                .as_boxed())
-        }
-        TokenKind::Float => {
-            if let Ok(float) = tokens[*position].literal.parse::<f64>() {
-                *position += 1;
-                let value = Value::Float(float);
-                return Ok(Box::new(NumberExpression { value }));
-            }
-
-            Err(Diagnostic::error("Too big Float value")
-                .add_help("Try to use smaller value")
-                .add_note(&format!(
-                    "Float value must be between {} and {}",
-                    f64::MIN,
-                    f64::MAX
-                ))
-                .with_location(tokens[*position].location)
-                .as_boxed())
         }
         TokenKind::True => {
             *position += 1;
@@ -2123,12 +2078,82 @@ fn parse_primary_expression(
             *position += 1;
             Ok(Box::new(NullExpression {}))
         }
-        TokenKind::Array => parse_array_value_expression(context, env, tokens, position),
-        TokenKind::LeftBracket => parse_array_value_expression(context, env, tokens, position),
-        TokenKind::LeftParen => parse_group_expression(context, env, tokens, position),
-        TokenKind::Case => parse_case_expression(context, env, tokens, position),
         _ => Err(un_expected_expression_error(tokens, position)),
     }
+}
+
+fn parse_const_integer_expression(
+    tokens: &[Token],
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
+    if let Ok(integer) = tokens[*position].literal.parse::<i64>() {
+        *position += 1;
+        let value = Value::Integer(integer);
+        return Ok(Box::new(NumberExpression { value }));
+    }
+
+    Err(Diagnostic::error("Too big Integer value")
+        .add_help("Try to use smaller value")
+        .add_note(&format!(
+            "Integer value must be between {} and {}",
+            i64::MIN,
+            i64::MAX
+        ))
+        .with_location(tokens[*position].location)
+        .as_boxed())
+}
+
+fn parse_const_float_expression(
+    tokens: &[Token],
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
+    if let Ok(float) = tokens[*position].literal.parse::<f64>() {
+        *position += 1;
+        let value = Value::Float(float);
+        return Ok(Box::new(NumberExpression { value }));
+    }
+
+    Err(Diagnostic::error("Too big Float value")
+        .add_help("Try to use smaller value")
+        .add_note(&format!(
+            "Float value must be between {} and {}",
+            f64::MIN,
+            f64::MAX
+        ))
+        .with_location(tokens[*position].location)
+        .as_boxed())
+}
+
+fn parse_symbol_expression(
+    context: &mut ParserContext,
+    env: &mut Environment,
+    tokens: &[Token],
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
+    let mut value = tokens[*position].literal.to_string();
+    *position += 1;
+
+    if context.has_select_statement {
+        // Replace name by alias if it used after select statement
+        // This workaround will help to execute query like
+        // SELECT commit_count as cc from branches where commit_count > 1
+        if context.name_alias_table.contains_key(&value) {
+            value = context.name_alias_table[&value].to_string();
+        }
+
+        if !env.scopes.contains_key(&value) {
+            return Err(Diagnostic::error("Unresolved column or variable name")
+                .add_help("Please check schema from docs website or SHOW query")
+                .with_location(tokens[*position].location)
+                .as_boxed());
+        }
+
+        if !context.selected_fields.contains(&value) {
+            context.hidden_selections.push(value.to_string());
+        }
+    }
+
+    Ok(Box::new(SymbolExpression { value }))
 }
 
 fn parse_array_value_expression(
