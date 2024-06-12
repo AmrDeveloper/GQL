@@ -27,6 +27,7 @@ use crate::tokenizer::TokenKind;
 use crate::type_checker::are_types_equals;
 use crate::type_checker::check_all_values_are_same_type;
 use crate::type_checker::check_function_call_arguments;
+use crate::type_checker::type_check_projection_symbols;
 use crate::type_checker::type_check_selected_fields;
 use crate::type_checker::TypeCheckResult;
 
@@ -374,6 +375,13 @@ fn parse_select_query(
         .cloned()
         .collect();
 
+    type_check_projection_symbols(
+        env,
+        &context.table_name,
+        &context.projection_names,
+        &context.projection_locations,
+    )?;
+
     Ok(Query::Select(GQLQuery {
         statements,
         has_aggregation_function: context.is_single_value_query,
@@ -510,6 +518,7 @@ fn parse_select_statement(
 
         // Consume table name
         *position += 1;
+        context.table_name = table_name.to_string();
 
         register_current_table_fields_types(env, table_name);
     }
@@ -2131,6 +2140,11 @@ fn parse_symbol_expression(
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     let mut value = tokens[*position].literal.to_string();
+    let location = tokens[*position].location;
+
+    context.projection_names.push(value.to_string());
+    context.projection_locations.push(location);
+
     *position += 1;
 
     if context.has_select_statement {

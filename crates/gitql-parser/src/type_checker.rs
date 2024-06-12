@@ -497,3 +497,37 @@ pub fn type_check_selected_fields(
     }
     Ok(())
 }
+
+/// Check that all projection columns are valid for this table name
+/// Return a Diagnostic Error if anything is wrong
+pub fn type_check_projection_symbols(
+    env: &mut Environment,
+    table_name: &str,
+    projection_names: &[String],
+    projection_locations: &[Location],
+) -> Result<(), Box<Diagnostic>> {
+    if table_name.is_empty() && !projection_names.is_empty() {
+        return Err(Diagnostic::error(&format!(
+            "Unresolved field with name `{}`",
+            projection_names[0]
+        ))
+        .with_location(projection_locations[0])
+        .as_boxed());
+    }
+
+    let count = projection_names.len();
+    let table_fields = &env.schema.tables_fields_names[table_name];
+    for i in 0..count {
+        if !table_fields.contains(&projection_names[i].as_str()) {
+            return Err(Diagnostic::error(&format!(
+                "Table {} has no field with name `{}`",
+                table_name, projection_names[i]
+            ))
+            .add_help("Check the documentations to see available fields for each tables")
+            .with_location(projection_locations[i])
+            .as_boxed());
+        }
+    }
+
+    Ok(())
+}
