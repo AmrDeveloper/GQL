@@ -1,6 +1,15 @@
 Change Log
 ==========
 
+Version 0.22.0 *(2024-06-12)*
+-----------------------------
+
+* Allow using column native name in condition after alias it
+* Implement Slice expression for Collection `[start : end]`.
+* Implement Slice expression for Collection with optional start and end.
+* Fix calling function without table name.
+* Improve projection columns type checker
+
 Version 0.21.0 *(2024-06-07)*
 -----------------------------
 
