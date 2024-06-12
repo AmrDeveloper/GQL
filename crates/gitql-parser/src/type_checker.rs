@@ -515,6 +515,10 @@ pub fn type_check_projection_symbols(
         .as_boxed());
     }
 
+    if table_name.is_empty() {
+        return Ok(());
+    }
+
     let count = projection_names.len();
     let table_fields = &env.schema.tables_fields_names[table_name];
     for i in 0..count {

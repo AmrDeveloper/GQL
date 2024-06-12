@@ -440,7 +440,7 @@ dependencies = [
 
 [[package]]
 name = "gitql"
-version = "0.22.0"
+version = "0.22.1"
 dependencies = [
  "atty",
  "gitql-ast",
@@ -461,7 +461,7 @@ dependencies = [
 
 [[package]]
 name = "gitql-cli"
-version = "0.22.0"
+version = "0.22.1"
 dependencies = [
  "comfy-table",
  "gitql-ast",
@@ -491,7 +491,7 @@ dependencies = [
 
 [[package]]
 name = "gitql-parser"
-version = "0.21.0"
+version = "0.21.1"
 dependencies = [
  "gitql-ast",
  "gitql-core",

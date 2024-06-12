@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+Version 0.22.1 *(2024-06-12)*
+-----------------------------
+
+* Hot fix type checker if eval expression without table.
+
 Version 0.22.0 *(2024-06-12)*
 -----------------------------
 
