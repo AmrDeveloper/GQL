@@ -208,6 +208,7 @@ fn parse_select_query(
                 let statement = parse_select_statement(&mut context, env, tokens, position)?;
                 statements.insert("select", statement);
                 context.is_single_value_query = !context.aggregations.is_empty();
+                context.has_select_statement = true;
             }
             TokenKind::Where => {
                 if statements.contains_key("where") {
@@ -1895,105 +1896,102 @@ fn parse_function_call_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
-    let expression = parse_primary_expression(context, env, tokens, position)?;
-    if *position < tokens.len() && tokens[*position].kind == TokenKind::LeftParen {
-        let symbol_expression = expression.as_any().downcast_ref::<SymbolExpression>();
-        let function_name_location = get_safe_location(tokens, *position);
+    if *position < tokens.len() && tokens[*position].kind == TokenKind::Symbol {
+        let symbol_token = &tokens[*position];
+        if *position + 1 < tokens.len() && tokens[*position + 1].kind == TokenKind::LeftParen {
+            let function_name = &symbol_token.literal;
+            let function_name_location = symbol_token.location;
 
-        // Make sure function name is SymbolExpression
-        if symbol_expression.is_none() {
-            return Err(Diagnostic::error("Function name must be an identifier")
+            // Consume function name
+            *position += 1;
+
+            // Check if this function is a Standard library functions
+            if env.is_std_function(function_name.as_str()) {
+                let mut arguments = parse_arguments_expressions(context, env, tokens, position)?;
+                let prototype = env.std_signature(function_name.as_str()).unwrap();
+                let parameters = &prototype.parameters;
+                let mut return_type = prototype.return_type.clone();
+                if let DataType::Dynamic(calculate_type) = return_type {
+                    return_type = calculate_type(parameters);
+                }
+
+                check_function_call_arguments(
+                    env,
+                    &mut arguments,
+                    parameters,
+                    function_name.to_string(),
+                    function_name_location,
+                )?;
+
+                // Register function name with return type
+                env.define(function_name.to_string(), return_type.clone());
+
+                return Ok(Box::new(CallExpression {
+                    function_name: function_name.to_string(),
+                    arguments,
+                    return_type,
+                }));
+            }
+
+            // Check if this function is an Aggregation functions
+            if env.is_aggregation_function(function_name.as_str()) {
+                let aggregations_count_before = context.aggregations.len();
+                let mut arguments = parse_arguments_expressions(context, env, tokens, position)?;
+                let has_aggregations = context.aggregations.len() != aggregations_count_before;
+
+                // Prevent calling aggregation function with aggregation values as argument
+                if has_aggregations {
+                    return Err(Diagnostic::error(
+                        "Aggregated values can't as used for aggregation function argument",
+                    )
+                    .with_location(function_name_location)
+                    .as_boxed());
+                }
+
+                let prototype = env.aggregation_signature(function_name.as_str()).unwrap();
+
+                let parameters = &prototype.parameters.clone();
+                let mut return_type = prototype.return_type.clone();
+                if let DataType::Dynamic(calculate_type) = return_type {
+                    return_type = calculate_type(parameters);
+                }
+
+                // Perform type checking and implicit casting if needed for function arguments
+                check_function_call_arguments(
+                    env,
+                    &mut arguments,
+                    parameters,
+                    function_name.to_string(),
+                    function_name_location,
+                )?;
+
+                let column_name = context.generate_column_name();
+                context.hidden_selections.push(column_name.to_string());
+
+                // Register aggregation generated name with return type
+                env.define(column_name.to_string(), return_type);
+
+                context.aggregations.insert(
+                    column_name.clone(),
+                    AggregateValue::Function(function_name.to_string(), arguments),
+                );
+
+                // Return a Symbol that reference to the aggregation function generated name
+                return Ok(Box::new(SymbolExpression { value: column_name }));
+            }
+
+            // Report that this function name is not standard or aggregation
+            return Err(Diagnostic::error("No such function name")
+                .add_help(&format!(
+                    "Function `{}` is not an Aggregation or Standard library function name",
+                    function_name,
+                ))
                 .with_location(function_name_location)
                 .as_boxed());
         }
-
-        let function_name = &symbol_expression.unwrap().value;
-
-        // Check if this function is a Standard library functions
-        if env.is_std_function(function_name.as_str()) {
-            let mut arguments = parse_arguments_expressions(context, env, tokens, position)?;
-            let prototype = env.std_signature(function_name.as_str()).unwrap();
-            let parameters = &prototype.parameters;
-            let mut return_type = prototype.return_type.clone();
-            if let DataType::Dynamic(calculate_type) = return_type {
-                return_type = calculate_type(parameters);
-            }
-
-            check_function_call_arguments(
-                env,
-                &mut arguments,
-                parameters,
-                function_name.to_string(),
-                function_name_location,
-            )?;
-
-            // Register function name with return type
-            env.define(function_name.to_string(), return_type.clone());
-
-            return Ok(Box::new(CallExpression {
-                function_name: function_name.to_string(),
-                arguments,
-                return_type,
-            }));
-        }
-
-        // Check if this function is an Aggregation functions
-        if env.is_aggregation_function(function_name.as_str()) {
-            let aggregations_count_before = context.aggregations.len();
-            let mut arguments = parse_arguments_expressions(context, env, tokens, position)?;
-            let has_aggregations = context.aggregations.len() != aggregations_count_before;
-
-            // Prevent calling aggregation function with aggregation values as argument
-            if has_aggregations {
-                return Err(Diagnostic::error(
-                    "Aggregated values can't as used for aggregation function argument",
-                )
-                .with_location(function_name_location)
-                .as_boxed());
-            }
-
-            let prototype = env.aggregation_signature(function_name.as_str()).unwrap();
-
-            let parameters = &prototype.parameters.clone();
-            let mut return_type = prototype.return_type.clone();
-            if let DataType::Dynamic(calculate_type) = return_type {
-                return_type = calculate_type(parameters);
-            }
-
-            // Perform type checking and implicit casting if needed for function arguments
-            check_function_call_arguments(
-                env,
-                &mut arguments,
-                parameters,
-                function_name.to_string(),
-                function_name_location,
-            )?;
-
-            let column_name = context.generate_column_name();
-            context.hidden_selections.push(column_name.to_string());
-
-            // Register aggregation generated name with return type
-            env.define(column_name.to_string(), return_type);
-
-            context.aggregations.insert(
-                column_name.clone(),
-                AggregateValue::Function(function_name.to_string(), arguments),
-            );
-
-            // Return a Symbol that reference to the aggregation function generated name
-            return Ok(Box::new(SymbolExpression { value: column_name }));
-        }
-
-        // Report that this function name is not standard or aggregation
-        return Err(Diagnostic::error("No such function name")
-            .add_help(&format!(
-                "Function `{}` is not an Aggregation or Standard library function name",
-                function_name,
-            ))
-            .with_location(function_name_location)
-            .as_boxed());
     }
-    Ok(expression)
+
+    parse_primary_expression(context, env, tokens, position)
 }
 
 fn parse_arguments_expressions(
@@ -2058,9 +2056,20 @@ fn parse_primary_expression(
         TokenKind::Symbol => {
             let value = tokens[*position].literal.to_string();
             *position += 1;
-            if !context.selected_fields.contains(&value) {
-                context.hidden_selections.push(value.to_string());
+
+            if context.has_select_statement {
+                if !env.scopes.contains_key(&value) {
+                    return Err(Diagnostic::error("Unresolved column or variable name")
+                        .add_help("Please check schema from docs website or SHOW query")
+                        .with_location(tokens[*position].location)
+                        .as_boxed());
+                }
+
+                if !context.selected_fields.contains(&value) {
+                    context.hidden_selections.push(value.to_string());
+                }
             }
+
             Ok(Box::new(SymbolExpression { value }))
         }
         TokenKind::GlobalVariable => {

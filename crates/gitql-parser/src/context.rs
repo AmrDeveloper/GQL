@@ -9,6 +9,7 @@ pub struct ParserContext {
     pub selected_fields: Vec<String>,
     pub hidden_selections: Vec<String>,
 
+    pub has_select_statement: bool,
     pub generated_field_count: i32,
     pub is_single_value_query: bool,
     pub has_group_by_statement: bool,
