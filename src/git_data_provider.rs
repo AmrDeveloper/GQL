@@ -28,6 +28,7 @@ impl DataProvider for GitDataProvider {
         fields_names: &[String],
         titles: &[String],
         fields_values: &[Box<dyn Expression>],
+        counter: i64,
     ) -> Result<GitQLObject, String> {
         let mut groups: Vec<Group> = vec![];
 
@@ -39,6 +40,7 @@ impl DataProvider for GitDataProvider {
                 fields_names,
                 titles,
                 fields_values,
+                counter,
             )?;
 
             if groups.is_empty() {
@@ -62,13 +64,49 @@ fn select_gql_objects(
     fields_names: &[String],
     titles: &[String],
     fields_values: &[Box<dyn Expression>],
+    hidden_selection_count: i64,
 ) -> Result<Group, String> {
     match table.as_str() {
-        "refs" => select_references(env, repo, fields_names, titles, fields_values),
-        "commits" => select_commits(env, repo, fields_names, titles, fields_values),
-        "branches" => select_branches(env, repo, fields_names, titles, fields_values),
-        "diffs" => select_diffs(env, repo, fields_names, titles, fields_values),
-        "tags" => select_tags(env, repo, fields_names, titles, fields_values),
+        "refs" => select_references(
+            env,
+            repo,
+            fields_names,
+            titles,
+            fields_values,
+            hidden_selection_count,
+        ),
+        "commits" => select_commits(
+            env,
+            repo,
+            fields_names,
+            titles,
+            fields_values,
+            hidden_selection_count,
+        ),
+        "branches" => select_branches(
+            env,
+            repo,
+            fields_names,
+            titles,
+            fields_values,
+            hidden_selection_count,
+        ),
+        "diffs" => select_diffs(
+            env,
+            repo,
+            fields_names,
+            titles,
+            fields_values,
+            hidden_selection_count,
+        ),
+        "tags" => select_tags(
+            env,
+            repo,
+            fields_names,
+            titles,
+            fields_values,
+            hidden_selection_count,
+        ),
         _ => select_values(env, titles, fields_values),
     }
 }
@@ -79,6 +117,7 @@ fn select_references(
     fields_names: &[String],
     titles: &[String],
     fields_values: &[Box<dyn Expression>],
+    hidden_selection_count: i64,
 ) -> Result<Group, String> {
     let repo_path = repo.path().to_str().unwrap().to_string();
 
@@ -95,11 +134,8 @@ fn select_references(
 
     for reference in references.all().unwrap().flatten() {
         let mut values: Vec<Value> = Vec::with_capacity(fields_names.len());
-
         for index in 0..names_len {
-            let field_name = &fields_names[index as usize];
-
-            if (index - padding) >= 0 {
+            if index >= hidden_selection_count && (index - padding) >= 0 {
                 let value = &fields_values[(index - padding) as usize];
                 if value.as_any().downcast_ref::<SymbolExpression>().is_none() {
                     let evaluated = evaluate_expression(env, value, titles, &values)?;
@@ -108,6 +144,7 @@ fn select_references(
                 }
             }
 
+            let field_name = &fields_names[index as usize];
             if field_name == "name" {
                 let name = reference
                     .name()
@@ -162,6 +199,7 @@ fn select_commits(
     fields_names: &[String],
     titles: &[String],
     fields_values: &[Box<dyn Expression>],
+    hidden_selection_count: i64,
 ) -> Result<Group, String> {
     let repo_path = repo.path().to_str().unwrap().to_string();
 
@@ -185,9 +223,7 @@ fn select_commits(
         let mut values: Vec<Value> = Vec::with_capacity(fields_names.len());
 
         for index in 0..names_len {
-            let field_name = &fields_names[index as usize];
-
-            if (index - padding) >= 0 {
+            if index >= hidden_selection_count && (index - padding) >= 0 {
                 let value = &fields_values[(index - padding) as usize];
                 if value.as_any().downcast_ref::<SymbolExpression>().is_none() {
                     let evaluated = evaluate_expression(env, value, titles, &values)?;
@@ -195,6 +231,8 @@ fn select_commits(
                     continue;
                 }
             }
+
+            let field_name = &fields_names[index as usize];
 
             if field_name == "commit_id" {
                 let commit_id = Value::Text(commit_info.id.to_string());
@@ -255,6 +293,7 @@ fn select_branches(
     fields_names: &[String],
     titles: &[String],
     fields_values: &[Box<dyn Expression>],
+    hidden_selection_count: i64,
 ) -> Result<Group, String> {
     let mut rows: Vec<Row> = vec![];
 
@@ -283,9 +322,7 @@ fn select_branches(
         let mut values: Vec<Value> = Vec::with_capacity(fields_names.len());
 
         for index in 0..names_len {
-            let field_name = &fields_names[index as usize];
-
-            if (index - padding) >= 0 {
+            if index >= hidden_selection_count && (index - padding) >= 0 {
                 let value = &fields_values[(index - padding) as usize];
                 if value.as_any().downcast_ref::<SymbolExpression>().is_none() {
                     let evaluated = evaluate_expression(env, value, titles, &values)?;
@@ -294,6 +331,7 @@ fn select_branches(
                 }
             }
 
+            let field_name = &fields_names[index as usize];
             if field_name == "name" {
                 let branch_name = branch.name().as_bstr().to_string();
                 values.push(Value::Text(branch_name));
@@ -371,6 +409,7 @@ fn select_diffs(
     fields_names: &[String],
     titles: &[String],
     fields_values: &[Box<dyn Expression>],
+    hidden_selection_count: i64,
 ) -> Result<Group, String> {
     let repo = {
         let mut repo = repo.clone();
@@ -398,9 +437,7 @@ fn select_diffs(
         let mut values: Vec<Value> = Vec::with_capacity(fields_names.len());
 
         for index in 0..names_len {
-            let field_name = &fields_names[index as usize];
-
-            if (index - padding) >= 0 {
+            if index >= hidden_selection_count && (index - padding) >= 0 {
                 let value = &fields_values[(index - padding) as usize];
                 if value.as_any().downcast_ref::<SymbolExpression>().is_none() {
                     let evaluated = evaluate_expression(env, value, titles, &values)?;
@@ -409,6 +446,7 @@ fn select_diffs(
                 }
             }
 
+            let field_name = &fields_names[index as usize];
             if field_name == "commit_id" {
                 values.push(Value::Text(commit_info.id.to_string()));
                 continue;
@@ -503,6 +541,7 @@ fn select_tags(
     fields_names: &[String],
     titles: &[String],
     fields_values: &[Box<dyn Expression>],
+    hidden_selection_count: i64,
 ) -> Result<Group, String> {
     let platform = repo.references().unwrap();
     let tag_names = platform.tags().unwrap();
@@ -518,10 +557,8 @@ fn select_tags(
         let mut values: Vec<Value> = Vec::with_capacity(fields_names.len());
 
         for index in 0..names_len {
-            let field_name = &fields_names[index as usize];
-            if (index - padding) >= 0 {
+            if index >= hidden_selection_count && (index - padding) >= 0 {
                 let value = &fields_values[(index - padding) as usize];
-
                 if value.as_any().downcast_ref::<SymbolExpression>().is_none() {
                     let evaluated = evaluate_expression(env, value, titles, &values)?;
                     values.push(evaluated);
@@ -529,6 +566,7 @@ fn select_tags(
                 }
             }
 
+            let field_name = &fields_names[index as usize];
             if field_name == "name" {
                 let tag_name = tag_ref
                     .name()

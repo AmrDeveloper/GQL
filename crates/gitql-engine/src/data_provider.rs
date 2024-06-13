@@ -17,6 +17,7 @@ pub trait DataProvider {
         fields_names: &[String],
         titles: &[String],
         fields_values: &[Box<dyn Expression>],
+        hidden_count: i64,
     ) -> Result<GitQLObject, String>;
 }
 

@@ -128,10 +128,13 @@ fn execute_select_statement(
 ) -> Result<(), String> {
     // Append hidden selection to the selected fields names
     let mut fields_names = statement.fields_names.to_owned();
+    let mut hidden_selection_count = 0;
+
     if !statement.table_name.is_empty() {
         for hidden in hidden_selections {
             if !fields_names.contains(hidden) {
-                fields_names.push(hidden.to_string());
+                fields_names.insert(0, hidden.to_string());
+                hidden_selection_count += 1;
             }
         }
     }
@@ -150,6 +153,7 @@ fn execute_select_statement(
         &fields_names,
         &gitql_object.titles,
         &statement.fields_values,
+        hidden_selection_count,
     )?;
 
     gitql_object.groups.append(&mut provided_object.groups);
