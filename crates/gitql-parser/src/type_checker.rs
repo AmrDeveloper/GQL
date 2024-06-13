@@ -3,6 +3,7 @@ use gitql_ast::expression::ExpressionKind;
 use gitql_ast::expression::StringExpression;
 use gitql_ast::expression::StringValueType;
 use gitql_core::environment::Environment;
+use gitql_core::signature::Signature;
 use gitql_core::types::DataType;
 
 use crate::diagnostic::Diagnostic;
@@ -534,4 +535,29 @@ pub fn type_check_projection_symbols(
     }
 
     Ok(())
+}
+
+/// Resolve the return type of Std or Aggregation function and re resolve it if it variant or dynamic
+pub fn resolve_call_expression_return_type(
+    env: &Environment,
+    signature: &Signature,
+    arguments: &Vec<Box<dyn Expression>>,
+) -> DataType {
+    let mut return_type = signature.return_type.clone();
+
+    if let DataType::Dynamic(calculate_type) = return_type {
+        return_type = calculate_type(&signature.parameters);
+
+        // In Case that return type is variant for example [Int | Float] need to resolve it from arguments types
+        // To be able to use it with other expressions
+        if !arguments.is_empty() && return_type.is_variant() {
+            let mut arguments_types = Vec::with_capacity(arguments.len());
+            for argument in arguments {
+                arguments_types.push(argument.expr_type(env));
+            }
+            return_type = calculate_type(&arguments_types);
+        }
+    }
+
+    return_type
 }

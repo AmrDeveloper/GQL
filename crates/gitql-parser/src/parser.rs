@@ -27,6 +27,7 @@ use crate::tokenizer::TokenKind;
 use crate::type_checker::are_types_equals;
 use crate::type_checker::check_all_values_are_same_type;
 use crate::type_checker::check_function_call_arguments;
+use crate::type_checker::resolve_call_expression_return_type;
 use crate::type_checker::type_check_projection_symbols;
 use crate::type_checker::type_check_selected_fields;
 use crate::type_checker::TypeCheckResult;
@@ -1918,22 +1919,18 @@ fn parse_function_call_expression(
             // Check if this function is a Standard library functions
             if env.is_std_function(function_name.as_str()) {
                 let mut arguments = parse_arguments_expressions(context, env, tokens, position)?;
-                let prototype = env.std_signature(function_name.as_str()).unwrap();
-                let parameters = &prototype.parameters;
-                let mut return_type = prototype.return_type.clone();
-                if let DataType::Dynamic(calculate_type) = return_type {
-                    return_type = calculate_type(parameters);
-                }
+                let signature = env.std_signature(function_name.as_str()).unwrap();
 
                 check_function_call_arguments(
                     env,
                     &mut arguments,
-                    parameters,
+                    &signature.parameters,
                     function_name.to_string(),
                     function_name_location,
                 )?;
 
                 // Register function name with return type
+                let return_type = resolve_call_expression_return_type(env, signature, &arguments);
                 env.define(function_name.to_string(), return_type.clone());
 
                 return Ok(Box::new(CallExpression {
@@ -1958,19 +1955,13 @@ fn parse_function_call_expression(
                     .as_boxed());
                 }
 
-                let prototype = env.aggregation_signature(function_name.as_str()).unwrap();
-
-                let parameters = &prototype.parameters.clone();
-                let mut return_type = prototype.return_type.clone();
-                if let DataType::Dynamic(calculate_type) = return_type {
-                    return_type = calculate_type(parameters);
-                }
+                let signature = env.aggregation_signature(function_name.as_str()).unwrap();
 
                 // Perform type checking and implicit casting if needed for function arguments
                 check_function_call_arguments(
                     env,
                     &mut arguments,
-                    parameters,
+                    &signature.parameters,
                     function_name.to_string(),
                     function_name_location,
                 )?;
@@ -1979,6 +1970,7 @@ fn parse_function_call_expression(
                 context.hidden_selections.push(column_name.to_string());
 
                 // Register aggregation generated name with return type
+                let return_type = resolve_call_expression_return_type(env, signature, &arguments);
                 env.define(column_name.to_string(), return_type);
 
                 context.aggregations.insert(
@@ -2142,8 +2134,11 @@ fn parse_symbol_expression(
     let mut value = tokens[*position].literal.to_string();
     let location = tokens[*position].location;
 
-    context.projection_names.push(value.to_string());
-    context.projection_locations.push(location);
+    // Collect projections only inside select statement
+    if !context.has_select_statement {
+        context.projection_names.push(value.to_string());
+        context.projection_locations.push(location);
+    }
 
     *position += 1;
 
