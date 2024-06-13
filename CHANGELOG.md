@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+Version 0.23.0 *(2024-06-13)*
+-----------------------------
+
+* Fix resolving return type of function with Dynamic and depend on Variant types.
+* Fix Projection check for symbols after select statement.
+
 Version 0.22.1 *(2024-06-12)*
 -----------------------------
 
