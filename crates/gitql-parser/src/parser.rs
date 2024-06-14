@@ -430,9 +430,8 @@ fn parse_select_statement(
         while *position < tokens.len() && tokens[*position].kind != TokenKind::From {
             let expression = parse_expression(context, env, tokens, position)?;
             let expr_type = expression.expr_type(env).clone();
-            let expression_name = get_expression_name(&expression);
-            let field_name = if expression_name.is_ok() {
-                expression_name.ok().unwrap()
+            let field_name = if let Some(expression_literal) = expression_literal(&expression) {
+                expression_literal
             } else {
                 context.generate_column_name()
             };
@@ -2008,10 +2007,8 @@ fn parse_arguments_expressions(
 
         while *position < tokens.len() && tokens[*position].kind != TokenKind::RightParen {
             let argument = parse_expression(context, env, tokens, position)?;
-            let argument_literal = get_expression_name(&argument);
-            if argument_literal.is_ok() {
-                let literal = argument_literal.ok().unwrap();
-                context.hidden_selections.push(literal);
+            if let Some(argument_literal) = expression_literal(&argument) {
+                context.hidden_selections.push(argument_literal);
             }
 
             arguments.push(argument);
@@ -2488,20 +2485,13 @@ fn un_expected_content_after_correct_statement(
         .as_boxed()
 }
 
+#[inline(always)]
 #[allow(clippy::borrowed_box)]
-fn get_expression_name(expression: &Box<dyn Expression>) -> Result<String, ()> {
+fn expression_literal(expression: &Box<dyn Expression>) -> Option<String> {
     if let Some(symbol) = expression.as_any().downcast_ref::<SymbolExpression>() {
-        return Ok(symbol.value.to_string());
+        return Some(symbol.value.to_string());
     }
-
-    if let Some(variable) = expression
-        .as_any()
-        .downcast_ref::<GlobalVariableExpression>()
-    {
-        return Ok(variable.name.to_string());
-    }
-
-    Err(())
+    None
 }
 
 #[inline(always)]
