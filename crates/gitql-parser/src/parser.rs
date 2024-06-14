@@ -51,7 +51,7 @@ pub fn parse_gql(tokens: Vec<Token>, env: &mut Environment) -> Result<Query, Box
         }
     }
 
-    // Check for un expected content after valid statement
+    // Check for unexpected content after valid statement
     if query_result.is_ok() && position < tokens.len() {
         return Err(un_expected_content_after_correct_statement(
             &first_token.literal,
@@ -1738,6 +1738,14 @@ fn parse_index_or_slice_expression(
         if *position < tokens.len() && tokens[*position].kind == TokenKind::Colon {
             // Consume Colon `:`
             *position += 1;
+
+            // In case the user use default slice start and end, we can ignore the slice expression
+            // and return array or any kind of expression value directly
+            if *position < tokens.len() && tokens[*position].kind == TokenKind::RightBracket {
+                // Consume right bracket `]`
+                *position += 1;
+                return Ok(expression);
+            }
 
             let slice_end = parse_unary_expression(context, env, tokens, position)?;
             let end_type = slice_end.expr_type(env);
