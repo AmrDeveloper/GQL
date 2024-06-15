@@ -691,7 +691,9 @@ fn parse_group_by_statement(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Statement>, Box<Diagnostic>> {
+    // Consume `Group` keyword
     *position += 1;
+
     if *position >= tokens.len() || tokens[*position].kind != TokenKind::By {
         return Err(
             Diagnostic::error("Expect keyword `by` after keyword `group`")
@@ -700,31 +702,26 @@ fn parse_group_by_statement(
                 .as_boxed(),
         );
     }
-    *position += 1;
-    if *position >= tokens.len() || tokens[*position].kind != TokenKind::Symbol {
-        return Err(Diagnostic::error("Expect field name after `group by`")
-            .with_location(get_safe_location(tokens, *position - 1))
-            .as_boxed());
-    }
 
-    let field_name = tokens[*position].literal.to_string();
-    if !context.selected_fields.contains(&field_name) {
-        context.hidden_selections.push(field_name.to_string());
-    }
-
+    // Consume `By` keyword
     *position += 1;
 
-    if !env.contains(&field_name) {
-        return Err(
-            Diagnostic::error("Current table not contains field with this name")
-                .add_help("Check the documentations to see available fields for each tables")
-                .with_location(get_safe_location(tokens, *position - 1))
-                .as_boxed(),
-        );
+    // Parse one or more expression
+    let mut values: Vec<Box<dyn Expression>> = vec![];
+    while *position < tokens.len() {
+        values.push(parse_expression(context, env, tokens, position)?);
+
+        if *position < tokens.len() && tokens[*position].kind == TokenKind::Comma {
+            // Consume Comma `,`
+            *position += 1;
+            continue;
+        }
+
+        break;
     }
 
     context.has_group_by_statement = true;
-    Ok(Box::new(GroupByStatement { field_name }))
+    Ok(Box::new(GroupByStatement { values }))
 }
 
 fn parse_having_statement(

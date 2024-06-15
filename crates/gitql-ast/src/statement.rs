@@ -152,7 +152,7 @@ impl Statement for OrderByStatement {
 }
 
 pub struct GroupByStatement {
-    pub field_name: String,
+    pub values: Vec<Box<dyn Expression>>,
 }
 
 impl Statement for GroupByStatement {

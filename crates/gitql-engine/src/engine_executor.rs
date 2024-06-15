@@ -1,6 +1,10 @@
 use std::cmp;
 use std::cmp::Ordering;
+use std::collections::hash_map::Entry::Vacant;
 use std::collections::HashMap;
+use std::hash::DefaultHasher;
+use std::hash::Hash;
+use std::hash::Hasher;
 
 use gitql_ast::statement::AggregateValue;
 use gitql_ast::statement::AggregationsStatement;
@@ -88,7 +92,7 @@ pub fn execute_statement(
                 .as_any()
                 .downcast_ref::<GroupByStatement>()
                 .unwrap();
-            execute_group_by_statement(statement, gitql_object)
+            execute_group_by_statement(env, statement, gitql_object)
         }
         AggregateFunction => {
             let statement = statement
@@ -338,6 +342,7 @@ fn execute_order_by_statement(
 }
 
 fn execute_group_by_statement(
+    env: &mut Environment,
     statement: &GroupByStatement,
     gitql_object: &mut GitQLObject,
 ) -> Result<(), String> {
@@ -351,31 +356,34 @@ fn execute_group_by_statement(
     }
 
     // Mapping each unique value to it group index
-    let mut groups_map: HashMap<String, usize> = HashMap::new();
+    let mut groups_map: HashMap<u64, usize> = HashMap::new();
 
     // Track current group index
     let mut next_group_index = 0;
+    let values_count = statement.values.len();
 
     for object in main_group.rows.into_iter() {
-        let field_index = gitql_object
-            .titles
-            .iter()
-            .position(|r| r.eq(&statement.field_name))
-            .unwrap();
+        let mut row_values: Vec<String> = Vec::with_capacity(values_count);
 
-        let field_value = &object.values[field_index];
+        for expression in &statement.values {
+            let value = evaluate_expression(env, expression, &gitql_object.titles, &object.values)?;
+            row_values.push(value.to_string());
+        }
 
-        // If there is an existing group for this value, append current object to it
-        if let std::collections::hash_map::Entry::Vacant(e) =
-            groups_map.entry(field_value.as_text())
-        {
+        // Compute the hash for row of values
+        let mut hasher = DefaultHasher::new();
+        row_values.hash(&mut hasher);
+        let values_hash = hasher.finish();
+
+        // Push a new group for this unique value and update the next index
+        if let Vacant(e) = groups_map.entry(values_hash) {
             e.insert(next_group_index);
             next_group_index += 1;
             gitql_object.groups.push(Group { rows: vec![object] });
         }
-        // Push a new group for this unique value and update the next index
+        // If there is an existing group for this value, append current object to it
         else {
-            let index = *groups_map.get(&field_value.as_text()).unwrap();
+            let index = *groups_map.get(&values_hash).unwrap();
             let target_group = &mut gitql_object.groups[index];
             target_group.rows.push(object);
         }
