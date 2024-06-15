@@ -14,7 +14,7 @@ pub(crate) fn apply_distinct_operator(
     object: &mut GitQLObject,
     hidden_selections: &[String],
 ) {
-    if !object.is_empty() {
+    if object.is_empty() {
         return;
     }
 
@@ -50,9 +50,9 @@ fn apply_distinct_all_operation(object: &mut GitQLObject, hidden_selections: &[S
         }
 
         // Compute the hash for row of values
-        let mut hash = DefaultHasher::new();
-        row_values.hash(&mut hash);
-        let values_hash = hash.finish();
+        let mut hasher = DefaultHasher::new();
+        row_values.hash(&mut hasher);
+        let values_hash = hasher.finish();
 
         // If this hash is unique, insert the row
         if values_set.insert(values_hash) {
@@ -86,12 +86,11 @@ fn apply_distinct_on_operation(object: &mut GitQLObject, distinct_fields: &[Stri
         }
 
         // Compute the hash for row of values
-        let mut hash = DefaultHasher::new();
-        row_values.hash(&mut hash);
-        let values_hash = hash.finish();
+        let mut hasher = DefaultHasher::new();
+        row_values.hash(&mut hasher);
 
         // If this hash is unique, insert the row
-        if values_set.insert(values_hash) {
+        if values_set.insert(hasher.finish()) {
             new_objects.rows.push(Row {
                 values: object.values.clone(),
             });
