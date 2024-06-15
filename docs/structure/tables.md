@@ -67,3 +67,20 @@ show tables
 | ---- | ---- | -------------------- |
 | name | Text | Tag name             |
 | repo | Text | Repository full path |
+
+---
+
+### List all tables in the current schema
+
+```sql
+SHOW TABLES;
+```
+
+---
+
+### Query the description of table by name
+
+```sql
+DESCRIBE commits;
+DESCRIBE branches;
+```
