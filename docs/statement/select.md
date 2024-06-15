@@ -1,3 +1,5 @@
+### Select Statement
+
 The `SELECT` statement is used to query data from a single table
 
 For example to select all fields from commits table.
@@ -25,8 +27,22 @@ SELECT title as tt FROM commits
 SELECT name, commit_count, max(commit_count) AS max_count message FROM branches
 ```
 
+---
+
+### Distinct option
+
 You can select unique rows only using the `distinct` keyword for example,
 
 ```sql
 SELECT DISTINCT title AS tt FROM commits
+```
+
+---
+
+### Distinct On option
+
+You can select rows with unique fields using the `distinct on` keyword with one or more field for example,
+
+```sql
+SELECT DISTINCT ON (name) title AS tt FROM commits
 ```

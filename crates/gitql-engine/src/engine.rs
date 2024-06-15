@@ -1,8 +1,4 @@
-use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
-use std::collections::HashSet;
-use std::hash::Hash;
-use std::hash::Hasher;
 use std::vec;
 
 use gitql_ast::statement::DescribeStatement;
@@ -18,11 +14,13 @@ use gitql_core::object::Row;
 use gitql_core::value::Value;
 
 use crate::data_provider::DataProvider;
+use crate::engine_distinct::apply_distinct_operator;
 use crate::engine_evaluator::evaluate_expression;
 use crate::engine_executor::execute_global_variable_statement;
 use crate::engine_executor::execute_statement;
 
-const GQL_COMMANDS_IN_ORDER: [&str; 8] = [
+/// Static Logical Plan, later must be replaced by optimized and Logical Planner
+const FIXED_LOGICAL_PLAN: [&str; 8] = [
     "select",
     "where",
     "group",
@@ -78,7 +76,7 @@ fn evaluate_select_query(
     let hidden_selections = query.hidden_selections;
     let mut statements_map = query.statements;
 
-    for gql_command in GQL_COMMANDS_IN_ORDER {
+    for gql_command in FIXED_LOGICAL_PLAN {
         if statements_map.contains_key(gql_command) {
             let statement = statements_map.get_mut(gql_command).unwrap();
             match gql_command {
@@ -106,10 +104,12 @@ fn evaluate_select_query(
                         ));
                     }
 
-                    // If Select statement has table name and distinct flag, keep only unique values
-                    if !select_statement.table_name.is_empty() && select_statement.is_distinct {
-                        apply_distinct_on_objects_group(&mut gitql_object, &hidden_selections);
-                    }
+                    // Apply the distinct operation object is not empty too.
+                    apply_distinct_operator(
+                        &select_statement.distinct,
+                        &mut gitql_object,
+                        &hidden_selections,
+                    );
                 }
                 _ => {
                     execute_statement(
@@ -151,50 +151,6 @@ fn evaluate_select_query(
         gitql_object,
         hidden_selections,
     ))
-}
-
-fn apply_distinct_on_objects_group(gitql_object: &mut GitQLObject, hidden_selections: &[String]) {
-    if gitql_object.is_empty() {
-        return;
-    }
-
-    let titles: Vec<&String> = gitql_object
-        .titles
-        .iter()
-        .filter(|s| !hidden_selections.contains(s))
-        .collect();
-
-    let titles_count = titles.len();
-
-    let objects = &gitql_object.groups[0].rows;
-    let mut new_objects: Group = Group { rows: vec![] };
-    let mut values_set: HashSet<u64> = HashSet::new();
-
-    for object in objects {
-        // Build row of the selected only values
-        let mut row_values: Vec<String> = Vec::with_capacity(titles_count);
-        for index in 0..titles.len() {
-            row_values.push(object.values.get(index).unwrap().to_string());
-        }
-
-        // Compute the hash for row of values
-        let mut hash = DefaultHasher::new();
-        row_values.hash(&mut hash);
-        let values_hash = hash.finish();
-
-        // If this hash is unique, insert the row
-        if values_set.insert(values_hash) {
-            new_objects.rows.push(Row {
-                values: object.values.clone(),
-            });
-        }
-    }
-
-    // If number of total rows is changed, update the main group rows
-    if objects.len() != new_objects.len() {
-        gitql_object.groups[0].rows.clear();
-        gitql_object.groups[0].rows.append(&mut new_objects.rows);
-    }
 }
 
 fn evaluate_global_declaration_query(

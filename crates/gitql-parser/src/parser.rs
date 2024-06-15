@@ -39,8 +39,8 @@ pub fn parse_gql(tokens: Vec<Token>, env: &mut Environment) -> Result<Query, Box
         TokenKind::Do => parse_do_query(env, &tokens, &mut position),
         TokenKind::Set => parse_set_query(env, &tokens, &mut position),
         TokenKind::Select => parse_select_query(env, &tokens, &mut position),
-        TokenKind::Describe => parse_describe_query(env, &tokens, &mut position),
-        TokenKind::Show => parse_show_query(env, &tokens, &mut position),
+        TokenKind::Describe => parse_describe_query(&tokens, &mut position),
+        TokenKind::Show => parse_show_query(&tokens, &mut position),
         _ => Err(un_expected_statement_error(&tokens, &mut position)),
     };
 
@@ -140,11 +140,7 @@ fn parse_set_query(
     }))
 }
 
-fn parse_describe_query(
-    _: &mut Environment,
-    tokens: &[Token],
-    position: &mut usize,
-) -> Result<Query, Box<Diagnostic>> {
+fn parse_describe_query(tokens: &[Token], position: &mut usize) -> Result<Query, Box<Diagnostic>> {
     let len = tokens.len();
 
     // Consume Set keyword
@@ -165,11 +161,7 @@ fn parse_describe_query(
     }))
 }
 
-fn parse_show_query(
-    _: &mut Environment,
-    tokens: &[Token],
-    position: &mut usize,
-) -> Result<Query, Box<Diagnostic>> {
+fn parse_show_query(tokens: &[Token], position: &mut usize) -> Result<Query, Box<Diagnostic>> {
     // Consume SHOW keyword
     *position += 1;
 
@@ -413,13 +405,8 @@ fn parse_select_statement(
     let mut fields_names: Vec<String> = Vec::new();
     let mut fields_values: Vec<Box<dyn Expression>> = Vec::new();
     let mut is_select_all = false;
-    let mut is_distinct = false;
 
-    // Check if select has distinct keyword after it
-    if tokens[*position].kind == TokenKind::Distinct {
-        is_distinct = true;
-        *position += 1;
-    }
+    let distinct = parse_select_distinct_option(context, tokens, position)?;
 
     // Select all option
     if *position < tokens.len() && tokens[*position].kind == TokenKind::Star {
@@ -565,8 +552,91 @@ fn parse_select_statement(
         table_name: table_name.to_string(),
         fields_names,
         fields_values,
-        is_distinct,
+        distinct,
     }))
+}
+
+fn parse_select_distinct_option(
+    context: &mut ParserContext,
+    tokens: &[Token],
+    position: &mut usize,
+) -> Result<Distinct, Box<Diagnostic>> {
+    if tokens[*position].kind == TokenKind::Distinct {
+        // Consume `DISTINCT` keyword
+        *position += 1;
+
+        if *position < tokens.len() && tokens[*position].kind == TokenKind::On {
+            // Consume `ON` keyword
+            *position += 1;
+
+            if *position >= tokens.len() || tokens[*position].kind != TokenKind::LeftParen {
+                return Err(Diagnostic::error("Expect `(` after `DISTINCT ON`")
+                    .add_help("Try to add `(` after ON and before fields")
+                    .with_location(get_safe_location(tokens, *position))
+                    .as_boxed());
+            }
+
+            // Consume `(` Left Parenthesis
+            *position += 1;
+
+            let mut distinct_fields: Vec<String> = vec![];
+            while *position < tokens.len() && tokens[*position].kind != TokenKind::RightParen {
+                let field_token = &tokens[*position];
+                let literal = &field_token.literal;
+                let location = field_token.location;
+
+                distinct_fields.push(literal.to_string());
+
+                context.hidden_selections.push(literal.to_string());
+                context.projection_names.push(literal.to_string());
+                context.projection_locations.push(location);
+
+                // Consume field name
+                *position += 1;
+
+                if *position < tokens.len() && tokens[*position].kind == TokenKind::Comma {
+                    *position += 1;
+                } else {
+                    break;
+                }
+            }
+
+            if *position >= tokens.len() || tokens[*position].kind != TokenKind::RightParen {
+                return Err(Diagnostic::error("Expect `)` after `DISTINCT ON fields`")
+                    .add_help("Try to add `)` after fields")
+                    .with_location(get_safe_location(tokens, *position))
+                    .as_boxed());
+            }
+
+            // Consume `)` Right Parenthesis
+            *position += 1;
+
+            // Prevent passing empty fields
+            if distinct_fields.is_empty() {
+                return Err(Diagnostic::error(
+                    "DISTINCT ON(...) must be used with one of more column",
+                )
+                .add_help("Try to add one or more columns from current table")
+                .with_location(get_safe_location(tokens, *position))
+                .as_boxed());
+            }
+
+            // Prevent user from writing comma after DISTINCT ON
+            if *position < tokens.len() && tokens[*position].kind == TokenKind::Comma {
+                return Err(
+                    Diagnostic::error("No need to add Comma `,` after DISTINCT ON")
+                        .add_help("Try to remove `,` after DISTINCT ON fields")
+                        .with_location(get_safe_location(tokens, *position))
+                        .as_boxed(),
+                );
+            }
+
+            return Ok(Distinct::DistinctOn(distinct_fields));
+        }
+        return Ok(Distinct::DistinctAll);
+    }
+
+    Ok(Distinct::None)
 }
 
 fn parse_where_statement(

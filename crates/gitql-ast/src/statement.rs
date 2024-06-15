@@ -51,11 +51,17 @@ impl Statement for DoStatement {
     }
 }
 
+pub enum Distinct {
+    None,
+    DistinctAll,
+    DistinctOn(Vec<String>),
+}
+
 pub struct SelectStatement {
     pub table_name: String,
     pub fields_names: Vec<String>,
     pub fields_values: Vec<Box<dyn Expression>>,
-    pub is_distinct: bool,
+    pub distinct: Distinct,
 }
 
 impl Statement for SelectStatement {
