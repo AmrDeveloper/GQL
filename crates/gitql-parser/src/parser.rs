@@ -39,7 +39,7 @@ pub fn parse_gql(tokens: Vec<Token>, env: &mut Environment) -> Result<Query, Box
         TokenKind::Do => parse_do_query(env, &tokens, &mut position),
         TokenKind::Set => parse_set_query(env, &tokens, &mut position),
         TokenKind::Select => parse_select_query(env, &tokens, &mut position),
-        TokenKind::Describe => parse_describe_query(&tokens, &mut position),
+        TokenKind::Describe => parse_describe_query(env, &tokens, &mut position),
         TokenKind::Show => parse_show_query(&tokens, &mut position),
         _ => Err(un_expected_statement_error(&tokens, &mut position)),
     };
@@ -140,25 +140,41 @@ fn parse_set_query(
     }))
 }
 
-fn parse_describe_query(tokens: &[Token], position: &mut usize) -> Result<Query, Box<Diagnostic>> {
-    let len = tokens.len();
-
-    // Consume Set keyword
+fn parse_describe_query(
+    env: &mut Environment,
+    tokens: &[Token],
+    position: &mut usize,
+) -> Result<Query, Box<Diagnostic>> {
+    // Consume `DESCRIBE` keyword
     *position += 1;
 
-    if *position >= len || tokens[*position].kind != TokenKind::Symbol {
-        return Err(Diagnostic::error("Expect table name after DESC Statement")
-            .with_location(get_safe_location(tokens, *position - 1))
-            .as_boxed());
+    if *position >= tokens.len() || tokens[*position].kind != TokenKind::Symbol {
+        return Err(
+            Diagnostic::error("Expect table name after DESCRIBE Statement")
+                .with_location(get_safe_location(tokens, *position))
+                .as_boxed(),
+        );
     }
 
-    let name = &tokens[*position].literal;
+    // Make sure table name is valid
+    let table_name = tokens[*position].literal.to_string();
+    if !env
+        .schema
+        .tables_fields_names
+        .contains_key(table_name.as_str())
+    {
+        return Err(
+            Diagnostic::error(&format!("Unresolved table name `{}`", table_name))
+                .add_help("You can use the command `SHOW TABLES` to get list of current tables")
+                .with_location(get_safe_location(tokens, *position))
+                .as_boxed(),
+        );
+    }
 
+    // Consume Table Name
     *position += 1;
 
-    Ok(Query::Describe(DescribeStatement {
-        table_name: name.to_string(),
-    }))
+    Ok(Query::Describe(DescribeStatement { table_name }))
 }
 
 fn parse_show_query(tokens: &[Token], position: &mut usize) -> Result<Query, Box<Diagnostic>> {

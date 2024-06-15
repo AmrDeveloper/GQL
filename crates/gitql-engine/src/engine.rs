@@ -165,41 +165,29 @@ fn evaluate_describe_query(
     env: &mut Environment,
     stmt: DescribeStatement,
 ) -> Result<EvaluationResult, String> {
-    let mut gitql_object = GitQLObject::default();
-    let hidden_selections = vec![];
-
     let table_fields = env
         .schema
         .tables_fields_names
-        .get(&stmt.table_name.as_str());
+        .get(&stmt.table_name.as_str())
+        .unwrap();
 
-    if table_fields.is_none() {
-        return Err(format!("Table {:?} doesnt exist", &stmt.table_name));
-    }
+    let mut gitql_object = GitQLObject::default();
+    gitql_object.titles.push("Field".to_owned());
+    gitql_object.titles.push("Type".to_owned());
 
-    let table_fields = table_fields.unwrap();
-
-    for title in ["Field", "Type"] {
-        gitql_object.titles.push(title.to_owned());
-    }
-
+    let mut rows: Vec<Row> = Vec::with_capacity(table_fields.len());
     for field in table_fields {
         let value = env.schema.tables_fields_types.get(field).unwrap();
-
-        gitql_object.groups.push(Group {
-            rows: vec![Row {
-                values: vec![
-                    Value::Text(field.to_owned().to_owned()),
-                    Value::Text(value.to_string()),
-                ],
-            }],
+        rows.push(Row {
+            values: vec![
+                Value::Text(field.to_owned().to_owned()),
+                Value::Text(value.to_string()),
+            ],
         })
     }
 
-    Ok(EvaluationResult::SelectedGroups(
-        gitql_object,
-        hidden_selections,
-    ))
+    gitql_object.groups.push(Group { rows });
+    Ok(EvaluationResult::SelectedGroups(gitql_object, vec![]))
 }
 
 fn evaluate_show_tables_query(env: &mut Environment) -> Result<EvaluationResult, String> {
