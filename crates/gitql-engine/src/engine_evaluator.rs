@@ -212,11 +212,12 @@ fn evaluate_string(expr: &StringExpression) -> Result<Value, String> {
         StringValueType::Time => Ok(Value::Time(expr.value.to_owned())),
         StringValueType::Date => Ok(string_literal_to_date(&expr.value)),
         StringValueType::DateTime => Ok(string_literal_to_date_time(&expr.value)),
+        StringValueType::Boolean => Ok(string_literal_to_boolean(&expr.value)),
     }
 }
 
-fn string_literal_to_date(date: &str) -> Value {
-    let date_time = chrono::NaiveDate::parse_from_str(date, "%Y-%m-%d").ok();
+fn string_literal_to_date(literal: &str) -> Value {
+    let date_time = chrono::NaiveDate::parse_from_str(literal, "%Y-%m-%d").ok();
     let timestamp = if let Some(date) = date_time {
         let zero_time = chrono::NaiveTime::from_hms_opt(0, 0, 0).unwrap();
         date.and_time(zero_time).and_utc().timestamp()
@@ -226,19 +227,38 @@ fn string_literal_to_date(date: &str) -> Value {
     Value::Date(timestamp)
 }
 
-fn string_literal_to_date_time(date: &str) -> Value {
-    let date_time_format = if date.contains('.') {
+fn string_literal_to_date_time(literal: &str) -> Value {
+    let date_time_format = if literal.contains('.') {
         "%Y-%m-%d %H:%M:%S%.3f"
     } else {
         "%Y-%m-%d %H:%M:%S"
     };
 
-    let date_time = chrono::NaiveDateTime::parse_from_str(date, date_time_format);
+    let date_time = chrono::NaiveDateTime::parse_from_str(literal, date_time_format);
     if date_time.is_err() {
         return Value::DateTime(0);
     }
 
     Value::DateTime(date_time.ok().unwrap().and_utc().timestamp())
+}
+
+fn string_literal_to_boolean(literal: &str) -> Value {
+    match literal {
+        // True values literal
+        "t" => Value::Boolean(true),
+        "true" => Value::Boolean(true),
+        "y" => Value::Boolean(true),
+        "yes" => Value::Boolean(true),
+        "1" => Value::Boolean(true),
+        // False values literal
+        "f" => Value::Boolean(false),
+        "false" => Value::Boolean(false),
+        "n" => Value::Boolean(false),
+        "no" => Value::Boolean(false),
+        "0" => Value::Boolean(false),
+        // Invalid value, must be unreachable
+        _ => Value::Null,
+    }
 }
 
 fn evaluate_symbol(

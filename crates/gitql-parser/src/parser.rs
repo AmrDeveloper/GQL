@@ -27,9 +27,11 @@ use crate::tokenizer::TokenKind;
 use crate::type_checker::are_types_equals;
 use crate::type_checker::check_all_values_are_same_type;
 use crate::type_checker::check_function_call_arguments;
+use crate::type_checker::is_expression_type_equals;
 use crate::type_checker::resolve_call_expression_return_type;
 use crate::type_checker::type_check_projection_symbols;
 use crate::type_checker::type_check_selected_fields;
+use crate::type_checker::ExprTypeCheckResult;
 use crate::type_checker::TypeCheckResult;
 
 pub fn parse_gql(tokens: Vec<Token>, env: &mut Environment) -> Result<Query, Box<Diagnostic>> {
@@ -1212,32 +1214,39 @@ fn parse_logical_or_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
-    let expression = parse_logical_and_expression(context, env, tokens, position);
-    if expression.is_err() || *position >= tokens.len() {
-        return expression;
-    }
-
-    let mut lhs = expression.ok().unwrap();
+    let mut lhs = parse_logical_and_expression(context, env, tokens, position)?;
     while *position < tokens.len() && tokens[*position].kind == TokenKind::LogicalOr {
-        *position += 1;
-
-        if lhs.expr_type(env) != DataType::Boolean {
-            return Err(type_mismatch_error(
-                tokens[*position - 2].location,
-                DataType::Boolean,
-                lhs.expr_type(env),
-            )
-            .as_boxed());
+        let expected_type = DataType::Boolean;
+        match is_expression_type_equals(env, &lhs, &expected_type) {
+            ExprTypeCheckResult::ImplicitCasted(expr) => lhs = expr,
+            ExprTypeCheckResult::Error(diagnostic) => return Err(diagnostic),
+            ExprTypeCheckResult::NotEqualAndCantImplicitCast => {
+                return Err(type_mismatch_error(
+                    tokens[*position - 1].location,
+                    expected_type,
+                    lhs.expr_type(env),
+                )
+                .as_boxed());
+            }
+            _ => {}
         }
 
-        let rhs = parse_logical_and_expression(context, env, tokens, position)?;
-        if rhs.expr_type(env) != DataType::Boolean {
-            return Err(type_mismatch_error(
-                tokens[*position].location,
-                DataType::Boolean,
-                lhs.expr_type(env),
-            )
-            .as_boxed());
+        // Consume operator
+        *position += 1;
+
+        let mut rhs = parse_logical_and_expression(context, env, tokens, position)?;
+        match is_expression_type_equals(env, &rhs, &expected_type) {
+            ExprTypeCheckResult::ImplicitCasted(expr) => rhs = expr,
+            ExprTypeCheckResult::Error(diagnostic) => return Err(diagnostic),
+            ExprTypeCheckResult::NotEqualAndCantImplicitCast => {
+                return Err(type_mismatch_error(
+                    tokens[*position].location,
+                    expected_type,
+                    rhs.expr_type(env),
+                )
+                .as_boxed());
+            }
+            _ => {}
         }
 
         lhs = Box::new(LogicalExpression {
@@ -1256,32 +1265,39 @@ fn parse_logical_and_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
-    let expression = parse_bitwise_or_expression(context, env, tokens, position);
-    if expression.is_err() || *position >= tokens.len() {
-        return expression;
-    }
-
-    let mut lhs = expression.ok().unwrap();
+    let mut lhs = parse_bitwise_or_expression(context, env, tokens, position)?;
     while *position < tokens.len() && tokens[*position].kind == TokenKind::LogicalAnd {
-        *position += 1;
-
-        if lhs.expr_type(env) != DataType::Boolean {
-            return Err(type_mismatch_error(
-                tokens[*position - 2].location,
-                DataType::Boolean,
-                lhs.expr_type(env),
-            )
-            .as_boxed());
+        let expected_type = DataType::Boolean;
+        match is_expression_type_equals(env, &lhs, &expected_type) {
+            ExprTypeCheckResult::ImplicitCasted(expr) => lhs = expr,
+            ExprTypeCheckResult::Error(diagnostic) => return Err(diagnostic),
+            ExprTypeCheckResult::NotEqualAndCantImplicitCast => {
+                return Err(type_mismatch_error(
+                    tokens[*position - 1].location,
+                    expected_type,
+                    lhs.expr_type(env),
+                )
+                .as_boxed());
+            }
+            _ => {}
         }
 
-        let rhs = parse_bitwise_or_expression(context, env, tokens, position)?;
-        if rhs.expr_type(env) != DataType::Boolean {
-            return Err(type_mismatch_error(
-                tokens[*position].location,
-                DataType::Boolean,
-                lhs.expr_type(env),
-            )
-            .as_boxed());
+        // Consume operator
+        *position += 1;
+
+        let mut rhs = parse_bitwise_or_expression(context, env, tokens, position)?;
+        match is_expression_type_equals(env, &rhs, &expected_type) {
+            ExprTypeCheckResult::ImplicitCasted(expr) => rhs = expr,
+            ExprTypeCheckResult::Error(diagnostic) => return Err(diagnostic),
+            ExprTypeCheckResult::NotEqualAndCantImplicitCast => {
+                return Err(type_mismatch_error(
+                    tokens[*position].location,
+                    expected_type,
+                    rhs.expr_type(env),
+                )
+                .as_boxed());
+            }
+            _ => {}
         }
 
         lhs = Box::new(LogicalExpression {
@@ -1300,29 +1316,24 @@ fn parse_bitwise_or_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
-    let expression = parse_logical_xor_expression(context, env, tokens, position);
-    if expression.is_err() || *position >= tokens.len() {
-        return expression;
-    }
-
-    let lhs = expression.ok().unwrap();
+    let lhs = parse_logical_xor_expression(context, env, tokens, position)?;
     if tokens[*position].kind == TokenKind::BitwiseOr {
         *position += 1;
 
-        if lhs.expr_type(env) != DataType::Boolean {
+        if lhs.expr_type(env) != DataType::Integer {
             return Err(type_mismatch_error(
                 tokens[*position - 2].location,
-                DataType::Boolean,
+                DataType::Integer,
                 lhs.expr_type(env),
             )
             .as_boxed());
         }
 
         let rhs = parse_logical_xor_expression(context, env, tokens, position)?;
-        if rhs.expr_type(env) != DataType::Boolean {
+        if rhs.expr_type(env) != DataType::Integer {
             return Err(type_mismatch_error(
                 tokens[*position].location,
-                DataType::Boolean,
+                DataType::Integer,
                 lhs.expr_type(env),
             )
             .as_boxed());
@@ -1344,30 +1355,39 @@ fn parse_logical_xor_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
-    let expression = parse_bitwise_and_expression(context, env, tokens, position);
-    if expression.is_err() || *position >= tokens.len() {
-        return expression;
-    }
-
-    let mut lhs = expression.ok().unwrap();
+    let mut lhs = parse_bitwise_and_expression(context, env, tokens, position)?;
     while *position < tokens.len() && tokens[*position].kind == TokenKind::LogicalXor {
-        *position += 1;
-
-        if lhs.expr_type(env) != DataType::Boolean {
-            return Err(type_mismatch_error(
-                tokens[*position - 2].location,
-                DataType::Boolean,
-                lhs.expr_type(env),
-            ));
+        let expected_type = DataType::Boolean;
+        match is_expression_type_equals(env, &lhs, &expected_type) {
+            ExprTypeCheckResult::ImplicitCasted(expr) => lhs = expr,
+            ExprTypeCheckResult::Error(diagnostic) => return Err(diagnostic),
+            ExprTypeCheckResult::NotEqualAndCantImplicitCast => {
+                return Err(type_mismatch_error(
+                    tokens[*position - 1].location,
+                    expected_type,
+                    lhs.expr_type(env),
+                )
+                .as_boxed());
+            }
+            _ => {}
         }
 
-        let rhs = parse_bitwise_and_expression(context, env, tokens, position)?;
-        if rhs.expr_type(env) != DataType::Boolean {
-            return Err(type_mismatch_error(
-                tokens[*position].location,
-                DataType::Boolean,
-                lhs.expr_type(env),
-            ));
+        // Consume operator
+        *position += 1;
+
+        let mut rhs = parse_bitwise_and_expression(context, env, tokens, position)?;
+        match is_expression_type_equals(env, &rhs, &expected_type) {
+            ExprTypeCheckResult::ImplicitCasted(expr) => rhs = expr,
+            ExprTypeCheckResult::Error(diagnostic) => return Err(diagnostic),
+            ExprTypeCheckResult::NotEqualAndCantImplicitCast => {
+                return Err(type_mismatch_error(
+                    tokens[*position].location,
+                    expected_type,
+                    rhs.expr_type(env),
+                )
+                .as_boxed());
+            }
+            _ => {}
         }
 
         lhs = Box::new(LogicalExpression {
@@ -1386,28 +1406,23 @@ fn parse_bitwise_and_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
-    let expression = parse_equality_expression(context, env, tokens, position);
-    if expression.is_err() || *position >= tokens.len() {
-        return expression;
-    }
-
-    let mut lhs = expression.ok().unwrap();
+    let mut lhs = parse_equality_expression(context, env, tokens, position)?;
     if *position < tokens.len() && tokens[*position].kind == TokenKind::BitwiseAnd {
         *position += 1;
 
-        if lhs.expr_type(env) != DataType::Boolean {
+        if lhs.expr_type(env) != DataType::Integer {
             return Err(type_mismatch_error(
                 tokens[*position - 2].location,
-                DataType::Boolean,
+                DataType::Integer,
                 lhs.expr_type(env),
             ));
         }
 
         let rhs = parse_equality_expression(context, env, tokens, position)?;
-        if rhs.expr_type(env) != DataType::Boolean {
+        if rhs.expr_type(env) != DataType::Integer {
             return Err(type_mismatch_error(
                 tokens[*position].location,
-                DataType::Boolean,
+                DataType::Integer,
                 lhs.expr_type(env),
             ));
         }
@@ -1510,7 +1525,6 @@ fn parse_comparison_expression(
         };
 
         let mut rhs = parse_bitwise_shift_expression(context, env, tokens, position)?;
-
         match are_types_equals(env, &lhs, &rhs) {
             TypeCheckResult::Equals => {}
             TypeCheckResult::RightSideCasted(expr) => rhs = expr,

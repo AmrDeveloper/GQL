@@ -76,6 +76,7 @@ pub enum StringValueType {
     Time,
     Date,
     DateTime,
+    Boolean,
 }
 
 pub struct StringExpression {
@@ -94,6 +95,7 @@ impl Expression for StringExpression {
             StringValueType::Time => DataType::Time,
             StringValueType::Date => DataType::Date,
             StringValueType::DateTime => DataType::DateTime,
+            StringValueType::Boolean => DataType::Boolean,
         }
     }
 

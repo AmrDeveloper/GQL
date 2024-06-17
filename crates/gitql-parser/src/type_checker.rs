@@ -26,30 +26,55 @@ pub enum TypeCheckResult {
     LeftSideCasted(Box<dyn Expression>),
 }
 
+/// List of valid boolean values
+const BOOLEANS_VALUES_LITERAL: [&str; 10] =
+    ["t", "true", "y", "yes", "1", "f", "false", "n", "no", "0"];
+
+/// The return result after performing types checking with implicit casting option
+pub enum ExprTypeCheckResult {
+    /// Both right and left hand sides types are equals without implicit casting
+    Equals,
+    /// Both right and left hand sides types are not equals and can't perform implicit casting
+    NotEqualAndCantImplicitCast,
+    /// Not Equals and can't perform implicit casting with error message provided
+    Error(Box<Diagnostic>),
+    /// Left hand side type will match the right side after implicit casting
+    ImplicitCasted(Box<dyn Expression>),
+}
+
 /// Check if expression type and data type are equals
 /// If not then check if one can be implicit casted to the other
+///
+/// Supported Implicit casting:
+/// - String to Time.
+/// - String to Date.
+/// - String to DateTime
+/// - String to Boolean
+///
 #[allow(clippy::borrowed_box)]
 pub fn is_expression_type_equals(
     scope: &Environment,
     expr: &Box<dyn Expression>,
     data_type: &DataType,
-) -> TypeCheckResult {
+) -> ExprTypeCheckResult {
     let expr_type = expr.expr_type(scope);
 
     // Both types are already equals without need for implicit casting
     if expr_type == *data_type {
-        return TypeCheckResult::Equals;
+        return ExprTypeCheckResult::Equals;
     }
 
-    // Cast expr type from Text literal to time
-    if (data_type.is_time() || data_type.is_variant_with(&DataType::Time))
-        && expr_type.is_text()
-        && expr.kind() == ExpressionKind::String
-    {
+    // Current implicit casting require expression kind to be string literal
+    if expr.kind() != ExpressionKind::String || !expr_type.is_text() {
+        return ExprTypeCheckResult::NotEqualAndCantImplicitCast;
+    }
+
+    // Implicit Casting expression type from Text literal to time
+    if data_type.is_time() || data_type.is_variant_with(&DataType::Time) {
         let literal = expr.as_any().downcast_ref::<StringExpression>().unwrap();
         let string_literal_value = &literal.value;
         if !is_valid_time_format(string_literal_value) {
-            return TypeCheckResult::Error(
+            return ExprTypeCheckResult::Error(
                 Diagnostic::error(&format!(
                     "Can't compare Time and Text `{}` because it can't be implicitly casted to Time",
                     string_literal_value
@@ -59,21 +84,18 @@ pub fn is_expression_type_equals(
             );
         }
 
-        return TypeCheckResult::RightSideCasted(Box::new(StringExpression {
+        return ExprTypeCheckResult::ImplicitCasted(Box::new(StringExpression {
             value: string_literal_value.to_owned(),
             value_type: StringValueType::Time,
         }));
     }
 
-    // Cast expr type from Text literal to Date
-    if (data_type.is_date() || data_type.is_variant_with(&DataType::Date))
-        && expr_type.is_text()
-        && expr.kind() == ExpressionKind::String
-    {
+    // Implicit Casting expression type from Text literal to Date
+    if data_type.is_date() || data_type.is_variant_with(&DataType::Date) {
         let literal = expr.as_any().downcast_ref::<StringExpression>().unwrap();
         let string_literal_value = &literal.value;
         if !is_valid_date_format(string_literal_value) {
-            return TypeCheckResult::Error(
+            return ExprTypeCheckResult::Error(
                 Diagnostic::error(&format!(
                     "Can't compare Date and Text `{}` because it can't be implicitly casted to Date",
                     string_literal_value
@@ -83,36 +105,53 @@ pub fn is_expression_type_equals(
             );
         }
 
-        return TypeCheckResult::RightSideCasted(Box::new(StringExpression {
+        return ExprTypeCheckResult::ImplicitCasted(Box::new(StringExpression {
             value: string_literal_value.to_owned(),
             value_type: StringValueType::Date,
         }));
     }
 
-    // Cast right hand side type from Text literal to DateTime
-    if (data_type.is_datetime() || data_type.is_variant_with(&DataType::DateTime))
-        && expr_type.is_text()
-        && expr.kind() == ExpressionKind::String
-    {
+    // Implicit Casting expression type from Text literal to DateTime
+    if data_type.is_datetime() || data_type.is_variant_with(&DataType::DateTime) {
         let literal = expr.as_any().downcast_ref::<StringExpression>().unwrap();
         let string_literal_value = &literal.value;
         if !is_valid_datetime_format(string_literal_value) {
-            return TypeCheckResult::Error(
+            return ExprTypeCheckResult::Error(
                 Diagnostic::error(&format!(
                     "Can't compare DateTime and Text `{}` because it can't be implicitly casted to DateTime",
                     string_literal_value
-                )).add_help("A valid DateTime format must match `YYYY-MM-DD HH:MM:SS` or `YYYY-MM-DD HH:MM:SS.SSS`")
+                )).add_help("A valid DateTime format must match one of the values `YYYY-MM-DD HH:MM:SS` or `YYYY-MM-DD HH:MM:SS.SSS`")
                 .as_boxed(),
             );
         }
 
-        return TypeCheckResult::RightSideCasted(Box::new(StringExpression {
+        return ExprTypeCheckResult::ImplicitCasted(Box::new(StringExpression {
             value: string_literal_value.to_owned(),
             value_type: StringValueType::DateTime,
         }));
     }
 
-    TypeCheckResult::NotEqualAndCantImplicitCast
+    // Implicit Casting expression type from Text literal to Boolean
+    if data_type.is_bool() || data_type.is_variant_with(&DataType::Boolean) {
+        let literal = expr.as_any().downcast_ref::<StringExpression>().unwrap();
+        let string_literal_value = &literal.value;
+        if !BOOLEANS_VALUES_LITERAL.contains(&string_literal_value.as_str()) {
+            return ExprTypeCheckResult::Error(
+                Diagnostic::error(&format!(
+                    "Can't compare Boolean and Text `{}` because it can't be implicitly casted to Boolean",
+                    string_literal_value
+                )).add_help("A valid Boolean value must match `t, true, y, yes, 1, f, false, n, no, 0`")
+                .as_boxed(),
+            );
+        }
+
+        return ExprTypeCheckResult::ImplicitCasted(Box::new(StringExpression {
+            value: string_literal_value.to_owned(),
+            value_type: StringValueType::Boolean,
+        }));
+    }
+
+    ExprTypeCheckResult::NotEqualAndCantImplicitCast
 }
 
 /// Check if two expressions types are equals
@@ -131,146 +170,26 @@ pub fn are_types_equals(
         return TypeCheckResult::Equals;
     }
 
-    // Cast right hand side type from Text literal to time
-    if (lhs_type.is_time() || lhs_type.is_variant_with(&DataType::Time))
-        && rhs_type.is_text()
-        && rhs.kind() == ExpressionKind::String
-    {
-        let expr = rhs.as_any().downcast_ref::<StringExpression>().unwrap();
-        let string_literal_value = &expr.value;
-        if !is_valid_time_format(string_literal_value) {
-            return TypeCheckResult::Error(
-                Diagnostic::error(&format!(
-                    "Can't compare Time and Text `{}` because it can't be implicitly casted to Time",
-                    string_literal_value
-                )).add_help("A valid Time format must match `HH:MM:SS` or `HH:MM:SS.SSS`")
-                .add_help("You can use `MAKETIME(hour, minute, second)` function to a create date value")
-                .as_boxed(),
-            );
+    // Check if can cast right hand side to left hand side type
+    match is_expression_type_equals(scope, rhs, &lhs_type) {
+        ExprTypeCheckResult::ImplicitCasted(expr) => {
+            return TypeCheckResult::RightSideCasted(expr);
         }
-
-        return TypeCheckResult::RightSideCasted(Box::new(StringExpression {
-            value: string_literal_value.to_owned(),
-            value_type: StringValueType::Time,
-        }));
+        ExprTypeCheckResult::Error(diagnostic) => {
+            return TypeCheckResult::Error(diagnostic);
+        }
+        _ => {}
     }
 
-    // Cast left hand side type from Text literal to time
-    if lhs_type.is_text()
-        && (rhs_type.is_time() || rhs_type.is_variant_with(&DataType::Time))
-        && lhs.kind() == ExpressionKind::String
-    {
-        let expr = lhs.as_any().downcast_ref::<StringExpression>().unwrap();
-        let string_literal_value = &expr.value;
-        if !is_valid_time_format(string_literal_value) {
-            return TypeCheckResult::Error(
-                Diagnostic::error(&format!(
-                    "Can't compare Text `{}` and Time because it can't be implicitly casted to Time",
-                    string_literal_value
-                )).add_help("A valid Time format must match `HH:MM:SS` or `HH:MM:SS.SSS`")
-                .add_help("You can use `MAKETIME(hour, minute, second)` function to a create date value")
-                .as_boxed(),
-            );
+    // Check if can cast left hand side to right hand side type
+    match is_expression_type_equals(scope, lhs, &rhs_type) {
+        ExprTypeCheckResult::ImplicitCasted(expr) => {
+            return TypeCheckResult::LeftSideCasted(expr);
         }
-
-        return TypeCheckResult::LeftSideCasted(Box::new(StringExpression {
-            value: string_literal_value.to_owned(),
-            value_type: StringValueType::Time,
-        }));
-    }
-
-    // Cast right hand side type from Text literal to Date
-    if (lhs_type.is_date() || lhs_type.is_variant_with(&DataType::Date))
-        && rhs_type.is_text()
-        && rhs.kind() == ExpressionKind::String
-    {
-        let expr = rhs.as_any().downcast_ref::<StringExpression>().unwrap();
-        let string_literal_value = &expr.value;
-        if !is_valid_date_format(string_literal_value) {
-            return TypeCheckResult::Error(
-                Diagnostic::error(&format!(
-                    "Can't compare Date and Text(`{}`) because Text can't be implicitly casted to Date",
-                    string_literal_value
-                )).add_help("A valid Date format should be matching `YYYY-MM-DD`")
-                .add_help("You can use `MAKEDATE(year, dayOfYear)` function to a create date value")
-                .as_boxed(),
-            );
+        ExprTypeCheckResult::Error(diagnostic) => {
+            return TypeCheckResult::Error(diagnostic);
         }
-
-        return TypeCheckResult::RightSideCasted(Box::new(StringExpression {
-            value: string_literal_value.to_owned(),
-            value_type: StringValueType::Date,
-        }));
-    }
-
-    // Cast left hand side type from Text literal to Date
-    if lhs_type.is_text()
-        && (rhs_type.is_date() || rhs_type.is_variant_with(&DataType::Date))
-        && lhs.kind() == ExpressionKind::String
-    {
-        let expr = lhs.as_any().downcast_ref::<StringExpression>().unwrap();
-        let string_literal_value = &expr.value;
-        if !is_valid_date_format(string_literal_value) {
-            return TypeCheckResult::Error(
-                Diagnostic::error(&format!(
-                    "Can't compare Text(`{}`) and Date because Text can't be implicitly casted to Date",
-                    string_literal_value
-                )).add_help("A valid Date format should be matching `YYYY-MM-DD`")
-                .add_help("You can use `MAKEDATE(year, dayOfYear)` function to a create date value")
-                .as_boxed(),
-            );
-        }
-
-        return TypeCheckResult::LeftSideCasted(Box::new(StringExpression {
-            value: string_literal_value.to_owned(),
-            value_type: StringValueType::Date,
-        }));
-    }
-
-    // Cast right hand side type from Text literal to DateTime
-    if (lhs_type.is_datetime() || lhs_type.is_variant_with(&DataType::DateTime))
-        && rhs_type.is_text()
-        && rhs.kind() == ExpressionKind::String
-    {
-        let expr = rhs.as_any().downcast_ref::<StringExpression>().unwrap();
-        let string_literal_value = &expr.value;
-        if !is_valid_datetime_format(string_literal_value) {
-            return TypeCheckResult::Error(
-                Diagnostic::error(&format!(
-                    "Can't compare DateTime and Text `{}` because it can't be implicitly casted to DateTime",
-                    string_literal_value
-                )).add_help("A valid DateTime format must match `YYYY-MM-DD HH:MM:SS` or `YYYY-MM-DD HH:MM:SS.SSS`")
-                .as_boxed(),
-            );
-        }
-
-        return TypeCheckResult::RightSideCasted(Box::new(StringExpression {
-            value: string_literal_value.to_owned(),
-            value_type: StringValueType::DateTime,
-        }));
-    }
-
-    // Cast Left hand side type from Text literal to DateTime
-    if lhs_type.is_text()
-        && (rhs_type.is_datetime() || rhs_type.is_variant_with(&DataType::DateTime))
-        && lhs.kind() == ExpressionKind::String
-    {
-        let expr = lhs.as_any().downcast_ref::<StringExpression>().unwrap();
-        let string_literal_value = &expr.value;
-        if !is_valid_datetime_format(string_literal_value) {
-            return TypeCheckResult::Error(
-                Diagnostic::error(&format!(
-                    "Can't compare Text `{}` and DateTime because it can't be implicitly casted to DateTime",
-                    string_literal_value
-                )).add_help("A valid DateTime format must match `YYYY-MM-DD HH:MM:SS` or `YYYY-MM-DD HH:MM:SS.SSS`")
-                .as_boxed(),
-            );
-        }
-
-        return TypeCheckResult::LeftSideCasted(Box::new(StringExpression {
-            value: string_literal_value.to_owned(),
-            value_type: StringValueType::DateTime,
-        }));
+        _ => {}
     }
 
     TypeCheckResult::NotEqualAndCantImplicitCast
@@ -365,14 +284,10 @@ pub fn check_function_call_arguments(
         }
 
         match is_expression_type_equals(env, argument, parameter_type) {
-            TypeCheckResult::Equals => {}
-            TypeCheckResult::RightSideCasted(new_expr) => {
+            ExprTypeCheckResult::ImplicitCasted(new_expr) => {
                 arguments[index] = new_expr;
             }
-            TypeCheckResult::LeftSideCasted(new_expr) => {
-                arguments[index] = new_expr;
-            }
-            TypeCheckResult::NotEqualAndCantImplicitCast => {
+            ExprTypeCheckResult::NotEqualAndCantImplicitCast => {
                 let argument_type = argument.expr_type(env);
                 return Err(Diagnostic::error(&format!(
                     "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
@@ -380,7 +295,8 @@ pub fn check_function_call_arguments(
                 ))
                 .with_location(location).as_boxed());
             }
-            TypeCheckResult::Error(error) => return Err(error),
+            ExprTypeCheckResult::Error(error) => return Err(error),
+            ExprTypeCheckResult::Equals => {}
         }
     }
 
@@ -407,14 +323,10 @@ pub fn check_function_call_arguments(
         }
 
         match is_expression_type_equals(env, argument, parameter_type) {
-            TypeCheckResult::Equals => {}
-            TypeCheckResult::RightSideCasted(new_expr) => {
+            ExprTypeCheckResult::ImplicitCasted(new_expr) => {
                 arguments[index] = new_expr;
             }
-            TypeCheckResult::LeftSideCasted(new_expr) => {
-                arguments[index] = new_expr;
-            }
-            TypeCheckResult::NotEqualAndCantImplicitCast => {
+            ExprTypeCheckResult::NotEqualAndCantImplicitCast => {
                 let argument_type = argument.expr_type(env);
                 return Err(Diagnostic::error(&format!(
                     "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
@@ -422,7 +334,8 @@ pub fn check_function_call_arguments(
                 ))
                 .with_location(location).as_boxed());
             }
-            TypeCheckResult::Error(error) => return Err(error),
+            ExprTypeCheckResult::Error(error) => return Err(error),
+            ExprTypeCheckResult::Equals => {}
         }
     }
 
@@ -445,14 +358,10 @@ pub fn check_function_call_arguments(
             }
 
             match is_expression_type_equals(env, argument, varargs_type) {
-                TypeCheckResult::Equals => {}
-                TypeCheckResult::RightSideCasted(new_expr) => {
+                ExprTypeCheckResult::ImplicitCasted(new_expr) => {
                     arguments[index] = new_expr;
                 }
-                TypeCheckResult::LeftSideCasted(new_expr) => {
-                    arguments[index] = new_expr;
-                }
-                TypeCheckResult::NotEqualAndCantImplicitCast => {
+                ExprTypeCheckResult::NotEqualAndCantImplicitCast => {
                     let argument_type = argument.expr_type(env);
                     return Err(Diagnostic::error(&format!(
                         "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
@@ -460,7 +369,8 @@ pub fn check_function_call_arguments(
                     ))
                     .with_location(location).as_boxed());
                 }
-                TypeCheckResult::Error(error) => return Err(error),
+                ExprTypeCheckResult::Error(error) => return Err(error),
+                ExprTypeCheckResult::Equals => {}
             }
         }
     }
