@@ -272,6 +272,11 @@ fn select_commits(
                 continue;
             }
 
+            if field_name == "parents_count" {
+                values.push(Value::Integer(commit.parents.len() as i64));
+                continue;
+            }
+
             if field_name == "repo" {
                 values.push(Value::Text(repo_path.to_string()));
                 continue;

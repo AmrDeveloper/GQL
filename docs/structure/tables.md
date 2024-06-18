@@ -22,15 +22,16 @@ show tables
 
 ---
 
-| Name      | Type | Description          |
-| --------- | ---- | -------------------- |
-| commit_id | Text | Commit id            |
-| title     | Text | Commit title         |
-| message   | Text | Commit full message  |
-| name      | Text | Author name          |
-| email     | Text | Author email         |
-| datetime  | Date | Commit date time     |
-| repo      | Text | Repository full path |
+| Name          | Type    | Description              |
+| ------------- | ------- | ------------------------ |
+| commit_id     | Text    | Commit id                |
+| title         | Text    | Commit title             |
+| message       | Text    | Commit full message      |
+| name          | Text    | Author name              |
+| email         | Text    | Author email             |
+| parents_count | Integer | Number of commit parents |
+| datetime      | Date    | Commit date time         |
+| repo          | Text    | Repository full path     |
 
 ---
 

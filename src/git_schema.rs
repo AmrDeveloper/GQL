@@ -20,6 +20,7 @@ pub fn tables_fields_types() -> &'static HashMap<&'static str, DataType> {
         map.insert("is_head", DataType::Boolean);
         map.insert("is_remote", DataType::Boolean);
         map.insert("commit_count", DataType::Integer);
+        map.insert("parents_count", DataType::Integer);
         map.insert("updated", DataType::DateTime);
         map.insert("repo", DataType::Text);
         map
@@ -40,6 +41,7 @@ pub fn tables_fields_names() -> &'static HashMap<&'static str, Vec<&'static str>
                 "name",
                 "email",
                 "datetime",
+                "parents_count",
                 "repo",
             ],
         );
