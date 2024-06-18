@@ -11,6 +11,7 @@ cargo install gitql
 ## Winget on Windows
 
 ```sh
+winget install cmake
 winget install gitql
 ```
 
