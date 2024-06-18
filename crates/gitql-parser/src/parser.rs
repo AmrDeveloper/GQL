@@ -1156,7 +1156,6 @@ fn parse_between_expression(
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     let expression = parse_logical_or_expression(context, env, tokens, position)?;
-
     if *position < tokens.len() && tokens[*position].kind == TokenKind::Between {
         let between_location = tokens[*position].location;
 
@@ -1317,7 +1316,7 @@ fn parse_bitwise_or_expression(
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     let lhs = parse_logical_xor_expression(context, env, tokens, position)?;
-    if tokens[*position].kind == TokenKind::BitwiseOr {
+    if *position < tokens.len() && tokens[*position].kind == TokenKind::BitwiseOr {
         *position += 1;
 
         if lhs.expr_type(env) != DataType::Integer {
