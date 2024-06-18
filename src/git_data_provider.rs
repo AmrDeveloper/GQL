@@ -241,14 +241,22 @@ fn select_commits(
             }
 
             if field_name == "name" {
-                let name = commit.author().name.to_string();
-                values.push(Value::Text(name));
+                values.push(Value::Text(commit.author().name.to_string()));
                 continue;
             }
 
             if field_name == "email" {
-                let email = commit.author().email.to_string();
-                values.push(Value::Text(email));
+                values.push(Value::Text(commit.author().email.to_string()));
+                continue;
+            }
+
+            if field_name == "committer_name" {
+                values.push(Value::Text(commit.committer().name.to_string()));
+                continue;
+            }
+
+            if field_name == "committer_email" {
+                values.push(Value::Text(commit.committer().email.to_string()));
                 continue;
             }
 
