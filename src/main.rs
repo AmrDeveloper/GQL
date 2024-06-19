@@ -20,10 +20,9 @@ use gitql_parser::parser;
 use gitql_parser::tokenizer;
 use gitql_std::aggregation::aggregation_function_signatures;
 use gitql_std::aggregation::aggregation_functions;
-use gitql_std::function::standard_function_signatures;
-use gitql_std::function::standard_functions;
 
 mod git_data_provider;
+mod git_functions;
 mod git_schema;
 
 fn main() {
@@ -56,8 +55,8 @@ fn main() {
                 tables_fields_types: tables_fields_types().to_owned(),
             };
 
-            let std_signatures = standard_function_signatures();
-            let std_functions = standard_functions();
+            let std_signatures = git_functions::gitql_std_signatures();
+            let std_functions = git_functions::gitql_std_functions();
 
             let aggregation_signatures = aggregation_function_signatures();
             let aggregation_functions = aggregation_functions();
@@ -96,8 +95,8 @@ fn launch_gitql_repl(arguments: Arguments) {
         tables_fields_types: tables_fields_types().clone(),
     };
 
-    let std_signatures = standard_function_signatures();
-    let std_functions = standard_functions();
+    let std_signatures = git_functions::gitql_std_signatures();
+    let std_functions = git_functions::gitql_std_functions();
 
     let aggregation_signatures = aggregation_function_signatures();
     let aggregation_functions = aggregation_functions();

@@ -84,6 +84,7 @@ nav:
   - Function:
       - Functions: function/functions.md
       - Aggregations: function/aggregations.md
+  - GitQL Functions: gitql_functions.md
   - GitQL SDK: sdk.md
 
 extra:
