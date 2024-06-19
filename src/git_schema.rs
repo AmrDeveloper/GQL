@@ -10,6 +10,8 @@ pub fn tables_fields_types() -> &'static HashMap<&'static str, DataType> {
         map.insert("title", DataType::Text);
         map.insert("message", DataType::Text);
         map.insert("name", DataType::Text);
+        map.insert("author_name", DataType::Text);
+        map.insert("author_email", DataType::Text);
         map.insert("committer_name", DataType::Text);
         map.insert("committer_email", DataType::Text);
         map.insert("full_name", DataType::Text);
@@ -40,8 +42,8 @@ pub fn tables_fields_names() -> &'static HashMap<&'static str, Vec<&'static str>
                 "commit_id",
                 "title",
                 "message",
-                "name",
-                "email",
+                "author_name",
+                "author_email",
                 "committer_name",
                 "committer_email",
                 "datetime",

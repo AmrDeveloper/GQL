@@ -32,7 +32,7 @@ SELECT name, avg(insertions) FROM commits GROUP BY name;
 The function count() is an aggregate function that returns the number of items in a group
 
 ```sql
-SELECT name, max(name) FROM commits GROUP BY name;
+SELECT name, max(author_name) FROM commits GROUP BY name;
 ```
 
 ### Aggregation `group_concat`

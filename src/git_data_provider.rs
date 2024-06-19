@@ -240,12 +240,12 @@ fn select_commits(
                 continue;
             }
 
-            if field_name == "name" {
+            if field_name == "author_name" {
                 values.push(Value::Text(commit.author().name.to_string()));
                 continue;
             }
 
-            if field_name == "email" {
+            if field_name == "author_email" {
                 values.push(Value::Text(commit.author().email.to_string()));
                 continue;
             }

@@ -17,7 +17,7 @@ SELECT title message FROM commits
 You can use Aggregation function in the select statement to perform function on all data until the current one
 
 ```sql
-SELECT count(name) FROM commits
+SELECT count(author_name) FROM commits
 ```
 
 You can alias the column name only in this query by using `as` keyword for example
@@ -44,5 +44,5 @@ SELECT DISTINCT title AS tt FROM commits
 You can select rows with unique fields using the `distinct on` keyword with one or more field for example,
 
 ```sql
-SELECT DISTINCT ON (name) title AS tt FROM commits
+SELECT DISTINCT ON (author_name) title AS tt FROM commits
 ```
