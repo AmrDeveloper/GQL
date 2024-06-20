@@ -674,19 +674,27 @@ fn parse_where_statement(
 
     let aggregations_count_before = context.aggregations.len();
 
-    // Make sure WHERE condition expression has boolean type
+    // Make sure WHERE condition expression has boolean type or can implicit casted to boolean
     let condition_location = tokens[*position].location;
-    let condition = parse_expression(context, env, tokens, position)?;
-    let condition_type = condition.expr_type(env);
-    if condition_type != DataType::Boolean {
-        return Err(Diagnostic::error(&format!(
-            "Expect `WHERE` condition to be type {} but got {}",
-            DataType::Boolean,
-            condition_type
-        ))
-        .add_note("`WHERE` statement condition must be Boolean")
-        .with_location(condition_location)
-        .as_boxed());
+    let mut condition = parse_expression(context, env, tokens, position)?;
+    match is_expression_type_equals(env, &condition, &DataType::Boolean) {
+        ExprTypeCheckResult::ImplicitCasted(expr) => {
+            condition = expr;
+        }
+        ExprTypeCheckResult::Error(diagnostic) => {
+            return Err(diagnostic);
+        }
+        ExprTypeCheckResult::NotEqualAndCantImplicitCast => {
+            return Err(Diagnostic::error(&format!(
+                "Expect `WHERE` condition to be type {} but got {}",
+                DataType::Boolean,
+                condition.expr_type(env)
+            ))
+            .add_note("`WHERE` statement condition must be Boolean")
+            .with_location(condition_location)
+            .as_boxed());
+        }
+        _ => {}
     }
 
     let aggregations_count_after = context.aggregations.len();
