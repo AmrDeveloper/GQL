@@ -1,6 +1,22 @@
 Change Log
 ==========
 
+Version 0.24.0 *(2024-06-21)*
+-----------------------------
+
+* Fix passing global variable value to function call.
+* Support slice with default start and end and optimize it.
+* Implement PostgreSQL `DISTINCT ON` operator.
+* Support `GROUP BY` one or more expression.
+* Improve the parse and performance of `DESCRIBE` query.
+* Support PostgreSQL boolean values literals.
+* Support query `parents_count` of commit.
+* Support query `committer_name` and `committer_email` of commit.
+* Rename `name` and `email` to `author_name` and `author_email` of commit.
+* Support `commit_conventional` function in gitql application.
+* Support implicit casting in `WHERE` statement.
+* Support implicit casting in `HAVING` statement.
+
 Version 0.23.0 *(2024-06-13)*
 -----------------------------
 
