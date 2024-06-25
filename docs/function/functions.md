@@ -187,12 +187,15 @@ SELECT REGEXP_SUBSTR("abc def ghi", "[a-z]+");
 
 ### Array functions
 
-| Name         | Parameters | Return  | Description                 |
-| ------------ | ---------- | ------- | --------------------------- |
-| ARRAY_LENGTH | ARRAY      | Integer | Return the length of Array. |
+| Name          | Parameters | Return  | Description                                                |
+| ------------- | ---------- | ------- | ---------------------------------------------------------- |
+| ARRAY_LENGTH  | ARRAY      | Integer | Return the length of Array.                                |
+| ARRAY_SHUFFLE | ARRAY      | ARRAY   | Return Randomly shuffles the first dimension of the array. |
 
 
 ### Array functions samples
 
 ```sql
 SELECT ARRAY_LENGTH([1, 2, 3]);
+SELECT ARRAY_SHUFFLE([1, 2, 3]);
+```

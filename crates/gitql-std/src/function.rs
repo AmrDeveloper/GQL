@@ -105,6 +105,7 @@ pub fn standard_functions() -> &'static HashMap<&'static str, Function> {
 
         // Array Functions
         map.insert("array_length", array_length);
+        map.insert("array_shuffle", array_shuffle);
         map
     })
 }
@@ -697,7 +698,13 @@ pub fn standard_function_signatures() -> &'static HashMap<&'static str, Signatur
                 return_type: DataType::Integer,
             },
         );
-
+        map.insert(
+            "array_shuffle",
+            Signature {
+                parameters: vec![DataType::Array(Box::new(DataType::Any))],
+                return_type: DataType::Dynamic(same_type_as_first_parameter),
+            },
+        );
         map
     })
 }
