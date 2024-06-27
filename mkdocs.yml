@@ -81,9 +81,14 @@ nav:
       - Unary: expression/unary.md
       - Binary: expression/binary.md
       - Case: expression/case.md
-  - Function:
-      - Functions: function/functions.md
-      - Aggregations: function/aggregations.md
+  - Functions and Operators:
+      - Mathematical: functions/math.md
+      - String: functions/string.md
+      - Date: functions/datetime.md
+      - Regex: functions/regex.md
+      - Array: functions/array.md
+      - Other: functions/other.md
+      - Aggregate Functions: functions/aggregations.md
   - GitQL Functions: gitql_functions.md
   - GitQL SDK: sdk.md
 
