@@ -34,3 +34,12 @@ gitql-engine = { path = "./crates/gitql-engine", version = "0.24.0" }
 gitql-cli = { path = "./crates/gitql-cli", version = "0.24.0" }
 gix = { workspace = true, features = ["blob-diff", "max-performance"] }
 atty = "0.2.14"
+
+[dev-dependencies]
+criterion = "0.5.1"
+
+# Run all benchmarks with `cargo bench`
+# Run individual benchmarks like `cargo bench -- <regex>` e.g. `cargo bench -- tokenizer`
+[[bench]]
+name = "benchmarks"
+harness = false
