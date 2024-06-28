@@ -23,11 +23,11 @@ use gitql_ast::statement::WhereStatement;
 use gitql_core::environment::Environment;
 use gitql_core::object::GitQLObject;
 use gitql_core::object::Group;
-use gitql_core::object::Row;
 use gitql_core::value::Value;
 
 use crate::data_provider::DataProvider;
 use crate::engine_evaluator::evaluate_expression;
+use crate::engine_filter::filter_rows_by_condition;
 
 #[allow(clippy::borrowed_box)]
 pub fn execute_statement(
@@ -169,31 +169,12 @@ fn execute_where_statement(
     statement: &WhereStatement,
     gitql_object: &mut GitQLObject,
 ) -> Result<(), String> {
-    if gitql_object.is_empty() {
-        return Ok(());
-    }
-
     // Perform where command only on the first group
     // because group by command not executed yet
-    let mut filtered_group: Group = Group { rows: vec![] };
-    let first_group = gitql_object.groups.first().unwrap().rows.iter();
-    for object in first_group {
-        let eval_result = evaluate_expression(
-            env,
-            &statement.condition,
-            &gitql_object.titles,
-            &object.values,
-        );
-        if eval_result.is_err() {
-            return Err(eval_result.err().unwrap());
-        }
-
-        if eval_result.ok().unwrap().as_bool() {
-            filtered_group.rows.push(Row {
-                values: object.values.clone(),
-            });
-        }
-    }
+    let condition = &statement.condition;
+    let main_group = &gitql_object.groups.first().unwrap().rows;
+    let rows = filter_rows_by_condition(env, condition, &gitql_object.titles, main_group)?;
+    let filtered_group: Group = Group { rows };
 
     // Update the main group with the filtered data
     gitql_object.groups.remove(0);
@@ -216,26 +197,11 @@ fn execute_having_statement(
     }
 
     // Perform where command only on the first group
-    // because groups are already merged
-    let mut filtered_group: Group = Group { rows: vec![] };
-    let first_group = gitql_object.groups.first().unwrap().rows.iter();
-    for object in first_group {
-        let eval_result = evaluate_expression(
-            env,
-            &statement.condition,
-            &gitql_object.titles,
-            &object.values,
-        );
-        if eval_result.is_err() {
-            return Err(eval_result.err().unwrap());
-        }
-
-        if eval_result.ok().unwrap().as_bool() {
-            filtered_group.rows.push(Row {
-                values: object.values.clone(),
-            });
-        }
-    }
+    // because group by command not executed yet
+    let condition = &statement.condition;
+    let main_group = &gitql_object.groups.first().unwrap().rows;
+    let rows = filter_rows_by_condition(env, condition, &gitql_object.titles, main_group)?;
+    let filtered_group: Group = Group { rows };
 
     // Update the main group with the filtered data
     gitql_object.groups.remove(0);

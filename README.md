@@ -42,7 +42,7 @@ SELECT @arr[1], @arr[2], @arr[3], ARRAY_LENGTH(@arr);
 SELECT @arr[1:2], @arr[2:], @arr[:2];
 
 SELECT DISTINCT title AS tt FROM commits
-SELECT name, COUNT(name) AS commit_num FROM commits GROUP BY name, author_email ORDER BY commit_num DESC LIMIT 10
+SELECT author_name, COUNT(author_name) AS commit_num FROM commits GROUP BY author_name, author_email ORDER BY commit_num DESC LIMIT 10
 SELECT commit_count FROM branches WHERE commit_count BETWEEN 0 .. 10
 
 SELECT * FROM refs WHERE type = "branch"
