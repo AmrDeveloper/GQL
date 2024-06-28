@@ -6,6 +6,8 @@ use std::hash::DefaultHasher;
 use std::hash::Hash;
 use std::hash::Hasher;
 
+use gitql_ast::expression::Expression;
+use gitql_ast::expression::ExpressionKind;
 use gitql_ast::statement::AggregateValue;
 use gitql_ast::statement::AggregationsStatement;
 use gitql_ast::statement::DoStatement;
@@ -23,6 +25,7 @@ use gitql_ast::statement::WhereStatement;
 use gitql_core::environment::Environment;
 use gitql_core::object::GitQLObject;
 use gitql_core::object::Group;
+use gitql_core::object::Row;
 use gitql_core::value::Value;
 
 use crate::data_provider::DataProvider;
@@ -131,36 +134,86 @@ fn execute_select_statement(
     hidden_selections: &Vec<String>,
 ) -> Result<(), String> {
     // Append hidden selection to the selected fields names
-    let mut fields_names = statement.fields_names.to_owned();
+    let mut selected_columns = statement.fields_names.to_owned();
     let mut hidden_selection_count = 0;
 
     if !statement.table_name.is_empty() {
         for hidden in hidden_selections {
-            if !fields_names.contains(hidden) {
-                fields_names.insert(0, hidden.to_string());
+            if !selected_columns.contains(hidden) {
+                selected_columns.insert(0, hidden.to_string());
                 hidden_selection_count += 1;
             }
         }
     }
 
     // Calculate list of titles once
-    for field_name in &fields_names {
+    for selected_column in &selected_columns {
         gitql_object
             .titles
-            .push(get_column_name(alias_table, field_name));
+            .push(get_column_name(alias_table, selected_column));
     }
 
     // Select objects from the target table
-    let mut provided_object = data_provider.provide(
-        env,
-        &statement.table_name,
-        &fields_names,
-        &gitql_object.titles,
-        &statement.fields_values,
-        hidden_selection_count,
-    )?;
+    let table_name = &statement.table_name;
+    let mut selected_rows = data_provider.provide(table_name, &selected_columns)?;
 
-    gitql_object.groups.append(&mut provided_object.groups);
+    // Execute Selected expressions if exists
+    if !statement.selected_expr.is_empty() {
+        execute_expression_selection(
+            env,
+            &mut selected_rows,
+            &gitql_object.titles,
+            &statement.selected_expr_titles,
+            &statement.selected_expr,
+            hidden_selection_count,
+        )?;
+    }
+
+    gitql_object.groups.push(Group {
+        rows: selected_rows,
+    });
+    Ok(())
+}
+
+#[inline(always)]
+fn execute_expression_selection(
+    env: &mut Environment,
+    selected_rows: &mut [Row],
+    object_titles: &[String],
+    selected_expr_titles: &[String],
+    selected_expr: &[Box<dyn Expression>],
+    hidden_selection_count: usize,
+) -> Result<(), String> {
+    // Cache the index of each expression position to provide fast insertion
+    let mut titles_index_map: HashMap<String, usize> = HashMap::new();
+    for expr_column_title in selected_expr_titles {
+        let expr_title_index = object_titles
+            .iter()
+            .position(|r| r.eq(expr_column_title))
+            .unwrap()
+            - hidden_selection_count;
+        titles_index_map.insert(expr_column_title.to_string(), expr_title_index);
+    }
+
+    for row in selected_rows.iter_mut() {
+        for (index, expr) in selected_expr.iter().enumerate() {
+            // Ignore evaluating expression if it symbol, that mean it a reference to aggregated value or function
+            let value = if expr.kind() == ExpressionKind::Symbol {
+                Value::Null
+            } else {
+                evaluate_expression(env, expr, object_titles, &row.values)?
+            };
+
+            let expr_title = &selected_expr_titles[index];
+            let value_index = titles_index_map.get(expr_title).unwrap();
+
+            if index >= row.values.len() {
+                row.values.push(value);
+            } else {
+                row.values[*value_index] = value;
+            }
+        }
+    }
     Ok(())
 }
 

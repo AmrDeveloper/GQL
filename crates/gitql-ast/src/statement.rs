@@ -60,7 +60,8 @@ pub enum Distinct {
 pub struct SelectStatement {
     pub table_name: String,
     pub fields_names: Vec<String>,
-    pub fields_values: Vec<Box<dyn Expression>>,
+    pub selected_expr_titles: Vec<String>,
+    pub selected_expr: Vec<Box<dyn Expression>>,
     pub distinct: Distinct,
 }
 

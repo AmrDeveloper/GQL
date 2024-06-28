@@ -424,7 +424,9 @@ fn parse_select_statement(
 
     let mut table_name = "";
     let mut fields_names: Vec<String> = Vec::new();
-    let mut fields_values: Vec<Box<dyn Expression>> = Vec::new();
+    let mut selected_expr_titles: Vec<String> = vec![];
+    let mut selected_expr: Vec<Box<dyn Expression>> = vec![];
+
     let mut is_select_all = false;
 
     let distinct = parse_select_distinct_option(context, tokens, position)?;
@@ -485,6 +487,9 @@ fn parse_select_statement(
                 context
                     .name_alias_table
                     .insert(field_name.to_string(), alias_name.to_string());
+                selected_expr_titles.push(alias_name.to_owned());
+            } else {
+                selected_expr_titles.push(field_name.to_owned());
             }
 
             // Register field type
@@ -492,7 +497,8 @@ fn parse_select_statement(
 
             fields_names.push(field_name.to_owned());
             context.selected_fields.push(field_name.to_owned());
-            fields_values.push(expression);
+
+            selected_expr.push(expression);
 
             // Consume `,` or break
             if *position < tokens.len() && tokens[*position].kind == TokenKind::Comma {
@@ -557,7 +563,6 @@ fn parse_select_statement(
             table_name,
             &mut context.selected_fields,
             &mut fields_names,
-            &mut fields_values,
         );
     }
 
@@ -572,7 +577,8 @@ fn parse_select_statement(
     Ok(Box::new(SelectStatement {
         table_name: table_name.to_string(),
         fields_names,
-        fields_values,
+        selected_expr_titles,
+        selected_expr,
         distinct,
     }))
 }
@@ -2626,7 +2632,6 @@ fn select_all_table_fields(
     table_name: &str,
     selected_fields: &mut Vec<String>,
     fields_names: &mut Vec<String>,
-    fields_values: &mut Vec<Box<dyn Expression>>,
 ) {
     if env.schema.tables_fields_names.contains_key(table_name) {
         let table_fields = &env.schema.tables_fields_names[table_name];
@@ -2635,12 +2640,6 @@ fn select_all_table_fields(
             if !fields_names.contains(&field.to_string()) {
                 fields_names.push(field.to_string());
                 selected_fields.push(field.to_string());
-
-                let literal_expr = Box::new(SymbolExpression {
-                    value: field.to_string(),
-                });
-
-                fields_values.push(literal_expr);
             }
         }
     }

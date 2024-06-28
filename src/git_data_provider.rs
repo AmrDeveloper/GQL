@@ -1,13 +1,6 @@
-use gitql_ast::expression::Expression;
-use gitql_ast::expression::SymbolExpression;
-use gitql_core::environment::Environment;
-use gitql_core::object::GitQLObject;
-use gitql_core::object::Group;
 use gitql_core::object::Row;
 use gitql_core::value::Value;
-use gitql_engine::data_provider::select_values;
 use gitql_engine::data_provider::DataProvider;
-use gitql_engine::engine_evaluator::evaluate_expression;
 use gix::refs::Category;
 
 pub struct GitDataProvider {
@@ -21,130 +14,55 @@ impl GitDataProvider {
 }
 
 impl DataProvider for GitDataProvider {
-    fn provide(
-        &self,
-        env: &mut Environment,
-        table: &str,
-        fields_names: &[String],
-        titles: &[String],
-        fields_values: &[Box<dyn Expression>],
-        counter: i64,
-    ) -> Result<GitQLObject, String> {
-        let mut groups: Vec<Group> = vec![];
+    fn provide(&self, table: &str, selected_columns: &[String]) -> Result<Vec<Row>, String> {
+        let mut rows: Vec<Row> = vec![];
 
         for repository in &self.repos {
-            let mut repository_group = select_gql_objects(
-                env,
-                repository,
-                table.to_string(),
-                fields_names,
-                titles,
-                fields_values,
-                counter,
-            )?;
-
-            if groups.is_empty() {
-                groups.push(repository_group);
-            } else {
-                groups[0].rows.append(&mut repository_group.rows);
-            }
+            let mut repo_rows =
+                select_gql_objects(repository, table.to_string(), selected_columns)?;
+            rows.append(&mut repo_rows);
         }
 
-        Ok(GitQLObject {
-            titles: titles.to_vec(),
-            groups,
-        })
+        Ok(rows)
     }
 }
 
 fn select_gql_objects(
-    env: &mut Environment,
     repo: &gix::Repository,
     table: String,
-    fields_names: &[String],
-    titles: &[String],
-    fields_values: &[Box<dyn Expression>],
-    hidden_selection_count: i64,
-) -> Result<Group, String> {
+    selected_columns: &[String],
+) -> Result<Vec<Row>, String> {
     match table.as_str() {
-        "refs" => select_references(
-            env,
-            repo,
-            fields_names,
-            titles,
-            fields_values,
-            hidden_selection_count,
-        ),
-        "commits" => select_commits(
-            env,
-            repo,
-            fields_names,
-            titles,
-            fields_values,
-            hidden_selection_count,
-        ),
-        "branches" => select_branches(
-            env,
-            repo,
-            fields_names,
-            titles,
-            fields_values,
-            hidden_selection_count,
-        ),
-        "diffs" => select_diffs(
-            env,
-            repo,
-            fields_names,
-            titles,
-            fields_values,
-            hidden_selection_count,
-        ),
-        "tags" => select_tags(
-            env,
-            repo,
-            fields_names,
-            titles,
-            fields_values,
-            hidden_selection_count,
-        ),
-        _ => select_values(env, titles, fields_values),
+        "refs" => select_references(repo, selected_columns),
+        "commits" => select_commits(repo, selected_columns),
+        "branches" => select_branches(repo, selected_columns),
+        "diffs" => select_diffs(repo, selected_columns),
+        "tags" => select_tags(repo, selected_columns),
+        _ => Ok(vec![Row {
+            values: vec![Value::Null],
+        }]),
     }
 }
 
 fn select_references(
-    env: &mut Environment,
     repo: &gix::Repository,
-    fields_names: &[String],
-    titles: &[String],
-    fields_values: &[Box<dyn Expression>],
-    hidden_selection_count: i64,
-) -> Result<Group, String> {
+    selected_columns: &[String],
+) -> Result<Vec<Row>, String> {
     let repo_path = repo.path().to_str().unwrap().to_string();
 
     let mut rows: Vec<Row> = vec![];
     let git_references = repo.references();
     if git_references.is_err() {
-        return Ok(Group { rows });
+        return Ok(rows);
     }
 
     let references = git_references.ok().unwrap();
-    let names_len = fields_names.len() as i64;
-    let values_len = fields_values.len() as i64;
-    let padding = names_len - values_len;
+    let names_len = selected_columns.len() as i64;
 
     for reference in references.all().unwrap().flatten() {
-        let mut values: Vec<Value> = Vec::with_capacity(fields_names.len());
+        let mut values: Vec<Value> = Vec::with_capacity(selected_columns.len());
         for index in 0..names_len {
-            if index >= hidden_selection_count && (index - padding) >= 0 {
-                let value = &fields_values[(index - padding) as usize];
-                if value.as_any().downcast_ref::<SymbolExpression>().is_none() {
-                    let evaluated = evaluate_expression(env, value, titles, &values)?;
-                    values.push(evaluated);
-                    continue;
-                }
-            }
-
-            let field_name = &fields_names[index as usize];
+            let field_name = &selected_columns[index as usize];
             if field_name == "name" {
                 let name = reference
                     .name()
@@ -190,49 +108,30 @@ fn select_references(
         rows.push(row);
     }
 
-    Ok(Group { rows })
+    Ok(rows)
 }
 
-fn select_commits(
-    env: &mut Environment,
-    repo: &gix::Repository,
-    fields_names: &[String],
-    titles: &[String],
-    fields_values: &[Box<dyn Expression>],
-    hidden_selection_count: i64,
-) -> Result<Group, String> {
+fn select_commits(repo: &gix::Repository, selected_columns: &[String]) -> Result<Vec<Row>, String> {
     let repo_path = repo.path().to_str().unwrap().to_string();
 
     let mut rows: Vec<Row> = vec![];
     let head_id = repo.head_id();
     if head_id.is_err() {
-        return Ok(Group { rows });
+        return Ok(rows);
     }
 
     let revwalk = head_id.unwrap().ancestors().all().unwrap();
 
-    let names_len = fields_names.len() as i64;
-    let values_len = fields_values.len() as i64;
-    let padding = names_len - values_len;
+    let names_len = selected_columns.len() as i64;
 
     for commit_info in revwalk {
         let commit_info = commit_info.unwrap();
         let commit = repo.find_object(commit_info.id).unwrap().into_commit();
         let commit = commit.decode().unwrap();
 
-        let mut values: Vec<Value> = Vec::with_capacity(fields_names.len());
-
+        let mut values: Vec<Value> = Vec::with_capacity(selected_columns.len());
         for index in 0..names_len {
-            if index >= hidden_selection_count && (index - padding) >= 0 {
-                let value = &fields_values[(index - padding) as usize];
-                if value.as_any().downcast_ref::<SymbolExpression>().is_none() {
-                    let evaluated = evaluate_expression(env, value, titles, &values)?;
-                    values.push(evaluated);
-                    continue;
-                }
-            }
-
-            let field_name = &fields_names[index as usize];
+            let field_name = &selected_columns[index as usize];
 
             if field_name == "commit_id" {
                 let commit_id = Value::Text(commit_info.id.to_string());
@@ -297,17 +196,13 @@ fn select_commits(
         rows.push(row);
     }
 
-    Ok(Group { rows })
+    Ok(rows)
 }
 
 fn select_branches(
-    env: &mut Environment,
     repo: &gix::Repository,
-    fields_names: &[String],
-    titles: &[String],
-    fields_values: &[Box<dyn Expression>],
-    hidden_selection_count: i64,
-) -> Result<Group, String> {
+    selected_columns: &[String],
+) -> Result<Vec<Row>, String> {
     let mut rows: Vec<Row> = vec![];
 
     let repo_path = repo.path().to_str().unwrap().to_string();
@@ -317,34 +212,23 @@ fn select_branches(
     let local_and_remote_branches = local_branches.chain(remote_branches);
     let head_ref_result = repo.head_ref();
     if head_ref_result.is_err() {
-        return Ok(Group { rows });
+        return Ok(rows);
     }
 
     let head_ref_option = head_ref_result.unwrap();
     if head_ref_option.is_none() {
-        return Ok(Group { rows });
+        return Ok(rows);
     }
 
     let head_ref = head_ref_option.unwrap();
 
-    let names_len = fields_names.len() as i64;
-    let values_len = fields_values.len() as i64;
-    let padding = names_len - values_len;
+    let names_len = selected_columns.len() as i64;
 
     for mut branch in local_and_remote_branches.flatten() {
-        let mut values: Vec<Value> = Vec::with_capacity(fields_names.len());
+        let mut values: Vec<Value> = Vec::with_capacity(selected_columns.len());
 
         for index in 0..names_len {
-            if index >= hidden_selection_count && (index - padding) >= 0 {
-                let value = &fields_values[(index - padding) as usize];
-                if value.as_any().downcast_ref::<SymbolExpression>().is_none() {
-                    let evaluated = evaluate_expression(env, value, titles, &values)?;
-                    values.push(evaluated);
-                    continue;
-                }
-            }
-
-            let field_name = &fields_names[index as usize];
+            let field_name = &selected_columns[index as usize];
             if field_name == "name" {
                 let branch_name = branch.name().as_bstr().to_string();
                 values.push(Value::Text(branch_name));
@@ -413,17 +297,10 @@ fn select_branches(
         rows.push(row);
     }
 
-    Ok(Group { rows })
+    Ok(rows)
 }
 
-fn select_diffs(
-    env: &mut Environment,
-    repo: &gix::Repository,
-    fields_names: &[String],
-    titles: &[String],
-    fields_values: &[Box<dyn Expression>],
-    hidden_selection_count: i64,
-) -> Result<Group, String> {
+fn select_diffs(repo: &gix::Repository, selected_columns: &[String]) -> Result<Vec<Row>, String> {
     let repo = {
         let mut repo = repo.clone();
         repo.object_cache_size_if_unset(4 * 1024 * 1024);
@@ -439,27 +316,15 @@ fn select_diffs(
         .unwrap();
     let mut diff_cache = rewrite_cache.clone();
 
-    let names_len = fields_names.len() as i64;
-    let values_len = fields_values.len() as i64;
-    let padding = names_len - values_len;
-
+    let names_len = selected_columns.len() as i64;
     for commit_info in revwalk {
         let commit_info = commit_info.unwrap();
         let commit = commit_info.id().object().unwrap().into_commit();
 
-        let mut values: Vec<Value> = Vec::with_capacity(fields_names.len());
+        let mut values: Vec<Value> = Vec::with_capacity(selected_columns.len());
 
         for index in 0..names_len {
-            if index >= hidden_selection_count && (index - padding) >= 0 {
-                let value = &fields_values[(index - padding) as usize];
-                if value.as_any().downcast_ref::<SymbolExpression>().is_none() {
-                    let evaluated = evaluate_expression(env, value, titles, &values)?;
-                    values.push(evaluated);
-                    continue;
-                }
-            }
-
-            let field_name = &fields_names[index as usize];
+            let field_name = &selected_columns[index as usize];
             if field_name == "commit_id" {
                 values.push(Value::Text(commit_info.id.to_string()));
                 continue;
@@ -545,41 +410,23 @@ fn select_diffs(
         rows.push(row);
     }
 
-    Ok(Group { rows })
+    Ok(rows)
 }
 
-fn select_tags(
-    env: &mut Environment,
-    repo: &gix::Repository,
-    fields_names: &[String],
-    titles: &[String],
-    fields_values: &[Box<dyn Expression>],
-    hidden_selection_count: i64,
-) -> Result<Group, String> {
+fn select_tags(repo: &gix::Repository, selected_columns: &[String]) -> Result<Vec<Row>, String> {
     let platform = repo.references().unwrap();
     let tag_names = platform.tags().unwrap();
     let repo_path = repo.path().to_str().unwrap().to_string();
 
-    let names_len = fields_names.len() as i64;
-    let values_len = fields_values.len() as i64;
-    let padding = names_len - values_len;
+    let names_len = selected_columns.len() as i64;
 
     let mut rows: Vec<Row> = vec![];
 
     for tag_ref in tag_names.flatten() {
-        let mut values: Vec<Value> = Vec::with_capacity(fields_names.len());
+        let mut values: Vec<Value> = Vec::with_capacity(selected_columns.len());
 
         for index in 0..names_len {
-            if index >= hidden_selection_count && (index - padding) >= 0 {
-                let value = &fields_values[(index - padding) as usize];
-                if value.as_any().downcast_ref::<SymbolExpression>().is_none() {
-                    let evaluated = evaluate_expression(env, value, titles, &values)?;
-                    values.push(evaluated);
-                    continue;
-                }
-            }
-
-            let field_name = &fields_names[index as usize];
+            let field_name = &selected_columns[index as usize];
             if field_name == "name" {
                 let tag_name = tag_ref
                     .name()
@@ -601,5 +448,5 @@ fn select_tags(
         rows.push(row);
     }
 
-    Ok(Group { rows })
+    Ok(rows)
 }
