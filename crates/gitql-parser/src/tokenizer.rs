@@ -369,7 +369,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
         }
 
         // xor
-        if char == '^' {
+        if char == '#' {
             let location = Location {
                 start: column_start,
                 end: position,

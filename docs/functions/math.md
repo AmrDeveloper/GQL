@@ -9,7 +9,7 @@
 | %        | modulo              |
 | &        | bitwise AND         |
 | \|       | bitwise OR          |
-| ^        | bitwise XOR         |
+| #        | bitwise XOR         |
 | >>       | bitwise shift left  |
 | <<       | bitwise shift right |
 
