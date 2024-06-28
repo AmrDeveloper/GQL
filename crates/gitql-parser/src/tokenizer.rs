@@ -55,6 +55,8 @@ pub enum TokenKind {
     LogicalAnd,
     LogicalXor,
 
+    BitwiseNot,
+    BitwiseXor,
     BitwiseOr,
     BitwiseAnd,
     BitwiseRightShift,
@@ -313,6 +315,24 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
             continue;
         }
 
+        // Bitwise NOT
+        if char == '~' {
+            let location = Location {
+                start: column_start,
+                end: position,
+            };
+
+            let token = Token {
+                location,
+                kind: TokenKind::BitwiseNot,
+                literal: "~".to_owned(),
+            };
+
+            tokens.push(token);
+            position += 1;
+            continue;
+        }
+
         // Or
         if char == '|' {
             let location = Location {
@@ -377,8 +397,8 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
 
             let token = Token {
                 location,
-                kind: TokenKind::LogicalXor,
-                literal: "^".to_owned(),
+                kind: TokenKind::BitwiseXor,
+                literal: "#".to_owned(),
             };
 
             tokens.push(token);

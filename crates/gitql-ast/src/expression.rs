@@ -5,9 +5,9 @@ use gitql_core::types::DataType;
 use gitql_core::value::Value;
 
 use crate::operator::ArithmeticOperator;
-use crate::operator::BitwiseOperator;
+use crate::operator::BinaryBitwiseOperator;
+use crate::operator::BinaryLogicalOperator;
 use crate::operator::ComparisonOperator;
-use crate::operator::LogicalOperator;
 use crate::operator::PrefixUnaryOperator;
 
 #[derive(PartialEq)]
@@ -47,7 +47,10 @@ impl dyn Expression {
     pub fn is_const(&self) -> bool {
         matches!(
             self.kind(),
-            ExpressionKind::Number | ExpressionKind::Boolean | ExpressionKind::String
+            ExpressionKind::Number
+                | ExpressionKind::Boolean
+                | ExpressionKind::String
+                | ExpressionKind::Null
         )
     }
 }
@@ -212,21 +215,21 @@ impl Expression for BooleanExpression {
     }
 }
 
-pub struct PrefixUnary {
+pub struct UnaryExpression {
     pub right: Box<dyn Expression>,
     pub op: PrefixUnaryOperator,
 }
 
-impl Expression for PrefixUnary {
+impl Expression for UnaryExpression {
     fn kind(&self) -> ExpressionKind {
         ExpressionKind::PrefixUnary
     }
 
-    fn expr_type(&self, _scope: &Environment) -> DataType {
+    fn expr_type(&self, scope: &Environment) -> DataType {
         if self.op == PrefixUnaryOperator::Bang {
             DataType::Boolean
         } else {
-            DataType::Integer
+            self.right.expr_type(scope)
         }
     }
 
@@ -381,7 +384,7 @@ impl Expression for GlobExpression {
 
 pub struct LogicalExpression {
     pub left: Box<dyn Expression>,
-    pub operator: LogicalOperator,
+    pub operator: BinaryLogicalOperator,
     pub right: Box<dyn Expression>,
 }
 
@@ -401,7 +404,7 @@ impl Expression for LogicalExpression {
 
 pub struct BitwiseExpression {
     pub left: Box<dyn Expression>,
-    pub operator: BitwiseOperator,
+    pub operator: BinaryBitwiseOperator,
     pub right: Box<dyn Expression>,
 }
 

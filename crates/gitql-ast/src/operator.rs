@@ -2,6 +2,7 @@
 pub enum PrefixUnaryOperator {
     Minus,
     Bang,
+    Not,
 }
 
 #[derive(PartialEq)]
@@ -25,14 +26,14 @@ pub enum ComparisonOperator {
 }
 
 #[derive(PartialEq)]
-pub enum LogicalOperator {
+pub enum BinaryLogicalOperator {
     Or,
     And,
     Xor,
 }
 
 #[derive(PartialEq)]
-pub enum BitwiseOperator {
+pub enum BinaryBitwiseOperator {
     Or,
     And,
     RightShift,

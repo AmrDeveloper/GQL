@@ -17,22 +17,23 @@ use gitql_ast::expression::IsNullExpression;
 use gitql_ast::expression::LikeExpression;
 use gitql_ast::expression::LogicalExpression;
 use gitql_ast::expression::NumberExpression;
-use gitql_ast::expression::PrefixUnary;
 use gitql_ast::expression::RegexExpression;
 use gitql_ast::expression::SliceExpression;
 use gitql_ast::expression::StringExpression;
 use gitql_ast::expression::StringValueType;
 use gitql_ast::expression::SymbolExpression;
+use gitql_ast::expression::UnaryExpression;
 use gitql_ast::operator::ArithmeticOperator;
-use gitql_ast::operator::BitwiseOperator;
+use gitql_ast::operator::BinaryBitwiseOperator;
+use gitql_ast::operator::BinaryLogicalOperator;
 use gitql_ast::operator::ComparisonOperator;
-use gitql_ast::operator::LogicalOperator;
 use gitql_ast::operator::PrefixUnaryOperator;
 use gitql_core::environment::Environment;
 use gitql_core::types::DataType;
 use gitql_core::value::Value;
 
 use regex::Regex;
+use std::ops::Not;
 use std::string::String;
 
 #[allow(clippy::borrowed_box)]
@@ -93,7 +94,10 @@ pub fn evaluate_expression(
             evaluate_boolean(expr)
         }
         PrefixUnary => {
-            let expr = expression.as_any().downcast_ref::<PrefixUnary>().unwrap();
+            let expr = expression
+                .as_any()
+                .downcast_ref::<UnaryExpression>()
+                .unwrap();
             evaluate_prefix_unary(env, expr, titles, object)
         }
         Index => {
@@ -385,7 +389,7 @@ fn evaluate_collection_slice(
 
 fn evaluate_prefix_unary(
     env: &mut Environment,
-    expr: &PrefixUnary,
+    expr: &UnaryExpression,
     titles: &[String],
     object: &Vec<Value>,
 ) -> Result<Value, String> {
@@ -399,6 +403,7 @@ fn evaluate_prefix_unary(
             }
         }
         PrefixUnaryOperator::Bang => Ok(Value::Boolean(!rhs.as_bool())),
+        PrefixUnaryOperator::Not => Ok(Value::Integer(rhs.as_int().not())),
     }
 }
 
@@ -543,20 +548,20 @@ fn evaluate_logical(
     object: &Vec<Value>,
 ) -> Result<Value, String> {
     let lhs = evaluate_expression(env, &expr.left, titles, object)?.as_bool();
-    if expr.operator == LogicalOperator::And && !lhs {
+    if expr.operator == BinaryLogicalOperator::And && !lhs {
         return Ok(Value::Boolean(false));
     }
 
-    if expr.operator == LogicalOperator::Or && lhs {
+    if expr.operator == BinaryLogicalOperator::Or && lhs {
         return Ok(Value::Boolean(true));
     }
 
     let rhs = evaluate_expression(env, &expr.right, titles, object)?.as_bool();
 
     Ok(Value::Boolean(match expr.operator {
-        LogicalOperator::And => lhs && rhs,
-        LogicalOperator::Or => lhs || rhs,
-        LogicalOperator::Xor => lhs ^ rhs,
+        BinaryLogicalOperator::And => lhs && rhs,
+        BinaryLogicalOperator::Or => lhs || rhs,
+        BinaryLogicalOperator::Xor => lhs ^ rhs,
     }))
 }
 
@@ -570,16 +575,16 @@ fn evaluate_bitwise(
     let rhs = evaluate_expression(env, &expr.right, titles, object)?.as_int();
 
     match expr.operator {
-        BitwiseOperator::Or => Ok(Value::Integer(lhs | rhs)),
-        BitwiseOperator::And => Ok(Value::Integer(lhs & rhs)),
-        BitwiseOperator::RightShift => {
+        BinaryBitwiseOperator::Or => Ok(Value::Integer(lhs | rhs)),
+        BinaryBitwiseOperator::And => Ok(Value::Integer(lhs & rhs)),
+        BinaryBitwiseOperator::RightShift => {
             if rhs >= 64 {
                 Err("Attempt to shift right with overflow".to_string())
             } else {
                 Ok(Value::Integer(lhs >> rhs))
             }
         }
-        BitwiseOperator::LeftShift => {
+        BinaryBitwiseOperator::LeftShift => {
             if rhs >= 64 {
                 Err("Attempt to shift left with overflow".to_string())
             } else {

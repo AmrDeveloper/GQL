@@ -7,6 +7,7 @@
 | *        | multiplication      |
 | /        | division            |
 | %        | modulo              |
+| ~        | bitwise NOT         |
 | &        | bitwise AND         |
 | \|       | bitwise OR          |
 | #        | bitwise XOR         |

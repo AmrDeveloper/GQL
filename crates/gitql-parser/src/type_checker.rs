@@ -2,6 +2,7 @@ use gitql_ast::expression::Expression;
 use gitql_ast::expression::ExpressionKind;
 use gitql_ast::expression::StringExpression;
 use gitql_ast::expression::StringValueType;
+use gitql_ast::operator::PrefixUnaryOperator;
 use gitql_core::environment::Environment;
 use gitql_core::signature::Signature;
 use gitql_core::types::DataType;
@@ -447,6 +448,57 @@ pub fn type_check_projection_symbols(
     Ok(())
 }
 
+/// Type check the right hand side of prefix unary expression
+/// Return Equals, Error, or new expression after implicit casting
+#[allow(clippy::borrowed_box)]
+pub fn type_check_prefix_unary(
+    env: &Environment,
+    right: &Box<dyn Expression>,
+    op: &PrefixUnaryOperator,
+    location: Location,
+) -> ExprTypeCheckResult {
+    let right_type = right.expr_type(env);
+    let expected_type = prefix_unary_expected_type(op);
+
+    if *op == PrefixUnaryOperator::Bang {
+        return is_expression_type_equals(env, right, &expected_type);
+    }
+
+    if *op == PrefixUnaryOperator::Minus {
+        if !right_type.is_number() {
+            return ExprTypeCheckResult::Error(type_mismatch_error(
+                location,
+                expected_type,
+                right_type,
+            ));
+        }
+        return ExprTypeCheckResult::Equals;
+    }
+
+    if *op == PrefixUnaryOperator::Not {
+        if !right_type.is_int() {
+            return ExprTypeCheckResult::Error(type_mismatch_error(
+                location,
+                expected_type,
+                right_type,
+            ));
+        }
+        return ExprTypeCheckResult::Equals;
+    }
+
+    ExprTypeCheckResult::Equals
+}
+
+/// Return the expected [DataType] depending on the prefix unary operator
+#[inline(always)]
+pub fn prefix_unary_expected_type(op: &PrefixUnaryOperator) -> DataType {
+    match op {
+        PrefixUnaryOperator::Minus => DataType::Variant(vec![DataType::Integer, DataType::Float]),
+        PrefixUnaryOperator::Bang => DataType::Boolean,
+        PrefixUnaryOperator::Not => DataType::Integer,
+    }
+}
+
 /// Resolve the return type of Std or Aggregation function and re resolve it if it variant or dynamic
 pub fn resolve_call_expression_return_type(
     env: &Environment,
@@ -470,4 +522,19 @@ pub fn resolve_call_expression_return_type(
     }
 
     return_type
+}
+
+/// Return a [Diagnostic] with common type mismatch error message
+#[inline(always)]
+pub fn type_mismatch_error(
+    location: Location,
+    expected: DataType,
+    actual: DataType,
+) -> Box<Diagnostic> {
+    Diagnostic::error(&format!(
+        "Type mismatch expected `{}`, got `{}`",
+        expected, actual
+    ))
+    .with_location(location)
+    .as_boxed()
 }

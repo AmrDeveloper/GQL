@@ -82,9 +82,11 @@ nav:
       - Binary: expression/binary.md
       - Case: expression/case.md
   - Functions and Operators:
+      - Logical: functions/logical.md
+      - Comparison: functions/comparison.md
       - Mathematical: functions/math.md
       - String: functions/string.md
-      - Date: functions/datetime.md
+      - Date/Time: functions/datetime.md
       - Regex: functions/regex.md
       - Array: functions/array.md
       - Other: functions/other.md

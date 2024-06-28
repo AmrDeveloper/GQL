@@ -10,9 +10,9 @@ use gitql_ast::expression::BetweenExpression;
 use gitql_ast::expression::BitwiseExpression;
 use gitql_ast::expression::*;
 use gitql_ast::operator::ArithmeticOperator;
-use gitql_ast::operator::BitwiseOperator;
+use gitql_ast::operator::BinaryBitwiseOperator;
+use gitql_ast::operator::BinaryLogicalOperator;
 use gitql_ast::operator::ComparisonOperator;
-use gitql_ast::operator::LogicalOperator;
 use gitql_ast::operator::PrefixUnaryOperator;
 use gitql_ast::statement::*;
 use gitql_core::environment::Environment;
@@ -28,9 +28,12 @@ use crate::type_checker::are_types_equals;
 use crate::type_checker::check_all_values_are_same_type;
 use crate::type_checker::check_function_call_arguments;
 use crate::type_checker::is_expression_type_equals;
+use crate::type_checker::prefix_unary_expected_type;
 use crate::type_checker::resolve_call_expression_return_type;
+use crate::type_checker::type_check_prefix_unary;
 use crate::type_checker::type_check_projection_symbols;
 use crate::type_checker::type_check_selected_fields;
+use crate::type_checker::type_mismatch_error;
 use crate::type_checker::ExprTypeCheckResult;
 use crate::type_checker::TypeCheckResult;
 
@@ -1040,7 +1043,7 @@ fn parse_regex_expression(
         });
 
         return Ok(if has_not_keyword {
-            Box::new(PrefixUnary {
+            Box::new(UnaryExpression {
                 right: regex_expr,
                 op: PrefixUnaryOperator::Bang,
             })
@@ -1266,7 +1269,7 @@ fn parse_logical_or_expression(
 
         lhs = Box::new(LogicalExpression {
             left: lhs,
-            operator: LogicalOperator::Or,
+            operator: BinaryLogicalOperator::Or,
             right: rhs,
         });
     }
@@ -1317,7 +1320,7 @@ fn parse_logical_and_expression(
 
         lhs = Box::new(LogicalExpression {
             left: lhs,
-            operator: LogicalOperator::And,
+            operator: BinaryLogicalOperator::And,
             right: rhs,
         });
     }
@@ -1356,7 +1359,7 @@ fn parse_bitwise_or_expression(
 
         return Ok(Box::new(BitwiseExpression {
             left: lhs,
-            operator: BitwiseOperator::Or,
+            operator: BinaryBitwiseOperator::Or,
             right: rhs,
         }));
     }
@@ -1407,7 +1410,7 @@ fn parse_logical_xor_expression(
 
         lhs = Box::new(LogicalExpression {
             left: lhs,
-            operator: LogicalOperator::Xor,
+            operator: BinaryLogicalOperator::Xor,
             right: rhs,
         });
     }
@@ -1444,7 +1447,7 @@ fn parse_bitwise_and_expression(
 
         lhs = Box::new(BitwiseExpression {
             left: lhs,
-            operator: BitwiseOperator::And,
+            operator: BinaryBitwiseOperator::And,
             right: rhs,
         });
     }
@@ -1592,9 +1595,9 @@ fn parse_bitwise_shift_expression(
         let operator = &tokens[*position];
         *position += 1;
         let bitwise_operator = if operator.kind == TokenKind::BitwiseRightShift {
-            BitwiseOperator::RightShift
+            BinaryBitwiseOperator::RightShift
         } else {
-            BitwiseOperator::LeftShift
+            BinaryBitwiseOperator::LeftShift
         };
 
         let rhs = parse_term_expression(context, env, tokens, position)?;
@@ -1683,12 +1686,7 @@ fn parse_factor_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
-    let expression = parse_like_expression(context, env, tokens, position);
-    if expression.is_err() || *position >= tokens.len() {
-        return expression;
-    }
-
-    let mut lhs = expression.ok().unwrap();
+    let mut lhs = parse_like_expression(context, env, tokens, position)?;
     while *position < tokens.len() && is_factor_operator(&tokens[*position]) {
         let operator = &tokens[*position];
         *position += 1;
@@ -1819,7 +1817,7 @@ fn parse_index_or_slice_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
-    let mut expression = parse_unary_expression(context, env, tokens, position)?;
+    let mut expression = parse_prefix_unary_expression(context, env, tokens, position)?;
 
     while *position < tokens.len() && tokens[*position].kind == TokenKind::LeftBracket {
         // Consume Left Bracket `[`
@@ -1859,7 +1857,7 @@ fn parse_index_or_slice_expression(
                 return Ok(expression);
             }
 
-            let slice_end = parse_unary_expression(context, env, tokens, position)?;
+            let slice_end = parse_prefix_unary_expression(context, env, tokens, position)?;
             let end_type = slice_end.expr_type(env);
             if !end_type.is_int() {
                 return Err(Diagnostic::error(&format!(
@@ -1887,7 +1885,7 @@ fn parse_index_or_slice_expression(
             continue;
         }
 
-        let index = parse_unary_expression(context, env, tokens, position)?;
+        let index = parse_prefix_unary_expression(context, env, tokens, position)?;
 
         // Slice Expression with Start and End range [start:end]
         if *position < tokens.len() && tokens[*position].kind == TokenKind::Colon {
@@ -1917,7 +1915,7 @@ fn parse_index_or_slice_expression(
                 continue;
             }
 
-            let slice_end = parse_unary_expression(context, env, tokens, position)?;
+            let slice_end = parse_prefix_unary_expression(context, env, tokens, position)?;
             let end_type = slice_end.expr_type(env);
             if !end_type.is_int() {
                 return Err(Diagnostic::error(&format!(
@@ -1981,40 +1979,39 @@ fn parse_index_or_slice_expression(
     Ok(expression)
 }
 
-fn parse_unary_expression(
+fn parse_prefix_unary_expression(
     context: &mut ParserContext,
     env: &mut Environment,
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     if *position < tokens.len() && is_prefix_unary_operator(&tokens[*position]) {
+        let op_location = tokens[*position].location;
         let op = if tokens[*position].kind == TokenKind::Bang {
             PrefixUnaryOperator::Bang
-        } else {
+        } else if tokens[*position].kind == TokenKind::Minus {
             PrefixUnaryOperator::Minus
+        } else {
+            PrefixUnaryOperator::Not
         };
 
         *position += 1;
 
-        let rhs = parse_unary_expression(context, env, tokens, position)?;
-        let rhs_type = rhs.expr_type(env);
-        if op == PrefixUnaryOperator::Bang && rhs_type != DataType::Boolean {
-            return Err(type_mismatch_error(
-                get_safe_location(tokens, *position - 1),
-                DataType::Boolean,
-                rhs_type,
-            ));
+        let mut rhs = parse_prefix_unary_expression(context, env, tokens, position)?;
+        match type_check_prefix_unary(env, &rhs, &op, op_location) {
+            ExprTypeCheckResult::NotEqualAndCantImplicitCast => {
+                return Err(type_mismatch_error(
+                    op_location,
+                    prefix_unary_expected_type(&op),
+                    rhs.expr_type(env),
+                ))
+            }
+            ExprTypeCheckResult::Error(diagnostic) => return Err(diagnostic),
+            ExprTypeCheckResult::ImplicitCasted(new_expr) => rhs = new_expr,
+            _ => {}
         }
 
-        if op == PrefixUnaryOperator::Minus && !rhs_type.is_number() {
-            return Err(type_mismatch_error(
-                get_safe_location(tokens, *position - 1),
-                DataType::Integer,
-                rhs_type,
-            ));
-        }
-
-        return Ok(Box::new(PrefixUnary { right: rhs, op }));
+        return Ok(Box::new(UnaryExpression { right: rhs, op }));
     }
 
     parse_function_call_expression(context, env, tokens, position)
@@ -2682,7 +2679,9 @@ fn is_bitwise_shift_operator(token: &Token) -> bool {
 
 #[inline(always)]
 fn is_prefix_unary_operator(token: &Token) -> bool {
-    token.kind == TokenKind::Bang || token.kind == TokenKind::Minus
+    token.kind == TokenKind::Bang
+        || token.kind == TokenKind::Minus
+        || token.kind == TokenKind::BitwiseNot
 }
 
 #[inline(always)]
@@ -2704,18 +2703,4 @@ fn is_factor_operator(token: &Token) -> bool {
 #[inline(always)]
 fn is_asc_or_desc(token: &Token) -> bool {
     token.kind == TokenKind::Ascending || token.kind == TokenKind::Descending
-}
-
-#[inline(always)]
-fn type_mismatch_error(
-    location: Location,
-    expected: DataType,
-    actual: DataType,
-) -> Box<Diagnostic> {
-    Diagnostic::error(&format!(
-        "Type mismatch expected `{}`, got `{}`",
-        expected, actual
-    ))
-    .with_location(location)
-    .as_boxed()
 }
