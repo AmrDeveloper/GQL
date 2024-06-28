@@ -31,7 +31,7 @@ SELECT @arr[1], @arr[2], @arr[3], ARRAY_LENGTH(@arr);
 SELECT @arr[1:2], @arr[2:], @arr[:2];
 
 SELECT DISTINCT title AS tt FROM commits
-SELECT name, COUNT(name) AS commit_num FROM commits GROUP BY name, author_email ORDER BY commit_num DESC LIMIT 10
+SELECT author_name, COUNT(author_name) AS commit_num FROM commits GROUP BY author_name, author_email ORDER BY commit_num DESC LIMIT 10
 SELECT commit_count FROM branches WHERE commit_count BETWEEN 0 .. 10
 
 SELECT * FROM refs WHERE type = "branch"
@@ -39,11 +39,11 @@ SELECT * FROM refs ORDER BY type
 
 SELECT * FROM commits
 SELECT author_name, author_email FROM commits
-SELECT author_name, author_email FROM commits ORDER BY name DESC, author_email ASC
-SELECT author_name, author_email FROM commits WHERE name LIKE "%gmail%" ORDER BY name
+SELECT author_name, author_email FROM commits ORDER BY author_name DESC, author_email ASC
+SELECT author_name, author_email FROM commits WHERE name LIKE "%gmail%" ORDER BY author_name
 SELECT * FROM commits WHERE LOWER(name) = "amrdeveloper"
-SELECT author_name FROM commits GROUP By name
-SELECT author_name FROM commits GROUP By name having name = "AmrDeveloper"
+SELECT author_name FROM commits GROUP By author_name
+SELECT author_name FROM commits GROUP By author_name having author_name = "AmrDeveloper"
 
 SELECT * FROM branches
 SELECT * FROM branches WHERE is_head = true
