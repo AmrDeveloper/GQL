@@ -22,6 +22,13 @@ pub enum TokenKind {
     Show,
     RegExp,
 
+    /// Joins
+    Join,
+    Left,
+    Right,
+    Cross,
+    Inner,
+
     Case,
     When,
     Then,
@@ -1103,6 +1110,13 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "describe" => TokenKind::Describe,
         "show" => TokenKind::Show,
         "regexp" => TokenKind::RegExp,
+
+        // Joins
+        "join" => TokenKind::Join,
+        "left" => TokenKind::Left,
+        "right" => TokenKind::Right,
+        "cross" => TokenKind::Cross,
+        "inner" => TokenKind::Inner,
 
         // Integer division and Modulo operator
         "div" => TokenKind::Slash,

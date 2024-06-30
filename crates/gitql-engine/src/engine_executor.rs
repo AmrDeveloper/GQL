@@ -26,11 +26,13 @@ use gitql_core::environment::Environment;
 use gitql_core::object::GitQLObject;
 use gitql_core::object::Group;
 use gitql_core::object::Row;
+use gitql_core::types::DataType;
 use gitql_core::value::Value;
 
 use crate::data_provider::DataProvider;
 use crate::engine_evaluator::evaluate_expression;
-use crate::engine_filter::filter_rows_by_condition;
+use crate::engine_filter::apply_filter_operation;
+use crate::engine_join::apply_join_operation;
 
 #[allow(clippy::borrowed_box)]
 pub fn execute_statement(
@@ -39,7 +41,7 @@ pub fn execute_statement(
     data_provider: &Box<dyn DataProvider>,
     gitql_object: &mut GitQLObject,
     alias_table: &mut HashMap<String, String>,
-    hidden_selection: &Vec<String>,
+    hidden_selection: &HashMap<String, Vec<String>>,
 ) -> Result<(), String> {
     match statement.kind() {
         Do => {
@@ -131,47 +133,70 @@ fn execute_select_statement(
     alias_table: &HashMap<String, String>,
     data_provider: &Box<dyn DataProvider>,
     gitql_object: &mut GitQLObject,
-    hidden_selections: &Vec<String>,
+    hidden_selections: &HashMap<String, Vec<String>>,
 ) -> Result<(), String> {
-    // Append hidden selection to the selected fields names
-    let mut selected_columns = statement.fields_names.to_owned();
-    let mut hidden_selection_count = 0;
+    let mut selected_rows_per_table: HashMap<String, Vec<Row>> = HashMap::new();
+    let mut hidden_selection_count_per_table: HashMap<String, usize> = HashMap::new();
 
-    if !statement.table_name.is_empty() {
-        for hidden in hidden_selections {
-            if !selected_columns.contains(hidden) {
-                selected_columns.insert(0, hidden.to_string());
-                hidden_selection_count += 1;
+    for table_selection in &statement.table_selections {
+        // Select objects from the target table
+        let table_name = &table_selection.table_name;
+        let selected_columns = &mut table_selection.columns_names.to_owned();
+
+        // Insert Hidden selection items for this table first
+        let mut hidden_selection_count = 0;
+        if let Some(table_hidden_selection) = hidden_selections.get(table_name) {
+            for hidden_selection in table_hidden_selection {
+                if !selected_columns.contains(hidden_selection) {
+                    selected_columns.insert(0, hidden_selection.to_string());
+                    hidden_selection_count += 1;
+                }
             }
         }
+
+        hidden_selection_count_per_table.insert(table_name.to_string(), hidden_selection_count);
+
+        // Calculate list of titles once per table
+        let mut table_titles = vec![];
+        for selected_column in selected_columns.iter_mut() {
+            table_titles.push(get_column_name(alias_table, selected_column));
+        }
+
+        let selected_rows = data_provider.provide(table_name, selected_columns)?;
+        selected_rows_per_table.insert(table_name.to_string(), selected_rows);
+
+        gitql_object.titles.append(&mut table_titles);
     }
 
-    // Calculate list of titles once
-    for selected_column in &selected_columns {
-        gitql_object
-            .titles
-            .push(get_column_name(alias_table, selected_column));
-    }
-
-    // Select objects from the target table
-    let table_name = &statement.table_name;
-    let mut selected_rows = data_provider.provide(table_name, &selected_columns)?;
+    // Apply joins operations if exists
+    let mut selected_rows: Vec<Row> = vec![];
+    apply_join_operation(
+        &mut selected_rows,
+        &statement.joins,
+        &statement.table_selections,
+        &mut selected_rows_per_table,
+    );
 
     // Execute Selected expressions if exists
     if !statement.selected_expr.is_empty() {
+        let all_hidden_selection: Vec<String> =
+            hidden_selections.values().flatten().cloned().collect();
+
         execute_expression_selection(
             env,
             &mut selected_rows,
             &gitql_object.titles,
             &statement.selected_expr_titles,
             &statement.selected_expr,
-            hidden_selection_count,
+            all_hidden_selection.len(),
         )?;
     }
 
-    gitql_object.groups.push(Group {
+    let main_group = Group {
         rows: selected_rows,
-    });
+    };
+
+    gitql_object.groups.push(main_group);
     Ok(())
 }
 
@@ -197,6 +222,13 @@ fn execute_expression_selection(
 
     for row in selected_rows.iter_mut() {
         for (index, expr) in selected_expr.iter().enumerate() {
+            let expr_title = &selected_expr_titles[index];
+            let value_index = *titles_index_map.get(expr_title).unwrap();
+
+            if index < row.values.len() && row.values[value_index].data_type() != DataType::Null {
+                continue;
+            }
+
             // Ignore evaluating expression if it symbol, that mean it a reference to aggregated value or function
             let value = if expr.kind() == ExpressionKind::Symbol {
                 Value::Null
@@ -204,13 +236,10 @@ fn execute_expression_selection(
                 evaluate_expression(env, expr, object_titles, &row.values)?
             };
 
-            let expr_title = &selected_expr_titles[index];
-            let value_index = titles_index_map.get(expr_title).unwrap();
-
             if index >= row.values.len() {
                 row.values.push(value);
             } else {
-                row.values[*value_index] = value;
+                row.values[value_index] = value;
             }
         }
     }
@@ -226,7 +255,7 @@ fn execute_where_statement(
     // because group by command not executed yet
     let condition = &statement.condition;
     let main_group = &gitql_object.groups.first().unwrap().rows;
-    let rows = filter_rows_by_condition(env, condition, &gitql_object.titles, main_group)?;
+    let rows = apply_filter_operation(env, condition, &gitql_object.titles, main_group)?;
     let filtered_group: Group = Group { rows };
 
     // Update the main group with the filtered data
@@ -253,7 +282,7 @@ fn execute_having_statement(
     // because group by command not executed yet
     let condition = &statement.condition;
     let main_group = &gitql_object.groups.first().unwrap().rows;
-    let rows = filter_rows_by_condition(env, condition, &gitql_object.titles, main_group)?;
+    let rows = apply_filter_operation(env, condition, &gitql_object.titles, main_group)?;
     let filtered_group: Group = Group { rows };
 
     // Update the main group with the filtered data

@@ -73,7 +73,8 @@ fn evaluate_select_query(
     let mut gitql_object = GitQLObject::default();
     let mut alias_table: HashMap<String, String> = query.alias_table;
 
-    let hidden_selections = query.hidden_selections;
+    let hidden_selections_map = query.hidden_selections;
+    let hidden_selections = hidden_selections_map.values().flatten().cloned().collect();
     let mut statements_map = query.statements;
 
     for gql_command in FIXED_LOGICAL_PLAN {
@@ -93,7 +94,7 @@ fn evaluate_select_query(
                         data_provider,
                         &mut gitql_object,
                         &mut alias_table,
-                        &hidden_selections,
+                        &hidden_selections_map,
                     )?;
 
                     // If the main group is empty, no need to perform other statements
@@ -118,7 +119,7 @@ fn evaluate_select_query(
                         data_provider,
                         &mut gitql_object,
                         &mut alias_table,
-                        &hidden_selections,
+                        &hidden_selections_map,
                     )?;
                 }
             }

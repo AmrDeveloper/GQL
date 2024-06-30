@@ -30,9 +30,9 @@ use crate::type_checker::check_function_call_arguments;
 use crate::type_checker::is_expression_type_equals;
 use crate::type_checker::prefix_unary_expected_type;
 use crate::type_checker::resolve_call_expression_return_type;
+use crate::type_checker::type_check_and_classify_selected_fields;
 use crate::type_checker::type_check_prefix_unary;
 use crate::type_checker::type_check_projection_symbols;
-use crate::type_checker::type_check_selected_fields;
 use crate::type_checker::type_mismatch_error;
 use crate::type_checker::ExprTypeCheckResult;
 use crate::type_checker::TypeCheckResult;
@@ -391,18 +391,58 @@ fn parse_select_query(
 
     type_check_projection_symbols(
         env,
-        &context.table_name,
+        &context.selected_tables,
         &context.projection_names,
         &context.projection_locations,
     )?;
+
+    let hidden_selection_per_table =
+        classify_hidden_selection(env, &context.selected_tables, &hidden_selections);
 
     Ok(Query::Select(GQLQuery {
         statements,
         has_aggregation_function: context.is_single_value_query,
         has_group_by_statement: context.has_group_by_statement,
-        hidden_selections,
+        hidden_selections: hidden_selection_per_table,
         alias_table: context.name_alias_table,
     }))
+}
+
+/// Classify hidden selection per table
+fn classify_hidden_selection(
+    env: &mut Environment,
+    tables: &[String],
+    hidden_selections: &[String],
+) -> HashMap<String, Vec<String>> {
+    let mut table_hidden_selections: HashMap<String, Vec<String>> = HashMap::new();
+    for table in tables {
+        table_hidden_selections.insert(table.to_string(), vec![]);
+    }
+
+    for hidden_selection in hidden_selections {
+        let mut is_resolved = false;
+        for table in tables {
+            let table_columns = env.schema.tables_fields_names.get(table.as_str()).unwrap();
+            if table_columns.contains(&hidden_selection.as_str()) {
+                let hidden_selection_for_table = table_hidden_selections.get_mut(table).unwrap();
+                if !hidden_selection_for_table.contains(hidden_selection) {
+                    hidden_selection_for_table.push(hidden_selection.to_string());
+                    is_resolved = true;
+                    break;
+                }
+            }
+        }
+
+        // If this symbol is not column name, maybe generated column
+        if !is_resolved && !table_hidden_selections.is_empty() {
+            table_hidden_selections
+                .get_mut(&tables[0])
+                .unwrap()
+                .push(hidden_selection.to_string());
+        }
+    }
+
+    table_hidden_selections
 }
 
 fn parse_select_statement(
@@ -422,8 +462,8 @@ fn parse_select_statement(
             .as_boxed());
     }
 
-    let mut table_name = "";
-    let mut fields_names: Vec<String> = Vec::new();
+    let mut tables_to_select_from: Vec<String> = vec![];
+    let mut fields_names: Vec<String> = vec![];
     let mut selected_expr_titles: Vec<String> = vec![];
     let mut selected_expr: Vec<Box<dyn Expression>> = vec![];
 
@@ -510,6 +550,7 @@ fn parse_select_statement(
     }
 
     // Parse optional Form statement
+    let mut joins: Vec<Join> = vec![];
     if *position < tokens.len() && tokens[*position].kind == TokenKind::From {
         // Consume `from` keyword
         *position += 1;
@@ -522,26 +563,122 @@ fn parse_select_statement(
                 .as_boxed());
         }
 
-        table_name = &table_name_token.ok().unwrap().literal;
-        if !env.schema.tables_fields_names.contains_key(table_name) {
+        let table_name = &table_name_token.ok().unwrap().literal;
+        if !env
+            .schema
+            .tables_fields_names
+            .contains_key(table_name.as_str())
+        {
             return Err(Diagnostic::error("Unresolved table name")
                 .add_help("Check the documentations to see available tables")
                 .with_location(get_safe_location(tokens, *position))
                 .as_boxed());
         }
 
+        tables_to_select_from.push(table_name.to_string());
+        context.selected_tables.push(table_name.to_string());
+
         // Consume table name
         *position += 1;
-        context.table_name = table_name.to_string();
+
+        // Parse Joins
+        // Convert it to white when supporting Multi different joins
+        if *position < tokens.len() && is_join_token(&tokens[*position]) {
+            let join_token = &tokens[*position];
+
+            // The default join type now is cross join because we don't support `ON` Condition
+            let mut join_kind = JoinKind::Cross;
+            if join_token.kind != TokenKind::Join {
+                join_kind = match join_token.kind {
+                    TokenKind::Left => JoinKind::Left,
+                    TokenKind::Right => JoinKind::Right,
+                    TokenKind::Cross => JoinKind::Cross,
+                    _ => JoinKind::Inner,
+                };
+
+                // TODO: Remove it after support all types in the engine level and support `ON` Condition
+                if join_kind != JoinKind::Cross {
+                    return Err(Diagnostic::error(
+                        "Unfortunately only `CROSS JOIN` is supported for now",
+                    )
+                    .with_location(get_safe_location(tokens, *position))
+                    .as_boxed());
+                }
+
+                // Consume Left, Right, Inner or Cross
+                *position += 1;
+
+                if *position >= tokens.len() || tokens[*position].kind != TokenKind::Join {
+                    return Err(Diagnostic::error(
+                        "Expect `JOIN` keyword after Cross, Left, Right, Inner",
+                    )
+                    .with_location(get_safe_location(tokens, *position))
+                    .as_boxed());
+                }
+            }
+
+            // Consume Join keyword
+            *position += 1;
+            if *position >= tokens.len() || tokens[*position].kind != TokenKind::Symbol {
+                return Err(Diagnostic::error("Expect table name after `JOIN` keyword")
+                    .with_location(get_safe_location(tokens, *position))
+                    .as_boxed());
+            }
+
+            let other_table = &tokens[*position];
+            let other_table_name = &other_table.literal;
+
+            // TODO: will be useful after support table alias `table as t` and dot expression
+            if table_name == other_table_name {
+                return Err(Diagnostic::error(
+                    "The two tables of join must be unique or have different alias",
+                )
+                .with_location(get_safe_location(tokens, *position))
+                .as_boxed());
+            }
+
+            tables_to_select_from.push(other_table_name.to_string());
+            context.selected_tables.push(other_table_name.to_string());
+            register_current_table_fields_types(env, other_table_name);
+
+            // Consume Other table name
+            *position += 1;
+
+            // TODO: must be removed after support `ON`
+            if *position < tokens.len() && tokens[*position].kind == TokenKind::On {
+                return Err(
+                    Diagnostic::error("The `ON` keyword after join is not supported yet")
+                        .with_location(get_safe_location(tokens, *position))
+                        .as_boxed(),
+                );
+            }
+
+            joins.push(Join {
+                right: table_name.to_string(),
+                left: other_table_name.to_string(),
+                kind: join_kind,
+                predicate: None,
+            })
+        }
 
         register_current_table_fields_types(env, table_name);
     }
 
+    // Make sure Aggregated functions are used with tables only
+    if tables_to_select_from.is_empty() && !context.aggregations.is_empty() {
+        return Err(
+            Diagnostic::error("Aggregations functions should be used only with tables")
+                .add_note("Try to select from one of the available tables in current schema")
+                .with_location(get_safe_location(tokens, *position))
+                .as_boxed(),
+        );
+    }
+
     // Make sure `SELECT *` used with specific table
-    if is_select_all && table_name.is_empty() {
+    if is_select_all && tables_to_select_from.is_empty() {
         return Err(
             Diagnostic::error("Expect `FROM` and table name after `SELECT *`")
-                .add_note("Select all must be used with valid table name")
+                .add_help("Select all must be used with valid table name")
                 .with_location(get_safe_location(tokens, *position))
                 .as_boxed(),
         );
@@ -560,23 +697,23 @@ fn parse_select_statement(
     if is_select_all {
         select_all_table_fields(
             env,
-            table_name,
+            &tables_to_select_from,
             &mut context.selected_fields,
             &mut fields_names,
         );
     }
 
     // Type check all selected fields has type registered in type table
-    type_check_selected_fields(
+    let table_selections = type_check_and_classify_selected_fields(
         env,
-        table_name,
+        &tables_to_select_from,
         &fields_names,
         get_safe_location(tokens, *position),
     )?;
 
     Ok(Box::new(SelectStatement {
-        table_name: table_name.to_string(),
-        fields_names,
+        table_selections,
+        joins,
         selected_expr_titles,
         selected_expr,
         distinct,
@@ -2629,18 +2766,22 @@ fn register_current_table_fields_types(env: &mut Environment, table_name: &str) 
 #[inline(always)]
 fn select_all_table_fields(
     env: &mut Environment,
-    table_name: &str,
+    table_name: &[String],
     selected_fields: &mut Vec<String>,
     fields_names: &mut Vec<String>,
 ) {
-    if env.schema.tables_fields_names.contains_key(table_name) {
-        let table_fields = &env.schema.tables_fields_names[table_name];
+    let mut tables_columns: Vec<&str> = vec![];
+    for table in table_name {
+        let columns = env.schema.tables_fields_names.get(table.as_str()).unwrap();
+        for column in columns {
+            tables_columns.push(column);
+        }
+    }
 
-        for field in table_fields {
-            if !fields_names.contains(&field.to_string()) {
-                fields_names.push(field.to_string());
-                selected_fields.push(field.to_string());
-            }
+    for field in tables_columns {
+        if !fields_names.contains(&field.to_string()) {
+            fields_names.push(field.to_string());
+            selected_fields.push(field.to_string());
         }
     }
 }
@@ -2697,6 +2838,15 @@ fn is_factor_operator(token: &Token) -> bool {
     token.kind == TokenKind::Star
         || token.kind == TokenKind::Slash
         || token.kind == TokenKind::Percentage
+}
+
+#[inline(always)]
+fn is_join_token(token: &Token) -> bool {
+    token.kind == TokenKind::Join
+        || token.kind == TokenKind::Left
+        || token.kind == TokenKind::Right
+        || token.kind == TokenKind::Cross
+        || token.kind == TokenKind::Inner
 }
 
 #[inline(always)]

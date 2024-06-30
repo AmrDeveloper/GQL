@@ -11,7 +11,7 @@ pub struct ParserContext {
     pub selected_fields: Vec<String>,
     pub hidden_selections: Vec<String>,
 
-    pub table_name: String,
+    pub selected_tables: Vec<String>,
     pub projection_names: Vec<String>,
     pub projection_locations: Vec<Location>,
 

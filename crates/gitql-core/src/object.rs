@@ -4,13 +4,13 @@ use crate::value::Value;
 use csv::Writer;
 
 /// In memory representation of the list of [`Value`] in one Row
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct Row {
     pub values: Vec<Value>,
 }
 
 /// In memory representation of the Rows of one [`Group`]
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct Group {
     pub rows: Vec<Row>,
 }

@@ -38,9 +38,7 @@ fn select_gql_objects(
         "branches" => select_branches(repo, selected_columns),
         "diffs" => select_diffs(repo, selected_columns),
         "tags" => select_tags(repo, selected_columns),
-        _ => Ok(vec![Row {
-            values: vec![Value::Null],
-        }]),
+        _ => Ok(vec![Row { values: vec![] }]),
     }
 }
 
@@ -221,7 +219,6 @@ fn select_branches(
     }
 
     let head_ref = head_ref_option.unwrap();
-
     let names_len = selected_columns.len() as i64;
 
     for mut branch in local_and_remote_branches.flatten() {

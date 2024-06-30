@@ -6,7 +6,7 @@ use crate::engine_evaluator::evaluate_expression;
 
 #[inline(always)]
 #[allow(clippy::borrowed_box)]
-pub fn filter_rows_by_condition(
+pub(crate) fn apply_filter_operation(
     env: &mut Environment,
     condition: &Box<dyn Expression>,
     titles: &[String],

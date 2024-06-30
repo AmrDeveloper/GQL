@@ -1,8 +1,11 @@
+use std::collections::HashMap;
+
 use gitql_ast::expression::Expression;
 use gitql_ast::expression::ExpressionKind;
 use gitql_ast::expression::StringExpression;
 use gitql_ast::expression::StringValueType;
 use gitql_ast::operator::PrefixUnaryOperator;
+use gitql_ast::statement::TableSelection;
 use gitql_core::environment::Environment;
 use gitql_core::signature::Signature;
 use gitql_core::types::DataType;
@@ -379,68 +382,99 @@ pub fn check_function_call_arguments(
     Ok(())
 }
 
-/// Check that all selected fields types are defined correctly
+/// Check that all selected fields types are defined correctly in selected tables
+/// Return the columns classified for each table
 /// Return a Diagnostic Error if anything is wrong
-pub fn type_check_selected_fields(
+pub fn type_check_and_classify_selected_fields(
     env: &mut Environment,
-    table_name: &str,
-    fields_names: &Vec<String>,
+    selected_tables: &Vec<String>,
+    selected_columns: &Vec<String>,
     location: Location,
-) -> Result<(), Box<Diagnostic>> {
-    for field_name in fields_names {
-        if let Some(data_type) = env.resolve_type(field_name) {
-            if data_type.is_undefined() {
-                return Err(
-                    Diagnostic::error(&format!("No field with name `{}`", field_name))
-                        .with_location(location)
-                        .as_boxed(),
-                );
+) -> Result<Vec<TableSelection>, Box<Diagnostic>> {
+    let mut table_selections: Vec<TableSelection> = vec![];
+    let mut table_index: HashMap<String, usize> = HashMap::new();
+    for (index, table) in selected_tables.iter().enumerate() {
+        table_selections.push(TableSelection {
+            table_name: table.to_string(),
+            columns_names: vec![],
+        });
+        table_index.insert(table.to_string(), index);
+    }
+
+    for selected_column in selected_columns {
+        let mut is_column_resolved = false;
+        for table in selected_tables {
+            let table_columns = env.schema.tables_fields_names.get(table.as_str()).unwrap();
+
+            // Check if this column name exists in current table
+            if table_columns.contains(&selected_column.as_str()) {
+                is_column_resolved = true;
+                let table_selection_index = *table_index.get(table).unwrap();
+                let selection = &mut table_selections[table_selection_index];
+                selection.columns_names.push(selected_column.to_string());
+                continue;
             }
-            continue;
         }
 
-        return Err(Diagnostic::error(&format!(
-            "Table `{}` has no field with name `{}`",
-            table_name, field_name
-        ))
-        .add_help("Check the documentations to see available fields for each tables")
-        .with_location(location)
-        .as_boxed());
+        if !is_column_resolved {
+            // This case for aggregated values or functions
+            if let Some(data_type) = env.resolve_type(selected_column) {
+                if !data_type.is_undefined() {
+                    if table_selections.is_empty() {
+                        table_selections.push(TableSelection {
+                            table_name: selected_tables
+                                .first()
+                                .unwrap_or(&"".to_string())
+                                .to_string(),
+                            columns_names: vec![selected_column.to_string()],
+                        });
+                    } else {
+                        table_selections[0]
+                            .columns_names
+                            .push(selected_column.to_string());
+                    }
+                    continue;
+                }
+            }
+
+            return Err(Diagnostic::error(&format!(
+                "Column `{}` not exists in any of the selected tables",
+                selected_column
+            ))
+            .add_help("Check the documentations to see available fields for each tables")
+            .with_location(location)
+            .as_boxed());
+        }
     }
-    Ok(())
+
+    Ok(table_selections)
 }
 
 /// Check that all projection columns are valid for this table name
 /// Return a Diagnostic Error if anything is wrong
 pub fn type_check_projection_symbols(
     env: &mut Environment,
-    table_name: &str,
+    selected_tables: &[String],
     projection_names: &[String],
     projection_locations: &[Location],
 ) -> Result<(), Box<Diagnostic>> {
-    if table_name.is_empty() && !projection_names.is_empty() {
-        return Err(Diagnostic::error(&format!(
-            "Unresolved field with name `{}`",
-            projection_names[0]
-        ))
-        .with_location(projection_locations[0])
-        .as_boxed());
-    }
+    for (index, selected_column) in projection_names.iter().enumerate() {
+        let mut is_column_resolved = false;
+        for table in selected_tables {
+            let table_columns = env.schema.tables_fields_names.get(table.as_str()).unwrap();
+            if table_columns.contains(&selected_column.as_str()) {
+                is_column_resolved = true;
+                break;
+            }
+        }
 
-    if table_name.is_empty() {
-        return Ok(());
-    }
-
-    let count = projection_names.len();
-    let table_fields = &env.schema.tables_fields_names[table_name];
-    for i in 0..count {
-        if !table_fields.contains(&projection_names[i].as_str()) {
+        if !is_column_resolved {
             return Err(Diagnostic::error(&format!(
-                "Table {} has no field with name `{}`",
-                table_name, projection_names[i]
+                "Column `{}` not exists in any of the selected tables",
+                selected_column
             ))
             .add_help("Check the documentations to see available fields for each tables")
-            .with_location(projection_locations[i])
+            .with_location(projection_locations[index])
             .as_boxed());
         }
     }

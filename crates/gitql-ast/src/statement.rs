@@ -34,7 +34,7 @@ pub struct GQLQuery {
     pub alias_table: HashMap<String, String>,
     pub has_aggregation_function: bool,
     pub has_group_by_statement: bool,
-    pub hidden_selections: Vec<String>,
+    pub hidden_selections: HashMap<String, Vec<String>>,
 }
 
 pub struct DoStatement {
@@ -57,9 +57,29 @@ pub enum Distinct {
     DistinctOn(Vec<String>),
 }
 
-pub struct SelectStatement {
+pub struct TableSelection {
     pub table_name: String,
-    pub fields_names: Vec<String>,
+    pub columns_names: Vec<String>,
+}
+
+#[derive(PartialEq)]
+pub enum JoinKind {
+    Cross,
+    Inner,
+    Left,
+    Right,
+}
+
+pub struct Join {
+    pub right: String,
+    pub left: String,
+    pub kind: JoinKind,
+    pub predicate: Option<Box<dyn Expression>>,
+}
+
+pub struct SelectStatement {
+    pub table_selections: Vec<TableSelection>,
+    pub joins: Vec<Join>,
     pub selected_expr_titles: Vec<String>,
     pub selected_expr: Vec<Box<dyn Expression>>,
     pub distinct: Distinct,
