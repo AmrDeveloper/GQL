@@ -138,6 +138,9 @@ fn execute_select_statement(
     let mut selected_rows_per_table: HashMap<String, Vec<Row>> = HashMap::new();
     let mut hidden_selection_count_per_table: HashMap<String, usize> = HashMap::new();
 
+    let mut titles: Vec<String> = vec![];
+    let mut hidden_sum = 0;
+
     for table_selection in &statement.table_selections {
         // Select objects from the target table
         let table_name = &table_selection.table_name;
@@ -165,8 +168,18 @@ fn execute_select_statement(
         let selected_rows = data_provider.provide(table_name, selected_columns)?;
         selected_rows_per_table.insert(table_name.to_string(), selected_rows);
 
-        gitql_object.titles.append(&mut table_titles);
+        // Append hidden selection in the right position
+        // at the end all hidden selections will be first
+        let hidden_selection_titles = &table_titles[..hidden_selection_count];
+        titles.splice(hidden_sum..hidden_sum, hidden_selection_titles.to_vec());
+
+        // Non hidden selection should be inserted at the end
+        let selection_titles = &table_titles[hidden_selection_count..];
+        titles.extend_from_slice(selection_titles);
+        hidden_sum += hidden_selection_count;
     }
+
+    gitql_object.titles.append(&mut titles);
 
     // Apply joins operations if exists
     let mut selected_rows: Vec<Row> = vec![];
@@ -175,20 +188,17 @@ fn execute_select_statement(
         &statement.joins,
         &statement.table_selections,
         &mut selected_rows_per_table,
+        &hidden_selection_count_per_table,
     );
 
     // Execute Selected expressions if exists
     if !statement.selected_expr.is_empty() {
-        let all_hidden_selection: Vec<String> =
-            hidden_selections.values().flatten().cloned().collect();
-
         execute_expression_selection(
             env,
             &mut selected_rows,
             &gitql_object.titles,
             &statement.selected_expr_titles,
             &statement.selected_expr,
-            all_hidden_selection.len(),
         )?;
     }
 
@@ -207,7 +217,6 @@ fn execute_expression_selection(
     object_titles: &[String],
     selected_expr_titles: &[String],
     selected_expr: &[Box<dyn Expression>],
-    hidden_selection_count: usize,
 ) -> Result<(), String> {
     // Cache the index of each expression position to provide fast insertion
     let mut titles_index_map: HashMap<String, usize> = HashMap::new();
@@ -215,8 +224,7 @@ fn execute_expression_selection(
         let expr_title_index = object_titles
             .iter()
             .position(|r| r.eq(expr_column_title))
-            .unwrap()
-            - hidden_selection_count;
+            .unwrap();
         titles_index_map.insert(expr_column_title.to_string(), expr_title_index);
     }
 
