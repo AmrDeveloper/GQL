@@ -317,6 +317,7 @@ fn select_diffs(repo: &gix::Repository, selected_columns: &[String]) -> Result<V
     for commit_info in revwalk {
         let commit_info = commit_info.unwrap();
         let commit = commit_info.id().object().unwrap().into_commit();
+        let commit_ref = commit.decode().unwrap();
 
         let mut values: Vec<Value> = Vec::with_capacity(selected_columns.len());
 
@@ -328,14 +329,22 @@ fn select_diffs(repo: &gix::Repository, selected_columns: &[String]) -> Result<V
             }
 
             if field_name == "name" {
-                let name = commit.author().unwrap().name.to_string();
+                let name = commit_ref.author().name.to_string();
                 values.push(Value::Text(name));
                 continue;
             }
 
             if field_name == "email" {
-                let email = commit.author().unwrap().email.to_string();
+                let email = commit_ref.author().email.to_string();
                 values.push(Value::Text(email));
+                continue;
+            }
+
+            if field_name == "datetime" {
+                let time_stamp = commit_info
+                    .commit_time
+                    .unwrap_or_else(|| commit_ref.time().seconds);
+                values.push(Value::DateTime(time_stamp));
                 continue;
             }
 
@@ -416,7 +425,6 @@ fn select_tags(repo: &gix::Repository, selected_columns: &[String]) -> Result<Ve
     let repo_path = repo.path().to_str().unwrap().to_string();
 
     let names_len = selected_columns.len() as i64;
-
     let mut rows: Vec<Row> = vec![];
 
     for tag_ref in tag_names.flatten() {
