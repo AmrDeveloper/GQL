@@ -2312,6 +2312,12 @@ fn parse_primary_expression(
         TokenKind::LeftBracket => parse_array_value_expression(context, env, tokens, position),
         TokenKind::LeftParen => parse_group_expression(context, env, tokens, position),
         TokenKind::Case => parse_case_expression(context, env, tokens, position),
+        TokenKind::Infinity => {
+            *position += 1;
+            Ok(Box::new(NumberExpression {
+                value: Value::Float(f64::INFINITY),
+            }))
+        }
         TokenKind::String => {
             *position += 1;
             Ok(Box::new(StringExpression {
