@@ -2307,17 +2307,13 @@ fn parse_primary_expression(
     match tokens[*position].kind {
         TokenKind::Integer => parse_const_integer_expression(tokens, position),
         TokenKind::Float => parse_const_float_expression(tokens, position),
+        TokenKind::Infinity => parse_float_infinity_or_nan_expression(tokens, position),
+        TokenKind::NaN => parse_float_infinity_or_nan_expression(tokens, position),
         TokenKind::Symbol => parse_symbol_expression(context, env, tokens, position),
         TokenKind::Array => parse_array_value_expression(context, env, tokens, position),
         TokenKind::LeftBracket => parse_array_value_expression(context, env, tokens, position),
         TokenKind::LeftParen => parse_group_expression(context, env, tokens, position),
         TokenKind::Case => parse_case_expression(context, env, tokens, position),
-        TokenKind::Infinity => {
-            *position += 1;
-            Ok(Box::new(NumberExpression {
-                value: Value::Float(f64::INFINITY),
-            }))
-        }
         TokenKind::String => {
             *position += 1;
             Ok(Box::new(StringExpression {
@@ -2386,6 +2382,21 @@ fn parse_const_float_expression(
         ))
         .with_location(tokens[*position].location)
         .as_boxed())
+}
+
+fn parse_float_infinity_or_nan_expression(
+    tokens: &[Token],
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
+    if tokens[*position].kind == TokenKind::Infinity {
+        *position += 1;
+        let value = Value::Float(f64::INFINITY);
+        return Ok(Box::new(NumberExpression { value }));
+    }
+
+    *position += 1;
+    let value = Value::Float(f64::NAN);
+    Ok(Box::new(NumberExpression { value }))
 }
 
 fn parse_symbol_expression(

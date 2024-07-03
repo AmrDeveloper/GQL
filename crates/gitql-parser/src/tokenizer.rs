@@ -81,6 +81,7 @@ pub enum TokenKind {
     Null,
 
     Infinity,
+    NaN,
 
     Colon,
     ColonEqual,
@@ -1135,6 +1136,7 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "null" => TokenKind::Null,
 
         "infinity" => TokenKind::Infinity,
+        "nan" => TokenKind::NaN,
 
         // As for alias
         "as" => TokenKind::As,
