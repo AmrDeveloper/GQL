@@ -17,3 +17,12 @@ pub fn array_shuffle(inputs: &[Value]) -> Value {
     array.shuffle(&mut rand::thread_rng());
     Value::Array(element_type, array)
 }
+
+pub fn array_position(inputs: &[Value]) -> Value {
+    let array_type = inputs[0].as_array();
+    let elemnet = &inputs[1];
+    if let Some(index) = array_type.iter().position(|r| r.equals(elemnet)) {
+        return Value::Integer((index + 1) as i64);
+    }
+    Value::Null
+}
