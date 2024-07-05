@@ -551,118 +551,14 @@ fn parse_select_statement(
 
     // Parse optional Form statement
     let mut joins: Vec<Join> = vec![];
-    if *position < tokens.len() && tokens[*position].kind == TokenKind::From {
-        // Consume `from` keyword
-        *position += 1;
-
-        let table_name_token = consume_kind(tokens, *position, TokenKind::Symbol);
-        if table_name_token.is_err() {
-            return Err(Diagnostic::error("Expect `identifier` as a table name")
-                .add_note("Table name must be an identifier")
-                .with_location(get_safe_location(tokens, *position))
-                .as_boxed());
-        }
-
-        let table_name = &table_name_token.ok().unwrap().literal;
-        if !env
-            .schema
-            .tables_fields_names
-            .contains_key(table_name.as_str())
-        {
-            return Err(Diagnostic::error("Unresolved table name")
-                .add_help("Check the documentations to see available tables")
-                .with_location(get_safe_location(tokens, *position))
-                .as_boxed());
-        }
-
-        tables_to_select_from.push(table_name.to_string());
-        context.selected_tables.push(table_name.to_string());
-
-        // Consume table name
-        *position += 1;
-
-        // Parse Joins
-        // Convert it to white when supporting Multi different joins
-        if *position < tokens.len() && is_join_token(&tokens[*position]) {
-            let join_token = &tokens[*position];
-
-            // The default join type now is cross join because we don't support `ON` Condition
-            let mut join_kind = JoinKind::Cross;
-            if join_token.kind != TokenKind::Join {
-                join_kind = match join_token.kind {
-                    TokenKind::Left => JoinKind::Left,
-                    TokenKind::Right => JoinKind::Right,
-                    TokenKind::Cross => JoinKind::Cross,
-                    _ => JoinKind::Inner,
-                };
-
-                // TODO: Remove it after support all types in the engine level and support `ON` Condition
-                if join_kind != JoinKind::Cross {
-                    return Err(Diagnostic::error(
-                        "Unfortunately only `CROSS JOIN` is supported for now",
-                    )
-                    .with_location(get_safe_location(tokens, *position))
-                    .as_boxed());
-                }
-
-                // Consume Left, Right, Inner or Cross
-                *position += 1;
-
-                if *position >= tokens.len() || tokens[*position].kind != TokenKind::Join {
-                    return Err(Diagnostic::error(
-                        "Expect `JOIN` keyword after Cross, Left, Right, Inner",
-                    )
-                    .with_location(get_safe_location(tokens, *position))
-                    .as_boxed());
-                }
-            }
-
-            // Consume Join keyword
-            *position += 1;
-            if *position >= tokens.len() || tokens[*position].kind != TokenKind::Symbol {
-                return Err(Diagnostic::error("Expect table name after `JOIN` keyword")
-                    .with_location(get_safe_location(tokens, *position))
-                    .as_boxed());
-            }
-
-            let other_table = &tokens[*position];
-            let other_table_name = &other_table.literal;
-
-            // TODO: will be useful after support table alias `table as t` and dot expression
-            if table_name == other_table_name {
-                return Err(Diagnostic::error(
-                    "The two tables of join must be unique or have different alias",
-                )
-                .with_location(get_safe_location(tokens, *position))
-                .as_boxed());
-            }
-
-            tables_to_select_from.push(other_table_name.to_string());
-            context.selected_tables.push(other_table_name.to_string());
-            register_current_table_fields_types(env, other_table_name);
-
-            // Consume Other table name
-            *position += 1;
-
-            // TODO: must be removed after support `ON`
-            if *position < tokens.len() && tokens[*position].kind == TokenKind::On {
-                return Err(
-                    Diagnostic::error("The `ON` keyword after join is not supported yet")
-                        .with_location(get_safe_location(tokens, *position))
-                        .as_boxed(),
-                );
-            }
-
-            joins.push(Join {
-                right: table_name.to_string(),
-                left: other_table_name.to_string(),
-                kind: join_kind,
-                predicate: None,
-            })
-        }
-
-        register_current_table_fields_types(env, table_name);
-    }
+    parse_from_option(
+        context,
+        env,
+        &mut tables_to_select_from,
+        &mut joins,
+        tokens,
+        position,
+    )?;
 
     // Make sure Aggregated functions are used with tables only
     if tables_to_select_from.is_empty() && !context.aggregations.is_empty() {
@@ -801,6 +697,129 @@ fn parse_select_distinct_option(
     }
 
     Ok(Distinct::None)
+}
+
+fn parse_from_option(
+    context: &mut ParserContext,
+    env: &mut Environment,
+    tables_to_select_from: &mut Vec<String>,
+    joins: &mut Vec<Join>,
+    tokens: &[Token],
+    position: &mut usize,
+) -> Result<(), Box<Diagnostic>> {
+    if *position < tokens.len() && tokens[*position].kind == TokenKind::From {
+        // Consume `From` keyword
+        *position += 1;
+
+        let table_name_token = consume_kind(tokens, *position, TokenKind::Symbol);
+        if table_name_token.is_err() {
+            return Err(Diagnostic::error("Expect `identifier` as a table name")
+                .add_note("Table name must be an identifier")
+                .with_location(get_safe_location(tokens, *position))
+                .as_boxed());
+        }
+
+        let table_name = &table_name_token.ok().unwrap().literal;
+        if !env
+            .schema
+            .tables_fields_names
+            .contains_key(table_name.as_str())
+        {
+            return Err(Diagnostic::error("Unresolved table name")
+                .add_help("Check the documentations to see available tables")
+                .with_location(get_safe_location(tokens, *position))
+                .as_boxed());
+        }
+
+        // Register the table
+        tables_to_select_from.push(table_name.to_string());
+        context.selected_tables.push(table_name.to_string());
+        register_current_table_fields_types(env, table_name);
+
+        // Consume table name
+        *position += 1;
+
+        // Parse Joins
+        // Convert it to white when supporting Multi different joins
+        if *position < tokens.len() && is_join_token(&tokens[*position]) {
+            let join_token = &tokens[*position];
+
+            // The default join type now is cross join because we don't support `ON` Condition
+            let mut join_kind = JoinKind::Cross;
+            if join_token.kind != TokenKind::Join {
+                join_kind = match join_token.kind {
+                    TokenKind::Left => JoinKind::Left,
+                    TokenKind::Right => JoinKind::Right,
+                    TokenKind::Cross => JoinKind::Cross,
+                    _ => JoinKind::Inner,
+                };
+
+                // TODO: Remove it after support all types in the engine level and support `ON` Condition
+                if join_kind != JoinKind::Cross {
+                    return Err(Diagnostic::error(
+                        "Unfortunately only `CROSS JOIN` is supported for now",
+                    )
+                    .with_location(get_safe_location(tokens, *position))
+                    .as_boxed());
+                }
+
+                // Consume Left, Right, Inner or Cross
+                *position += 1;
+
+                if *position >= tokens.len() || tokens[*position].kind != TokenKind::Join {
+                    return Err(Diagnostic::error(
+                        "Expect `JOIN` keyword after Cross, Left, Right, Inner",
+                    )
+                    .with_location(get_safe_location(tokens, *position))
+                    .as_boxed());
+                }
+            }
+
+            // Consume `JOIN` keyword
+            *position += 1;
+            if *position >= tokens.len() || tokens[*position].kind != TokenKind::Symbol {
+                return Err(Diagnostic::error("Expect table name after `JOIN` keyword")
+                    .with_location(get_safe_location(tokens, *position))
+                    .as_boxed());
+            }
+
+            let other_table = &tokens[*position];
+            let other_table_name = &other_table.literal;
+
+            // TODO: will be useful after support table alias `table as t` and dot expression
+            if table_name == other_table_name {
+                return Err(Diagnostic::error(
+                    "The two tables of join must be unique or have different alias",
+                )
+                .with_location(get_safe_location(tokens, *position))
+                .as_boxed());
+            }
+
+            tables_to_select_from.push(other_table_name.to_string());
+            context.selected_tables.push(other_table_name.to_string());
+            register_current_table_fields_types(env, other_table_name);
+
+            // Consume Other table name
+            *position += 1;
+
+            // TODO: must be removed after support `ON`
+            if *position < tokens.len() && tokens[*position].kind == TokenKind::On {
+                return Err(
+                    Diagnostic::error("The `ON` keyword after join is not supported yet")
+                        .with_location(get_safe_location(tokens, *position))
+                        .as_boxed(),
+                );
+            }
+
+            joins.push(Join {
+                right: table_name.to_string(),
+                left: other_table_name.to_string(),
+                kind: join_kind,
+                predicate: None,
+            })
+        }
+    }
+    Ok(())
 }
 
 fn parse_where_statement(
