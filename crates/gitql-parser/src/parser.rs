@@ -768,26 +768,32 @@ fn parse_from_option(
             let join_token = &tokens[*position];
 
             // The default join type now is cross join because we don't support `ON` Condition
-            let mut join_kind = JoinKind::Cross;
+            let mut join_kind = JoinKind::Default;
             if join_token.kind != TokenKind::Join {
                 join_kind = match join_token.kind {
                     TokenKind::Left => JoinKind::Left,
                     TokenKind::Right => JoinKind::Right,
                     TokenKind::Cross => JoinKind::Cross,
-                    _ => JoinKind::Inner,
+                    TokenKind::Inner => JoinKind::Inner,
+                    _ => JoinKind::Default,
                 };
-
-                // TODO: Remove it after support all types in the engine level and support `ON` Condition
-                if join_kind != JoinKind::Cross {
-                    return Err(Diagnostic::error(
-                        "Unfortunately only `CROSS JOIN` is supported for now",
-                    )
-                    .with_location(get_safe_location(tokens, *position))
-                    .as_boxed());
-                }
 
                 // Consume Left, Right, Inner or Cross
                 *position += 1;
+
+                // Parse optional `OUTER` token after `LEFT` or `RIGHT` only
+                if *position < tokens.len() && tokens[*position].kind == TokenKind::Outer {
+                    if !matches!(join_kind, JoinKind::Left | JoinKind::Right) {
+                        return Err(Diagnostic::error(
+                            "`OUTER` keyword used with LEFT or RGIHT JOIN only",
+                        )
+                        .with_location(get_safe_location(tokens, *position))
+                        .as_boxed());
+                    }
+
+                    // Consume `OUTER` keyword
+                    *position += 1;
+                }
 
                 if *position >= tokens.len() || tokens[*position].kind != TokenKind::Join {
                     return Err(Diagnostic::error(

@@ -68,6 +68,7 @@ pub enum JoinKind {
     Inner,
     Left,
     Right,
+    Default,
 }
 
 pub struct Join {

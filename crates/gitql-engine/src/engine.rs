@@ -218,7 +218,7 @@ fn evaluate_show_tables_query(env: &mut Environment) -> Result<EvaluationResult,
 fn remove_hidden_selected(
     titles: &mut Vec<String>,
     group: &mut Group,
-    hidden_selections: &Vec<String>,
+    hidden_selections: &[String],
 ) {
     let titles_count = titles.len();
     for i in (0..titles_count).rev() {

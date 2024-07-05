@@ -28,6 +28,7 @@ pub enum TokenKind {
     Right,
     Cross,
     Inner,
+    Outer,
 
     Case,
     When,
@@ -1120,6 +1121,7 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "right" => TokenKind::Right,
         "cross" => TokenKind::Cross,
         "inner" => TokenKind::Inner,
+        "outer" => TokenKind::Outer,
 
         // Integer division and Modulo operator
         "div" => TokenKind::Slash,
