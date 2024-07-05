@@ -24,24 +24,17 @@ pub fn render_objects(
     let gql_group = groups.groups.first().unwrap();
     let gql_group_len = gql_group.len();
 
-    let titles: Vec<&str> = groups
-        .titles
-        .iter()
-        .filter(|s| !hidden_selections.contains(s))
-        .map(|k| k.as_ref())
-        .collect();
-
     // Setup table headers
     let header_color = comfy_table::Color::Green;
     let mut table_headers = vec![];
-    for key in &titles {
+    for key in &groups.titles {
         table_headers.push(comfy_table::Cell::new(key).fg(header_color));
     }
 
     // Print all data without pagination
     if !pagination || page_size >= gql_group_len {
         print_group_as_table(
-            &titles,
+            &groups.titles,
             table_headers,
             &gql_group.rows,
             hidden_selections.len(),
@@ -60,7 +53,7 @@ pub fn render_objects(
         let current_page_groups = &gql_group.rows[start_index..end_index];
         println!("Page {}/{}", current_page, number_of_pages);
         print_group_as_table(
-            &titles,
+            &groups.titles,
             table_headers.clone(),
             current_page_groups,
             hidden_selections.len(),
@@ -76,7 +69,7 @@ pub fn render_objects(
 }
 
 fn print_group_as_table(
-    titles: &[&str],
+    titles: &[String],
     table_headers: Vec<comfy_table::Cell>,
     rows: &[Row],
     hidden_selection_count: usize,

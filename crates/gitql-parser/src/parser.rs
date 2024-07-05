@@ -451,7 +451,7 @@ fn parse_select_statement(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Statement>, Box<Diagnostic>> {
-    // Consume select keyword
+    // Consume `SELECT` keyword
     *position += 1;
 
     if *position >= tokens.len() {
@@ -462,95 +462,28 @@ fn parse_select_statement(
             .as_boxed());
     }
 
-    let mut tables_to_select_from: Vec<String> = vec![];
+    // Parse `DISTINCT` or `DISTINCT ON(...)`
+    let distinct = parse_select_distinct_option(context, tokens, position)?;
+
+    // Parse `*` or `expressions`
     let mut fields_names: Vec<String> = vec![];
     let mut selected_expr_titles: Vec<String> = vec![];
     let mut selected_expr: Vec<Box<dyn Expression>> = vec![];
-
     let mut is_select_all = false;
+    parse_select_all_or_expressions(
+        context,
+        env,
+        tokens,
+        position,
+        &mut fields_names,
+        &mut selected_expr_titles,
+        &mut selected_expr,
+        &mut is_select_all,
+    )?;
 
-    let distinct = parse_select_distinct_option(context, tokens, position)?;
-
-    // Select all option
-    if *position < tokens.len() && tokens[*position].kind == TokenKind::Star {
-        // Consume `*`
-        *position += 1;
-        is_select_all = true;
-    } else {
-        while *position < tokens.len() && tokens[*position].kind != TokenKind::From {
-            let expression = parse_expression(context, env, tokens, position)?;
-            let expr_type = expression.expr_type(env).clone();
-            let field_name = if let Some(expression_literal) = expression_literal(&expression) {
-                expression_literal
-            } else {
-                context.generate_column_name()
-            };
-
-            // Assert that each selected field is unique
-            if fields_names.contains(&field_name) {
-                return Err(Diagnostic::error("Can't select the same field twice")
-                    .with_location(get_safe_location(tokens, *position - 1))
-                    .as_boxed());
-            }
-
-            // Check for Field name alias
-            if *position < tokens.len() && tokens[*position].kind == TokenKind::As {
-                // Consume `as` keyword
-                *position += 1;
-                let alias_name_token = consume_kind(tokens, *position, TokenKind::Symbol);
-                if alias_name_token.is_err() {
-                    return Err(Diagnostic::error("Expect `identifier` as field alias name")
-                        .with_location(get_safe_location(tokens, *position))
-                        .as_boxed());
-                }
-
-                // Register alias name
-                let alias_name = alias_name_token.ok().unwrap().literal.to_string();
-                if context.selected_fields.contains(&alias_name)
-                    || context.name_alias_table.contains_key(&alias_name)
-                {
-                    return Err(
-                        Diagnostic::error("You already have field with the same name")
-                            .add_help("Try to use a new unique name for alias")
-                            .with_location(get_safe_location(tokens, *position))
-                            .as_boxed(),
-                    );
-                }
-
-                // Consume alias name
-                *position += 1;
-
-                // Register alias name type
-                env.define(alias_name.to_string(), expr_type.clone());
-
-                context.selected_fields.push(alias_name.clone());
-                context
-                    .name_alias_table
-                    .insert(field_name.to_string(), alias_name.to_string());
-                selected_expr_titles.push(alias_name.to_owned());
-            } else {
-                selected_expr_titles.push(field_name.to_owned());
-            }
-
-            // Register field type
-            env.define(field_name.to_string(), expr_type);
-
-            fields_names.push(field_name.to_owned());
-            context.selected_fields.push(field_name.to_owned());
-
-            selected_expr.push(expression);
-
-            // Consume `,` or break
-            if *position < tokens.len() && tokens[*position].kind == TokenKind::Comma {
-                *position += 1;
-            } else {
-                break;
-            }
-        }
-    }
-
-    // Parse optional Form statement
+    // Parse optional `FROM` with one or more tables and joins
     let mut joins: Vec<Join> = vec![];
+    let mut tables_to_select_from: Vec<String> = vec![];
     parse_from_option(
         context,
         env,
@@ -697,6 +630,96 @@ fn parse_select_distinct_option(
     }
 
     Ok(Distinct::None)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn parse_select_all_or_expressions(
+    context: &mut ParserContext,
+    env: &mut Environment,
+    tokens: &[Token],
+    position: &mut usize,
+    fields_names: &mut Vec<String>,
+    selected_expr_titles: &mut Vec<String>,
+    selected_expr: &mut Vec<Box<dyn Expression>>,
+    is_select_all: &mut bool,
+) -> Result<(), Box<Diagnostic>> {
+    // Check if it `SELECT *`
+    if *position < tokens.len() && tokens[*position].kind == TokenKind::Star {
+        // Consume `*`
+        *position += 1;
+        *is_select_all = true;
+        return Ok(());
+    }
+
+    // Parse list of expression separated by `,` or until end of file
+    while *position < tokens.len() && tokens[*position].kind != TokenKind::From {
+        let expression = parse_expression(context, env, tokens, position)?;
+        let expr_type: DataType = expression.expr_type(env).clone();
+        let field_name = expression_literal(&expression).unwrap_or(context.generate_column_name());
+
+        // Assert that each selected field is unique
+        if fields_names.contains(&field_name) {
+            return Err(Diagnostic::error("Can't select the same field twice")
+                .with_location(get_safe_location(tokens, *position - 1))
+                .as_boxed());
+        }
+
+        // Check for Field name alias
+        if *position < tokens.len() && tokens[*position].kind == TokenKind::As {
+            // Consume `as` keyword
+            *position += 1;
+            let alias_name_token = consume_kind(tokens, *position, TokenKind::Symbol);
+            if alias_name_token.is_err() {
+                return Err(Diagnostic::error("Expect `identifier` as field alias name")
+                    .with_location(get_safe_location(tokens, *position))
+                    .as_boxed());
+            }
+
+            // Register alias name
+            let alias_name = alias_name_token.ok().unwrap().literal.to_string();
+            if context.selected_fields.contains(&alias_name)
+                || context.name_alias_table.contains_key(&alias_name)
+            {
+                return Err(
+                    Diagnostic::error("You already have field with the same name")
+                        .add_help("Try to use a new unique name for alias")
+                        .with_location(get_safe_location(tokens, *position))
+                        .as_boxed(),
+                );
+            }
+
+            // Consume alias name
+            *position += 1;
+
+            // Register alias name type
+            env.define(alias_name.to_string(), expr_type.clone());
+
+            context.selected_fields.push(alias_name.clone());
+            context
+                .name_alias_table
+                .insert(field_name.to_string(), alias_name.to_string());
+            selected_expr_titles.push(alias_name.to_owned());
+        } else {
+            selected_expr_titles.push(field_name.to_owned());
+        }
+
+        // Register field type
+        env.define(field_name.to_string(), expr_type);
+
+        fields_names.push(field_name.to_owned());
+        context.selected_fields.push(field_name.to_owned());
+
+        selected_expr.push(expression);
+
+        // Consume `,` or break
+        if *position < tokens.len() && tokens[*position].kind == TokenKind::Comma {
+            *position += 1;
+        } else {
+            break;
+        }
+    }
+
+    Ok(())
 }
 
 fn parse_from_option(

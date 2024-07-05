@@ -126,6 +126,10 @@ fn evaluate_select_query(
         }
     }
 
+    // Remove Hidden Selection from the rows after executing the query plan
+    let group: &mut Group = &mut gitql_object.groups[0];
+    remove_hidden_selected(&mut gitql_object.titles, group, &hidden_selections);
+
     // If there are many groups that mean group by is executed before.
     // must merge each group into only one element
     if gitql_object.len() > 1 {
@@ -209,4 +213,22 @@ fn evaluate_show_tables_query(env: &mut Environment) -> Result<EvaluationResult,
         gitql_object,
         hidden_selections,
     ))
+}
+
+fn remove_hidden_selected(
+    titles: &mut Vec<String>,
+    group: &mut Group,
+    hidden_selections: &Vec<String>,
+) {
+    let titles_count = titles.len();
+    for i in (0..titles_count).rev() {
+        if hidden_selections.contains(&titles[i]) {
+            titles.remove(i);
+            for row in group.rows.iter_mut() {
+                if row.values.len() < i {
+                    row.values.remove(i);
+                }
+            }
+        }
+    }
 }
