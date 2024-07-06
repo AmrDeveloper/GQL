@@ -19,10 +19,15 @@ pub fn array_shuffle(inputs: &[Value]) -> Value {
 }
 
 pub fn array_position(inputs: &[Value]) -> Value {
-    let array_type = inputs[0].as_array();
+    let array = inputs[0].as_array();
     let elemnet = &inputs[1];
-    if let Some(index) = array_type.iter().position(|r| r.equals(elemnet)) {
+    if let Some(index) = array.iter().position(|r| r.equals(elemnet)) {
         return Value::Integer((index + 1) as i64);
     }
     Value::Null
+}
+
+pub fn array_dims(inputs: &[Value]) -> Value {
+    let array_type = inputs[0].data_type();
+    Value::Text(array_type.to_string())
 }
