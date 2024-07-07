@@ -184,12 +184,14 @@ fn execute_select_statement(
     // Apply joins operations if exists
     let mut selected_rows: Vec<Row> = vec![];
     apply_join_operation(
+        env,
         &mut selected_rows,
         &statement.joins,
         &statement.table_selections,
         &mut selected_rows_per_table,
         &hidden_selection_count_per_table,
-    );
+        &gitql_object.titles,
+    )?;
 
     // Execute Selected expressions if exists
     if !statement.selected_expr.is_empty() {

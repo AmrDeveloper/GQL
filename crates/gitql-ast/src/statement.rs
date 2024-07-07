@@ -72,8 +72,8 @@ pub enum JoinKind {
 }
 
 pub struct Join {
-    pub right: String,
     pub left: String,
+    pub right: String,
     pub kind: JoinKind,
     pub predicate: Option<Box<dyn Expression>>,
 }

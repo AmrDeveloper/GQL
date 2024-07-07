@@ -815,7 +815,7 @@ fn parse_from_option(
             let other_table = &tokens[*position];
             let other_table_name = &other_table.literal;
 
-            // TODO: will be useful after support table alias `table as t` and dot expression
+            // Make sure the RIGHT and LEFT tables names are not the same
             if table_name == other_table_name {
                 return Err(Diagnostic::error(
                     "The two tables of join must be unique or have different alias",
@@ -831,20 +831,28 @@ fn parse_from_option(
             // Consume Other table name
             *position += 1;
 
-            // TODO: must be removed after support `ON`
+            // Parse the `ON` predicate
+            let mut predicate: Option<Box<dyn Expression>> = None;
             if *position < tokens.len() && tokens[*position].kind == TokenKind::On {
-                return Err(
-                    Diagnostic::error("The `ON` keyword after join is not supported yet")
-                        .with_location(get_safe_location(tokens, *position))
-                        .as_boxed(),
-                );
+                // Consume `ON` keyword
+                *position += 1;
+                predicate = Some(parse_expression(context, env, tokens, position)?);
+            }
+
+            // Make sure user set predicate condition for LEFT or RIGHT JOIN
+            if predicate.is_none() {
+                return Err(Diagnostic::error(
+                    "You must set predicate condition using `ON` Keyword for LEFT OR RIHTH JOINS",
+                )
+                .with_location(get_safe_location(tokens, *position))
+                .as_boxed());
             }
 
             joins.push(Join {
-                right: table_name.to_string(),
-                left: other_table_name.to_string(),
+                left: table_name.to_string(),
+                right: other_table_name.to_string(),
                 kind: join_kind,
-                predicate: None,
+                predicate,
             })
         }
     }
