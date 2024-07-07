@@ -74,7 +74,7 @@ SELECT * FROM tags OFFSET 1 LIMIT 1
   - [Types](docs/structure/types.md)
   - [Statements](docs/statement)
   - [Expressions](docs/expression)
-  - [Transformations](docs/function/transformations.md)
+  - [Functions and Operators](docs/functions)
   - [Aggregations](docs/function/aggregations.md)
   - [GitQL SDK](docs/sdk.md)
 
