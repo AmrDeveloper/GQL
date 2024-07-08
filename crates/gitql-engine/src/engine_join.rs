@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use gitql_ast::statement::Join;
 use gitql_ast::statement::JoinKind;
+use gitql_ast::statement::JoinOperand;
 use gitql_ast::statement::TableSelection;
 use gitql_core::environment::Environment;
 use gitql_core::object::Row;
@@ -30,21 +31,38 @@ pub(crate) fn apply_join_operation(
         return Ok(());
     }
 
+    let mut current_tables_rows: Vec<Row> = vec![];
+    let mut all_rows_hidden_count = 0;
+
     // Apply join operator depend on the join type
     for join in joins {
-        let left_rows = selected_rows_per_table.get(&join.left).unwrap();
-        let left_hidden_count = if let Some(count) = hidden_selection_per_table.get(&join.left) {
-            *count
-        } else {
-            0
-        };
+        let mut current_join_rows: Vec<Row> = vec![];
 
-        let right_rows = selected_rows_per_table.get(&join.right).unwrap();
-        let right_hidden_count = if let Some(count) = hidden_selection_per_table.get(&join.right) {
-            *count
-        } else {
-            0
-        };
+        let left_rows: &Vec<Row>;
+        let left_hidden_count: usize;
+
+        let right_rows: &Vec<Row>;
+        let right_hidden_count: usize;
+
+        match &join.operand {
+            JoinOperand::OuterAndInner(outer, inner) => {
+                left_hidden_count = *hidden_selection_per_table.get(outer).unwrap_or(&0);
+                right_hidden_count = *hidden_selection_per_table.get(inner).unwrap_or(&0);
+                all_rows_hidden_count += left_hidden_count + right_hidden_count;
+
+                left_rows = selected_rows_per_table.get(outer).unwrap();
+                right_rows = selected_rows_per_table.get(inner).unwrap();
+            }
+
+            JoinOperand::Inner(inner) => {
+                left_hidden_count = all_rows_hidden_count;
+                right_hidden_count = *hidden_selection_per_table.get(inner).unwrap_or(&0);
+                all_rows_hidden_count += right_hidden_count;
+
+                left_rows = &current_tables_rows;
+                right_rows = selected_rows_per_table.get(inner).unwrap();
+            }
+        }
 
         // Perform nested loops straight forward join algorithm
         for outer in left_rows {
@@ -54,20 +72,20 @@ pub(crate) fn apply_join_operation(
                 joined_row.append(&mut outer.values.clone());
 
                 let inner_rows = inner.values.clone();
-                let inner_hidden_values = &inner_rows[0..left_hidden_count];
+                let inner_hidden_values = &inner_rows[0..right_hidden_count];
                 joined_row.splice(
-                    right_hidden_count..right_hidden_count,
+                    left_hidden_count..left_hidden_count,
                     inner_hidden_values.to_vec(),
                 );
 
-                let inner_other_values = &inner_rows[left_hidden_count..];
+                let inner_other_values = &inner_rows[right_hidden_count..];
                 joined_row.extend_from_slice(inner_other_values);
 
                 // If join has predicate, insert the joined row only if the predicate value is true
                 if let Some(predicate) = &join.predicate {
                     let predicate_value = evaluate_expression(env, predicate, titles, &joined_row)?;
                     if predicate_value.as_bool() {
-                        all_rows.push(Row { values: joined_row });
+                        current_join_rows.push(Row { values: joined_row });
                         continue;
                     }
 
@@ -99,10 +117,18 @@ pub(crate) fn apply_join_operation(
                 }
 
                 // If the condition has no predicate, just insert it
-                all_rows.push(Row { values: joined_row });
+                current_join_rows.push(Row { values: joined_row });
             }
         }
+
+        // Clear the previous join rows if exists
+        current_tables_rows.clear();
+        // Set the current tables rows as the result of the join
+        current_tables_rows.append(&mut current_join_rows);
     }
+
+    // Push the result to the all_rows ref
+    all_rows.append(&mut current_tables_rows);
 
     Ok(())
 }

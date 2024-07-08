@@ -71,9 +71,15 @@ pub enum JoinKind {
     Default,
 }
 
+pub enum JoinOperand {
+    /// Used when JOIN is used first time on query, X JOIN Y,
+    OuterAndInner(String, String),
+    /// Used for JOIN that used afrer first time, JOIN Z
+    Inner(String),
+}
+
 pub struct Join {
-    pub left: String,
-    pub right: String,
+    pub operand: JoinOperand,
     pub kind: JoinKind,
     pub predicate: Option<Box<dyn Expression>>,
 }

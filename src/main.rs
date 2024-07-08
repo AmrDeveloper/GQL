@@ -27,7 +27,7 @@ mod git_schema;
 
 fn main() {
     if cfg!(debug_assertions) {
-        std::env::set_var("RUST_BACKTRACE", "1");
+        std::env::set_var("RUST_BACKTRACE", "full");
         std::env::set_var("RUST_LIB_BACKTRACE", "1");
     }
 

@@ -763,8 +763,8 @@ fn parse_from_option(
         *position += 1;
 
         // Parse Joins
-        // Convert it to white when supporting Multi different joins
-        if *position < tokens.len() && is_join_token(&tokens[*position]) {
+        let mut number_previous_of_joines = 0;
+        while *position < tokens.len() && is_join_token(&tokens[*position]) {
             let join_token = &tokens[*position];
 
             // The default join type now is cross join because we don't support `ON` Condition
@@ -840,7 +840,7 @@ fn parse_from_option(
             }
 
             // Make sure user set predicate condition for LEFT or RIGHT JOIN
-            if predicate.is_none() {
+            if predicate.is_none() && matches!(join_kind, JoinKind::Right | JoinKind::Left) {
                 return Err(Diagnostic::error(
                     "You must set predicate condition using `ON` Keyword for LEFT OR RIHTH JOINS",
                 )
@@ -848,12 +848,19 @@ fn parse_from_option(
                 .as_boxed());
             }
 
+            let join_operand = if number_previous_of_joines == 0 {
+                JoinOperand::OuterAndInner(table_name.to_string(), other_table_name.to_string())
+            } else {
+                JoinOperand::Inner(other_table_name.to_string())
+            };
+
             joins.push(Join {
-                left: table_name.to_string(),
-                right: other_table_name.to_string(),
+                operand: join_operand,
                 kind: join_kind,
                 predicate,
-            })
+            });
+
+            number_previous_of_joines += 1;
         }
     }
     Ok(())
