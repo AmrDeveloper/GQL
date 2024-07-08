@@ -816,7 +816,7 @@ fn parse_from_option(
             let other_table_name = &other_table.literal;
 
             // Make sure the RIGHT and LEFT tables names are not the same
-            if table_name == other_table_name {
+            if number_previous_of_joines == 0 && table_name == other_table_name {
                 return Err(Diagnostic::error(
                     "The two tables of join must be unique or have different alias",
                 )

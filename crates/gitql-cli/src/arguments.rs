@@ -1,5 +1,5 @@
-
 #[derive(Debug, PartialEq)]
+
 /// Represent the different type of available formats
 pub enum OutputFormat {
     /// Render the output as table
