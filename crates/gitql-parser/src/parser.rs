@@ -805,7 +805,9 @@ fn parse_from_option(
             }
 
             // Consume `JOIN` keyword
+            let join_location = tokens[*position].location;
             *position += 1;
+
             if *position >= tokens.len() || tokens[*position].kind != TokenKind::Symbol {
                 return Err(Diagnostic::error("Expect table name after `JOIN` keyword")
                     .with_location(get_safe_location(tokens, *position))
@@ -844,7 +846,7 @@ fn parse_from_option(
                 return Err(Diagnostic::error(
                     "You must set predicate condition using `ON` Keyword for LEFT OR RIHTH JOINS",
                 )
-                .with_location(get_safe_location(tokens, *position))
+                .with_location(join_location)
                 .as_boxed());
             }
 
