@@ -46,3 +46,14 @@ You can select rows with unique fields using the `distinct on` keyword with one 
 ```sql
 SELECT DISTINCT ON (author_name) title AS tt FROM commits
 ```
+
+### Joins
+
+You can perform one or more JOIN to join two tables together, you can use one of four different join types,
+which are Inner, Cross, Left and Right outer JOINS and also filter by on predicate condition.
+
+```sql
+SELECT COUNT() FROM tags JOIN branches
+SELECT COUNT() FROM tags LEFT JOIN branches ON commit_count > 1
+SELECT COUNT() FROM tags RIGHT JOIN branches ON commit_count > 1
+```
