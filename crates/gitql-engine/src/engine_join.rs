@@ -64,6 +64,11 @@ pub(crate) fn apply_join_operation(
             }
         }
 
+        // Don't apply CROSS JOIN if left or right rows are empty
+        if join.kind == JoinKind::Cross && (left_rows.is_empty() || right_rows.is_empty()) {
+            continue;
+        }
+
         // Perform nested loops straight forward join algorithm
         for outer in left_rows {
             for inner in right_rows {
