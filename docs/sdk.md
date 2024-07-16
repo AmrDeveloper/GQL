@@ -1,6 +1,7 @@
 The architecture for GitQL designed to enable you to embedded the full engine with all required components and work with dynamic data so for example you can run the SQL query on files, API response, So this design help you to easy create a tool that can run SQL like query on any structured data such as Files, API Response, Logs, Abstract syntax tree ...etc.
 
 ## SDK Components
+
 | Component    |                  Description                  |                      Install |
 | ------------ | :-------------------------------------------: | ---------------------------: |
 | gitql-core   |       Core components Types and Values        |   `cargo install gitql-core` |
@@ -15,6 +16,7 @@ To use the GitQL SDK with different data you need to define two things `Schema` 
 Note: Most of the times you may don't need to use the `gitql-cli` component and write your own args parser using `clap` or implement your own code.
 
 ### Define your own Schema
+
 To allow using GitQL SDK on different data you need to define the data schema so it can be used to validate the symbols and types on the query.
 
 The Schema is just a 2 maps
@@ -22,18 +24,18 @@ The Schema is just a 2 maps
 The tables Fields names map is used to define which tables we expect and what fields each table contains for example for Files schema.
 
 ```rs
-use lazy_static::lazy_static;
 use std::collections::HashMap;
 
-lazy_static! {
-    pub static ref TABLES_FIELDS_TYPES: HashMap<&'static str, DataType> = {
+pub fn tables_fields_types() -> &'static HashMap<&'static str, DataType> {
+    static HASHMAP: OnceLock<HashMap<&'static str, DataType>> = OnceLock::new();
+    HASHMAP.get_or_init(|| {
         let mut map = HashMap::new();
         map.insert("path", DataType::Text);
         map.insert("parent", DataType::Text);
         map.insert("extension", DataType::Text);
-        map.insert("size", DataType::Integer);
+        map.insert("size", DataType::Text);
         map
-    };
+    })
 }
 ```
 
@@ -41,15 +43,15 @@ The other map is for types so it define the type of each field on the schema for
 
 ```rs
 use gitql_ast::types::DataType;
-use lazy_static::lazy_static;
 use std::collections::HashMap;
 
-lazy_static! {
-    pub static ref TABLES_FIELDS_NAMES: HashMap<&'static str, Vec<&'static str>> = {
+pub fn tables_fields_names() -> &'static HashMap<&'static str, Vec<&'static str>> {
+    static HASHMAP: OnceLock<HashMap<&'static str, Vec<&'static str>>> = OnceLock::new();
+    HASHMAP.get_or_init(|| {
         let mut map = HashMap::new();
-        map.insert("files", vec!["path", "parent", "extension", "size"]);
+         map.insert("files", vec!["path", "parent", "extension", "size"]);
         map
-    };
+    })
 }
 ```
 
@@ -59,8 +61,8 @@ Then create the Schema object from the two maps
 use gitql_ast::schema::Schema;
 
 let schema = Schema {
-    tables_fields_names: TABLES_FIELDS_NAMES.to_owned(),
-    tables_fields_types: TABLES_FIELDS_TYPES.to_owned(),
+    tables_fields_names: tables_fields_names().to_owned(),
+    tables_fields_types: tables_fields_types().to_owned(),
 };
 ```
 
@@ -92,36 +94,18 @@ impl FileDataProvider {
 }
 
 impl DataProvider for FileDataProvider {
-    fn provide(
-        &self,
-        env: &mut Environment,
-        _table: &str,
-        fields_names: &[String],
-        titles: &[String],
-        fields_values: &[Box<dyn Expression>],
-    ) -> Result<GitQLObject, String> {
+    fn provide(&self, table: &str, selected_columns: &[String]) -> Result<Vec<Row>, String> {
         let files = traverse_file_path(&self.base_path);
         let mut groups: Vec<Group> = vec![];
         let mut rows: Vec<Row> = vec![];
 
-        let names_len = fields_names.len() as i64;
-        let values_len = fields_values.len() as i64;
-        let padding = names_len - values_len;
+        let names_len = selected_columns.len() as i64;
 
         for file in files {
             let mut values: Vec<Value> = vec![];
 
             for index in 0..names_len {
-                let field_name = &fields_names[index as usize];
-
-                if (index - padding) >= 0 {
-                    let value = &fields_values[(index - padding) as usize];
-                    if value.as_any().downcast_ref::<SymbolExpression>().is_none() {
-                        let evaluated = evaluate_expression(env, value, titles, &values);
-                        values.push(evaluated.unwrap_or(Value::Null));
-                        continue;
-                    }
-                }
+                let field_name = &selected_columns[index as usize];
 
                 if field_name == "path" {
                     let path = Path::new(&file);
@@ -164,11 +148,7 @@ impl DataProvider for FileDataProvider {
             rows.push(Row { values });
         }
 
-        groups.push(Group { rows });
-        Ok(GitQLObject {
-            titles: titles.to_vec(),
-            groups,
-        })
+        Ok(rows)
     }
 }
 
@@ -208,8 +188,8 @@ let base_path = ...;
 let query = ...;
 
 let schema = Schema {
-    tables_fields_names: TABLES_FIELDS_NAMES.to_owned(),
-    tables_fields_types: TABLES_FIELDS_TYPES.to_owned(),
+    tables_fields_names: tables_fields_names().to_owned(),
+    tables_fields_types: tables_fields_types().to_owned(),
 };
 
 // Register default standard and aggregation function or add your own with modifications
@@ -258,48 +238,11 @@ if let SelectedGroups(mut groups, hidden_selection) = engine_result {
             render::render_objects(&mut groups, &hidden_selection, pagination, page_size);
         }
         OutputFormat::JSON => {
-            let mut indexes = vec![];
-            for (index, title) in groups.titles.iter().enumerate() {
-                if hidden_selection.contains(title) {
-                    indexes.insert(0, index);
-                }
-            }
-
-            if groups.len() > 1 {
-                groups.flat()
-            }
-
-            for index in indexes {
-                groups.titles.remove(index);
-                for row in &mut groups.groups[0].rows {
-                    row.values.remove(index);
-                }
-            }
-
             if let Ok(json) = groups.as_json() {
                 println!("{}", json);
             }
         }
         OutputFormat::CSV => {
-            let mut indexes = vec![];
-            for (index, title) in groups.titles.iter().enumerate() {
-                if hidden_selection.contains(title) {
-                    indexes.insert(0, index);
-                }
-            }
-
-            if groups.len() > 1 {
-                groups.flat()
-            }
-
-            for index in indexes {
-                groups.titles.remove(index);
-
-                for row in &mut groups.groups[0].rows {
-                    row.values.remove(index);
-                }
-            }
-
             if let Ok(csv) = groups.as_csv() {
                 println!("{}", csv);
             }
