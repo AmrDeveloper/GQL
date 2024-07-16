@@ -206,49 +206,11 @@ fn execute_gitql_query(
                 );
             }
             OutputFormat::JSON => {
-                let mut indexes = vec![];
-                for (index, title) in groups.titles.iter().enumerate() {
-                    if hidden_selection.contains(title) {
-                        indexes.insert(0, index);
-                    }
-                }
-
-                if groups.len() > 1 {
-                    groups.flat()
-                }
-
-                for index in indexes {
-                    groups.titles.remove(index);
-
-                    for row in &mut groups.groups[0].rows {
-                        row.values.remove(index);
-                    }
-                }
-
                 if let Ok(json) = groups.as_json() {
                     println!("{}", json);
                 }
             }
             OutputFormat::CSV => {
-                let mut indexes = vec![];
-                for (index, title) in groups.titles.iter().enumerate() {
-                    if hidden_selection.contains(title) {
-                        indexes.insert(0, index);
-                    }
-                }
-
-                if groups.len() > 1 {
-                    groups.flat()
-                }
-
-                for index in indexes {
-                    groups.titles.remove(index);
-
-                    for row in &mut groups.groups[0].rows {
-                        row.values.remove(index);
-                    }
-                }
-
                 if let Ok(csv) = groups.as_csv() {
                     println!("{}", csv);
                 }
