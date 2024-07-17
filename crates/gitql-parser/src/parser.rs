@@ -1902,6 +1902,7 @@ fn parse_factor_expression(
         let factor_operator = match operator.kind {
             TokenKind::Star => ArithmeticOperator::Star,
             TokenKind::Slash => ArithmeticOperator::Slash,
+            TokenKind::Caret => ArithmeticOperator::Exponentiation,
             _ => ArithmeticOperator::Modulus,
         };
 
@@ -2920,6 +2921,7 @@ fn is_factor_operator(token: &Token) -> bool {
     token.kind == TokenKind::Star
         || token.kind == TokenKind::Slash
         || token.kind == TokenKind::Percentage
+        || token.kind == TokenKind::Caret
 }
 
 #[inline(always)]

@@ -12,6 +12,7 @@ pub enum ArithmeticOperator {
     Star,
     Slash,
     Modulus,
+    Exponentiation,
 }
 
 #[derive(PartialEq)]

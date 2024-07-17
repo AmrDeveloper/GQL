@@ -422,6 +422,7 @@ fn evaluate_arithmetic(
         ArithmeticOperator::Star => lhs.mul(&rhs),
         ArithmeticOperator::Slash => lhs.div(&rhs),
         ArithmeticOperator::Modulus => lhs.modulus(&rhs),
+        ArithmeticOperator::Exponentiation => lhs.pow(&rhs),
     }
 }
 

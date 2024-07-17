@@ -92,6 +92,7 @@ pub enum TokenKind {
     Star,
     Slash,
     Percentage,
+    Caret,
 
     Comma,
     Dot,
@@ -319,6 +320,24 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
                 location,
                 kind: TokenKind::Percentage,
                 literal: "%".to_owned(),
+            };
+
+            tokens.push(token);
+            position += 1;
+            continue;
+        }
+
+        // Caret
+        if char == '^' {
+            let location = Location {
+                start: column_start,
+                end: position,
+            };
+
+            let token = Token {
+                location,
+                kind: TokenKind::Caret,
+                literal: "^".to_owned(),
             };
 
             tokens.push(token);

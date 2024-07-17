@@ -4,9 +4,10 @@
 | -------- | ------------------- |
 | +        | addition            |
 | -        | subtraction         |
-| *        | multiplication      |
+| \*       | multiplication      |
 | /        | division            |
 | %        | modulo              |
+| ^        | exponentiation      |
 | ~        | bitwise NOT         |
 | &        | bitwise AND         |
 | \|       | bitwise OR          |

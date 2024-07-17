@@ -290,9 +290,20 @@ impl Expression for ArithmeticExpression {
     }
 
     fn expr_type(&self, scope: &Environment) -> DataType {
-        if self.left.expr_type(scope).is_int() && self.right.expr_type(scope).is_int() {
+        let lhs_type = self.left.expr_type(scope);
+        let rhs_type = self.right.expr_type(scope);
+
+        if self.operator == ArithmeticOperator::Exponentiation {
+            if lhs_type.is_float() {
+                return DataType::Float;
+            }
             return DataType::Integer;
         }
+
+        if lhs_type.is_int() && rhs_type.is_int() {
+            return DataType::Integer;
+        }
+
         DataType::Float
     }
 

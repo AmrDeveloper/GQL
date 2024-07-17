@@ -230,7 +230,7 @@ impl Value {
             return Ok(Value::Float(self.as_float() / other.as_int() as f64));
         }
 
-        Ok(Value::Integer(0))
+        Ok(Value::Null)
     }
 
     pub fn modulus(&self, other: &Value) -> Result<Value, String> {
@@ -264,6 +264,38 @@ impl Value {
         }
 
         Ok(Value::Integer(0))
+    }
+
+    pub fn pow(&self, other: &Value) -> Result<Value, String> {
+        let self_type = self.data_type();
+        let other_type = other.data_type();
+
+        if self_type.is_int() && other_type.is_int() {
+            let other = other.as_int();
+            if other < 0 {
+                return Err(format!("Attempt to perform `{} ^ {}`", self, other));
+            }
+            return Ok(Value::Integer(i64::pow(self.as_int(), other as u32)));
+        }
+
+        if self_type.is_float() && other_type.is_float() {
+            return Ok(Value::Float(f64::powf(self.as_float(), other.as_float())));
+        }
+
+        if self_type.is_float() && other_type.is_int() {
+            let other = other.as_int();
+            if other < 0 {
+                return Err(format!("Attempt to perform `{} ^ {}`", self, other));
+            }
+            return Ok(Value::Float(f64::powi(self.as_float(), other as i32)));
+        }
+
+        if self_type.is_int() && other_type.is_float() {
+            let expr: u32 = other.as_float() as u32;
+            return Ok(Value::Integer(i64::pow(self.as_int(), expr)));
+        }
+
+        Ok(Value::Null)
     }
 
     pub fn data_type(&self) -> DataType {
