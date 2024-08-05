@@ -165,7 +165,13 @@ fn execute_select_statement(
             table_titles.push(get_column_name(alias_table, selected_column));
         }
 
-        let selected_rows = data_provider.provide(table_name, selected_columns)?;
+        // Call the provider only if table name is not empty
+        let selected_rows: Vec<Row> = if table_name.is_empty() {
+            vec![Row { values: vec![] }]
+        } else {
+            data_provider.provide(table_name, selected_columns)?
+        };
+
         selected_rows_per_table.insert(table_name.to_string(), selected_rows);
 
         // Append hidden selection in the right position
