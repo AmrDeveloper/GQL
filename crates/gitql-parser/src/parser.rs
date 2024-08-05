@@ -2480,8 +2480,6 @@ fn parse_symbol_expression(
         context.projection_locations.push(location);
     }
 
-    *position += 1;
-
     if context.has_select_statement {
         // Replace name by alias if it used after select statement
         // This workaround will help to execute query like
@@ -2501,6 +2499,9 @@ fn parse_symbol_expression(
             context.hidden_selections.push(value.to_string());
         }
     }
+
+    // Consume Symbol
+    *position += 1;
 
     Ok(Box::new(SymbolExpression { value }))
 }
