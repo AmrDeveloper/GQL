@@ -34,6 +34,7 @@ const FIXED_LOGICAL_PLAN: [&str; 8] = [
 pub enum EvaluationResult {
     Do(Value),
     SelectedGroups(GitQLObject, Vec<std::string::String>),
+    SelectedInfo,
     SetGlobalVariable,
 }
 
@@ -149,6 +150,21 @@ fn evaluate_select_query(
         if group.len() > 1 {
             group.rows.drain(1..);
         }
+    }
+
+    // Into statement must be executed last after flatted and remove hidden selections
+    if statements_map.contains_key("into") {
+        let into_statement = statements_map.get_mut("into").unwrap();
+        execute_statement(
+            env,
+            into_statement,
+            data_provider,
+            &mut gitql_object,
+            &mut alias_table,
+            &hidden_selections_map,
+        )?;
+
+        return Ok(EvaluationResult::SelectedInfo);
     }
 
     // Return the groups and hidden selections to be used later in GUI or TUI ...etc

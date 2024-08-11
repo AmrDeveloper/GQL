@@ -22,7 +22,6 @@ pub enum TokenKind {
     Show,
     RegExp,
 
-    /// Joins
     Join,
     Left,
     Right,
@@ -35,6 +34,9 @@ pub enum TokenKind {
     Then,
     Else,
     End,
+
+    Into,
+    Outfile,
 
     Between,
     DotDot,
@@ -50,13 +52,9 @@ pub enum TokenKind {
 
     As,
 
-    /// Left parenthesis `(`
     LeftParen,
-    /// Right parenthesis `)`
     RightParen,
-    /// Left bracket `[`
     LeftBracket,
-    /// Right bracket `]`
     RightBracket,
 
     LogicalOr,
@@ -1141,6 +1139,10 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "cross" => TokenKind::Cross,
         "inner" => TokenKind::Inner,
         "outer" => TokenKind::Outer,
+
+        // Select into
+        "into" => TokenKind::Into,
+        "outfile" => TokenKind::Outfile,
 
         // Integer division and Modulo operator
         "div" => TokenKind::Slash,

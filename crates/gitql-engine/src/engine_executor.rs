@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use std::hash::DefaultHasher;
 use std::hash::Hash;
 use std::hash::Hasher;
+use std::io::Write;
 
 use gitql_ast::expression::Expression;
 use gitql_ast::expression::ExpressionKind;
@@ -14,6 +15,7 @@ use gitql_ast::statement::DoStatement;
 use gitql_ast::statement::GlobalVariableStatement;
 use gitql_ast::statement::GroupByStatement;
 use gitql_ast::statement::HavingStatement;
+use gitql_ast::statement::IntoStatement;
 use gitql_ast::statement::LimitStatement;
 use gitql_ast::statement::OffsetStatement;
 use gitql_ast::statement::OrderByStatement;
@@ -105,6 +107,10 @@ pub fn execute_statement(
                 .downcast_ref::<AggregationsStatement>()
                 .unwrap();
             execute_aggregation_function_statement(env, statement, gitql_object, alias_table)
+        }
+        Into => {
+            let statement = statement.as_any().downcast_ref::<IntoStatement>().unwrap();
+            execute_into_statement(statement, gitql_object)
         }
         GlobalVariable => {
             let statement = statement
@@ -556,6 +562,39 @@ fn execute_aggregation_function_statement(
         if groups_count > 1 {
             group.rows.drain(1..);
         }
+    }
+
+    Ok(())
+}
+
+fn execute_into_statement(
+    statement: &IntoStatement,
+    gitql_object: &mut GitQLObject,
+) -> Result<(), String> {
+    let mut buffer = String::new();
+
+    // Headers
+    let header = gitql_object.titles.join(",");
+    buffer.push_str(&header);
+    buffer.push('\n');
+
+    // Rows
+    let rows = &gitql_object.groups[0].rows;
+    for row in rows {
+        let row_values: Vec<String> = row.values.iter().map(|r| r.to_string()).collect();
+        buffer.push_str(&row_values.join(","));
+        buffer.push('\n');
+    }
+
+    let file_result = std::fs::File::create(statement.file_path.clone());
+    if let Err(error) = file_result {
+        return Err(error.to_string());
+    }
+
+    let mut file = file_result.ok().unwrap();
+    let write_result = file.write_all(buffer.as_bytes());
+    if let Err(error) = write_result {
+        return Err(error.to_string());
     }
 
     Ok(())

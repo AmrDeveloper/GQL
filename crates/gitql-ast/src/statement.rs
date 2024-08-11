@@ -14,6 +14,7 @@ pub enum StatementKind {
     GroupBy,
     AggregateFunction,
     GlobalVariable,
+    Into,
 }
 
 pub trait Statement {
@@ -224,6 +225,20 @@ impl Statement for GlobalVariableStatement {
 
     fn kind(&self) -> StatementKind {
         StatementKind::GlobalVariable
+    }
+}
+
+pub struct IntoStatement {
+    pub file_path: String,
+}
+
+impl Statement for IntoStatement {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn kind(&self) -> StatementKind {
+        StatementKind::Into
     }
 }
 

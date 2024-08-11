@@ -359,6 +359,16 @@ fn parse_select_query(
                 let statement = parse_order_by_statement(&mut context, env, tokens, position)?;
                 statements.insert("order", statement);
             }
+            TokenKind::Into => {
+                if statements.contains_key("into") {
+                    return Err(Diagnostic::error("You already used `INTO` statement")
+                        .add_note("Can't use more than one `INTO` statement in the same query")
+                        .with_location(token.location)
+                        .as_boxed());
+                }
+                let statement = parse_into_statement(tokens, position)?;
+                statements.insert("into", statement);
+            }
             TokenKind::Not => {
                 return Err(Diagnostic::error(
                     "Expects `REGEXP` or `IN` expression after this `NOT` keyword",
@@ -1137,6 +1147,45 @@ fn parse_order_by_statement(
     Ok(Box::new(OrderByStatement {
         arguments,
         sorting_orders,
+    }))
+}
+
+fn parse_into_statement(
+    tokens: &[Token],
+    position: &mut usize,
+) -> Result<Box<dyn Statement>, Box<Diagnostic>> {
+    // Consume `INTO` keyword
+    *position += 1;
+
+    // Make sure user define explicity the into type
+    if *position >= tokens.len() || tokens[*position].kind != TokenKind::Outfile {
+        return Err(
+            Diagnostic::error("Expect Keyword `OUTFILE` after keyword `INTO`")
+                .add_note("Currently only `INFO OUTFILE` is supported")
+                .with_location(get_safe_location(tokens, *position))
+                .as_boxed(),
+        );
+    }
+
+    // Consume `OUTFILE` keyword
+    *position += 1;
+
+    // Make sure user defined a file path as string literal
+    if *position >= tokens.len() || tokens[*position].kind != TokenKind::String {
+        return Err(
+            Diagnostic::error("Expect String literal as file path after OUTFILE keyword")
+                .with_location(get_safe_location(tokens, *position))
+                .as_boxed(),
+        );
+    }
+
+    let file_path = &tokens[*position].literal;
+
+    // Consume File path token
+    *position += 1;
+
+    Ok(Box::new(IntoStatement {
+        file_path: file_path.to_string(),
     }))
 }
 
