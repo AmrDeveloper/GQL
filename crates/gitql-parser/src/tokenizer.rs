@@ -37,6 +37,10 @@ pub enum TokenKind {
 
     Into,
     Outfile,
+    Lines,
+    Fields,
+    Enclosed,
+    Terminated,
 
     Between,
     DotDot,
@@ -1143,6 +1147,10 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         // Select into
         "into" => TokenKind::Into,
         "outfile" => TokenKind::Outfile,
+        "lines" => TokenKind::Lines,
+        "fields" => TokenKind::Fields,
+        "enclosed" => TokenKind::Enclosed,
+        "terminated" => TokenKind::Terminated,
 
         // Integer division and Modulo operator
         "div" => TokenKind::Slash,

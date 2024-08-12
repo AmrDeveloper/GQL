@@ -1184,8 +1184,145 @@ fn parse_into_statement(
     // Consume File path token
     *position += 1;
 
+    let mut lines_terminated = "\n";
+    let mut lines_terminated_used = false;
+
+    let mut fields_termianted = ",";
+    let mut fields_termianted_used = false;
+
+    let mut enclosed = "";
+    let mut enclosed_used = false;
+
+    while *position < tokens.len() {
+        let token = &tokens[*position];
+
+        if token.kind == TokenKind::Lines {
+            if lines_terminated_used {
+                return Err(
+                    Diagnostic::error("You already used `LINES TERMINATED` option")
+                        .with_location(tokens[*position].location)
+                        .as_boxed(),
+                );
+            }
+
+            // Consume `LINES` keyword
+            *position += 1;
+
+            if *position >= tokens.len() || tokens[*position].kind != TokenKind::Terminated {
+                return Err(
+                    Diagnostic::error("Expect `TERMINATED` keyword after `LINES` keyword")
+                        .with_location(get_safe_location(tokens, *position))
+                        .as_boxed(),
+                );
+            }
+
+            // Consume `TERMINATED` KEYWORD
+            *position += 1;
+
+            if *position >= tokens.len() || tokens[*position].kind != TokenKind::By {
+                return Err(Diagnostic::error("Expect `BY` after `TERMINATED` keyword")
+                    .with_location(get_safe_location(tokens, *position))
+                    .as_boxed());
+            }
+
+            // Consume `BY` keyword
+            *position += 1;
+
+            if *position >= tokens.len() || tokens[*position].kind != TokenKind::String {
+                return Err(Diagnostic::error(
+                    "Expect String literal as lines terminated value after BY keyword",
+                )
+                .with_location(get_safe_location(tokens, *position))
+                .as_boxed());
+            }
+
+            // Consume `LINES TERMINATED BY` Value
+            lines_terminated = &tokens[*position].literal;
+            lines_terminated_used = true;
+            *position += 1;
+            continue;
+        }
+
+        if token.kind == TokenKind::Fields {
+            if fields_termianted_used {
+                return Err(
+                    Diagnostic::error("You already used `FIELDS TERMINATED` option")
+                        .with_location(tokens[*position].location)
+                        .as_boxed(),
+                );
+            }
+
+            // Consume `FIELDS` keyword
+            *position += 1;
+
+            if *position >= tokens.len() || tokens[*position].kind != TokenKind::Terminated {
+                return Err(Diagnostic::error(
+                    "Expect `TERMINATED` keyword after `FIELDS` keyword",
+                )
+                .with_location(get_safe_location(tokens, *position))
+                .as_boxed());
+            }
+
+            // Consume `TERMINATED` KEYWORD
+            *position += 1;
+
+            if *position >= tokens.len() || tokens[*position].kind != TokenKind::By {
+                return Err(Diagnostic::error("Expect `BY` after `TERMINATED` keyword")
+                    .with_location(get_safe_location(tokens, *position))
+                    .as_boxed());
+            }
+
+            // Consume `BY` keyword
+            *position += 1;
+
+            if *position >= tokens.len() || tokens[*position].kind != TokenKind::String {
+                return Err(Diagnostic::error(
+                    "Expect String literal as Field terminated value after BY keyword",
+                )
+                .with_location(get_safe_location(tokens, *position))
+                .as_boxed());
+            }
+
+            // Consume `FIELD TERMINATED BY` Value
+            fields_termianted = &tokens[*position].literal;
+            fields_termianted_used = true;
+            *position += 1;
+            continue;
+        }
+
+        if token.kind == TokenKind::Enclosed {
+            if enclosed_used {
+                return Err(Diagnostic::error("You already used ENCLOSED option")
+                    .with_location(tokens[*position].location)
+                    .as_boxed());
+            }
+
+            // Consume `ENCLOSED` token
+            *position += 1;
+
+            if *position >= tokens.len() || tokens[*position].kind != TokenKind::String {
+                return Err(Diagnostic::error(
+                    "Expect String literal as enclosed value after ENCLOSED keyword",
+                )
+                .with_location(get_safe_location(tokens, *position))
+                .as_boxed());
+            }
+
+            // Consume `ENCLOSED` Value
+            enclosed = &tokens[*position].literal;
+            enclosed_used = true;
+            *position += 1;
+            continue;
+        }
+
+        break;
+    }
+
     Ok(Box::new(IntoStatement {
         file_path: file_path.to_string(),
+        lines_terminated: lines_terminated.to_string(),
+        fields_terminated: fields_termianted.to_string(),
+        enclosed: enclosed.to_string(),
     }))
 }
 

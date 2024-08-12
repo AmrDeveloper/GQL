@@ -574,16 +574,20 @@ fn execute_into_statement(
     let mut buffer = String::new();
 
     // Headers
-    let header = gitql_object.titles.join(",");
+    let header = gitql_object.titles.join(&statement.fields_terminated);
     buffer.push_str(&header);
-    buffer.push('\n');
+    buffer.push_str(&statement.lines_terminated);
 
     // Rows
     let rows = &gitql_object.groups[0].rows;
     for row in rows {
-        let row_values: Vec<String> = row.values.iter().map(|r| r.to_string()).collect();
-        buffer.push_str(&row_values.join(","));
-        buffer.push('\n');
+        let row_values: Vec<String> = row
+            .values
+            .iter()
+            .map(|r| value_to_string_with_optional_enclosing(r, &statement.enclosed))
+            .collect();
+        buffer.push_str(&row_values.join(&statement.fields_terminated));
+        buffer.push_str(&statement.lines_terminated);
     }
 
     let file_result = std::fs::File::create(statement.file_path.clone());
@@ -598,6 +602,14 @@ fn execute_into_statement(
     }
 
     Ok(())
+}
+
+#[inline(always)]
+fn value_to_string_with_optional_enclosing(value: &Value, enclosed: &String) -> String {
+    if enclosed.is_empty() {
+        return value.to_string();
+    }
+    format!("{}{}{}", enclosed, value, enclosed)
 }
 
 pub fn execute_global_variable_statement(

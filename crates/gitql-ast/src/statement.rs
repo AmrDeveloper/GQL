@@ -230,6 +230,9 @@ impl Statement for GlobalVariableStatement {
 
 pub struct IntoStatement {
     pub file_path: String,
+    pub lines_terminated: String,
+    pub fields_terminated: String,
+    pub enclosed: String,
 }
 
 impl Statement for IntoStatement {
