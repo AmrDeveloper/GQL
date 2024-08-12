@@ -57,3 +57,11 @@ SELECT COUNT() FROM tags JOIN branches
 SELECT COUNT() FROM tags LEFT JOIN branches ON commit_count > 1
 SELECT COUNT() FROM tags RIGHT JOIN branches ON commit_count > 1
 ```
+
+### Select ... INTO
+
+You can export the query result into external file using the syntax `INTO OUTFILE <File>`
+
+```sql
+SELECT name FROM branches INTO OUTFILE "branches.txt"
+```
