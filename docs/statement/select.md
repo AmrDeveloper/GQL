@@ -65,3 +65,10 @@ You can export the query result into external file using the syntax `INTO OUTFIL
 ```sql
 SELECT name FROM branches INTO OUTFILE "branches.txt"
 ```
+
+You can format the output result with options for example
+
+```sql
+SELECT * FROM branches INT OUTFILE "branches" FIELDS TERMINATED "," LINES TERMINATED "\n" ENCLOSED "|"
+```
+
