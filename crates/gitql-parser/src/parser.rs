@@ -1175,11 +1175,11 @@ fn parse_into_statement(
 
     // Make sure user defined a file path as string literal
     if *position >= tokens.len() || tokens[*position].kind != TokenKind::String {
-        return Err(
-            Diagnostic::error("Expect String literal as file path after OUTFILE keyword")
-                .with_location(get_safe_location(tokens, *position))
-                .as_boxed(),
-        );
+        return Err(Diagnostic::error(
+            "Expect String literal as file path after OUTFILE or DUMPFILE keyword",
+        )
+        .with_location(get_safe_location(tokens, *position))
+        .as_boxed());
     }
 
     let file_path = &tokens[*position].literal;
@@ -1187,20 +1187,12 @@ fn parse_into_statement(
     // Consume File path token
     *position += 1;
 
-    // DUMPFILE take no option and should return the node here
-    if *file_format_kind == TokenKind::Dumpfile {
-        return Ok(Box::new(IntoStatement {
-            file_path: file_path.to_string(),
-            lines_terminated: String::new(),
-            fields_terminated: String::new(),
-            enclosed: String::new(),
-        }));
-    }
+    let is_dump_file = *file_format_kind == TokenKind::Dumpfile;
 
-    let mut lines_terminated = "\n";
+    let mut lines_terminated = if is_dump_file { "" } else { "\n" };
     let mut lines_terminated_used = false;
 
-    let mut fields_termianted = ",";
+    let mut fields_termianted = if is_dump_file { "" } else { "," };
     let mut fields_termianted_used = false;
 
     let mut enclosed = "";
@@ -1210,6 +1202,15 @@ fn parse_into_statement(
         let token = &tokens[*position];
 
         if token.kind == TokenKind::Lines {
+            if is_dump_file {
+                return Err(Diagnostic::error(
+                    "`LINES TERMINATED` option can't be used with INTO DUMPFILE",
+                )
+                .add_help("To customize the format replace `DUMPFILE` with `OUTFILE` option")
+                .with_location(tokens[*position].location)
+                .as_boxed());
+            }
+
             if lines_terminated_used {
                 return Err(
                     Diagnostic::error("You already used `LINES TERMINATED` option")
@@ -1257,6 +1258,15 @@ fn parse_into_statement(
         }
 
         if token.kind == TokenKind::Fields {
+            if is_dump_file {
+                return Err(Diagnostic::error(
+                    "`FIELDS TERMINATED` option can't be used with INTO DUMPFILE",
+                )
+                .add_help("To customize the format replace `DUMPFILE` with `OUTFILE` option")
+                .with_location(tokens[*position].location)
+                .as_boxed());
+            }
+
             if fields_termianted_used {
                 return Err(
                     Diagnostic::error("You already used `FIELDS TERMINATED` option")
@@ -1304,6 +1314,15 @@ fn parse_into_statement(
         }
 
         if token.kind == TokenKind::Enclosed {
+            if is_dump_file {
+                return Err(Diagnostic::error(
+                    "`ENCLOSED` option can't be used with INTO DUMPFILE",
+                )
+                .add_help("To customize the format replace `DUMPFILE` with `OUTFILE` option")
+                .with_location(tokens[*position].location)
+                .as_boxed());
+            }
+
             if enclosed_used {
                 return Err(Diagnostic::error("You already used ENCLOSED option")
                     .with_location(tokens[*position].location)
