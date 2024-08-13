@@ -1158,16 +1158,19 @@ fn parse_into_statement(
     *position += 1;
 
     // Make sure user define explicity the into type
-    if *position >= tokens.len() || tokens[*position].kind != TokenKind::Outfile {
-        return Err(
-            Diagnostic::error("Expect Keyword `OUTFILE` after keyword `INTO`")
-                .add_note("Currently only `INFO OUTFILE` is supported")
-                .with_location(get_safe_location(tokens, *position))
-                .as_boxed(),
-        );
+    if *position >= tokens.len()
+        || (tokens[*position].kind != TokenKind::Outfile
+            && tokens[*position].kind != TokenKind::Dumpfile)
+    {
+        return Err(Diagnostic::error(
+            "Expect Keyword `OUTFILE` or `DUMPFILE` after keyword `INTO`",
+        )
+        .with_location(get_safe_location(tokens, *position))
+        .as_boxed());
     }
 
-    // Consume `OUTFILE` keyword
+    // Consume `OUTFILE` or `DUMPFILE` keyword
+    let file_format_kind = &tokens[*position].kind;
     *position += 1;
 
     // Make sure user defined a file path as string literal
@@ -1183,6 +1186,16 @@ fn parse_into_statement(
 
     // Consume File path token
     *position += 1;
+
+    // DUMPFILE take no option and should return the node here
+    if *file_format_kind == TokenKind::Dumpfile {
+        return Ok(Box::new(IntoStatement {
+            file_path: file_path.to_string(),
+            lines_terminated: String::new(),
+            fields_terminated: String::new(),
+            enclosed: String::new(),
+        }));
+    }
 
     let mut lines_terminated = "\n";
     let mut lines_terminated_used = false;

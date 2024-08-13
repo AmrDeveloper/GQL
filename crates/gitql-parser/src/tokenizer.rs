@@ -37,6 +37,7 @@ pub enum TokenKind {
 
     Into,
     Outfile,
+    Dumpfile,
     Lines,
     Fields,
     Enclosed,
@@ -1147,6 +1148,7 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         // Select into
         "into" => TokenKind::Into,
         "outfile" => TokenKind::Outfile,
+        "dumpfile" => TokenKind::Dumpfile,
         "lines" => TokenKind::Lines,
         "fields" => TokenKind::Fields,
         "enclosed" => TokenKind::Enclosed,
