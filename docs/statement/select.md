@@ -69,7 +69,7 @@ SELECT name FROM branches INTO OUTFILE "branches.txt"
 You can format the output result with options for example
 
 ```sql
-SELECT * FROM branches INT OUTFILE "branches" FIELDS TERMINATED "," LINES TERMINATED "\n" ENCLOSED "|"
+SELECT * FROM branches INTO OUTFILE "branches" FIELDS TERMINATED BY "," LINES TERMINATED BY "\n" ENCLOSED "|"
 ```
 
 If you want to just dump the data without any format you can use `INTO DUMPFILE`
