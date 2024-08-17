@@ -567,14 +567,14 @@ dependencies = [
 
 [[package]]
 name = "gitql-ast"
-version = "0.23.0"
+version = "0.23.1"
 dependencies = [
  "gitql-core",
 ]
 
 [[package]]
 name = "gitql-cli"
-version = "0.26.0"
+version = "0.26.1"
 dependencies = [
  "comfy-table",
  "gitql-ast",
@@ -585,7 +585,7 @@ dependencies = [
 
 [[package]]
 name = "gitql-core"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "chrono",
  "csv",
@@ -604,7 +604,7 @@ dependencies = [
 
 [[package]]
 name = "gitql-parser"
-version = "0.25.0"
+version = "0.25.1"
 dependencies = [
  "gitql-ast",
  "gitql-core",
@@ -612,7 +612,7 @@ dependencies = [
 
 [[package]]
 name = "gitql-std"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "chrono",
  "gitql-core",

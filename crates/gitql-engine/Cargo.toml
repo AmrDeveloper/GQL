@@ -10,7 +10,7 @@ keywords = ["cli", "gql", "language", "git", "sql"]
 categories = ["command-line-utilities"]
 
 [dependencies]
-gitql-core = { path = "../gitql-core", version = "0.2.0" }
-gitql-ast = { path = "../gitql-ast", version = "0.23.0" }
+gitql-core = { path = "../gitql-core", version = "0.3.0" }
+gitql-ast = { path = "../gitql-ast", version = "0.23.1" }
 regex = "1.10.4"
 chrono = "0.4.38"
