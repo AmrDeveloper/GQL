@@ -573,21 +573,26 @@ fn execute_into_statement(
 ) -> Result<(), String> {
     let mut buffer = String::new();
 
-    // Headers
-    let header = gitql_object.titles.join(&statement.fields_terminated);
-    buffer.push_str(&header);
-    buffer.push_str(&statement.lines_terminated);
+    let line_terminated_by = &statement.lines_terminated;
+    let field_termianted_by = &statement.fields_terminated;
+    let enclosing = &statement.enclosed;
 
-    // Rows
-    let rows = &gitql_object.groups[0].rows;
-    for row in rows {
-        let row_values: Vec<String> = row
-            .values
-            .iter()
-            .map(|r| value_to_string_with_optional_enclosing(r, &statement.enclosed))
-            .collect();
-        buffer.push_str(&row_values.join(&statement.fields_terminated));
-        buffer.push_str(&statement.lines_terminated);
+    // Headers
+    let header = gitql_object.titles.join(field_termianted_by);
+    buffer.push_str(&header);
+    buffer.push_str(line_terminated_by);
+
+    // Rows of the main group
+    if let Some(main_group) = gitql_object.groups.first() {
+        for row in &main_group.rows {
+            let row_values: Vec<String> = row
+                .values
+                .iter()
+                .map(|r| value_to_string_with_optional_enclosing(r, enclosing))
+                .collect();
+            buffer.push_str(&row_values.join(field_termianted_by));
+            buffer.push_str(line_terminated_by);
+        }
     }
 
     let file_result = std::fs::File::create(statement.file_path.clone());
