@@ -1,5 +1,19 @@
 # Change Log
 
+## Version 0.26.0 _(2024-08-17)_
+
+- Fix iagnostic position when parsing undefined symbol.
+- Improve handle error in data provider.
+- Don't apply CROSS join operator if one of the tables is empty.
+- Update docs for new Data provider design.
+- Remove un needed code for remove hidden selection after engine.
+- Support exponentiation operator.
+- Optimize the calling of data provider if table is empty.
+- Implement Select ... INTO OUTFILE.
+- Support INTO OUTFILE Terminated options and enclosed.
+- Implement Select ... into dumpfile feature.
+- Improve error messages when use options with dumpfile.
+
 ## Version 0.25.0 _(2024-07-09)_
 
 - Support JOIN more than two tables togther in same query.
