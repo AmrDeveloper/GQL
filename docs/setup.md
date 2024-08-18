@@ -20,6 +20,12 @@ winget install gitql
 scoop install gitql
 ```
 
+## Homebrew on MacOS and Linux
+
+```sh
+brew install gql
+```
+
 # On Single repository
 gitql <repository_path>
 
