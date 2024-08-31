@@ -31,3 +31,16 @@ pub fn array_dims(inputs: &[Value]) -> Value {
     let array_type = inputs[0].data_type();
     Value::Text(array_type.to_string())
 }
+
+pub fn array_replace(inputs: &[Value]) -> Value {
+    let array_type = inputs[0].data_type();
+    let mut array_values = inputs[0].as_array();
+    let from = &inputs[1];
+    let to = &inputs[2];
+    for element in &mut array_values {
+        if element.equals(from) {
+            *element = to.clone();
+        }
+    }
+    Value::Array(array_type, array_values)
+}
