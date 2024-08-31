@@ -7,7 +7,6 @@ use gitql_ast::expression::StringValueType;
 use gitql_ast::operator::PrefixUnaryOperator;
 use gitql_ast::statement::TableSelection;
 use gitql_core::environment::Environment;
-use gitql_core::signature::Signature;
 use gitql_core::types::DataType;
 
 use crate::diagnostic::Diagnostic;
@@ -272,7 +271,8 @@ pub fn check_function_call_arguments(
 
     // Type check the min required arguments
     for index in 0..min_arguments_count {
-        let parameter_type = parameters.get(index).unwrap();
+        let parameter_type =
+            resolve_dynamic_data_type(env, parameters, arguments, parameters.get(index).unwrap());
         let argument = arguments.get(index).unwrap();
 
         // Catch undefined arguments
@@ -287,7 +287,7 @@ pub fn check_function_call_arguments(
             .as_boxed());
         }
 
-        match is_expression_type_equals(env, argument, parameter_type) {
+        match is_expression_type_equals(env, argument, &parameter_type) {
             ExprTypeCheckResult::ImplicitCasted(new_expr) => {
                 arguments[index] = new_expr;
             }
@@ -311,7 +311,8 @@ pub fn check_function_call_arguments(
             return Ok(());
         }
 
-        let parameter_type = parameters.get(index).unwrap();
+        let parameter_type =
+            resolve_dynamic_data_type(env, parameters, arguments, parameters.get(index).unwrap());
         let argument = arguments.get(index).unwrap();
 
         // Catch undefined arguments
@@ -326,7 +327,7 @@ pub fn check_function_call_arguments(
             .as_boxed());
         }
 
-        match is_expression_type_equals(env, argument, parameter_type) {
+        match is_expression_type_equals(env, argument, &parameter_type) {
             ExprTypeCheckResult::ImplicitCasted(new_expr) => {
                 arguments[index] = new_expr;
             }
@@ -345,7 +346,8 @@ pub fn check_function_call_arguments(
 
     // Type check the variable parameters if exists
     if has_varargs_parameter {
-        let varargs_type = parameters.last().unwrap();
+        let varargs_type =
+            resolve_dynamic_data_type(env, parameters, arguments, parameters.last().unwrap());
         for index in last_optional_param_index..arguments_count {
             let argument = arguments.get(index).unwrap();
 
@@ -361,7 +363,7 @@ pub fn check_function_call_arguments(
                 .as_boxed());
             }
 
-            match is_expression_type_equals(env, argument, varargs_type) {
+            match is_expression_type_equals(env, argument, &varargs_type) {
                 ExprTypeCheckResult::ImplicitCasted(new_expr) => {
                     arguments[index] = new_expr;
                 }
@@ -533,29 +535,29 @@ pub fn prefix_unary_expected_type(op: &PrefixUnaryOperator) -> DataType {
     }
 }
 
-/// Resolve the return type of Std or Aggregation function and re resolve it if it variant or dynamic
-pub fn resolve_call_expression_return_type(
+/// Resolve dynamic data type depending on the parameters and arguments types
+pub fn resolve_dynamic_data_type(
     env: &Environment,
-    signature: &Signature,
-    arguments: &Vec<Box<dyn Expression>>,
+    parameters: &[DataType],
+    arguments: &[Box<dyn Expression>],
+    data_type: &DataType,
 ) -> DataType {
-    let mut return_type = signature.return_type.clone();
+    let mut resolved_data_type = data_type.clone();
+    if let DataType::Dynamic(calculate_type) = resolved_data_type {
+        resolved_data_type = calculate_type(parameters);
 
-    if let DataType::Dynamic(calculate_type) = return_type {
-        return_type = calculate_type(&signature.parameters);
-
-        // In Case that return type is variant for example [Int | Float] need to resolve it from arguments types
+        // In Case that data type is Any or Variant [Type1 | Type2...] need to resolve it from arguments types
         // To be able to use it with other expressions
-        if !arguments.is_empty() && return_type.is_variant() {
+        if !arguments.is_empty() && (resolved_data_type.is_variant() || resolved_data_type.is_any())
+        {
             let mut arguments_types = Vec::with_capacity(arguments.len());
             for argument in arguments {
                 arguments_types.push(argument.expr_type(env));
             }
-            return_type = calculate_type(&arguments_types);
+            resolved_data_type = calculate_type(&arguments_types);
         }
     }
-
-    return_type
+    resolved_data_type
 }
 
 /// Return a [Diagnostic] with common type mismatch error message

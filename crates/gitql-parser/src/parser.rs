@@ -29,7 +29,7 @@ use crate::type_checker::check_all_values_are_same_type;
 use crate::type_checker::check_function_call_arguments;
 use crate::type_checker::is_expression_type_equals;
 use crate::type_checker::prefix_unary_expected_type;
-use crate::type_checker::resolve_call_expression_return_type;
+use crate::type_checker::resolve_dynamic_data_type;
 use crate::type_checker::type_check_and_classify_selected_fields;
 use crate::type_checker::type_check_prefix_unary;
 use crate::type_checker::type_check_projection_symbols;
@@ -2472,8 +2472,14 @@ fn parse_function_call_expression(
                     function_name_location,
                 )?;
 
-                // Register function name with return type
-                let return_type = resolve_call_expression_return_type(env, signature, &arguments);
+                let return_type = resolve_dynamic_data_type(
+                    env,
+                    &signature.parameters,
+                    &arguments,
+                    &signature.return_type,
+                );
+
+                // Register function name with return type after resolving it
                 env.define(function_name.to_string(), return_type.clone());
 
                 return Ok(Box::new(CallExpression {
@@ -2512,8 +2518,14 @@ fn parse_function_call_expression(
                 let column_name = context.generate_column_name();
                 context.hidden_selections.push(column_name.to_string());
 
-                // Register aggregation generated name with return type
-                let return_type = resolve_call_expression_return_type(env, signature, &arguments);
+                let return_type = resolve_dynamic_data_type(
+                    env,
+                    &signature.parameters,
+                    &arguments,
+                    &signature.return_type,
+                );
+
+                // Register aggregation generated name with return type after resolving it
                 env.define(column_name.to_string(), return_type);
 
                 context.aggregations.insert(

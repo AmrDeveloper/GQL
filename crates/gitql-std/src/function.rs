@@ -5,9 +5,10 @@ use crate::number::*;
 use crate::regex::*;
 use crate::text::*;
 
+use gitql_core::dynamic_types::array_element_type_of_first_element;
+use gitql_core::dynamic_types::type_of_first_element;
 use gitql_core::signature::Function;
 use gitql_core::signature::Signature;
-use gitql_core::types::same_type_as_first_parameter;
 use gitql_core::types::DataType;
 use std::collections::HashMap;
 use std::sync::OnceLock;
@@ -507,7 +508,7 @@ pub fn standard_function_signatures() -> &'static HashMap<&'static str, Signatur
             "abs",
             Signature {
                 parameters: vec![DataType::Variant(vec![DataType::Integer, DataType::Float])],
-                return_type: DataType::Dynamic(same_type_as_first_parameter),
+                return_type: DataType::Dynamic(type_of_first_element),
             },
         );
         map.insert(
@@ -705,7 +706,7 @@ pub fn standard_function_signatures() -> &'static HashMap<&'static str, Signatur
             "array_shuffle",
             Signature {
                 parameters: vec![DataType::Array(Box::new(DataType::Any))],
-                return_type: DataType::Dynamic(same_type_as_first_parameter),
+                return_type: DataType::Dynamic(type_of_first_element),
             },
         );
         map.insert(
@@ -727,10 +728,10 @@ pub fn standard_function_signatures() -> &'static HashMap<&'static str, Signatur
             Signature {
                 parameters: vec![
                     DataType::Array(Box::new(DataType::Any)),
-                    DataType::Any,
-                    DataType::Any,
+                    DataType::Dynamic(array_element_type_of_first_element),
+                    DataType::Dynamic(array_element_type_of_first_element),
                 ],
-                return_type: DataType::Dynamic(same_type_as_first_parameter),
+                return_type: DataType::Dynamic(type_of_first_element),
             },
         );
         map
