@@ -22,6 +22,7 @@ pub fn aggregation_functions() -> &'static HashMap<&'static str, Aggregation> {
         map.insert("bool_or", aggregation_bool_or);
         map.insert("bit_and", aggregation_bit_and);
         map.insert("bit_or", aggregation_bit_or);
+        map.insert("bit_xor", aggregation_bit_xor);
         map
     })
 }
@@ -109,6 +110,13 @@ pub fn aggregation_function_signatures() -> &'static HashMap<&'static str, Signa
         );
         map.insert(
             "bit_or",
+            Signature {
+                parameters: vec![DataType::Integer],
+                return_type: DataType::Integer,
+            },
+        );
+        map.insert(
+            "bit_xor",
             Signature {
                 parameters: vec![DataType::Integer],
                 return_type: DataType::Integer,
@@ -215,6 +223,24 @@ pub fn aggregation_bit_or(group_values: Vec<Vec<Value>>) -> Value {
             continue;
         }
         value |= row_values[0].as_int();
+        has_non_null = true;
+    }
+
+    if has_non_null {
+        Value::Integer(value)
+    } else {
+        Value::Null
+    }
+}
+
+pub fn aggregation_bit_xor(group_values: Vec<Vec<Value>>) -> Value {
+    let mut value: i64 = 0;
+    let mut has_non_null = false;
+    for row_values in group_values {
+        if row_values[0].data_type().is_null() {
+            continue;
+        }
+        value ^= row_values[0].as_int();
         has_non_null = true;
     }
 

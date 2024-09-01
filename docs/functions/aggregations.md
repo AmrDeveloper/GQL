@@ -12,3 +12,4 @@ An aggregate function in GQL performs a calculation on multiple values and retur
 | BOOL_OR      | Boolean    | Boolean | Return true if at least one input value is true, otherwise false  |
 | BIT_AND      | Integer    | Integer | Return bitwise AND of all non-null input values, or null if none  |
 | BIT_OR       | Integer    | Integer | Return bitwise OR of all non-null input values, or null if none   |
+| BIT_XOR      | Integer    | Integer | Return bitwise XOR of all non-null input values, or null if none  |
