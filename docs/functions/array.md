@@ -2,6 +2,7 @@
 
 | Name           | Parameters      | Return  | Description                                                                       |
 | -------------- | --------------- | ------- | --------------------------------------------------------------------------------- |
+| ARRAY_APPEND   | Array, Any      | Array   | Append element to the end of the array.                                           |
 | ARRAY_LENGTH   | Array           | Integer | Return the length of Array.                                                       |
 | ARRAY_SHUFFLE  | Array           | Array   | Return Randomly shuffles the first dimension of the array.                        |
 | ARRAY_POSITION | Array, Any      | Integer | Return the position of element in array or NULL if not found.                     |

@@ -1,6 +1,14 @@
 use gitql_core::types::DataType;
 use gitql_core::value::Value;
+
 use rand::seq::SliceRandom;
+
+pub fn array_append(inputs: &[Value]) -> Value {
+    let mut array = inputs[0].as_array();
+    let element = &inputs[1];
+    array.push(element.to_owned());
+    Value::Array(inputs[0].data_type(), array)
+}
 
 pub fn array_length(inputs: &[Value]) -> Value {
     let array = inputs[0].as_array();
