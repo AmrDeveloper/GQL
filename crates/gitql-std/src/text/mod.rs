@@ -1,4 +1,259 @@
+use gitql_core::signature::Function;
+use gitql_core::signature::Signature;
+use gitql_core::types::DataType;
 use gitql_core::value::Value;
+
+use std::collections::HashMap;
+
+#[inline(always)]
+pub fn register_std_text_functions(map: &mut HashMap<&'static str, Function>) {
+    map.insert("bin", text_bin);
+    map.insert("lower", text_lowercase);
+    map.insert("upper", text_uppercase);
+    map.insert("reverse", text_reverse);
+    map.insert("replicate", text_replicate);
+    map.insert("space", text_space);
+    map.insert("trim", text_trim);
+    map.insert("ltrim", text_left_trim);
+    map.insert("rtrim", text_right_trim);
+    map.insert("len", text_len);
+    map.insert("ascii", text_ascii);
+    map.insert("left", text_left);
+    map.insert("datalength", text_datalength);
+    map.insert("char", text_char);
+    map.insert("nchar", text_char);
+    map.insert("charindex", text_charindex);
+    map.insert("replace", text_replace);
+    map.insert("substring", text_substring);
+    map.insert("stuff", text_stuff);
+    map.insert("right", text_right);
+    map.insert("translate", text_translate);
+    map.insert("soundex", text_soundex);
+    map.insert("concat", text_concat);
+    map.insert("concat_ws", text_concat_ws);
+    map.insert("unicode", text_unicode);
+    map.insert("strcmp", text_strcmp);
+    map.insert("quotename", text_quotename);
+    map.insert("str", text_str);
+}
+
+#[inline(always)]
+pub fn register_std_text_function_signatures(map: &mut HashMap<&'static str, Signature>) {
+    map.insert(
+        "bin",
+        Signature {
+            parameters: vec![DataType::Integer],
+            return_type: DataType::Text,
+        },
+    );
+    map.insert(
+        "lower",
+        Signature {
+            parameters: vec![DataType::Text],
+            return_type: DataType::Text,
+        },
+    );
+    map.insert(
+        "upper",
+        Signature {
+            parameters: vec![DataType::Text],
+            return_type: DataType::Text,
+        },
+    );
+    map.insert(
+        "reverse",
+        Signature {
+            parameters: vec![DataType::Text],
+            return_type: DataType::Text,
+        },
+    );
+    map.insert(
+        "replicate",
+        Signature {
+            parameters: vec![DataType::Text, DataType::Integer],
+            return_type: DataType::Text,
+        },
+    );
+    map.insert(
+        "space",
+        Signature {
+            parameters: vec![DataType::Integer],
+            return_type: DataType::Text,
+        },
+    );
+    map.insert(
+        "trim",
+        Signature {
+            parameters: vec![DataType::Text],
+            return_type: DataType::Text,
+        },
+    );
+    map.insert(
+        "ltrim",
+        Signature {
+            parameters: vec![DataType::Text],
+            return_type: DataType::Text,
+        },
+    );
+    map.insert(
+        "rtrim",
+        Signature {
+            parameters: vec![DataType::Text],
+            return_type: DataType::Text,
+        },
+    );
+    map.insert(
+        "len",
+        Signature {
+            parameters: vec![DataType::Text],
+            return_type: DataType::Integer,
+        },
+    );
+    map.insert(
+        "ascii",
+        Signature {
+            parameters: vec![DataType::Text],
+            return_type: DataType::Integer,
+        },
+    );
+    map.insert(
+        "left",
+        Signature {
+            parameters: vec![DataType::Text, DataType::Integer],
+            return_type: DataType::Text,
+        },
+    );
+    map.insert(
+        "datalength",
+        Signature {
+            parameters: vec![DataType::Text],
+            return_type: DataType::Integer,
+        },
+    );
+    map.insert(
+        "char",
+        Signature {
+            parameters: vec![DataType::Integer],
+            return_type: DataType::Text,
+        },
+    );
+    map.insert(
+        "nchar",
+        Signature {
+            parameters: vec![DataType::Integer],
+            return_type: DataType::Text,
+        },
+    );
+    map.insert(
+        "charindex",
+        Signature {
+            parameters: vec![DataType::Text, DataType::Text],
+            return_type: DataType::Integer,
+        },
+    );
+    map.insert(
+        "replace",
+        Signature {
+            parameters: vec![DataType::Text, DataType::Text, DataType::Text],
+            return_type: DataType::Text,
+        },
+    );
+    map.insert(
+        "substring",
+        Signature {
+            parameters: vec![DataType::Text, DataType::Integer, DataType::Integer],
+            return_type: DataType::Text,
+        },
+    );
+    map.insert(
+        "stuff",
+        Signature {
+            parameters: vec![
+                DataType::Text,
+                DataType::Integer,
+                DataType::Integer,
+                DataType::Text,
+            ],
+            return_type: DataType::Text,
+        },
+    );
+    map.insert(
+        "right",
+        Signature {
+            parameters: vec![DataType::Text, DataType::Integer],
+            return_type: DataType::Text,
+        },
+    );
+    map.insert(
+        "translate",
+        Signature {
+            parameters: vec![DataType::Text, DataType::Text, DataType::Text],
+            return_type: DataType::Text,
+        },
+    );
+    map.insert(
+        "soundex",
+        Signature {
+            parameters: vec![DataType::Text],
+            return_type: DataType::Text,
+        },
+    );
+    map.insert(
+        "concat",
+        Signature {
+            parameters: vec![
+                DataType::Any,
+                DataType::Any,
+                DataType::Varargs(Box::new(DataType::Any)),
+            ],
+            return_type: DataType::Text,
+        },
+    );
+    map.insert(
+        "concat_ws",
+        Signature {
+            parameters: vec![
+                DataType::Text,
+                DataType::Any,
+                DataType::Any,
+                DataType::Varargs(Box::new(DataType::Any)),
+            ],
+            return_type: DataType::Text,
+        },
+    );
+    map.insert(
+        "unicode",
+        Signature {
+            parameters: vec![DataType::Text],
+            return_type: DataType::Integer,
+        },
+    );
+    map.insert(
+        "strcmp",
+        Signature {
+            parameters: vec![DataType::Text, DataType::Text],
+            return_type: DataType::Integer,
+        },
+    );
+    map.insert(
+        "quotename",
+        Signature {
+            parameters: vec![DataType::Text, DataType::Optional(Box::new(DataType::Text))],
+            return_type: DataType::Text,
+        },
+    );
+    map.insert(
+        "str",
+        Signature {
+            parameters: vec![
+                DataType::Variant(vec![DataType::Integer, DataType::Float]),
+                DataType::Optional(Box::new(DataType::Integer)),
+                DataType::Optional(Box::new(DataType::Integer)),
+            ],
+            return_type: DataType::Text,
+        },
+    );
+}
 
 pub fn text_bin(inputs: &[Value]) -> Value {
     let number = inputs[0].as_int();

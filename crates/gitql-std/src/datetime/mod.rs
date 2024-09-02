@@ -1,5 +1,12 @@
 extern crate chrono;
 
+use gitql_core::signature::Function;
+use gitql_core::signature::Signature;
+use gitql_core::types::DataType;
+use gitql_core::value::Value;
+
+use std::collections::HashMap;
+
 use chrono::DateTime;
 use chrono::Datelike;
 use chrono::NaiveDate;
@@ -7,7 +14,206 @@ use chrono::TimeZone;
 use chrono::Timelike;
 use chrono::Utc;
 use chrono::Weekday;
-use gitql_core::value::Value;
+
+#[inline(always)]
+pub fn register_std_datetime_functions(map: &mut HashMap<&'static str, Function>) {
+    map.insert("date", date_extract_date);
+    map.insert("current_date", date_current_date);
+    map.insert("current_time", date_current_time);
+    map.insert("current_timestamp", date_current_timestamp);
+    map.insert("now", date_current_timestamp);
+    map.insert("makedate", date_make_date);
+    map.insert("maketime", date_make_time);
+    map.insert("day", date_day);
+    map.insert("dayname", date_dayname);
+    map.insert("monthname", date_monthname);
+    map.insert("hour", date_hour);
+    map.insert("minute", date_minute);
+    map.insert("isdate", date_is_date);
+    map.insert("dayofweek", date_day_of_week);
+    map.insert("dayofmonth", date_day_of_month);
+    map.insert("dayofyear", date_day_of_year);
+    map.insert("weekofyear", date_week_of_year);
+    map.insert("quarter", date_quarter);
+    map.insert("year", date_year);
+    map.insert("month", date_month);
+    map.insert("weekday", date_weekday);
+    map.insert("to_days", date_to_days);
+    map.insert("last_day", date_last_day);
+    map.insert("yearweek", date_year_and_week);
+}
+
+#[inline(always)]
+pub fn register_std_datetime_function_signatures(map: &mut HashMap<&'static str, Signature>) {
+    map.insert(
+        "date",
+        Signature {
+            parameters: vec![DataType::Variant(vec![DataType::Date, DataType::DateTime])],
+            return_type: DataType::Date,
+        },
+    );
+    map.insert(
+        "current_date",
+        Signature {
+            parameters: vec![],
+            return_type: DataType::Date,
+        },
+    );
+    map.insert(
+        "current_time",
+        Signature {
+            parameters: vec![],
+            return_type: DataType::Time,
+        },
+    );
+    map.insert(
+        "current_timestamp",
+        Signature {
+            parameters: vec![],
+            return_type: DataType::DateTime,
+        },
+    );
+    map.insert(
+        "now",
+        Signature {
+            parameters: vec![],
+            return_type: DataType::DateTime,
+        },
+    );
+    map.insert(
+        "makedate",
+        Signature {
+            parameters: vec![DataType::Integer, DataType::Integer],
+            return_type: DataType::Date,
+        },
+    );
+    map.insert(
+        "maketime",
+        Signature {
+            parameters: vec![DataType::Integer, DataType::Integer, DataType::Integer],
+            return_type: DataType::Time,
+        },
+    );
+    map.insert(
+        "dayname",
+        Signature {
+            parameters: vec![DataType::Date],
+            return_type: DataType::Text,
+        },
+    );
+    map.insert(
+        "day",
+        Signature {
+            parameters: vec![DataType::Date],
+            return_type: DataType::Integer,
+        },
+    );
+    map.insert(
+        "monthname",
+        Signature {
+            parameters: vec![DataType::Date],
+            return_type: DataType::Text,
+        },
+    );
+    map.insert(
+        "hour",
+        Signature {
+            parameters: vec![DataType::DateTime],
+            return_type: DataType::Integer,
+        },
+    );
+    map.insert(
+        "minute",
+        Signature {
+            parameters: vec![DataType::DateTime],
+            return_type: DataType::Integer,
+        },
+    );
+    map.insert(
+        "isdate",
+        Signature {
+            parameters: vec![DataType::Any],
+            return_type: DataType::Boolean,
+        },
+    );
+    map.insert(
+        "dayofweek",
+        Signature {
+            parameters: vec![DataType::Date],
+            return_type: DataType::Integer,
+        },
+    );
+    map.insert(
+        "dayofmonth",
+        Signature {
+            parameters: vec![DataType::Date],
+            return_type: DataType::Integer,
+        },
+    );
+    map.insert(
+        "dayofyear",
+        Signature {
+            parameters: vec![DataType::Date],
+            return_type: DataType::Integer,
+        },
+    );
+    map.insert(
+        "weekofyear",
+        Signature {
+            parameters: vec![DataType::Date],
+            return_type: DataType::Integer,
+        },
+    );
+    map.insert(
+        "quarter",
+        Signature {
+            parameters: vec![DataType::Date],
+            return_type: DataType::Integer,
+        },
+    );
+    map.insert(
+        "year",
+        Signature {
+            parameters: vec![DataType::Date],
+            return_type: DataType::Integer,
+        },
+    );
+    map.insert(
+        "month",
+        Signature {
+            parameters: vec![DataType::Date],
+            return_type: DataType::Integer,
+        },
+    );
+    map.insert(
+        "weekday",
+        Signature {
+            parameters: vec![DataType::Date],
+            return_type: DataType::Integer,
+        },
+    );
+    map.insert(
+        "to_days",
+        Signature {
+            parameters: vec![DataType::Date],
+            return_type: DataType::Integer,
+        },
+    );
+    map.insert(
+        "last_day",
+        Signature {
+            parameters: vec![DataType::Date],
+            return_type: DataType::Date,
+        },
+    );
+    map.insert(
+        "yearweek",
+        Signature {
+            parameters: vec![DataType::Date],
+            return_type: DataType::Text,
+        },
+    );
+}
 
 pub fn date_extract_date(inputs: &[Value]) -> Value {
     let argument_type = inputs[0].data_type();

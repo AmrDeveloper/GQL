@@ -1,9 +1,147 @@
+use gitql_core::dynamic_types::type_of_first_element;
+use gitql_core::signature::Function;
+use gitql_core::signature::Signature;
+use gitql_core::types::DataType;
 use gitql_core::value::Value;
+
+use std::collections::HashMap;
+use std::ops::Rem;
+
 use rand::distributions::Uniform;
 use rand::rngs::StdRng;
 use rand::Rng;
 use rand::SeedableRng;
-use std::ops::Rem;
+
+#[inline(always)]
+pub fn register_std_number_functions(map: &mut HashMap<&'static str, Function>) {
+    map.insert("abs", numeric_abs);
+    map.insert("pi", numeric_pi);
+    map.insert("floor", numeric_floor);
+    map.insert("round", numeric_round);
+    map.insert("square", numeric_square);
+    map.insert("sin", numeric_sin);
+    map.insert("asin", numeric_asin);
+    map.insert("cos", numeric_cos);
+    map.insert("acos", numeric_acos);
+    map.insert("tan", numeric_tan);
+    map.insert("atan", numeric_atan);
+    map.insert("atn2", numeric_atn2);
+    map.insert("sign", numeric_sign);
+    map.insert("mod", numeric_mod);
+    map.insert("rand", numeric_rand);
+}
+
+#[inline(always)]
+pub fn register_std_number_function_signatures(map: &mut HashMap<&'static str, Signature>) {
+    map.insert(
+        "abs",
+        Signature {
+            parameters: vec![DataType::Variant(vec![DataType::Integer, DataType::Float])],
+            return_type: DataType::Dynamic(type_of_first_element),
+        },
+    );
+    map.insert(
+        "pi",
+        Signature {
+            parameters: vec![],
+            return_type: DataType::Float,
+        },
+    );
+    map.insert(
+        "floor",
+        Signature {
+            parameters: vec![DataType::Float],
+            return_type: DataType::Integer,
+        },
+    );
+    map.insert(
+        "round",
+        Signature {
+            parameters: vec![
+                DataType::Float,
+                DataType::Optional(Box::new(DataType::Integer)),
+            ],
+            return_type: DataType::Float,
+        },
+    );
+    map.insert(
+        "square",
+        Signature {
+            parameters: vec![DataType::Integer],
+            return_type: DataType::Integer,
+        },
+    );
+    map.insert(
+        "sin",
+        Signature {
+            parameters: vec![DataType::Float],
+            return_type: DataType::Float,
+        },
+    );
+    map.insert(
+        "asin",
+        Signature {
+            parameters: vec![DataType::Float],
+            return_type: DataType::Float,
+        },
+    );
+    map.insert(
+        "cos",
+        Signature {
+            parameters: vec![DataType::Float],
+            return_type: DataType::Float,
+        },
+    );
+    map.insert(
+        "acos",
+        Signature {
+            parameters: vec![DataType::Float],
+            return_type: DataType::Float,
+        },
+    );
+    map.insert(
+        "tan",
+        Signature {
+            parameters: vec![DataType::Float],
+            return_type: DataType::Float,
+        },
+    );
+    map.insert(
+        "atan",
+        Signature {
+            parameters: vec![DataType::Float],
+            return_type: DataType::Float,
+        },
+    );
+    map.insert(
+        "atn2",
+        Signature {
+            parameters: vec![DataType::Float, DataType::Float],
+            return_type: DataType::Float,
+        },
+    );
+    map.insert(
+        "sign",
+        Signature {
+            parameters: vec![DataType::Variant(vec![DataType::Integer, DataType::Float])],
+            return_type: DataType::Integer,
+        },
+    );
+    map.insert(
+        "mod",
+        Signature {
+            parameters: vec![DataType::Integer, DataType::Integer],
+            return_type: DataType::Integer,
+        },
+    );
+    map.insert(
+        "rand",
+        Signature {
+            parameters: vec![DataType::Optional(Box::new(DataType::Float))],
+            return_type: DataType::Float,
+        },
+    );
+}
 
 pub fn numeric_abs(inputs: &[Value]) -> Value {
     let input_type = inputs[0].data_type();

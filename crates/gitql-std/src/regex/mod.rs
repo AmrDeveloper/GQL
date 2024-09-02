@@ -1,5 +1,51 @@
+use gitql_core::signature::Function;
+use gitql_core::signature::Signature;
+use gitql_core::types::DataType;
 use gitql_core::value::Value;
+
+use std::collections::HashMap;
+
 use regex::Regex;
+
+#[inline(always)]
+pub fn register_std_regex_functions(map: &mut HashMap<&'static str, Function>) {
+    map.insert("regexp_instr", regexp_instr);
+    map.insert("regexp_like", regexp_like);
+    map.insert("regexp_replace", regexp_replace);
+    map.insert("regexp_substr", regexp_substr);
+}
+
+#[inline(always)]
+pub fn register_std_regex_function_signatures(map: &mut HashMap<&'static str, Signature>) {
+    map.insert(
+        "regexp_instr",
+        Signature {
+            parameters: vec![DataType::Text, DataType::Text],
+            return_type: DataType::Integer,
+        },
+    );
+    map.insert(
+        "regexp_like",
+        Signature {
+            parameters: vec![DataType::Text, DataType::Text],
+            return_type: DataType::Boolean,
+        },
+    );
+    map.insert(
+        "regexp_replace",
+        Signature {
+            parameters: vec![DataType::Text, DataType::Text, DataType::Text],
+            return_type: DataType::Text,
+        },
+    );
+    map.insert(
+        "regexp_substr",
+        Signature {
+            parameters: vec![DataType::Text, DataType::Text],
+            return_type: DataType::Text,
+        },
+    );
+}
 
 /// Return the position of the pattern in the input
 /// If the pattern compilation fails, it returns -1
