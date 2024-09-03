@@ -59,7 +59,10 @@ pub fn register_std_array_function_signatures(map: &mut HashMap<&'static str, Si
     map.insert(
         "array_position",
         Signature {
-            parameters: vec![DataType::Array(Box::new(DataType::Any)), DataType::Any],
+            parameters: vec![
+                DataType::Array(Box::new(DataType::Any)),
+                DataType::Dynamic(array_element_type_of_first_element),
+            ],
             return_type: DataType::Integer,
         },
     );
