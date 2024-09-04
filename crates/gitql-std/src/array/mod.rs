@@ -12,6 +12,7 @@ use rand::seq::SliceRandom;
 #[inline(always)]
 pub fn register_std_array_functions(map: &mut HashMap<&'static str, Function>) {
     map.insert("array_append", array_append);
+    map.insert("array_remove", array_remove);
     map.insert("array_cat", array_cat);
     map.insert("array_length", array_length);
     map.insert("array_shuffle", array_shuffle);
@@ -24,6 +25,16 @@ pub fn register_std_array_functions(map: &mut HashMap<&'static str, Function>) {
 pub fn register_std_array_function_signatures(map: &mut HashMap<&'static str, Signature>) {
     map.insert(
         "array_append",
+        Signature {
+            parameters: vec![
+                DataType::Array(Box::new(DataType::Any)),
+                DataType::Dynamic(array_element_type_of_first_element),
+            ],
+            return_type: DataType::Dynamic(type_of_first_element),
+        },
+    );
+    map.insert(
+        "array_remove",
         Signature {
             parameters: vec![
                 DataType::Array(Box::new(DataType::Any)),
@@ -91,6 +102,16 @@ pub fn array_append(inputs: &[Value]) -> Value {
     let element = &inputs[1];
     array.push(element.to_owned());
     Value::Array(inputs[0].data_type(), array)
+}
+
+pub fn array_remove(inputs: &[Value]) -> Value {
+    let array = inputs[0].as_array();
+    let element_to_remove = &inputs[1];
+    let array_after_remove = array
+        .into_iter()
+        .filter(|element| !element_to_remove.equals(element))
+        .collect();
+    Value::Array(inputs[0].data_type(), array_after_remove)
 }
 
 pub fn array_cat(inputs: &[Value]) -> Value {

@@ -3,6 +3,7 @@
 | Name           | Parameters      | Return  | Description                                                                       |
 | -------------- | --------------- | ------- | --------------------------------------------------------------------------------- |
 | ARRAY_APPEND   | Array, Any      | Array   | Append element to the end of the array.                                           |
+| ARRAY_REMOVE   | Array, Any      | Array   | Remove elemnt from the array.                                           |
 | ARRAY_CAT      | Array, Array    | Array   | Concatenates two arrays with the same type.                                       |
 | ARRAY_LENGTH   | Array           | Integer | Return the length of Array.                                                       |
 | ARRAY_SHUFFLE  | Array           | Array   | Return Randomly shuffles the first dimension of the array.                        |
