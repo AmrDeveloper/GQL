@@ -1,5 +1,7 @@
 use gitql_core::dynamic_types::array_element_type_of_first_element;
+use gitql_core::dynamic_types::array_type_of_first_element_type;
 use gitql_core::dynamic_types::type_of_first_element;
+use gitql_core::dynamic_types::type_of_second_element;
 use gitql_core::signature::Function;
 use gitql_core::signature::Signature;
 use gitql_core::types::DataType;
@@ -12,6 +14,7 @@ use rand::seq::SliceRandom;
 #[inline(always)]
 pub fn register_std_array_functions(map: &mut HashMap<&'static str, Function>) {
     map.insert("array_append", array_append);
+    map.insert("array_prepend", array_prepend);
     map.insert("array_remove", array_remove);
     map.insert("array_cat", array_cat);
     map.insert("array_length", array_length);
@@ -31,6 +34,16 @@ pub fn register_std_array_function_signatures(map: &mut HashMap<&'static str, Si
                 DataType::Dynamic(array_element_type_of_first_element),
             ],
             return_type: DataType::Dynamic(type_of_first_element),
+        },
+    );
+    map.insert(
+        "array_prepend",
+        Signature {
+            parameters: vec![
+                DataType::Any,
+                DataType::Dynamic(array_type_of_first_element_type),
+            ],
+            return_type: DataType::Dynamic(type_of_second_element),
         },
     );
     map.insert(
@@ -102,6 +115,13 @@ pub fn array_append(inputs: &[Value]) -> Value {
     let element = &inputs[1];
     array.push(element.to_owned());
     Value::Array(inputs[0].data_type(), array)
+}
+
+pub fn array_prepend(inputs: &[Value]) -> Value {
+    let element = &inputs[0];
+    let mut array = inputs[1].as_array();
+    array.insert(0, element.clone());
+    Value::Array(inputs[1].data_type(), array)
 }
 
 pub fn array_remove(inputs: &[Value]) -> Value {
