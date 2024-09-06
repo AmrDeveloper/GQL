@@ -1,7 +1,7 @@
-use gitql_core::dynamic_types::array_element_type_of_first_element;
-use gitql_core::dynamic_types::array_type_of_first_element_type;
-use gitql_core::dynamic_types::type_of_first_element;
-use gitql_core::dynamic_types::type_of_second_element;
+use gitql_core::dynamic_types::array_element_type;
+use gitql_core::dynamic_types::array_of_type;
+use gitql_core::dynamic_types::first_element_type;
+use gitql_core::dynamic_types::second_element_type;
 use gitql_core::signature::Function;
 use gitql_core::signature::Signature;
 use gitql_core::types::DataType;
@@ -31,9 +31,9 @@ pub fn register_std_array_function_signatures(map: &mut HashMap<&'static str, Si
         Signature {
             parameters: vec![
                 DataType::Array(Box::new(DataType::Any)),
-                DataType::Dynamic(array_element_type_of_first_element),
+                DataType::Dynamic(|elements| array_element_type(first_element_type(elements))),
             ],
-            return_type: DataType::Dynamic(type_of_first_element),
+            return_type: DataType::Dynamic(first_element_type),
         },
     );
     map.insert(
@@ -41,9 +41,9 @@ pub fn register_std_array_function_signatures(map: &mut HashMap<&'static str, Si
         Signature {
             parameters: vec![
                 DataType::Any,
-                DataType::Dynamic(array_type_of_first_element_type),
+                DataType::Dynamic(|elements| array_of_type(first_element_type(elements))),
             ],
-            return_type: DataType::Dynamic(type_of_second_element),
+            return_type: DataType::Dynamic(second_element_type),
         },
     );
     map.insert(
@@ -51,9 +51,9 @@ pub fn register_std_array_function_signatures(map: &mut HashMap<&'static str, Si
         Signature {
             parameters: vec![
                 DataType::Array(Box::new(DataType::Any)),
-                DataType::Dynamic(array_element_type_of_first_element),
+                DataType::Dynamic(|elements| array_element_type(first_element_type(elements))),
             ],
-            return_type: DataType::Dynamic(type_of_first_element),
+            return_type: DataType::Dynamic(first_element_type),
         },
     );
     map.insert(
@@ -61,9 +61,9 @@ pub fn register_std_array_function_signatures(map: &mut HashMap<&'static str, Si
         Signature {
             parameters: vec![
                 DataType::Array(Box::new(DataType::Any)),
-                DataType::Dynamic(type_of_first_element),
+                DataType::Dynamic(first_element_type),
             ],
-            return_type: DataType::Dynamic(type_of_first_element),
+            return_type: DataType::Dynamic(first_element_type),
         },
     );
     map.insert(
@@ -77,7 +77,7 @@ pub fn register_std_array_function_signatures(map: &mut HashMap<&'static str, Si
         "array_shuffle",
         Signature {
             parameters: vec![DataType::Array(Box::new(DataType::Any))],
-            return_type: DataType::Dynamic(type_of_first_element),
+            return_type: DataType::Dynamic(first_element_type),
         },
     );
     map.insert(
@@ -85,7 +85,7 @@ pub fn register_std_array_function_signatures(map: &mut HashMap<&'static str, Si
         Signature {
             parameters: vec![
                 DataType::Array(Box::new(DataType::Any)),
-                DataType::Dynamic(array_element_type_of_first_element),
+                DataType::Dynamic(|elements| array_element_type(first_element_type(elements))),
             ],
             return_type: DataType::Integer,
         },
@@ -102,10 +102,10 @@ pub fn register_std_array_function_signatures(map: &mut HashMap<&'static str, Si
         Signature {
             parameters: vec![
                 DataType::Array(Box::new(DataType::Any)),
-                DataType::Dynamic(array_element_type_of_first_element),
-                DataType::Dynamic(array_element_type_of_first_element),
+                DataType::Dynamic(|elements| array_element_type(first_element_type(elements))),
+                DataType::Dynamic(|elements| array_element_type(first_element_type(elements))),
             ],
-            return_type: DataType::Dynamic(type_of_first_element),
+            return_type: DataType::Dynamic(first_element_type),
         },
     );
 }

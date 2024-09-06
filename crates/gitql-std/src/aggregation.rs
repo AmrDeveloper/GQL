@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
-use gitql_core::dynamic_types::type_of_first_element;
+use gitql_core::dynamic_types::first_element_type;
 use gitql_core::signature::Aggregation;
 use gitql_core::signature::Signature;
 use gitql_core::types::DataType;
@@ -42,7 +42,7 @@ pub fn aggregation_function_signatures() -> &'static HashMap<&'static str, Signa
                     DataType::Time,
                     DataType::DateTime,
                 ])],
-                return_type: DataType::Dynamic(type_of_first_element),
+                return_type: DataType::Dynamic(first_element_type),
             },
         );
         map.insert(
@@ -56,7 +56,7 @@ pub fn aggregation_function_signatures() -> &'static HashMap<&'static str, Signa
                     DataType::Time,
                     DataType::DateTime,
                 ])],
-                return_type: DataType::Dynamic(type_of_first_element),
+                return_type: DataType::Dynamic(first_element_type),
             },
         );
         map.insert(

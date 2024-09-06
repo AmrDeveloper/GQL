@@ -1,26 +1,32 @@
 use crate::types::DataType;
 
-/// Return a clone of the first type from the list
-pub fn type_of_first_element(elements: &[DataType]) -> DataType {
+/// Returns the type of of first element
+/// (T1, T2, ...) -> T1
+#[inline(always)]
+pub fn first_element_type(elements: &[DataType]) -> DataType {
     elements[0].clone()
 }
 
-/// Return a clone of the second type from the list
-pub fn type_of_second_element(elements: &[DataType]) -> DataType {
-    elements[1].clone()
+/// Returns the type of second element
+/// (T1, T2, ...) -> T2
+#[inline(always)]
+pub fn second_element_type(elements: &[DataType]) -> DataType {
+    elements[0].clone()
 }
 
-/// Return Array type of element type equal of first element type
-pub fn array_type_of_first_element_type(elements: &[DataType]) -> DataType {
-    let first_element_type = &elements[0];
-    DataType::Array(first_element_type)
+/// Returns Array type of the passed element type
+/// T -> Array<T>
+#[inline(always)]
+pub fn array_of_type(element_type: DataType) -> DataType {
+    DataType::Array(Box::new(element_type))
 }
 
-/// Return a clone of the first array element type of first type
-pub fn array_element_type_of_first_element(elements: &[DataType]) -> DataType {
-    let first_element_type = &elements[0];
-    match first_element_type {
+/// Returns element type of passed Array type
+/// Array<T> -> T
+#[inline(always)]
+pub fn array_element_type(array: DataType) -> DataType {
+    match array {
         DataType::Array(element_type) => *element_type.clone(),
-        _ => panic!("First element type must be an Array"),
+        _ => panic!("Expect Array type"),
     }
 }

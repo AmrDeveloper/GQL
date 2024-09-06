@@ -1,4 +1,4 @@
-use gitql_core::dynamic_types::type_of_first_element;
+use gitql_core::dynamic_types::first_element_type;
 use gitql_core::signature::Function;
 use gitql_core::signature::Signature;
 use gitql_core::types::DataType;
@@ -37,7 +37,7 @@ pub fn register_std_number_function_signatures(map: &mut HashMap<&'static str, S
         "abs",
         Signature {
             parameters: vec![DataType::Variant(vec![DataType::Integer, DataType::Float])],
-            return_type: DataType::Dynamic(type_of_first_element),
+            return_type: DataType::Dynamic(first_element_type),
         },
     );
     map.insert(
