@@ -149,7 +149,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
         if char == '@' {
             if position + 1 < len && characters[position + 1] == '>' {
                 position += 2;
-                
+
                 let location = Location {
                     start: column_start,
                     end: position,
