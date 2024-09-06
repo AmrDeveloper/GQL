@@ -1951,13 +1951,9 @@ fn parse_comparison_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
-    let expression = parse_bitwise_shift_expression(context, env, tokens, position);
-    if expression.is_err() || *position >= tokens.len() {
-        return expression;
-    }
+    let mut lhs = parse_contains_expression(context, env, tokens, position)?;
 
-    let mut lhs = expression.ok().unwrap();
-    if is_comparison_operator(&tokens[*position]) {
+    if *position < tokens.len() && is_comparison_operator(&tokens[*position]) {
         let operator = &tokens[*position];
         *position += 1;
         let comparison_operator = match operator.kind {
@@ -1968,7 +1964,7 @@ fn parse_comparison_expression(
             _ => ComparisonOperator::NullSafeEqual,
         };
 
-        let mut rhs = parse_bitwise_shift_expression(context, env, tokens, position)?;
+        let mut rhs = parse_contains_expression(context, env, tokens, position)?;
         match are_types_equals(env, &lhs, &rhs) {
             TypeCheckResult::Equals => {}
             TypeCheckResult::RightSideCasted(expr) => rhs = expr,
@@ -2007,6 +2003,53 @@ fn parse_comparison_expression(
     }
 
     Ok(lhs)
+}
+
+fn parse_contains_expression(
+    context: &mut ParserContext,
+    env: &mut Environment,
+    tokens: &[Token],
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
+    let collection = parse_bitwise_shift_expression(context, env, tokens, position)?;
+
+    if *position < tokens.len() && tokens[*position].kind == TokenKind::AtRightArrow {
+        let operator_location = tokens[*position].location;
+
+        // Consume `@>` token
+        *position += 1;
+
+        let element = parse_bitwise_shift_expression(context, env, tokens, position)?;
+        let element_type = element.expr_type(env);
+
+        // Make sure the left hand side is a Range
+        // Make sure the Range element type is equal to the right hand side Expr type
+        match collection.expr_type(env) {
+            DataType::Range(range_element_type) => {
+                if *range_element_type != element_type {
+                    return Err(Diagnostic::error(
+                        "Element type must be match the range element type",
+                    )
+                    .with_location(operator_location)
+                    .as_boxed());
+                }
+            }
+            _ => {
+                return Err(
+                    Diagnostic::error("Contains expression expect left side to be Range")
+                        .with_location(operator_location)
+                        .as_boxed(),
+                );
+            }
+        };
+
+        return Ok(Box::new(ContainsExpression {
+            collection,
+            element,
+        }));
+    }
+
+    Ok(collection)
 }
 
 fn parse_bitwise_shift_expression(

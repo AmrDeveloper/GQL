@@ -55,6 +55,8 @@ pub enum TokenKind {
     BangEqual,
     NullSafeEqual,
 
+    AtRightArrow,
+
     As,
 
     LeftParen,
@@ -143,8 +145,26 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
             continue;
         }
 
-        // Global Variable Symbol
+        // @> or Global Variable Symbol
         if char == '@' {
+            if position + 1 < len && characters[position + 1] == '>' {
+                position += 2;
+                
+                let location = Location {
+                    start: column_start,
+                    end: position,
+                };
+
+                let token = Token {
+                    location,
+                    kind: TokenKind::AtRightArrow,
+                    literal: "@".to_owned(),
+                };
+
+                tokens.push(token);
+                continue;
+            }
+
             tokens.push(consume_global_variable_name(
                 &characters,
                 &mut position,

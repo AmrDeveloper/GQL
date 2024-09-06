@@ -7,6 +7,7 @@ use gitql_ast::expression::BooleanExpression;
 use gitql_ast::expression::CallExpression;
 use gitql_ast::expression::CaseExpression;
 use gitql_ast::expression::ComparisonExpression;
+use gitql_ast::expression::ContainsExpression;
 use gitql_ast::expression::Expression;
 use gitql_ast::expression::ExpressionKind::*;
 use gitql_ast::expression::GlobExpression;
@@ -33,6 +34,7 @@ use gitql_core::types::DataType;
 use gitql_core::value::Value;
 
 use regex::Regex;
+use std::cmp::Ordering;
 use std::ops::Not;
 use std::string::String;
 
@@ -127,6 +129,13 @@ pub fn evaluate_expression(
                 .downcast_ref::<ComparisonExpression>()
                 .unwrap();
             evaluate_comparison(env, expr, titles, object)
+        }
+        Contains => {
+            let expr = expression
+                .as_any()
+                .downcast_ref::<ContainsExpression>()
+                .unwrap();
+            evaluate_contains(env, expr, titles, object)
         }
         Like => {
             let expr = expression
@@ -476,6 +485,22 @@ fn evaluate_comparison(
         ComparisonOperator::NotEqual => !comparison_result.is_eq(),
         ComparisonOperator::NullSafeEqual => false,
     }))
+}
+
+fn evaluate_contains(
+    env: &mut Environment,
+    expr: &ContainsExpression,
+    titles: &[String],
+    object: &Vec<Value>,
+) -> Result<Value, String> {
+    let collection = evaluate_expression(env, &expr.collection, titles, object)?;
+    let element = evaluate_expression(env, &expr.element, titles, object)?;
+
+    let collection_range = collection.as_range();
+    let is_in_range = Ordering::is_ge(collection_range.0.compare(&element))
+        && Ordering::is_le(collection_range.1.compare(&element));
+
+    Ok(Value::Boolean(is_in_range))
 }
 
 fn evaluate_like(

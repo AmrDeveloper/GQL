@@ -24,6 +24,7 @@ pub enum ExpressionKind {
     Slice,
     Arithmetic,
     Comparison,
+    Contains,
     Like,
     Regex,
     Glob,
@@ -329,6 +330,25 @@ impl Expression for ComparisonExpression {
         } else {
             DataType::Boolean
         }
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+pub struct ContainsExpression {
+    pub collection: Box<dyn Expression>,
+    pub element: Box<dyn Expression>,
+}
+
+impl Expression for ContainsExpression {
+    fn kind(&self) -> ExpressionKind {
+        ExpressionKind::Contains
+    }
+
+    fn expr_type(&self, scope: &Environment) -> DataType {
+        self.element.expr_type(scope)
     }
 
     fn as_any(&self) -> &dyn Any {
