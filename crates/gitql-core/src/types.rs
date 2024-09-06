@@ -19,8 +19,10 @@ pub enum DataType {
     Time,
     /// Represent Date with Time type
     DateTime,
-    /// Represent an Array type
+    /// Represent Array type
     Array(Box<DataType>),
+    /// Represent Range type
+    Range(Box<DataType>),
     /// Represent a set of valid variant of types
     Variant(Vec<DataType>),
     /// Represent an optional type so it can passed or not, must be last parameter
@@ -146,6 +148,9 @@ impl fmt::Display for DataType {
             DataType::Array(data_type) => {
                 write!(f, "{}[]", data_type)
             }
+            DataType::Range(data_type) => {
+                write!(f, "Range({})", data_type)
+            }
             DataType::Variant(types) => {
                 let last_position = types.len() - 1;
                 write!(f, "[")?;
@@ -211,6 +216,10 @@ impl DataType {
 
     pub fn is_array(&self) -> bool {
         matches!(self, DataType::Array(_))
+    }
+
+    pub fn is_range(&self) -> bool {
+        matches!(self, DataType::Range(_))
     }
 
     pub fn is_variant(&self) -> bool {

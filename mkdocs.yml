@@ -89,6 +89,7 @@ nav:
       - Date/Time: functions/datetime.md
       - Regex: functions/regex.md
       - Array: functions/array.md
+      - Range: functions/range.md
       - Other: functions/other.md
       - Aggregate Functions: functions/aggregations.md
   - GitQL Functions: gitql_functions.md

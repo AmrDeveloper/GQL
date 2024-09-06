@@ -18,6 +18,7 @@ pub enum Value {
     Date(i64),
     Time(String),
     Array(DataType, Vec<Value>),
+    Range(DataType, Box<Value>, Box<Value>),
     Null,
 }
 
@@ -39,6 +40,7 @@ impl fmt::Display for Value {
                 }
                 write!(f, "]")
             }
+            Value::Range(_data_type, start, end) => write!(f, "[{}:{}]", start, end),
             Value::DateTime(dt) => {
                 let datetime = DateTime::from_timestamp(*dt, 0).unwrap();
                 write!(f, "{}", datetime.format(VALUE_DATE_TIME_FORMAT))
@@ -59,19 +61,65 @@ impl Value {
             return false;
         }
 
-        match self.data_type() {
-            DataType::Any => true,
-            DataType::Text => self.as_text() == other.as_text(),
-            DataType::Integer => self.as_int() == other.as_int(),
-            DataType::Float => self.as_float() == other.as_float(),
-            DataType::Boolean => self.as_bool() == other.as_bool(),
-            DataType::DateTime => self.as_date_time() == other.as_date_time(),
-            DataType::Date => self.as_date() == other.as_date(),
-            DataType::Time => self.as_time() == other.as_time(),
-            DataType::Undefined => true,
-            DataType::Null => true,
-            _ => false,
+        if self.data_type().is_any() {
+            return true;
         }
+
+        if self.data_type().is_text() {
+            return self.as_text() == other.as_text();
+        }
+
+        if self.data_type().is_int() {
+            return self.as_int() == other.as_int();
+        }
+
+        if self.data_type().is_float() {
+            return self.as_float() == other.as_float();
+        }
+
+        if self.data_type().is_bool() {
+            return self.as_bool() == other.as_bool();
+        }
+
+        if self.data_type().is_array() {
+            let self_array = self.as_array();
+            let other_array = self.as_array();
+            if self_array.len() != other_array.len() {
+                return false;
+            }
+
+            for i in 0..self_array.len() {
+                if self_array[i].equals(&other_array[i]) {
+                    return false;
+                }
+            }
+
+            return false;
+        }
+
+        if self.data_type().is_range() {
+            let self_range = self.as_range();
+            let other_range = other.as_range();
+            return self_range.0.equals(&other_range.0) && self_range.1.equals(&other_range.1);
+        }
+
+        if self.data_type().is_datetime() {
+            return self.as_date_time() == other.as_date_time();
+        }
+
+        if self.data_type().is_date() {
+            return self.as_date() == other.as_date();
+        }
+
+        if self.data_type().is_time() {
+            return self.as_time() == other.as_time();
+        }
+
+        if self.data_type().is_undefined() && self.data_type().is_null() {
+            return true;
+        }
+
+        false
     }
 
     pub fn compare(&self, other: &Self) -> Ordering {
@@ -305,6 +353,7 @@ impl Value {
             Value::Text(_) => DataType::Text,
             Value::Boolean(_) => DataType::Boolean,
             Value::Array(data_type, _) => DataType::Array(Box::new(data_type.clone())),
+            Value::Range(data_type, _, _) => DataType::Range(Box::new(data_type.clone())),
             Value::DateTime(_) => DataType::DateTime,
             Value::Date(_) => DataType::Date,
             Value::Time(_) => DataType::Time,
@@ -345,6 +394,13 @@ impl Value {
             return elements.to_vec();
         }
         vec![]
+    }
+
+    pub fn as_range(&self) -> (Value, Value) {
+        if let Value::Range(_, start, end) = self {
+            return (*start.clone(), *end.clone());
+        }
+        (Value::Null, Value::Null)
     }
 
     pub fn as_date_time(&self) -> i64 {
