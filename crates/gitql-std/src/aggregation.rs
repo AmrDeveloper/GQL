@@ -2,6 +2,7 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
+use gitql_core::dynamic_types::array_of_type;
 use gitql_core::dynamic_types::first_element_type;
 use gitql_core::signature::Aggregation;
 use gitql_core::signature::Signature;
@@ -23,6 +24,7 @@ pub fn aggregation_functions() -> &'static HashMap<&'static str, Aggregation> {
         map.insert("bit_and", aggregation_bit_and);
         map.insert("bit_or", aggregation_bit_or);
         map.insert("bit_xor", aggregation_bit_xor);
+        map.insert("array_agg", aggregation_array_agg);
         map
     })
 }
@@ -120,6 +122,15 @@ pub fn aggregation_function_signatures() -> &'static HashMap<&'static str, Signa
             Signature {
                 parameters: vec![DataType::Integer],
                 return_type: DataType::Integer,
+            },
+        );
+        map.insert(
+            "array_agg",
+            Signature {
+                parameters: vec![DataType::Any],
+                return_type: DataType::Dynamic(|elements| {
+                    array_of_type(first_element_type(elements))
+                }),
             },
         );
         map
@@ -249,4 +260,19 @@ pub fn aggregation_bit_xor(group_values: Vec<Vec<Value>>) -> Value {
     } else {
         Value::Null
     }
+}
+
+pub fn aggregation_array_agg(group_values: Vec<Vec<Value>>) -> Value {
+    let mut array: Vec<Value> = vec![];
+    for row_values in group_values {
+        array.push(row_values[0].clone());
+    }
+
+    let element_type = if array.is_empty() {
+        DataType::Null
+    } else {
+        array[0].data_type()
+    };
+
+    Value::Array(element_type, array)
 }
