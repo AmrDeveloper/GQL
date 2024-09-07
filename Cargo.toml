@@ -1,14 +1,14 @@
 [package]
 name = "gitql"
 authors = ["AmrDeveloper"]
-version = "0.26.0"
+version = "0.27.0"
 edition = "2021"
 description = "A SQL like query language to perform queries on .git files"
 license = "MIT"
 repository = "https://github.com/amrdeveloper/gql/"
 documentation = "https://github.com/amrdeveloper/gql"
 readme = "README.md"
-keywords = ["cli", "gql", "language", "git", "sql"]
+keywords = ["gitql", "gitql-sdk", "gql", "git", "sql"]
 categories = ["command-line-utilities"]
 exclude = [".github/**", "docs/**", "media/**", "scripts/**"]
 
@@ -26,12 +26,12 @@ members = [
 gix = { version = "0.64.0", default-features = false }
 
 [dependencies]
-gitql-core = { path = "./crates/gitql-core", version = "0.3.0" }
-gitql-std = { path = "./crates/gitql-std", version = "0.3.1" }
-gitql-ast = { path = "./crates/gitql-ast", version = "0.23.1" }
-gitql-parser = { path = "./crates/gitql-parser", version = "0.25.1" }
-gitql-engine = { path = "./crates/gitql-engine", version = "0.26.0" }
-gitql-cli = { path = "./crates/gitql-cli", version = "0.26.1" }
+gitql-core = { path = "./crates/gitql-core", version = "0.4.0" }
+gitql-std = { path = "./crates/gitql-std", version = "0.4.0" }
+gitql-ast = { path = "./crates/gitql-ast", version = "0.24.0" }
+gitql-parser = { path = "./crates/gitql-parser", version = "0.26.0" }
+gitql-engine = { path = "./crates/gitql-engine", version = "0.27.0" }
+gitql-cli = { path = "./crates/gitql-cli", version = "0.27.0" }
 gix = { workspace = true, features = ["blob-diff", "max-performance"] }
 atty = "0.2.14"
 

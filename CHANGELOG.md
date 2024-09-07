@@ -1,5 +1,24 @@
 # Change Log
 
+## Version 0.27.0 _(2024-09-07)_
+
+- Improve comparing Arrays values.
+- Support Range data types.
+- Implement `int4range` range function.
+- Implement `daterange` range function.
+- Implement `tsrange` range function.
+- Simplify the dynamic types helper functions.
+- Implement `ARRAY_PREPEND` function.
+- Implement `ARRAY_REMOVE` function.
+- Implement `ARRAY_APPEND` Array function.
+- Implement `ARRAY_REPLACE` Array function.
+- Update `ARRAT_POSITION` signature.
+- Organize the std functions registers.
+- Implement `BIT_XOR` Aggregation function.
+- Implement `ARRAY_AGG` Aggregation function.
+- Improve the type checker to resolve dynamic types in arguments.
+- Implement Contains operator `@>` between Range and Element.
+
 ## Version 0.26.0 _(2024-08-17)_
 
 - Fix iagnostic position when parsing undefined symbol.
