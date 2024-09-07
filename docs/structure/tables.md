@@ -22,18 +22,18 @@ show tables
 
 ---
 
-| Name            | Type    | Description              |
-| --------------- | ------- | ------------------------ |
-| commit_id       | Text    | Commit id                |
-| title           | Text    | Commit title             |
-| message         | Text    | Commit full message      |
-| author_name     | Text    | Author name              |
-| author_email    | Text    | Author email             |
-| committer_name  | Text    | Committer name           |
-| committer_email | Text    | Committer email          |
-| parents_count   | Integer | Number of commit parents |
-| datetime        | Date    | Commit date time         |
-| repo            | Text    | Repository full path     |
+| Name            | Type     | Description              |
+| --------------- | -------- | ------------------------ |
+| commit_id       | Text     | Commit id                |
+| title           | Text     | Commit title             |
+| message         | Text     | Commit full message      |
+| author_name     | Text     | Author name              |
+| author_email    | Text     | Author email             |
+| committer_name  | Text     | Committer name           |
+| committer_email | Text     | Committer email          |
+| parents_count   | Integer  | Number of commit parents |
+| datetime        | DateTime | Commit date time         |
+| repo            | Text     | Repository full path     |
 
 ---
 

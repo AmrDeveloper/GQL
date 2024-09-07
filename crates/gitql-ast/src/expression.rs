@@ -347,8 +347,8 @@ impl Expression for ContainsExpression {
         ExpressionKind::Contains
     }
 
-    fn expr_type(&self, scope: &Environment) -> DataType {
-        self.element.expr_type(scope)
+    fn expr_type(&self, _scope: &Environment) -> DataType {
+        DataType::Boolean
     }
 
     fn as_any(&self) -> &dyn Any {
