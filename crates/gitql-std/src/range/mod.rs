@@ -8,6 +8,7 @@ use std::collections::HashMap;
 #[inline(always)]
 pub fn register_std_range_functions(map: &mut HashMap<&'static str, Function>) {
     map.insert("int4range", int4range);
+    map.insert("daterange", daterange);
 }
 
 #[inline(always)]
@@ -19,11 +20,26 @@ pub fn register_std_range_function_signatures(map: &mut HashMap<&'static str, Si
             return_type: DataType::Range(Box::new(DataType::Integer)),
         },
     );
+    map.insert(
+        "daterange",
+        Signature {
+            parameters: vec![DataType::Date, DataType::Date],
+            return_type: DataType::Range(Box::new(DataType::Date)),
+        },
+    );
 }
 
 pub fn int4range(inputs: &[Value]) -> Value {
     Value::Range(
         DataType::Integer,
+        Box::new(inputs[0].clone()),
+        Box::new(inputs[1].clone()),
+    )
+}
+
+pub fn daterange(inputs: &[Value]) -> Value {
+    Value::Range(
+        DataType::Date,
         Box::new(inputs[0].clone()),
         Box::new(inputs[1].clone()),
     )
