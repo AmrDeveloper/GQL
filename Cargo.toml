@@ -25,6 +25,9 @@ members = [
 [workspace.dependencies]
 gix = { version = "0.64.0", default-features = false }
 
+[profile.release]
+lto = true
+
 [dependencies]
 gitql-core = { path = "./crates/gitql-core", version = "0.4.0" }
 gitql-std = { path = "./crates/gitql-std", version = "0.4.0" }
