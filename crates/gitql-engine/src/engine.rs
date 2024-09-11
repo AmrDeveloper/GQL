@@ -77,6 +77,7 @@ fn evaluate_select_query(
     let hidden_selections_map = query.hidden_selections;
     let hidden_selections = hidden_selections_map.values().flatten().cloned().collect();
     let mut statements_map = query.statements;
+    let has_group_by_statement = statements_map.contains_key("group");
 
     for gql_command in FIXED_LOGICAL_PLAN {
         if statements_map.contains_key(gql_command) {
@@ -96,6 +97,7 @@ fn evaluate_select_query(
                         &mut gitql_object,
                         &mut alias_table,
                         &hidden_selections_map,
+                        has_group_by_statement,
                     )?;
 
                     // If the main group is empty, no need to perform other statements
@@ -121,6 +123,7 @@ fn evaluate_select_query(
                         &mut gitql_object,
                         &mut alias_table,
                         &hidden_selections_map,
+                        has_group_by_statement,
                     )?;
                 }
             }
@@ -128,12 +131,13 @@ fn evaluate_select_query(
     }
 
     // Remove Hidden Selection from the rows after executing the query plan
+    let number_of_groups = gitql_object.groups.len();
     let group: &mut Group = &mut gitql_object.groups[0];
     remove_hidden_selected(&mut gitql_object.titles, group, &hidden_selections);
 
     // If there are many groups that mean group by is executed before.
     // must merge each group into only one element
-    if gitql_object.len() > 1 {
+    if number_of_groups > 1 {
         for group in gitql_object.groups.iter_mut() {
             if group.len() > 1 {
                 group.rows.drain(1..);
@@ -142,14 +146,12 @@ fn evaluate_select_query(
     }
     // If it a single group but it select only aggregations function,
     // should return only first element in the group
-    else if gitql_object.len() == 1
+    else if number_of_groups == 1
         && !query.has_group_by_statement
         && query.has_aggregation_function
+        && group.len() > 1
     {
-        let group: &mut Group = &mut gitql_object.groups[0];
-        if group.len() > 1 {
-            group.rows.drain(1..);
-        }
+        group.rows.drain(1..);
     }
 
     // Into statement must be executed last after flatted and remove hidden selections
@@ -162,6 +164,7 @@ fn evaluate_select_query(
             &mut gitql_object,
             &mut alias_table,
             &hidden_selections_map,
+            has_group_by_statement,
         )?;
 
         return Ok(EvaluationResult::SelectedInfo);

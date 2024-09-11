@@ -44,6 +44,7 @@ pub fn execute_statement(
     gitql_object: &mut GitQLObject,
     alias_table: &mut HashMap<String, String>,
     hidden_selection: &HashMap<String, Vec<String>>,
+    has_group_by_statement: bool,
 ) -> Result<(), String> {
     match statement.kind() {
         Do => {
@@ -106,7 +107,13 @@ pub fn execute_statement(
                 .as_any()
                 .downcast_ref::<AggregationsStatement>()
                 .unwrap();
-            execute_aggregation_function_statement(env, statement, gitql_object, alias_table)
+            execute_aggregation_function_statement(
+                env,
+                statement,
+                gitql_object,
+                alias_table,
+                has_group_by_statement,
+            )
         }
         Into => {
             let statement = statement.as_any().downcast_ref::<IntoStatement>().unwrap();
@@ -450,13 +457,13 @@ fn execute_group_by_statement(
             e.insert(next_group_index);
             next_group_index += 1;
             gitql_object.groups.push(Group { rows: vec![object] });
+            continue;
         }
+
         // If there is an existing group for this value, append current object to it
-        else {
-            let index = *groups_map.get(&values_hash).unwrap();
-            let target_group = &mut gitql_object.groups[index];
-            target_group.rows.push(object);
-        }
+        let index = *groups_map.get(&values_hash).unwrap();
+        let target_group = &mut gitql_object.groups[index];
+        target_group.rows.push(object);
     }
 
     Ok(())
@@ -467,15 +474,13 @@ fn execute_aggregation_function_statement(
     statement: &AggregationsStatement,
     gitql_object: &mut GitQLObject,
     alias_table: &HashMap<String, String>,
+    is_query_has_group_by: bool,
 ) -> Result<(), String> {
     // Make sure you have at least one aggregation function to calculate
     let aggregations_map = &statement.aggregations;
     if aggregations_map.is_empty() {
         return Ok(());
     }
-
-    // Used to determine if group by statement is executed before or not
-    let groups_count = gitql_object.len();
 
     // We should run aggregation function for each group
     for group in &mut gitql_object.groups {
@@ -559,7 +564,7 @@ fn execute_aggregation_function_statement(
 
         // In case of group by statement is executed
         // Remove all elements expect the first one
-        if groups_count > 1 {
+        if is_query_has_group_by {
             group.rows.drain(1..);
         }
     }
