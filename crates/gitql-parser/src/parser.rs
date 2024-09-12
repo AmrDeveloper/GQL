@@ -687,27 +687,33 @@ fn parse_select_all_or_expressions(
 
             // Register alias name
             let alias_name = alias_name_token.ok().unwrap().literal.to_string();
-            if context.selected_fields.contains(&alias_name)
-                || context.name_alias_table.contains_key(&alias_name)
-            {
-                return Err(
-                    Diagnostic::error("You already have field with the same name")
-                        .add_help("Try to use a new unique name for alias")
-                        .with_location(get_safe_location(tokens, *position))
-                        .as_boxed(),
-                );
-            }
 
             // Consume alias name
             *position += 1;
 
-            // Register alias name type
-            env.define(alias_name.to_string(), expr_type.clone());
+            // No need to do checks or add alias
+            // `SELECT C AS C` is equal to `SELECT C`
+            if field_name != alias_name {
+                if context.selected_fields.contains(&alias_name)
+                    || context.name_alias_table.contains_key(&alias_name)
+                {
+                    return Err(
+                        Diagnostic::error("You already have field with the same name")
+                            .add_help("Try to use a new unique name for alias")
+                            .with_location(tokens[*position - 1].location)
+                            .as_boxed(),
+                    );
+                }
 
-            context.selected_fields.push(alias_name.clone());
-            context
-                .name_alias_table
-                .insert(field_name.to_string(), alias_name.to_string());
+                // Register alias name type
+                env.define(alias_name.to_string(), expr_type.clone());
+
+                context.selected_fields.push(alias_name.clone());
+                context
+                    .name_alias_table
+                    .insert(field_name.to_string(), alias_name.to_string());
+            }
+
             selected_expr_titles.push(alias_name.to_owned());
         } else {
             selected_expr_titles.push(field_name.to_owned());
