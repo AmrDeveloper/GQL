@@ -219,7 +219,7 @@ impl Expression for BooleanExpression {
 
 pub struct UnaryExpression {
     pub right: Box<dyn Expression>,
-    pub op: PrefixUnaryOperator,
+    pub operator: PrefixUnaryOperator,
 }
 
 impl Expression for UnaryExpression {
@@ -228,7 +228,7 @@ impl Expression for UnaryExpression {
     }
 
     fn expr_type(&self, scope: &Environment) -> DataType {
-        if self.op == PrefixUnaryOperator::Bang {
+        if self.operator == PrefixUnaryOperator::Bang {
             DataType::Boolean
         } else {
             self.right.expr_type(scope)
@@ -339,9 +339,9 @@ impl Expression for ComparisonExpression {
 }
 
 pub struct ContainsExpression {
-    pub lhs: Box<dyn Expression>,
-    pub rhs: Box<dyn Expression>,
-    pub op: ContainsOperator,
+    pub left: Box<dyn Expression>,
+    pub right: Box<dyn Expression>,
+    pub operator: ContainsOperator,
 }
 
 impl Expression for ContainsExpression {

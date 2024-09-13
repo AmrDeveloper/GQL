@@ -404,7 +404,7 @@ fn evaluate_prefix_unary(
     object: &Vec<Value>,
 ) -> Result<Value, String> {
     let rhs = evaluate_expression(env, &expr.right, titles, object)?;
-    match expr.op {
+    match expr.operator {
         PrefixUnaryOperator::Minus => {
             if rhs.data_type().is_int() {
                 Ok(Value::Integer(-rhs.as_int()))
@@ -494,10 +494,10 @@ fn evaluate_contains(
     titles: &[String],
     object: &Vec<Value>,
 ) -> Result<Value, String> {
-    let lhs = evaluate_expression(env, &expr.lhs, titles, object)?;
-    let rhs = evaluate_expression(env, &expr.rhs, titles, object)?;
+    let lhs = evaluate_expression(env, &expr.left, titles, object)?;
+    let rhs = evaluate_expression(env, &expr.right, titles, object)?;
 
-    match expr.op {
+    match expr.operator {
         ContainsOperator::RangeContainsElement => {
             let collection_range = lhs.as_range();
             let is_in_range = Ordering::is_ge(collection_range.0.compare(&rhs))

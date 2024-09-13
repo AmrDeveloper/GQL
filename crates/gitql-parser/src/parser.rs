@@ -1478,7 +1478,7 @@ fn parse_regex_expression(
         return Ok(if has_not_keyword {
             Box::new(UnaryExpression {
                 right: regex_expr,
-                op: PrefixUnaryOperator::Bang,
+                operator: PrefixUnaryOperator::Bang,
             })
         } else {
             regex_expr
@@ -2039,9 +2039,9 @@ fn parse_contains_expression(
                 // Example: Range<T> @> Range<T>
                 if is_both_side_has_same_type {
                     return Ok(Box::new(ContainsExpression {
-                        lhs,
-                        rhs,
-                        op: ContainsOperator::RangeContainsRange,
+                        left: lhs,
+                        right: rhs,
+                        operator: ContainsOperator::RangeContainsRange,
                     }));
                 }
 
@@ -2049,9 +2049,9 @@ fn parse_contains_expression(
                 // Example: Range<T> @> T
                 if *range_element_type == rhs_type {
                     return Ok(Box::new(ContainsExpression {
-                        lhs,
-                        rhs,
-                        op: ContainsOperator::RangeContainsElement,
+                        left: lhs,
+                        right: rhs,
+                        operator: ContainsOperator::RangeContainsElement,
                     }));
                 }
 
@@ -2504,7 +2504,10 @@ fn parse_prefix_unary_expression(
             _ => {}
         }
 
-        return Ok(Box::new(UnaryExpression { right: rhs, op }));
+        return Ok(Box::new(UnaryExpression {
+            right: rhs,
+            operator: op,
+        }));
     }
 
     parse_function_call_expression(context, env, tokens, position)
