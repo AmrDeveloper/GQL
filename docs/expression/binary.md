@@ -26,6 +26,7 @@ Used to perform arithmetic operators on number types.
 ### Contains Expression
 
 - `@>` Check if Range contains element of the same type.
+- `@>` Check if Range contains Range` of the same type.
 
 ---
 
