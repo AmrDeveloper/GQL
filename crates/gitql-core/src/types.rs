@@ -60,6 +60,22 @@ impl PartialEq for DataType {
             };
         }
 
+        if let DataType::Range(self_type) = self {
+            return if let DataType::Range(other_type) = other {
+                self_type == other_type
+            } else {
+                false
+            };
+        }
+
+        if let DataType::Range(other_type) = other {
+            return if let DataType::Range(self_type) = self {
+                self_type == other_type
+            } else {
+                false
+            };
+        }
+
         if let DataType::Variant(types) = self {
             for data_type in types {
                 if data_type == other {

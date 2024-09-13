@@ -13,6 +13,7 @@ use gitql_ast::operator::ArithmeticOperator;
 use gitql_ast::operator::BinaryBitwiseOperator;
 use gitql_ast::operator::BinaryLogicalOperator;
 use gitql_ast::operator::ComparisonOperator;
+use gitql_ast::operator::ContainsOperator;
 use gitql_ast::operator::PrefixUnaryOperator;
 use gitql_ast::statement::*;
 use gitql_core::environment::Environment;
@@ -2017,7 +2018,7 @@ fn parse_contains_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
-    let collection = parse_bitwise_shift_expression(context, env, tokens, position)?;
+    let lhs = parse_bitwise_shift_expression(context, env, tokens, position)?;
 
     if *position < tokens.len() && tokens[*position].kind == TokenKind::AtRightArrow {
         let operator_location = tokens[*position].location;
@@ -2025,20 +2026,41 @@ fn parse_contains_expression(
         // Consume `@>` token
         *position += 1;
 
-        let element = parse_bitwise_shift_expression(context, env, tokens, position)?;
-        let element_type = element.expr_type(env);
+        let rhs = parse_bitwise_shift_expression(context, env, tokens, position)?;
 
-        // Make sure the left hand side is a Range
-        // Make sure the Range element type is equal to the right hand side Expr type
-        match collection.expr_type(env) {
+        let lhs_type = lhs.expr_type(env);
+        let rhs_type = rhs.expr_type(env);
+        let is_both_side_has_same_type = lhs_type == rhs_type;
+
+        // Make sure the left hand side is a Range or Array
+        match lhs_type {
             DataType::Range(range_element_type) => {
-                if *range_element_type != element_type {
-                    return Err(Diagnostic::error(
-                        "Element type must be match the range element type",
-                    )
-                    .with_location(operator_location)
-                    .as_boxed());
+                // Is Range contains another Range of the same element type
+                // Example: Range<T> @> Range<T>
+                if is_both_side_has_same_type {
+                    return Ok(Box::new(ContainsExpression {
+                        lhs,
+                        rhs,
+                        op: ContainsOperator::RangeContainsRange,
+                    }));
                 }
+
+                // Is Range contains another element of the same Range element type
+                // Example: Range<T> @> T
+                if *range_element_type == rhs_type {
+                    return Ok(Box::new(ContainsExpression {
+                        lhs,
+                        rhs,
+                        op: ContainsOperator::RangeContainsElement,
+                    }));
+                }
+
+                // Unexpected Right hand side
+                return Err(Diagnostic::error(
+                    "Element type must be match the range type or element type",
+                )
+                .with_location(operator_location)
+                .as_boxed());
             }
             _ => {
                 return Err(
@@ -2048,14 +2070,9 @@ fn parse_contains_expression(
                 );
             }
         };
-
-        return Ok(Box::new(ContainsExpression {
-            collection,
-            element,
-        }));
     }
 
-    Ok(collection)
+    Ok(lhs)
 }
 
 fn parse_bitwise_shift_expression(

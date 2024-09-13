@@ -28,6 +28,7 @@ use gitql_ast::operator::ArithmeticOperator;
 use gitql_ast::operator::BinaryBitwiseOperator;
 use gitql_ast::operator::BinaryLogicalOperator;
 use gitql_ast::operator::ComparisonOperator;
+use gitql_ast::operator::ContainsOperator;
 use gitql_ast::operator::PrefixUnaryOperator;
 use gitql_core::environment::Environment;
 use gitql_core::types::DataType;
@@ -493,14 +494,24 @@ fn evaluate_contains(
     titles: &[String],
     object: &Vec<Value>,
 ) -> Result<Value, String> {
-    let collection = evaluate_expression(env, &expr.collection, titles, object)?;
-    let element = evaluate_expression(env, &expr.element, titles, object)?;
+    let lhs = evaluate_expression(env, &expr.lhs, titles, object)?;
+    let rhs = evaluate_expression(env, &expr.rhs, titles, object)?;
 
-    let collection_range = collection.as_range();
-    let is_in_range = Ordering::is_ge(collection_range.0.compare(&element))
-        && Ordering::is_le(collection_range.1.compare(&element));
-
-    Ok(Value::Boolean(is_in_range))
+    match expr.op {
+        ContainsOperator::RangeContainsElement => {
+            let collection_range = lhs.as_range();
+            let is_in_range = Ordering::is_ge(collection_range.0.compare(&rhs))
+                && Ordering::is_le(collection_range.1.compare(&rhs));
+            Ok(Value::Boolean(is_in_range))
+        }
+        ContainsOperator::RangeContainsRange => {
+            let lhs_range = lhs.as_range();
+            let rhs_range = rhs.as_range();
+            let is_in_range = Ordering::is_ge(lhs_range.0.compare(&rhs_range.0))
+                && Ordering::is_le(lhs_range.1.compare(&rhs_range.1));
+            Ok(Value::Boolean(is_in_range))
+        }
+    }
 }
 
 fn evaluate_like(

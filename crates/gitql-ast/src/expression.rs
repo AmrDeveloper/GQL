@@ -8,6 +8,7 @@ use crate::operator::ArithmeticOperator;
 use crate::operator::BinaryBitwiseOperator;
 use crate::operator::BinaryLogicalOperator;
 use crate::operator::ComparisonOperator;
+use crate::operator::ContainsOperator;
 use crate::operator::PrefixUnaryOperator;
 
 #[derive(PartialEq)]
@@ -338,8 +339,9 @@ impl Expression for ComparisonExpression {
 }
 
 pub struct ContainsExpression {
-    pub collection: Box<dyn Expression>,
-    pub element: Box<dyn Expression>,
+    pub lhs: Box<dyn Expression>,
+    pub rhs: Box<dyn Expression>,
+    pub op: ContainsOperator,
 }
 
 impl Expression for ContainsExpression {
