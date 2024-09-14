@@ -16,6 +16,7 @@ pub fn register_std_general_functions(map: &mut HashMap<&'static str, Function>)
     map.insert("greatest", general_greatest);
     map.insert("least", general_least);
     map.insert("uuid", general_uuid);
+    map.insert("if", general_if);
 }
 
 #[inline(always)]
@@ -70,6 +71,17 @@ pub fn register_std_general_function_signatures(map: &mut HashMap<&'static str, 
             return_type: DataType::Text,
         },
     );
+    map.insert(
+        "if",
+        Signature {
+            parameters: vec![
+                DataType::Boolean,
+                DataType::Any,
+                DataType::Dynamic(|elements| elements[1].clone()),
+            ],
+            return_type: DataType::Dynamic(|elements| elements[1].clone()),
+        },
+    );
 }
 
 pub fn general_is_null(inputs: &[Value]) -> Value {
@@ -113,4 +125,13 @@ pub fn general_least(inputs: &[Value]) -> Value {
 pub fn general_uuid(_inputs: &[Value]) -> Value {
     let uuid = Uuid::new_v4();
     Value::Text(uuid.to_string())
+}
+
+pub fn general_if(inputs: &[Value]) -> Value {
+    let condition = inputs[0].as_bool();
+    if condition {
+        inputs[1].clone()
+    } else {
+        inputs[2].clone()
+    }
 }
