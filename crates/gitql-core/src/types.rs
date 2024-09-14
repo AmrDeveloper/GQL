@@ -265,9 +265,3 @@ impl DataType {
         matches!(self, DataType::Undefined)
     }
 }
-
-/// Function to used with Dynamic Data type
-/// The result is the same type as the first parameter
-pub fn same_type_as_first_parameter(parameters: &[DataType]) -> DataType {
-    parameters[0].clone()
-}

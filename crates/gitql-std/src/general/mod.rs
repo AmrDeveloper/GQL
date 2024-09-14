@@ -1,3 +1,5 @@
+use gitql_core::dynamic_types::first_element_type;
+use gitql_core::dynamic_types::second_element_type;
 use gitql_core::signature::Function;
 use gitql_core::signature::Signature;
 use gitql_core::types::DataType;
@@ -17,6 +19,7 @@ pub fn register_std_general_functions(map: &mut HashMap<&'static str, Function>)
     map.insert("least", general_least);
     map.insert("uuid", general_uuid);
     map.insert("if", general_if);
+    map.insert("ifnull", general_ifnull);
 }
 
 #[inline(always)]
@@ -77,9 +80,16 @@ pub fn register_std_general_function_signatures(map: &mut HashMap<&'static str, 
             parameters: vec![
                 DataType::Boolean,
                 DataType::Any,
-                DataType::Dynamic(|elements| elements[1].clone()),
+                DataType::Dynamic(second_element_type),
             ],
-            return_type: DataType::Dynamic(|elements| elements[1].clone()),
+            return_type: DataType::Dynamic(second_element_type),
+        },
+    );
+    map.insert(
+        "ifnull",
+        Signature {
+            parameters: vec![DataType::Any, DataType::Dynamic(first_element_type)],
+            return_type: DataType::Dynamic(first_element_type),
         },
     );
 }
@@ -134,4 +144,11 @@ pub fn general_if(inputs: &[Value]) -> Value {
     } else {
         inputs[2].clone()
     }
+}
+
+pub fn general_ifnull(inputs: &[Value]) -> Value {
+    if inputs[0].data_type().is_null() {
+        return inputs[1].clone();
+    }
+    inputs[0].clone()
 }
