@@ -10,6 +10,7 @@ pub fn register_std_range_functions(map: &mut HashMap<&'static str, Function>) {
     map.insert("int4range", int4range);
     map.insert("daterange", daterange);
     map.insert("tsrange", tsrange);
+    map.insert("isempty", isempty);
 }
 
 #[inline(always)]
@@ -33,6 +34,13 @@ pub fn register_std_range_function_signatures(map: &mut HashMap<&'static str, Si
         Signature {
             parameters: vec![DataType::DateTime, DataType::DateTime],
             return_type: DataType::Range(Box::new(DataType::DateTime)),
+        },
+    );
+    map.insert(
+        "isempty",
+        Signature {
+            parameters: vec![DataType::Range(Box::new(DataType::Any))],
+            return_type: DataType::Boolean,
         },
     );
 }
@@ -59,4 +67,9 @@ pub fn tsrange(inputs: &[Value]) -> Value {
         Box::new(inputs[0].clone()),
         Box::new(inputs[1].clone()),
     )
+}
+
+pub fn isempty(inputs: &[Value]) -> Value {
+    let range = inputs[0].as_range();
+    Value::Boolean(range.0.equals(&range.1))
 }
