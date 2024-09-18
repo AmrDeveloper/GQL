@@ -20,6 +20,7 @@ pub fn register_std_array_functions(map: &mut HashMap<&'static str, Function>) {
     map.insert("array_length", array_length);
     map.insert("array_shuffle", array_shuffle);
     map.insert("array_position", array_position);
+    map.insert("array_positions", array_positions);
     map.insert("array_dims", array_dims);
     map.insert("array_replace", array_replace);
 }
@@ -166,6 +167,18 @@ pub fn array_position(inputs: &[Value]) -> Value {
         return Value::Integer((index + 1) as i64);
     }
     Value::Null
+}
+
+pub fn array_positions(inputs: &[Value]) -> Value {
+    let array = inputs[0].as_array();
+    let target = &inputs[1];
+    let mut positions: Vec<Value> = vec![];
+    for (index, element) in array.into_iter().enumerate() {
+        if element.equals(target) {
+            positions.push(Value::Integer((index + 1) as i64));
+        }
+    }
+    Value::Array(DataType::Array(Box::new(DataType::Integer)), positions)
 }
 
 pub fn array_dims(inputs: &[Value]) -> Value {
