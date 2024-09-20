@@ -427,7 +427,7 @@ fn execute_group_by_statement(
         return Ok(());
     }
 
-    let main_group: Group = gitql_object.groups.remove(0);
+    let main_group = gitql_object.groups.remove(0);
     if main_group.is_empty() {
         return Ok(());
     }
@@ -439,7 +439,7 @@ fn execute_group_by_statement(
     let mut next_group_index = 0;
     let values_count = statement.values.len();
 
-    for object in main_group.rows.into_iter() {
+    for object in main_group.rows.iter() {
         let mut row_values: Vec<String> = Vec::with_capacity(values_count);
 
         for expression in &statement.values {
@@ -456,14 +456,21 @@ fn execute_group_by_statement(
         if let Vacant(e) = groups_map.entry(values_hash) {
             e.insert(next_group_index);
             next_group_index += 1;
-            gitql_object.groups.push(Group { rows: vec![object] });
+            gitql_object.groups.push(Group {
+                rows: vec![object.clone()],
+            });
             continue;
         }
 
         // If there is an existing group for this value, append current object to it
         let index = *groups_map.get(&values_hash).unwrap();
         let target_group = &mut gitql_object.groups[index];
-        target_group.rows.push(object);
+        target_group.rows.push(object.clone());
+    }
+
+    // If `WIRH ROLLUP` is used, push the main group again at the end
+    if statement.has_with_rollup {
+        gitql_object.groups.push(main_group);
     }
 
     Ok(())

@@ -59,6 +59,9 @@ pub enum TokenKind {
 
     As,
 
+    With,
+    Rollup,
+
     LeftParen,
     RightParen,
     LeftBracket,
@@ -1134,13 +1137,10 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "select" => TokenKind::Select,
         "distinct" => TokenKind::Distinct,
         "from" => TokenKind::From,
-        "group" => TokenKind::Group,
         "where" => TokenKind::Where,
-        "having" => TokenKind::Having,
         "limit" => TokenKind::Limit,
         "offset" => TokenKind::Offset,
         "order" => TokenKind::Order,
-        "by" => TokenKind::By,
         "case" => TokenKind::Case,
         "when" => TokenKind::When,
         "then" => TokenKind::Then,
@@ -1157,14 +1157,6 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "show" => TokenKind::Show,
         "regexp" => TokenKind::RegExp,
 
-        // Joins
-        "join" => TokenKind::Join,
-        "left" => TokenKind::Left,
-        "right" => TokenKind::Right,
-        "cross" => TokenKind::Cross,
-        "inner" => TokenKind::Inner,
-        "outer" => TokenKind::Outer,
-
         // Select into
         "into" => TokenKind::Into,
         "outfile" => TokenKind::Outfile,
@@ -1173,6 +1165,21 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "fields" => TokenKind::Fields,
         "enclosed" => TokenKind::Enclosed,
         "terminated" => TokenKind::Terminated,
+
+        // Joins
+        "join" => TokenKind::Join,
+        "left" => TokenKind::Left,
+        "right" => TokenKind::Right,
+        "cross" => TokenKind::Cross,
+        "inner" => TokenKind::Inner,
+        "outer" => TokenKind::Outer,
+
+        // Grouping
+        "group" => TokenKind::Group,
+        "by" => TokenKind::By,
+        "having" => TokenKind::Having,
+        "with" => TokenKind::With,
+        "rollup" => TokenKind::Rollup,
 
         // Integer division and Modulo operator
         "div" => TokenKind::Slash,
@@ -1194,12 +1201,12 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         // As for alias
         "as" => TokenKind::As,
 
-        // Array data type
-        "array" => TokenKind::Array,
-
         // Order by DES and ASC
         "asc" => TokenKind::Ascending,
         "desc" => TokenKind::Descending,
+
+        // Array data type
+        "array" => TokenKind::Array,
 
         // Identifier
         _ => TokenKind::Symbol,

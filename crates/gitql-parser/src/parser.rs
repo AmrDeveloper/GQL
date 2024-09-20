@@ -974,8 +974,39 @@ fn parse_group_by_statement(
         break;
     }
 
+    let mut has_with_rollup = false;
+    if *position < tokens.len() && tokens[*position].kind == TokenKind::With {
+        // Consume Comma `WITH``
+        *position += 1;
+
+        if *position < tokens.len() && tokens[*position].kind != TokenKind::Rollup {
+            return Err(
+                Diagnostic::error("Expect keyword `ROLLUP` after keyword `with`")
+                    .add_help("Try to use `ROLLUP` keyword after `WITH")
+                    .with_location(tokens[*position].location)
+                    .as_boxed(),
+            );
+        }
+
+        // Consume Comma `ROLLUP``
+        *position += 1;
+        has_with_rollup = true;
+    }
+
+    // TODO: Remove it after fully implemented `WITH ROLLUP`
+    if values.len() > 1 {
+        return Err(Diagnostic::error(
+            "Currently WITH ROLLUP support GROUP BY with one value only",
+        )
+        .with_location(tokens[*position - 1].location)
+        .as_boxed());
+    }
+
     context.has_group_by_statement = true;
-    Ok(Box::new(GroupByStatement { values }))
+    Ok(Box::new(GroupByStatement {
+        values,
+        has_with_rollup,
+    }))
 }
 
 fn parse_having_statement(

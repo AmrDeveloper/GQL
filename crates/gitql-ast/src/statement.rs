@@ -182,6 +182,7 @@ impl Statement for OrderByStatement {
 
 pub struct GroupByStatement {
     pub values: Vec<Box<dyn Expression>>,
+    pub has_with_rollup: bool,
 }
 
 impl Statement for GroupByStatement {
