@@ -17,6 +17,7 @@ use gitql_ast::operator::ContainsOperator;
 use gitql_ast::operator::PrefixUnaryOperator;
 use gitql_ast::statement::*;
 use gitql_core::environment::Environment;
+use gitql_core::name_generator::generate_column_name;
 use gitql_core::types::DataType;
 use gitql_core::value::Value;
 
@@ -666,7 +667,7 @@ fn parse_select_all_or_expressions(
     while *position < tokens.len() && tokens[*position].kind != TokenKind::From {
         let expression = parse_expression(context, env, tokens, position)?;
         let expr_type: DataType = expression.expr_type(env).clone();
-        let field_name = expression_literal(&expression).unwrap_or(context.generate_column_name());
+        let field_name = expression_literal(&expression).unwrap_or(generate_column_name());
 
         // Assert that each selected field is unique
         if fields_names.contains(&field_name) {
@@ -991,15 +992,6 @@ fn parse_group_by_statement(
         // Consume Comma `ROLLUP``
         *position += 1;
         has_with_rollup = true;
-    }
-
-    // TODO: Remove it after fully implemented `WITH ROLLUP`
-    if values.len() > 1 {
-        return Err(Diagnostic::error(
-            "Currently WITH ROLLUP support GROUP BY with one value only",
-        )
-        .with_location(tokens[*position - 1].location)
-        .as_boxed());
     }
 
     context.has_group_by_statement = true;
@@ -1407,7 +1399,7 @@ fn parse_expression(
     let has_aggregations = context.aggregations.len() != aggregations_count_before;
 
     if has_aggregations {
-        let column_name = context.generate_column_name();
+        let column_name = generate_column_name();
         env.define(column_name.to_string(), expression.expr_type(env));
 
         // Register the new aggregation generated field if the this expression is after group by
@@ -2615,7 +2607,7 @@ fn parse_function_call_expression(
                     function_name_location,
                 )?;
 
-                let column_name = context.generate_column_name();
+                let column_name = generate_column_name();
                 context.hidden_selections.push(column_name.to_string());
 
                 let return_type = resolve_dynamic_data_type(
