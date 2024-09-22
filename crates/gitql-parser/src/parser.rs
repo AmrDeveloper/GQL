@@ -1152,20 +1152,9 @@ fn parse_order_by_statement(
     let mut sorting_orders: Vec<SortingOrder> = vec![];
 
     loop {
-        let argument = parse_expression(context, env, tokens, position)?;
-        arguments.push(argument);
+        arguments.push(parse_expression(context, env, tokens, position)?);
+        sorting_orders.push(parse_sorting_order(tokens, position)?);
 
-        let mut order = SortingOrder::Ascending;
-        if *position < tokens.len() && is_asc_or_desc(&tokens[*position]) {
-            if tokens[*position].kind == TokenKind::Descending {
-                order = SortingOrder::Descending;
-            }
-
-            // Consume `ASC or DESC` keyword
-            *position += 1;
-        }
-
-        sorting_orders.push(order);
         if *position < tokens.len() && tokens[*position].kind == TokenKind::Comma {
             // Consume `,` keyword
             *position += 1;
@@ -1178,6 +1167,50 @@ fn parse_order_by_statement(
         arguments,
         sorting_orders,
     }))
+}
+
+fn parse_sorting_order(
+    tokens: &[Token],
+    position: &mut usize,
+) -> Result<SortingOrder, Box<Diagnostic>> {
+    let mut sorting_order = SortingOrder::Ascending;
+    if *position >= tokens.len() {
+        return Ok(sorting_order);
+    }
+
+    // Parse `ASC` or `DESC`
+    if is_asc_or_desc(&tokens[*position]) {
+        if tokens[*position].kind == TokenKind::Descending {
+            sorting_order = SortingOrder::Descending;
+        }
+
+        // Consume `ASC or DESC` keyword
+        *position += 1;
+        return Ok(sorting_order);
+    }
+
+    // Parse `USING <Operator>`
+    if tokens[*position].kind == TokenKind::Using {
+        // Consume `USING` keyword
+        *position += 1;
+
+        if *position < tokens.len() && is_order_by_using_operator(&tokens[*position]) {
+            if tokens[*position].kind == TokenKind::Greater {
+                sorting_order = SortingOrder::Descending;
+            }
+
+            // Consume `> or <` keyword
+            *position += 1;
+            return Ok(sorting_order);
+        }
+
+        return Err(Diagnostic::error("Expect `>` or `<` after `USING` keyword")
+            .with_location(tokens[*position - 1].location)
+            .as_boxed());
+    }
+
+    // Return default sorting order
+    Ok(sorting_order)
 }
 
 fn parse_into_statement(
@@ -3245,6 +3278,11 @@ fn is_factor_operator(token: &Token) -> bool {
         || token.kind == TokenKind::Slash
         || token.kind == TokenKind::Percentage
         || token.kind == TokenKind::Caret
+}
+
+#[inline(always)]
+fn is_order_by_using_operator(token: &Token) -> bool {
+    token.kind == TokenKind::Greater || token.kind == TokenKind::Less
 }
 
 #[inline(always)]

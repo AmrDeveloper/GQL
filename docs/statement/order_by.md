@@ -7,3 +7,10 @@ SELECT author_name, author_email FROM commits ORDER BY author_email, commit_id A
 SELECT author_name, author_email FROM commits ORDER BY author_name DESC
 SELECT author_name, author_email FROM commits ORDER BY author_name, LEN(author_name)
 ```
+
+The `ORDER BY` Statement with `USING <operator>` syntax inspired by PostgreSQL
+
+```sql
+SELECT author_name, author_email FROM commits ORDER BY author_email, commit_id USING <
+SELECT author_name, author_email FROM commits ORDER BY author_name USING >
+```
