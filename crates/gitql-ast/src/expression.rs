@@ -9,6 +9,7 @@ use crate::operator::BinaryBitwiseOperator;
 use crate::operator::BinaryLogicalOperator;
 use crate::operator::ComparisonOperator;
 use crate::operator::ContainsOperator;
+use crate::operator::OverlapOperator;
 use crate::operator::PrefixUnaryOperator;
 
 #[derive(PartialEq)]
@@ -26,6 +27,7 @@ pub enum ExpressionKind {
     Arithmetic,
     Comparison,
     Contains,
+    Overlap,
     Like,
     Regex,
     Glob,
@@ -347,6 +349,26 @@ pub struct ContainsExpression {
 impl Expression for ContainsExpression {
     fn kind(&self) -> ExpressionKind {
         ExpressionKind::Contains
+    }
+
+    fn expr_type(&self, _scope: &Environment) -> DataType {
+        DataType::Boolean
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+pub struct OverlapExpression {
+    pub left: Box<dyn Expression>,
+    pub right: Box<dyn Expression>,
+    pub operator: OverlapOperator,
+}
+
+impl Expression for OverlapExpression {
+    fn kind(&self) -> ExpressionKind {
+        ExpressionKind::Overlap
     }
 
     fn expr_type(&self, _scope: &Environment) -> DataType {

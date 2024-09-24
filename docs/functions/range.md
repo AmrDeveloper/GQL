@@ -1,8 +1,9 @@
-### Range Operators
+### Range operators
 
 | Operator | Description |
 | -------- | ----------- |
 | @>       | Comtains    |
+| &&       | Overlap     |
 
 ### Range functions
 

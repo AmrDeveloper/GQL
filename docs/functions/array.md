@@ -1,3 +1,10 @@
+### Array operators
+
+| Operator | Description |
+| -------- | ----------- |
+| @>       | Comtains    |
+| &&       | Overlap     |
+
 ### Array functions
 
 | Name            | Parameters      | Return         | Description                                                                       |

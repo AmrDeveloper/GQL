@@ -68,8 +68,8 @@ pub enum TokenKind {
     LeftBracket,
     RightBracket,
 
-    LogicalOr,
-    LogicalAnd,
+    OrOr,
+    AndAnd,
     LogicalXor,
 
     BitwiseNot,
@@ -402,7 +402,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
             let mut kind = TokenKind::BitwiseOr;
             let literal = if position < len && characters[position] == '|' {
                 position += 1;
-                kind = TokenKind::LogicalOr;
+                kind = TokenKind::OrOr;
                 "||"
             } else {
                 "|"
@@ -429,7 +429,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
             let mut kind = TokenKind::BitwiseAnd;
             let literal = if position < len && characters[position] == '&' {
                 position += 1;
-                kind = TokenKind::LogicalAnd;
+                kind = TokenKind::AndAnd;
                 "&&"
             } else {
                 "&"
@@ -1188,8 +1188,8 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "mod" => TokenKind::Percentage,
 
         // Logical Operators
-        "or" => TokenKind::LogicalOr,
-        "and" => TokenKind::LogicalAnd,
+        "or" => TokenKind::OrOr,
+        "and" => TokenKind::AndAnd,
         "xor" => TokenKind::LogicalXor,
 
         // True, False and Null

@@ -14,6 +14,7 @@ use gitql_ast::operator::BinaryBitwiseOperator;
 use gitql_ast::operator::BinaryLogicalOperator;
 use gitql_ast::operator::ComparisonOperator;
 use gitql_ast::operator::ContainsOperator;
+use gitql_ast::operator::OverlapOperator;
 use gitql_ast::operator::PrefixUnaryOperator;
 use gitql_ast::statement::*;
 use gitql_core::environment::Environment;
@@ -1722,7 +1723,7 @@ fn parse_logical_or_expression(
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     let mut lhs = parse_logical_and_expression(context, env, tokens, position)?;
-    while *position < tokens.len() && tokens[*position].kind == TokenKind::LogicalOr {
+    while *position < tokens.len() && tokens[*position].kind == TokenKind::OrOr {
         let expected_type = DataType::Boolean;
         match is_expression_type_equals(env, &lhs, &expected_type) {
             ExprTypeCheckResult::ImplicitCasted(expr) => lhs = expr,
@@ -1772,8 +1773,8 @@ fn parse_logical_and_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
-    let mut lhs = parse_bitwise_or_expression(context, env, tokens, position)?;
-    while *position < tokens.len() && tokens[*position].kind == TokenKind::LogicalAnd {
+    let mut lhs = parse_overlap_expression(context, env, tokens, position)?;
+    while *position < tokens.len() && tokens[*position].kind == TokenKind::AndAnd {
         let expected_type = DataType::Boolean;
         match is_expression_type_equals(env, &lhs, &expected_type) {
             ExprTypeCheckResult::ImplicitCasted(expr) => lhs = expr,
@@ -1789,10 +1790,10 @@ fn parse_logical_and_expression(
             _ => {}
         }
 
-        // Consume operator
+        // Consume `&&` operator
         *position += 1;
 
-        let mut rhs = parse_bitwise_or_expression(context, env, tokens, position)?;
+        let mut rhs = parse_overlap_expression(context, env, tokens, position)?;
         match is_expression_type_equals(env, &rhs, &expected_type) {
             ExprTypeCheckResult::ImplicitCasted(expr) => rhs = expr,
             ExprTypeCheckResult::Error(diagnostic) => return Err(diagnostic),
@@ -1814,6 +1815,47 @@ fn parse_logical_and_expression(
         });
     }
 
+    Ok(lhs)
+}
+
+fn parse_overlap_expression(
+    context: &mut ParserContext,
+    env: &mut Environment,
+    tokens: &[Token],
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
+    let lhs = parse_bitwise_or_expression(context, env, tokens, position)?;
+    if *position < tokens.len() && tokens[*position].kind == TokenKind::AndAnd {
+        let lhs_type = lhs.expr_type(env);
+        if lhs_type.is_array() || lhs_type.is_range() {
+            let operator_location = tokens[*position].location;
+            let overlap_operator = if lhs_type.is_array() {
+                OverlapOperator::ArrayOverlap
+            } else {
+                OverlapOperator::RangeOverlap
+            };
+
+            // Consume `&&` operator
+            *position += 1;
+
+            let rhs = parse_bitwise_or_expression(context, env, tokens, position)?;
+            let rhs_type = rhs.expr_type(env);
+            if lhs_type != rhs_type {
+                return Err(Diagnostic::error(&format!(
+                    "Overlap expression right hand side expected to be `{}` but got `{}`",
+                    lhs_type, rhs_type
+                ))
+                .with_location(operator_location)
+                .as_boxed());
+            }
+
+            return Ok(Box::new(OverlapExpression {
+                left: lhs,
+                right: rhs,
+                operator: overlap_operator,
+            }));
+        }
+    }
     Ok(lhs)
 }
 

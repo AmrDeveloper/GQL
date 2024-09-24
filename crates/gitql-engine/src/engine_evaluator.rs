@@ -18,6 +18,7 @@ use gitql_ast::expression::IsNullExpression;
 use gitql_ast::expression::LikeExpression;
 use gitql_ast::expression::LogicalExpression;
 use gitql_ast::expression::NumberExpression;
+use gitql_ast::expression::OverlapExpression;
 use gitql_ast::expression::RegexExpression;
 use gitql_ast::expression::SliceExpression;
 use gitql_ast::expression::StringExpression;
@@ -29,6 +30,7 @@ use gitql_ast::operator::BinaryBitwiseOperator;
 use gitql_ast::operator::BinaryLogicalOperator;
 use gitql_ast::operator::ComparisonOperator;
 use gitql_ast::operator::ContainsOperator;
+use gitql_ast::operator::OverlapOperator;
 use gitql_ast::operator::PrefixUnaryOperator;
 use gitql_core::environment::Environment;
 use gitql_core::types::DataType;
@@ -137,6 +139,13 @@ pub fn evaluate_expression(
                 .downcast_ref::<ContainsExpression>()
                 .unwrap();
             evaluate_contains(env, expr, titles, object)
+        }
+        Overlap => {
+            let expr = expression
+                .as_any()
+                .downcast_ref::<OverlapExpression>()
+                .unwrap();
+            evaluate_overlap(env, expr, titles, object)
         }
         Like => {
             let expr = expression
@@ -512,6 +521,48 @@ fn evaluate_contains(
             Ok(Value::Boolean(is_in_range))
         }
     }
+}
+
+fn evaluate_overlap(
+    env: &mut Environment,
+    expr: &OverlapExpression,
+    titles: &[String],
+    object: &Vec<Value>,
+) -> Result<Value, String> {
+    let lhs = evaluate_expression(env, &expr.left, titles, object)?;
+    let rhs = evaluate_expression(env, &expr.right, titles, object)?;
+
+    match expr.operator {
+        OverlapOperator::RangeOverlap => {
+            let lhs_range = lhs.as_range();
+            let rhs_range = rhs.as_range();
+            let max_start = if lhs_range.0.compare(&rhs_range.0).is_le() {
+                lhs_range.0
+            } else {
+                rhs_range.0
+            };
+            let max_end = if lhs_range.1.compare(&rhs_range.1).is_gt() {
+                lhs_range.1
+            } else {
+                rhs_range.1
+            };
+            // has_overlap = min(r1.1, r2.1) > max(r1.0, r2.0)
+            let is_overlap = max_end.compare(&max_start).is_le();
+            return Ok(Value::Boolean(is_overlap));
+        }
+        OverlapOperator::ArrayOverlap => {
+            let lhs_array = lhs.as_array();
+            let rhs_array = rhs.as_array();
+            for lhs_element in lhs_array {
+                for rhs_element in rhs_array.iter() {
+                    if lhs_element.equals(rhs_element) {
+                        return Ok(Value::Boolean(true));
+                    }
+                }
+            }
+        }
+    }
+    Ok(Value::Boolean(false))
 }
 
 fn evaluate_like(
