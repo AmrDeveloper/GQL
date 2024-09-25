@@ -19,3 +19,4 @@
 | ARRAY_POSITIONS | Array, Any      | Array<Integer> | Return the an array of positions of element in array.                             |
 | ARRAY_DIMS      | Array           | Text           | Returns a text representation of the array's dimensions.                          |
 | ARRAY_REPLACE   | Array, Any, Any | Array          | Replaces each array element equal to the second argument with the third argument. |
+| TRIM_ARRAY      | Array, Integer  | Array          | Remove the last n elements from the array.                                        |

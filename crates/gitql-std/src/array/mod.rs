@@ -23,6 +23,7 @@ pub fn register_std_array_functions(map: &mut HashMap<&'static str, Function>) {
     map.insert("array_positions", array_positions);
     map.insert("array_dims", array_dims);
     map.insert("array_replace", array_replace);
+    map.insert("trim_array", array_trim);
 }
 
 #[inline(always)]
@@ -106,6 +107,13 @@ pub fn register_std_array_function_signatures(map: &mut HashMap<&'static str, Si
                 DataType::Dynamic(|elements| array_element_type(first_element_type(elements))),
                 DataType::Dynamic(|elements| array_element_type(first_element_type(elements))),
             ],
+            return_type: DataType::Dynamic(first_element_type),
+        },
+    );
+    map.insert(
+        "trim_array",
+        Signature {
+            parameters: vec![DataType::Array(Box::new(DataType::Any)), DataType::Integer],
             return_type: DataType::Dynamic(first_element_type),
         },
     );
@@ -197,4 +205,13 @@ pub fn array_replace(inputs: &[Value]) -> Value {
         }
     }
     Value::Array(array_type, array_values)
+}
+
+pub fn array_trim(inputs: &[Value]) -> Value {
+    let mut array = inputs[0].as_array();
+    let array_type = inputs[0].data_type();
+    let array_len = array.len();
+    let n = i64::min(array.len().try_into().unwrap(), inputs[1].as_int());
+    array.truncate(array_len - n as usize);
+    Value::Array(array_type, array)
 }
