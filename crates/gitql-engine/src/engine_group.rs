@@ -77,5 +77,12 @@ pub(crate) fn execute_group_by_statement(
         }
     }
 
+    // If the group by elements is one and rollup is enabled
+    // For example: SELECT ... FROM <TABLE> GROUP BY X WITH ROLLUP
+    // Should append the the main group at the end
+    if is_rollup_enabled && indeses_combinations.len() == 1 && indeses_combinations[0].len() == 1 {
+        gitql_object.groups.push(main_group);
+    }
+
     Ok(())
 }
