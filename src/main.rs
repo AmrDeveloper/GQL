@@ -183,6 +183,7 @@ fn execute_gitql_query(
     let engine_start = std::time::Instant::now();
     let provider: Box<dyn DataProvider> = Box::new(GitDataProvider::new(repos.to_vec()));
     let evaluation_result = engine::evaluate(env, &provider, query_node);
+    let engine_duration = engine_start.elapsed();
 
     // Report Runtime exceptions if they exists
     if evaluation_result.is_err() {
@@ -195,15 +196,10 @@ fn execute_gitql_query(
 
     // Render the result only if they are selected groups not any other statement
     let engine_result = evaluation_result.ok().unwrap();
-    if let SelectedGroups(mut groups, hidden_selection) = engine_result {
+    if let SelectedGroups(mut groups) = engine_result {
         match arguments.output_format {
             OutputFormat::Render => {
-                render::render_objects(
-                    &mut groups,
-                    &hidden_selection,
-                    arguments.pagination,
-                    arguments.page_size,
-                );
+                render::render_objects(&mut groups, arguments.pagination, arguments.page_size);
             }
             OutputFormat::JSON => {
                 if let Ok(json) = groups.as_json() {
@@ -217,8 +213,6 @@ fn execute_gitql_query(
             }
         }
     }
-
-    let engine_duration = engine_start.elapsed();
 
     if arguments.analysis {
         println!("\n");

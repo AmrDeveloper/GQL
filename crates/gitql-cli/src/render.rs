@@ -7,12 +7,7 @@ enum PaginationInput {
     Quit,
 }
 
-pub fn render_objects(
-    groups: &mut GitQLObject,
-    hidden_selections: &[String],
-    pagination: bool,
-    page_size: usize,
-) {
+pub fn render_objects(groups: &mut GitQLObject, pagination: bool, page_size: usize) {
     if groups.len() > 1 {
         groups.flat()
     }
@@ -33,12 +28,7 @@ pub fn render_objects(
 
     // Print all data without pagination
     if !pagination || page_size >= gql_group_len {
-        print_group_as_table(
-            &groups.titles,
-            table_headers,
-            &gql_group.rows,
-            hidden_selections.len(),
-        );
+        print_group_as_table(&groups.titles, table_headers, &gql_group.rows);
         return;
     }
 
@@ -52,12 +42,7 @@ pub fn render_objects(
 
         let current_page_groups = &gql_group.rows[start_index..end_index];
         println!("Page {}/{}", current_page, number_of_pages);
-        print_group_as_table(
-            &groups.titles,
-            table_headers.clone(),
-            current_page_groups,
-            hidden_selections.len(),
-        );
+        print_group_as_table(&groups.titles, table_headers.clone(), current_page_groups);
 
         let pagination_input = handle_pagination_input(current_page, number_of_pages);
         match pagination_input {
@@ -68,12 +53,7 @@ pub fn render_objects(
     }
 }
 
-fn print_group_as_table(
-    titles: &[String],
-    table_headers: Vec<comfy_table::Cell>,
-    rows: &[Row],
-    hidden_selection_count: usize,
-) {
+fn print_group_as_table(titles: &[String], table_headers: Vec<comfy_table::Cell>, rows: &[Row]) {
     let mut table = comfy_table::Table::new();
 
     // Setup table style
@@ -89,7 +69,7 @@ fn print_group_as_table(
     for row in rows {
         let mut table_row: Vec<comfy_table::Cell> = vec![];
         for index in 0..titles_len {
-            let value = row.values.get(index + hidden_selection_count).unwrap();
+            let value = row.values.get(index).unwrap();
             table_row.push(comfy_table::Cell::new(value.to_string()));
         }
         table.add_row(table_row);

@@ -33,7 +33,7 @@ const FIXED_LOGICAL_PLAN: [&str; 8] = [
 
 pub enum EvaluationResult {
     Do(Value),
-    SelectedGroups(GitQLObject, Vec<std::string::String>),
+    SelectedGroups(GitQLObject),
     SelectedInfo,
     SetGlobalVariable,
 }
@@ -75,7 +75,8 @@ fn evaluate_select_query(
     let mut alias_table: HashMap<String, String> = query.alias_table;
 
     let hidden_selections_map = query.hidden_selections;
-    let hidden_selections = hidden_selections_map.values().flatten().cloned().collect();
+    let hidden_selections: Vec<String> =
+        hidden_selections_map.values().flatten().cloned().collect();
     let mut statements_map = query.statements;
     let has_group_by_statement = statements_map.contains_key("group");
 
@@ -102,10 +103,7 @@ fn evaluate_select_query(
 
                     // If the main group is empty, no need to perform other statements
                     if gitql_object.is_empty() || gitql_object.groups[0].is_empty() {
-                        return Ok(EvaluationResult::SelectedGroups(
-                            gitql_object,
-                            hidden_selections,
-                        ));
+                        return Ok(EvaluationResult::SelectedGroups(gitql_object));
                     }
 
                     // Apply the distinct operation object is not empty too.
@@ -170,11 +168,7 @@ fn evaluate_select_query(
         return Ok(EvaluationResult::SelectedInfo);
     }
 
-    // Return the groups and hidden selections to be used later in GUI or TUI ...etc
-    Ok(EvaluationResult::SelectedGroups(
-        gitql_object,
-        hidden_selections,
-    ))
+    Ok(EvaluationResult::SelectedGroups(gitql_object))
 }
 
 fn evaluate_global_declaration_query(
@@ -211,12 +205,11 @@ fn evaluate_describe_query(
     }
 
     gitql_object.groups.push(Group { rows });
-    Ok(EvaluationResult::SelectedGroups(gitql_object, vec![]))
+    Ok(EvaluationResult::SelectedGroups(gitql_object))
 }
 
 fn evaluate_show_tables_query(env: &mut Environment) -> Result<EvaluationResult, String> {
     let mut gitql_object = GitQLObject::default();
-    let hidden_selections = vec![];
 
     gitql_object.titles.push("Tables".to_owned());
 
@@ -228,10 +221,7 @@ fn evaluate_show_tables_query(env: &mut Environment) -> Result<EvaluationResult,
         })
     }
 
-    Ok(EvaluationResult::SelectedGroups(
-        gitql_object,
-        hidden_selections,
-    ))
+    Ok(EvaluationResult::SelectedGroups(gitql_object))
 }
 
 fn remove_hidden_selected(
@@ -244,7 +234,7 @@ fn remove_hidden_selected(
         if hidden_selections.contains(&titles[i]) {
             titles.remove(i);
             for row in group.rows.iter_mut() {
-                if row.values.len() < i {
+                if row.values.len() > i {
                     row.values.remove(i);
                 }
             }
