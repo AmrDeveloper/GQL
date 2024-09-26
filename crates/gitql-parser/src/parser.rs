@@ -440,9 +440,10 @@ fn classify_hidden_selection(
                 let hidden_selection_for_table = table_hidden_selections.get_mut(table).unwrap();
                 if !hidden_selection_for_table.contains(hidden_selection) {
                     hidden_selection_for_table.push(hidden_selection.to_string());
-                    is_resolved = true;
-                    break;
                 }
+                // This symbol is resolved either if it pushed to the table or it's already their
+                is_resolved = true;
+                break;
             }
         }
 
