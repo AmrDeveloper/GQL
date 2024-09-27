@@ -1,22 +1,33 @@
 # Change Log
 
+## Version 0.28.0 _(2024-09-27)_
+
+- Enable LTO (Link time optimization).
+- Optimize set alias for selected expression.
+- Handle groups rows elemenations in case group by don't create extra groups #117.
+- Implement contains operator for Range in other Range.
+- Implement `IF`, `IFNULL` general functions.
+- Implement `ARRAT_POSITIONS`, `TRIM_ARRAY` array functions.
+- Implement `ISEMPTY` range function.
+- Implement `WITH ROLLUP` feature.
+- Implement `ORDER BY ... USING <operator>` feature.
+- Implement Overlap operator for Arrays and Ranges.
+- Remove hidden selection information from the render.
+- Handle `WITH ROLLUP` edge case for using one column only in grouping.
+- Improve classifying columns on tables.
+
 ## Version 0.27.0 _(2024-09-07)_
 
 - Improve comparing Arrays values.
 - Support Range data types.
-- Implement `int4range` range function.
-- Implement `daterange` range function.
-- Implement `tsrange` range function.
 - Simplify the dynamic types helper functions.
-- Implement `ARRAY_PREPEND` function.
-- Implement `ARRAY_REMOVE` function.
-- Implement `ARRAY_APPEND` Array function.
-- Implement `ARRAY_REPLACE` Array function.
 - Update `ARRAT_POSITION` signature.
+- Implement `int4range`, `daterange`, `tsrange` range function.
+- Implement `ARRAY_PREPEND`, `ARRAY_REMOVE` Array functions.
+- Implement `ARRAY_APPEND`, `ARRAY_REPLACE` Array functions.
+- Implement `BIT_XOR`, `ARRAY_AGG` Aggregation functions.
 - Organize the std functions registers.
-- Implement `BIT_XOR` Aggregation function.
-- Implement `ARRAY_AGG` Aggregation function.
-- Improve the type checker to resolve dynamic types in arguments.
+]- Improve the type checker to resolve dynamic types in arguments.
 - Implement Contains operator `@>` between Range and Element.
 
 ## Version 0.26.0 _(2024-08-17)_
@@ -243,8 +254,7 @@
 ## Version 0.7.2 _(2023-10-26)_
 
 - Support `NULL` keyword.
-- Implement `ISNULL` function.
-- Implement `ISNUMERIC` function.
+- Implement `ISNULL`, `ISNUMERIC` functions.
 - Handle crash for undefined symbol as argument at runtime.
 
 ## Version 0.7.1 _(2023-09-26)_
@@ -272,9 +282,7 @@
 - Support negative numbers.
 - Add repository path as a field for data all tables.
 - Make function name case-insensitive.
-- Support Text `reverse` function.
-- Support Text `replicate` function.
-- Support Text `ltrim`, `rtrim` function.
+- Implement Text `reverse`, `replicate`, `ltrim`, `rtrim` function..
 - Select the same field twice.
 - Optimize engine to work on one repo only if table name is empty.
 - Fix merging empty groups.
