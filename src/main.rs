@@ -9,7 +9,10 @@ use gitql_cli::arguments::Command;
 use gitql_cli::arguments::OutputFormat;
 use gitql_cli::diagnostic_reporter;
 use gitql_cli::diagnostic_reporter::DiagnosticReporter;
-use gitql_cli::render;
+use gitql_cli::printer::base::OutputPrinter;
+use gitql_cli::printer::csv_printer::CSVPrinter;
+use gitql_cli::printer::json_printer::JSONPrinter;
+use gitql_cli::printer::table_printer::TablePrinter;
 use gitql_core::environment::Environment;
 use gitql_core::schema::Schema;
 use gitql_engine::data_provider::DataProvider;
@@ -197,21 +200,14 @@ fn execute_gitql_query(
     // Render the result only if they are selected groups not any other statement
     let engine_result = evaluation_result.ok().unwrap();
     if let SelectedGroups(mut groups) = engine_result {
-        match arguments.output_format {
+        let printer: Box<dyn OutputPrinter> = match arguments.output_format {
             OutputFormat::Render => {
-                render::render_objects(&mut groups, arguments.pagination, arguments.page_size);
+                Box::new(TablePrinter::new(arguments.pagination, arguments.page_size))
             }
-            OutputFormat::JSON => {
-                if let Ok(json) = groups.as_json() {
-                    println!("{}", json);
-                }
-            }
-            OutputFormat::CSV => {
-                if let Ok(csv) = groups.as_csv() {
-                    println!("{}", csv);
-                }
-            }
-        }
+            OutputFormat::JSON => Box::new(JSONPrinter {}),
+            OutputFormat::CSV => Box::new(CSVPrinter {}),
+        };
+        printer.print(&mut groups);
     }
 
     if arguments.analysis {

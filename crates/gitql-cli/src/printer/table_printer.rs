@@ -1,5 +1,6 @@
-use gitql_core::object::GitQLObject;
 use gitql_core::object::Row;
+
+use super::base::OutputPrinter;
 
 enum PaginationInput {
     NextPage,
@@ -7,48 +8,61 @@ enum PaginationInput {
     Quit,
 }
 
-pub fn render_objects(groups: &mut GitQLObject, pagination: bool, page_size: usize) {
-    if groups.len() > 1 {
-        groups.flat()
+pub struct TablePrinter {
+    pub pagination: bool,
+    pub page_size: usize,
+}
+
+impl TablePrinter {
+    pub fn new(pagination: bool, page_size: usize) -> Self {
+        TablePrinter {
+            pagination,
+            page_size,
+        }
     }
+}
 
-    if groups.is_empty() || groups.groups[0].is_empty() {
-        return;
-    }
+impl OutputPrinter for TablePrinter {
+    fn print(&self, object: &mut gitql_core::object::GitQLObject) {
+        if object.is_empty() || object.groups[0].is_empty() {
+            return;
+        }
 
-    let gql_group = groups.groups.first().unwrap();
-    let gql_group_len = gql_group.len();
+        let titles = &object.titles;
+        let group = object.groups.first().unwrap();
+        let group_len = group.len();
 
-    // Setup table headers
-    let header_color = comfy_table::Color::Green;
-    let mut table_headers = vec![];
-    for key in &groups.titles {
-        table_headers.push(comfy_table::Cell::new(key).fg(header_color));
-    }
+        // Setup table headers
+        let header_color = comfy_table::Color::Green;
+        let mut table_headers = vec![];
+        for key in titles {
+            table_headers.push(comfy_table::Cell::new(key).fg(header_color));
+        }
 
-    // Print all data without pagination
-    if !pagination || page_size >= gql_group_len {
-        print_group_as_table(&groups.titles, table_headers, &gql_group.rows);
-        return;
-    }
+        // Print all data without pagination
+        if !self.pagination || self.page_size >= group_len {
+            print_group_as_table(titles, table_headers, &group.rows);
+            return;
+        }
 
-    // Setup the pagination mode
-    let number_of_pages = (gql_group_len as f64 / page_size as f64).ceil() as usize;
-    let mut current_page = 1;
+        // Setup the pagination mode
+        let number_of_pages = (group_len as f64 / self.page_size as f64).ceil() as usize;
+        let mut current_page = 1;
 
-    loop {
-        let start_index = (current_page - 1) * page_size;
-        let end_index = (start_index + page_size).min(gql_group_len);
+        loop {
+            let start_index = (current_page - 1) * self.page_size;
+            let end_index = (start_index + self.page_size).min(group_len);
 
-        let current_page_groups = &gql_group.rows[start_index..end_index];
-        println!("Page {}/{}", current_page, number_of_pages);
-        print_group_as_table(&groups.titles, table_headers.clone(), current_page_groups);
+            let current_page_groups = &group.rows[start_index..end_index];
+            println!("Page {}/{}", current_page, number_of_pages);
+            print_group_as_table(titles, table_headers.clone(), current_page_groups);
 
-        let pagination_input = handle_pagination_input(current_page, number_of_pages);
-        match pagination_input {
-            PaginationInput::NextPage => current_page += 1,
-            PaginationInput::PreviousPage => current_page -= 1,
-            PaginationInput::Quit => break,
+            let pagination_input = handle_pagination_input(current_page, number_of_pages);
+            match pagination_input {
+                PaginationInput::NextPage => current_page += 1,
+                PaginationInput::PreviousPage => current_page -= 1,
+                PaginationInput::Quit => break,
+            }
         }
     }
 }

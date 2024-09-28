@@ -577,9 +577,11 @@ name = "gitql-cli"
 version = "0.28.0"
 dependencies = [
  "comfy-table",
+ "csv",
  "gitql-ast",
  "gitql-core",
  "gitql-parser",
+ "serde_json",
  "termcolor",
 ]
 
@@ -588,8 +590,6 @@ name = "gitql-core"
 version = "0.5.0"
 dependencies = [
  "chrono",
- "csv",
- "serde_json",
 ]
 
 [[package]]
