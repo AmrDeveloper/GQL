@@ -198,8 +198,10 @@ fn execute_gitql_query(
     }
 
     // Render the result only if they are selected groups not any other statement
+    let mut rows_count = 0;
     let engine_result = evaluation_result.ok().unwrap();
     if let SelectedGroups(mut groups) = engine_result {
+        rows_count += groups.len();
         let printer: Box<dyn OutputPrinter> = match arguments.output_format {
             OutputFormat::Render => {
                 Box::new(TablePrinter::new(arguments.pagination, arguments.page_size))
@@ -211,12 +213,11 @@ fn execute_gitql_query(
     }
 
     if arguments.analysis {
-        println!("\n");
-        println!("Analysis:");
-        println!("Frontend : {:?}", front_duration);
-        println!("Engine   : {:?}", engine_duration);
-        println!("Total    : {:?}", (front_duration + engine_duration));
-        println!("\n");
+        let total_time = front_duration + engine_duration;
+        println!(
+            "{} row in set (total: {:?}, front: {:?}, engine: {:?})",
+            rows_count, total_time, front_duration, engine_duration
+        );
     }
 }
 
