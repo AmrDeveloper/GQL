@@ -1,6 +1,7 @@
 use gitql_ast::expression::ArithmeticExpression;
 use gitql_ast::expression::ArrayExpression;
 use gitql_ast::expression::AssignmentExpression;
+use gitql_ast::expression::BenchmarkExpression;
 use gitql_ast::expression::BetweenExpression;
 use gitql_ast::expression::BitwiseExpression;
 use gitql_ast::expression::BooleanExpression;
@@ -188,6 +189,13 @@ pub fn evaluate_expression(
                 .downcast_ref::<CallExpression>()
                 .unwrap();
             evaluate_call(env, expr, titles, object)
+        }
+        BenchmarkCall => {
+            let expr = expression
+                .as_any()
+                .downcast_ref::<BenchmarkExpression>()
+                .unwrap();
+            evaluate_benchmark_call(env, expr, titles, object)
         }
         Between => {
             let expr = expression
@@ -696,6 +704,19 @@ fn evaluate_call(
 
     let function = env.std_function(function_name).unwrap();
     Ok(function(&arguments))
+}
+
+fn evaluate_benchmark_call(
+    env: &mut Environment,
+    expr: &BenchmarkExpression,
+    titles: &[String],
+    object: &Vec<Value>,
+) -> Result<Value, String> {
+    let number_of_execution = evaluate_expression(env, &expr.count, titles, object)?;
+    for _ in 0..number_of_execution.as_int() {
+        evaluate_expression(env, &expr.expression, titles, object)?;
+    }
+    Ok(Value::Integer(0))
 }
 
 fn evaluate_between(

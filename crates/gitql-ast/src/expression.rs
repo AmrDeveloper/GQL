@@ -34,6 +34,7 @@ pub enum ExpressionKind {
     Logical,
     Bitwise,
     Call,
+    BenchmarkCall,
     Between,
     Case,
     In,
@@ -490,6 +491,25 @@ impl Expression for CallExpression {
 
     fn expr_type(&self, _scope: &Environment) -> DataType {
         self.return_type.clone()
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+pub struct BenchmarkExpression {
+    pub expression: Box<dyn Expression>,
+    pub count: Box<dyn Expression>,
+}
+
+impl Expression for BenchmarkExpression {
+    fn kind(&self) -> ExpressionKind {
+        ExpressionKind::BenchmarkCall
+    }
+
+    fn expr_type(&self, _scope: &Environment) -> DataType {
+        DataType::Integer
     }
 
     fn as_any(&self) -> &dyn Any {

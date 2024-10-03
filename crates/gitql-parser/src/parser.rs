@@ -2778,6 +2778,7 @@ fn parse_primary_expression(
         TokenKind::LeftBracket => parse_array_value_expression(context, env, tokens, position),
         TokenKind::LeftParen => parse_group_expression(context, env, tokens, position),
         TokenKind::Case => parse_case_expression(context, env, tokens, position),
+        TokenKind::Benchmark => parse_benchmark_call_expression(context, env, tokens, position),
         TokenKind::String => {
             *position += 1;
             Ok(Box::new(StringExpression {
@@ -2982,6 +2983,62 @@ fn parse_group_expression(
     }
     *position += 1;
     Ok(expression)
+}
+
+fn parse_benchmark_call_expression(
+    context: &mut ParserContext,
+    env: &mut Environment,
+    tokens: &[Token],
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
+    // Consume `BENCHMARK` token
+    *position += 1;
+
+    if *position >= tokens.len() || tokens[*position].kind != TokenKind::LeftParen {
+        return Err(Diagnostic::error("Expect `(` after `Benchmark` keyword")
+            .with_location(get_safe_location(tokens, *position))
+            .add_help("Try to add '(' right after `Benchmark` keyword")
+            .as_boxed());
+    }
+
+    // Consume `(` token
+    *position += 1;
+
+    let count = parse_expression(context, env, tokens, position)?;
+    if !count.expr_type(env).is_int() {
+        return Err(
+            Diagnostic::error("Benchmark expect first argument to be integer")
+                .with_location(get_safe_location(tokens, *position))
+                .add_help("Try to integer value as first argument, eg: `Benchmark(10, 1 + 1)`")
+                .as_boxed(),
+        );
+    }
+
+    if *position >= tokens.len() || tokens[*position].kind != TokenKind::Comma {
+        return Err(
+            Diagnostic::error("Expect `,` after Benchmark first argument value")
+                .with_location(get_safe_location(tokens, *position))
+                .add_help("Make sure you passed two arguments to the Benchmark function")
+                .as_boxed(),
+        );
+    }
+
+    // Consume `,` token
+    *position += 1;
+
+    let expression = parse_expression(context, env, tokens, position)?;
+
+    if *position >= tokens.len() || tokens[*position].kind != TokenKind::RightParen {
+        return Err(Diagnostic::error("Expect `)` after `Benchmark` arguments")
+            .with_location(get_safe_location(tokens, *position))
+            .add_help("Try to add ')` after `Benchmark` arguments")
+            .as_boxed());
+    }
+
+    // Consume `)` token
+    *position += 1;
+
+    Ok(Box::new(BenchmarkExpression { expression, count }))
 }
 
 fn parse_case_expression(

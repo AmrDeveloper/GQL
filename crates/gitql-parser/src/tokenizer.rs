@@ -23,6 +23,8 @@ pub enum TokenKind {
     Show,
     RegExp,
 
+    Benchmark,
+
     Join,
     Left,
     Right,
@@ -1158,6 +1160,8 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "describe" => TokenKind::Describe,
         "show" => TokenKind::Show,
         "regexp" => TokenKind::RegExp,
+
+        "benchmark" => TokenKind::Benchmark,
 
         // Select into
         "into" => TokenKind::Into,
