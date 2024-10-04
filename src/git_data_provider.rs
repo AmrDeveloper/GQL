@@ -304,6 +304,9 @@ fn select_diffs(repo: &gix::Repository, selected_columns: &[String]) -> Result<V
     let mut diff_cache = rewrite_cache.clone();
     let mut rows: Vec<Row> = vec![];
 
+    let select_insertions_or_deletions = selected_columns.contains(&"insertions".to_string())
+        || selected_columns.contains(&"deletions".to_string());
+
     for commit_info in revwalk {
         let commit_info = commit_info.unwrap();
         let commit = commit_info.id().object().unwrap().into_commit();
@@ -351,9 +354,6 @@ fn select_diffs(repo: &gix::Repository, selected_columns: &[String]) -> Result<V
                     .next()
                     .map(|id| id.object().unwrap().into_commit().tree().unwrap())
                     .unwrap_or_else(|| repo.empty_tree());
-
-                let select_insertions_or_deletions =
-                    column_name == "insertions" || column_name == "deletions";
 
                 rewrite_cache.clear_resource_cache();
                 diff_cache.clear_resource_cache();
