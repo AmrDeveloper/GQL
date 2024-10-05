@@ -349,18 +349,17 @@ fn select_diffs(repo: &gix::Repository, selected_columns: &[String]) -> Result<V
                 || column_name == "files_changed"
             {
                 let current = commit.tree().unwrap();
+
                 let previous = commit_info
                     .parent_ids()
                     .next()
                     .map(|id| id.object().unwrap().into_commit().tree().unwrap())
                     .unwrap_or_else(|| repo.empty_tree());
-
                 rewrite_cache.clear_resource_cache();
                 diff_cache.clear_resource_cache();
 
                 let (mut insertions, mut deletions, mut files_changed) = (0, 0, 0);
-
-                previous
+                let _ = previous
                     .changes()
                     .unwrap()
                     .for_each_to_obtain_tree_with_cache(
@@ -378,8 +377,7 @@ fn select_diffs(repo: &gix::Repository, selected_columns: &[String]) -> Result<V
                             }
                             Ok(gix::object::tree::diff::Action::Continue)
                         },
-                    )
-                    .unwrap();
+                    );
 
                 if column_name == "insertions" {
                     values.push(Value::Integer(insertions as i64));
@@ -412,7 +410,6 @@ fn select_tags(repo: &gix::Repository, selected_columns: &[String]) -> Result<Ve
     let tag_names = platform.tags().unwrap();
     let repo_path = repo.path().to_str().unwrap().to_string();
     let mut rows: Vec<Row> = vec![];
-
     for tag_ref in tag_names.flatten() {
         let mut values: Vec<Value> = Vec::with_capacity(selected_columns.len());
 
