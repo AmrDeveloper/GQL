@@ -1866,8 +1866,47 @@ fn parse_bitwise_or_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
-    let lhs = parse_logical_xor_expression(context, env, tokens, position)?;
+    let lhs = parse_bitwise_xor_expression(context, env, tokens, position)?;
     if *position < tokens.len() && tokens[*position].kind == TokenKind::BitwiseOr {
+        *position += 1;
+
+        if lhs.expr_type(env) != DataType::Integer {
+            return Err(type_mismatch_error(
+                tokens[*position - 2].location,
+                DataType::Integer,
+                lhs.expr_type(env),
+            )
+            .as_boxed());
+        }
+
+        let rhs = parse_bitwise_xor_expression(context, env, tokens, position)?;
+        if rhs.expr_type(env) != DataType::Integer {
+            return Err(type_mismatch_error(
+                tokens[*position].location,
+                DataType::Integer,
+                lhs.expr_type(env),
+            )
+            .as_boxed());
+        }
+
+        return Ok(Box::new(BitwiseExpression {
+            left: lhs,
+            operator: BinaryBitwiseOperator::Or,
+            right: rhs,
+        }));
+    }
+
+    Ok(lhs)
+}
+
+fn parse_bitwise_xor_expression(
+    context: &mut ParserContext,
+    env: &mut Environment,
+    tokens: &[Token],
+    position: &mut usize,
+) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
+    let lhs = parse_logical_xor_expression(context, env, tokens, position)?;
+    if *position < tokens.len() && tokens[*position].kind == TokenKind::BitwiseXor {
         *position += 1;
 
         if lhs.expr_type(env) != DataType::Integer {
@@ -1891,7 +1930,7 @@ fn parse_bitwise_or_expression(
 
         return Ok(Box::new(BitwiseExpression {
             left: lhs,
-            operator: BinaryBitwiseOperator::Or,
+            operator: BinaryBitwiseOperator::Xor,
             right: rhs,
         }));
     }

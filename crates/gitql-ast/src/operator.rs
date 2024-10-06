@@ -37,6 +37,7 @@ pub enum BinaryLogicalOperator {
 pub enum BinaryBitwiseOperator {
     Or,
     And,
+    Xor,
     RightShift,
     LeftShift,
 }

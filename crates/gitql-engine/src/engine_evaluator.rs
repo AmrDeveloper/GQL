@@ -673,6 +673,7 @@ fn evaluate_bitwise(
     match expr.operator {
         BinaryBitwiseOperator::Or => Ok(Value::Integer(lhs | rhs)),
         BinaryBitwiseOperator::And => Ok(Value::Integer(lhs & rhs)),
+        BinaryBitwiseOperator::Xor => Ok(Value::Integer(lhs ^ rhs)),
         BinaryBitwiseOperator::RightShift => {
             if rhs >= 64 {
                 Err("Attempt to shift right with overflow".to_string())
