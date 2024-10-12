@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::types::DataType;
+use gitql_ast::types::base::DataType;
 
 /// A Representation of the Data Schema that constructed the following
 ///
@@ -22,13 +22,13 @@ use crate::types::DataType;
 /// # Examples
 ///
 /// ```
-/// pub static ref TABLES_FIELDS_TYPES: HashMap<&'static str, DataType> = {
+/// pub static ref TABLES_FIELDS_TYPES: HashMap<&'static str, Box<dyn DataType>> = {
 ///    let mut map = HashMap::new();
-///    map.insert("commit_id", DataType::Text);
+///    map.insert("commit_id", Box::new(TextType));
 /// }
 /// ```
 ///
 pub struct Schema {
     pub tables_fields_names: HashMap<&'static str, Vec<&'static str>>,
-    pub tables_fields_types: HashMap<&'static str, DataType>,
+    pub tables_fields_types: HashMap<&'static str, Box<dyn DataType>>,
 }

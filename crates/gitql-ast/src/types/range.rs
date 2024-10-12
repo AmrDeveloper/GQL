@@ -1,0 +1,46 @@
+use std::any::Any;
+
+use super::base::DataType;
+use super::boolean::BoolType;
+
+#[derive(Clone)]
+pub struct RangeType {
+    pub base: Box<dyn DataType>,
+}
+
+impl DataType for RangeType {
+    fn literal(&self) -> String {
+        format!("Range({})", self.base.literal())
+    }
+
+    fn equals(&self, other: &Box<dyn DataType>) -> bool {
+        if other.is_any() {
+            return true;
+        }
+
+        if let Some(other_range) = other.as_any().downcast_ref::<RangeType>() {
+            return self.equals(&other_range.base);
+        }
+        false
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn can_perform_contains_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(self.clone()), self.base.clone()]
+    }
+
+    fn contains_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
+        Box::new(BoolType)
+    }
+
+    fn can_perform_logical_or_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(self.clone())]
+    }
+
+    fn logical_or_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
+        Box::new(BoolType)
+    }
+}

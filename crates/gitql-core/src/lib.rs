@@ -5,5 +5,4 @@ pub mod name_generator;
 pub mod object;
 pub mod schema;
 pub mod signature;
-pub mod types;
-pub mod value;
+pub mod values;

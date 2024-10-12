@@ -14,7 +14,7 @@ impl OutputPrinter for CSVPrinter {
             for row in &group.rows {
                 let mut values_row: Vec<String> = Vec::with_capacity(row_len);
                 for value in &row.values {
-                    values_row.push(value.to_string());
+                    values_row.push(value.literal());
                 }
                 let _ = writer.write_record(values_row);
             }

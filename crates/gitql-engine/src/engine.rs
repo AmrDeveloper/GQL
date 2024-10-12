@@ -11,7 +11,8 @@ use gitql_core::environment::Environment;
 use gitql_core::object::GitQLObject;
 use gitql_core::object::Group;
 use gitql_core::object::Row;
-use gitql_core::value::Value;
+use gitql_core::values::base::Value;
+use gitql_core::values::text::TextValue;
 
 use crate::data_provider::DataProvider;
 use crate::engine_distinct::apply_distinct_operator;
@@ -32,7 +33,7 @@ const FIXED_LOGICAL_PLAN: [&str; 8] = [
 ];
 
 pub enum EvaluationResult {
-    Do(Value),
+    Do(Box<dyn Value>),
     SelectedGroups(GitQLObject),
     SelectedInfo,
     SetGlobalVariable,
@@ -198,8 +199,12 @@ fn evaluate_describe_query(
         let value = env.schema.tables_fields_types.get(field).unwrap();
         rows.push(Row {
             values: vec![
-                Value::Text(field.to_owned().to_owned()),
-                Value::Text(value.to_string()),
+                Box::new(TextValue {
+                    value: field.to_owned().to_owned(),
+                }),
+                Box::new(TextValue {
+                    value: value.literal(),
+                }),
             ],
         })
     }
@@ -216,7 +221,9 @@ fn evaluate_show_tables_query(env: &mut Environment) -> Result<EvaluationResult,
     for table in env.schema.tables_fields_names.keys() {
         gitql_object.groups.push(Group {
             rows: vec![Row {
-                values: vec![Value::Text(table.to_owned().to_owned())],
+                values: vec![Box::new(TextValue {
+                    value: table.to_owned().to_owned(),
+                })],
             }],
         })
     }

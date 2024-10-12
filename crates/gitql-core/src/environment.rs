@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 
+use gitql_ast::types::base::DataType;
+
 use crate::schema::Schema;
 use crate::signature::Aggregation;
 use crate::signature::Function;
 use crate::signature::Signature;
-use crate::types::DataType;
-use crate::value::Value;
+use crate::values::base::Value;
 
 /// Environment that track schema, functions, scopes and types
 /// to be used in different places in the query engine
@@ -26,13 +27,13 @@ pub struct Environment {
     pub aggregation_functions: HashMap<&'static str, Aggregation>,
 
     /// All Global Variables values that can life for this program session
-    pub globals: HashMap<String, Value>,
+    pub globals: HashMap<String, Box<dyn Value>>,
 
     /// All Global Variables Types that can life for this program session
-    pub globals_types: HashMap<String, DataType>,
+    pub globals_types: HashMap<String, Box<dyn DataType>>,
 
     /// Local variables types in the current scope, later will be multi layer scopes
-    pub scopes: HashMap<String, DataType>,
+    pub scopes: HashMap<String, Box<dyn DataType>>,
 }
 
 impl Environment {
@@ -101,12 +102,12 @@ impl Environment {
     }
 
     /// Define in the current scope
-    pub fn define(&mut self, str: String, data_type: DataType) {
+    pub fn define(&mut self, str: String, data_type: Box<dyn DataType>) {
         self.scopes.insert(str, data_type);
     }
 
     /// Define in the global scope
-    pub fn define_global(&mut self, str: String, data_type: DataType) {
+    pub fn define_global(&mut self, str: String, data_type: Box<dyn DataType>) {
         self.globals_types.insert(str, data_type);
     }
 
@@ -116,7 +117,7 @@ impl Environment {
     }
 
     /// Resolve Global or Local type using symbol name
-    pub fn resolve_type(&self, str: &String) -> Option<&DataType> {
+    pub fn resolve_type(&self, str: &String) -> Option<&Box<dyn DataType>> {
         if str.starts_with('@') {
             return self.globals_types.get(str);
         }

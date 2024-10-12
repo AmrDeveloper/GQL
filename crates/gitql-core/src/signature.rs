@@ -1,8 +1,9 @@
-use crate::types::DataType;
-use crate::value::Value;
+use super::values::base::Value;
+
+use gitql_ast::types::base::DataType;
 
 /// Standard function accept array of values and return single [`Value`]
-pub type Function = fn(&[Value]) -> Value;
+pub type Function = fn(&[Box<dyn Value>]) -> Box<dyn Value>;
 
 /// Aggregation function accept a selected row values for each row in group and return single [`Value`]
 ///
@@ -15,7 +16,7 @@ pub type Function = fn(&[Value]) -> Value;
 /// This implementation allow aggregation function to accept more than one parameter,
 /// and also accept any Expression not only field name
 ///
-pub type Aggregation = fn(Vec<Vec<Value>>) -> Value;
+pub type Aggregation = fn(Vec<Vec<Box<dyn Value>>>) -> Box<dyn Value>;
 
 /// Signature struct is a representation of function type
 ///
@@ -34,6 +35,6 @@ pub type Aggregation = fn(Vec<Vec<Value>>) -> Value;
 /// so you can return a dynamic type depending on parameters.
 #[derive(Clone)]
 pub struct Signature {
-    pub parameters: Vec<DataType>,
-    pub return_type: DataType,
+    pub parameters: Vec<Box<dyn DataType>>,
+    pub return_type: Box<dyn DataType>,
 }

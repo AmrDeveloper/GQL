@@ -52,7 +52,7 @@ pub(crate) fn execute_group_by_statement(
                     &gitql_object.titles,
                     &row.values,
                 )?;
-                row_values.push(value.to_string());
+                row_values.push(value.literal());
             }
 
             // Compute the hash for row of values

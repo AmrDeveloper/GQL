@@ -84,7 +84,7 @@ fn print_group_as_table(titles: &[String], table_headers: Vec<comfy_table::Cell>
         let mut table_row: Vec<comfy_table::Cell> = vec![];
         for index in 0..titles_len {
             let value = row.values.get(index).unwrap();
-            table_row.push(comfy_table::Cell::new(value.to_string()));
+            table_row.push(comfy_table::Cell::new(value.literal()));
         }
         table.add_row(table_row);
     }

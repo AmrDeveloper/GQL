@@ -15,7 +15,7 @@ impl OutputPrinter for JSONPrinter {
                 for (i, value) in row.values.iter().enumerate() {
                     object.insert(
                         titles[i].to_string(),
-                        serde_json::Value::String(value.to_string()),
+                        serde_json::Value::String(value.literal()),
                     );
                 }
                 elements.push(serde_json::Value::Object(object));

@@ -10,4 +10,6 @@ keywords = ["cli", "gql", "language", "git", "sql"]
 categories = ["command-line-utilities"]
 
 [dependencies]
+gitql-ast = { path = "../gitql-ast", version = "0.25.0" }
 chrono = "0.4.38"
+dyn-clone = "1.0.17"

@@ -14,31 +14,28 @@ use gitql_ast::operator::BinaryBitwiseOperator;
 use gitql_ast::operator::BinaryLogicalOperator;
 use gitql_ast::operator::ComparisonOperator;
 use gitql_ast::operator::ContainsOperator;
-use gitql_ast::operator::OverlapOperator;
 use gitql_ast::operator::PrefixUnaryOperator;
 use gitql_ast::statement::*;
+use gitql_ast::types::any::AnyType;
+use gitql_ast::types::array::ArrayType;
+use gitql_ast::types::base::DataType;
+use gitql_ast::types::boolean::BoolType;
+use gitql_ast::types::undefined::UndefType;
 use gitql_core::environment::Environment;
 use gitql_core::name_generator::generate_column_name;
-use gitql_core::types::DataType;
-use gitql_core::value::Value;
 
 use crate::context::ParserContext;
 use crate::diagnostic::Diagnostic;
 use crate::tokenizer::Location;
 use crate::tokenizer::Token;
 use crate::tokenizer::TokenKind;
-use crate::type_checker::are_types_equals;
 use crate::type_checker::check_all_values_are_same_type;
 use crate::type_checker::check_function_call_arguments;
 use crate::type_checker::is_expression_type_equals;
-use crate::type_checker::prefix_unary_expected_type;
 use crate::type_checker::resolve_dynamic_data_type;
 use crate::type_checker::type_check_and_classify_selected_fields;
-use crate::type_checker::type_check_prefix_unary;
 use crate::type_checker::type_check_projection_symbols;
-use crate::type_checker::type_mismatch_error;
 use crate::type_checker::ExprTypeCheckResult;
-use crate::type_checker::TypeCheckResult;
 
 pub fn parse_gql(tokens: Vec<Token>, env: &mut Environment) -> Result<Query, Box<Diagnostic>> {
     let mut position = 0;
@@ -140,7 +137,7 @@ fn parse_set_query(
         );
     }
 
-    env.define_global(name.to_string(), value.expr_type(env));
+    env.define_global(name.to_string(), value.expr_type());
 
     Ok(Query::GlobalVariableDeclaration(GlobalVariableStatement {
         name: name.to_string(),
@@ -668,7 +665,7 @@ fn parse_select_all_or_expressions(
     // Parse list of expression separated by `,` or until end of file
     while *position < tokens.len() && tokens[*position].kind != TokenKind::From {
         let expression = parse_expression(context, env, tokens, position)?;
-        let expr_type: DataType = expression.expr_type(env).clone();
+        let expr_type = expression.expr_type().clone();
         let field_name = expression_literal(&expression).unwrap_or(generate_column_name());
 
         // Assert that each selected field is unique
@@ -908,7 +905,8 @@ fn parse_where_statement(
     // Make sure WHERE condition expression has boolean type or can implicit casted to boolean
     let condition_location = tokens[*position].location;
     let mut condition = parse_expression(context, env, tokens, position)?;
-    match is_expression_type_equals(env, &condition, &DataType::Boolean) {
+    let expected_type: Box<dyn DataType> = Box::new(BoolType);
+    match is_expression_type_equals(&condition, &expected_type) {
         ExprTypeCheckResult::ImplicitCasted(expr) => {
             condition = expr;
         }
@@ -918,8 +916,8 @@ fn parse_where_statement(
         ExprTypeCheckResult::NotEqualAndCantImplicitCast => {
             return Err(Diagnostic::error(&format!(
                 "Expect `WHERE` condition to be type {} but got {}",
-                DataType::Boolean,
-                condition.expr_type(env)
+                "Boolean",
+                condition.expr_type().literal()
             ))
             .add_note("`WHERE` statement condition must be Boolean")
             .with_location(condition_location)
@@ -1023,7 +1021,8 @@ fn parse_having_statement(
     // Make sure HAVING condition expression has boolean type
     let condition_location = tokens[*position].location;
     let mut condition = parse_expression(context, env, tokens, position)?;
-    match is_expression_type_equals(env, &condition, &DataType::Boolean) {
+    let expected_type: Box<dyn DataType> = Box::new(BoolType);
+    match is_expression_type_equals(&condition, &expected_type) {
         ExprTypeCheckResult::ImplicitCasted(expr) => {
             condition = expr;
         }
@@ -1033,8 +1032,8 @@ fn parse_having_statement(
         ExprTypeCheckResult::NotEqualAndCantImplicitCast => {
             return Err(Diagnostic::error(&format!(
                 "Expect `HAVING` condition to be type {} but got {}",
-                DataType::Boolean,
-                condition.expr_type(env)
+                "Boolean",
+                condition.expr_type().literal()
             ))
             .add_note("`HAVING` statement condition must be Boolean")
             .with_location(condition_location)
@@ -1435,7 +1434,8 @@ fn parse_expression(
 
     if has_aggregations {
         let column_name = generate_column_name();
-        env.define(column_name.to_string(), expression.expr_type(env));
+        let expr_type = expression.expr_type();
+        env.define(column_name.to_string(), expr_type.clone());
 
         // Register the new aggregation generated field if the this expression is after group by
         if context.has_group_by_statement && !context.hidden_selections.contains(&column_name) {
@@ -1446,7 +1446,10 @@ fn parse_expression(
             .aggregations
             .insert(column_name.clone(), AggregateValue::Expression(expression));
 
-        return Ok(Box::new(SymbolExpression { value: column_name }));
+        return Ok(Box::new(SymbolExpression {
+            value: column_name,
+            result_type: expr_type,
+        }));
     }
 
     Ok(expression)
@@ -1479,7 +1482,7 @@ fn parse_assignment_expression(
         *position += 1;
 
         let value = parse_regex_expression(context, env, tokens, position)?;
-        env.define_global(variable_name.clone(), value.expr_type(env));
+        env.define_global(variable_name.clone(), value.expr_type());
 
         return Ok(Box::new(AssignmentExpression {
             symbol: variable_name.clone(),
@@ -1509,7 +1512,7 @@ fn parse_regex_expression(
     };
 
     if *position < tokens.len() && tokens[*position].kind == TokenKind::RegExp {
-        if !expression.expr_type(env).is_text() {
+        if !expression.expr_type().is_text() {
             return Err(
                 Diagnostic::error("`REGEXP` left hand side must be `Text` Type")
                     .with_location(tokens[*position].location)
@@ -1520,7 +1523,7 @@ fn parse_regex_expression(
         *position += 1;
 
         let pattern = parse_is_null_expression(context, env, tokens, position)?;
-        if !pattern.expr_type(env).is_text() {
+        if !pattern.expr_type().is_text() {
             return Err(
                 Diagnostic::error("`REGEXP` right hand side must be `Text` Type")
                     .with_location(tokens[*position].location)
@@ -1537,6 +1540,7 @@ fn parse_regex_expression(
             Box::new(UnaryExpression {
                 right: regex_expr,
                 operator: PrefixUnaryOperator::Bang,
+                result_type: Box::new(BoolType),
             })
         } else {
             regex_expr
@@ -1629,7 +1633,7 @@ fn parse_in_expression(
             }));
         }
 
-        let values_type_result = check_all_values_are_same_type(env, &values);
+        let values_type_result = check_all_values_are_same_type(&values);
         if values_type_result.is_none() {
             return Err(Diagnostic::error(
                 "Expects values between `(` and `)` to have the same type",
@@ -1640,7 +1644,7 @@ fn parse_in_expression(
 
         // Check that argument and values has the same type
         let values_type = values_type_result.unwrap();
-        if values_type != DataType::Any && expression.expr_type(env) != values_type {
+        if !values_type.is_any() && !expression.expr_type().equals(&values_type) {
             return Err(Diagnostic::error(
                 "Argument and Values of In Expression must have the same type",
             )
@@ -1680,7 +1684,7 @@ fn parse_between_expression(
             );
         }
 
-        let argument_type = expression.expr_type(env);
+        let argument_type = expression.expr_type();
         let range_start = parse_logical_or_expression(context, env, tokens, position)?;
 
         if *position >= tokens.len() || tokens[*position].kind != TokenKind::DotDot {
@@ -1694,13 +1698,14 @@ fn parse_between_expression(
 
         let range_end = parse_logical_or_expression(context, env, tokens, position)?;
 
-        if argument_type != range_start.expr_type(env) || argument_type != range_end.expr_type(env)
+        if !argument_type.equals(&range_start.expr_type())
+            || !argument_type.equals(&range_end.expr_type())
         {
             return Err(Diagnostic::error(&format!(
                 "Expect `BETWEEN` argument, range start and end to has same type but got {}, {} and {}",
-                argument_type,
-                range_start.expr_type(env),
-                range_end.expr_type(env)
+                argument_type.literal(),
+                range_start. expr_type().literal(),
+                range_end. expr_type().literal()
             ))
             .add_help("Try to make sure all of them has same type")
             .with_location(between_location)
@@ -1723,46 +1728,54 @@ fn parse_logical_or_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
-    let mut lhs = parse_logical_and_expression(context, env, tokens, position)?;
-    while *position < tokens.len() && tokens[*position].kind == TokenKind::OrOr {
-        let expected_type = DataType::Boolean;
-        match is_expression_type_equals(env, &lhs, &expected_type) {
-            ExprTypeCheckResult::ImplicitCasted(expr) => lhs = expr,
-            ExprTypeCheckResult::Error(diagnostic) => return Err(diagnostic),
-            ExprTypeCheckResult::NotEqualAndCantImplicitCast => {
-                return Err(type_mismatch_error(
-                    tokens[*position - 1].location,
-                    expected_type,
-                    lhs.expr_type(env),
-                )
-                .as_boxed());
-            }
-            _ => {}
-        }
+    let lhs = parse_logical_and_expression(context, env, tokens, position)?;
 
-        // Consume operator
+    if *position < tokens.len() && tokens[*position].kind == TokenKind::OrOr {
+        let operator = &tokens[*position];
+
+        // Consume`OR` operator
         *position += 1;
 
-        let mut rhs = parse_logical_and_expression(context, env, tokens, position)?;
-        match is_expression_type_equals(env, &rhs, &expected_type) {
-            ExprTypeCheckResult::ImplicitCasted(expr) => rhs = expr,
-            ExprTypeCheckResult::Error(diagnostic) => return Err(diagnostic),
-            ExprTypeCheckResult::NotEqualAndCantImplicitCast => {
-                return Err(type_mismatch_error(
-                    tokens[*position].location,
-                    expected_type,
-                    rhs.expr_type(env),
-                )
-                .as_boxed());
-            }
-            _ => {}
+        let rhs = parse_logical_and_expression(context, env, tokens, position)?;
+
+        let lhs_type = lhs.expr_type();
+        let rhs_type = rhs.expr_type();
+
+        let rhs_expected_types = lhs_type.can_perform_logical_or_op_with();
+
+        // Can perform this operator between LHS and RHS
+        if rhs_expected_types.contains(&rhs_type) {
+            return Ok(Box::new(LogicalExpression {
+                left: lhs,
+                operator: BinaryLogicalOperator::Or,
+                right: rhs,
+            }));
         }
 
-        lhs = Box::new(LogicalExpression {
-            left: lhs,
-            operator: BinaryLogicalOperator::Or,
-            right: rhs,
-        });
+        // Check if can perform the operator with additonal implicit casting
+        for expected_type in rhs_expected_types {
+            if expected_type.has_implicit_cast_from(&rhs) {
+                let casting = Box::new(CastExpression {
+                    value: rhs,
+                    result_type: expected_type.clone(),
+                });
+
+                return Ok(Box::new(LogicalExpression {
+                    left: lhs,
+                    operator: BinaryLogicalOperator::Or,
+                    right: casting,
+                }));
+            }
+        }
+
+        // Return error if this operator can't be performed even with implicit cast
+        return Err(Diagnostic::error(&format!(
+            "Operator `OR` can't be performed between types `{}` and `{}`",
+            lhs_type.literal(),
+            rhs_type.literal()
+        ))
+        .with_location(operator.location)
+        .as_boxed());
     }
 
     Ok(lhs)
@@ -1774,51 +1787,62 @@ fn parse_logical_and_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
-    let mut lhs = parse_overlap_expression(context, env, tokens, position)?;
-    while *position < tokens.len() && tokens[*position].kind == TokenKind::AndAnd {
-        let expected_type = DataType::Boolean;
-        match is_expression_type_equals(env, &lhs, &expected_type) {
-            ExprTypeCheckResult::ImplicitCasted(expr) => lhs = expr,
-            ExprTypeCheckResult::Error(diagnostic) => return Err(diagnostic),
-            ExprTypeCheckResult::NotEqualAndCantImplicitCast => {
-                return Err(type_mismatch_error(
-                    tokens[*position - 1].location,
-                    expected_type,
-                    lhs.expr_type(env),
-                )
-                .as_boxed());
-            }
-            _ => {}
-        }
+    let lhs = parse_bitwise_or_expression(context, env, tokens, position)?;
 
-        // Consume `&&` operator
+    if *position < tokens.len() && tokens[*position].kind == TokenKind::AndAnd {
+        let operator = &tokens[*position];
+
+        // Consume`AND` operator
         *position += 1;
 
-        let mut rhs = parse_overlap_expression(context, env, tokens, position)?;
-        match is_expression_type_equals(env, &rhs, &expected_type) {
-            ExprTypeCheckResult::ImplicitCasted(expr) => rhs = expr,
-            ExprTypeCheckResult::Error(diagnostic) => return Err(diagnostic),
-            ExprTypeCheckResult::NotEqualAndCantImplicitCast => {
-                return Err(type_mismatch_error(
-                    tokens[*position].location,
-                    expected_type,
-                    rhs.expr_type(env),
-                )
-                .as_boxed());
-            }
-            _ => {}
+        let rhs = parse_bitwise_or_expression(context, env, tokens, position)?;
+
+        let lhs_type = lhs.expr_type();
+        let rhs_type = rhs.expr_type();
+
+        let rhs_expected_types = lhs_type.can_perform_logical_and_op_with();
+
+        // Can perform this operator between LHS and RHS
+        if rhs_expected_types.contains(&rhs_type) {
+            return Ok(Box::new(LogicalExpression {
+                left: lhs,
+                operator: BinaryLogicalOperator::And,
+                right: rhs,
+            }));
         }
 
-        lhs = Box::new(LogicalExpression {
-            left: lhs,
-            operator: BinaryLogicalOperator::And,
-            right: rhs,
-        });
+        // Check if can perform the operator with additonal implicit casting
+        for expected_type in rhs_expected_types {
+            if expected_type.has_implicit_cast_from(&rhs) {
+                let casting = Box::new(CastExpression {
+                    value: rhs,
+                    result_type: expected_type.clone(),
+                });
+
+                return Ok(Box::new(LogicalExpression {
+                    left: lhs,
+                    operator: BinaryLogicalOperator::And,
+                    right: casting,
+                }));
+            }
+        }
+
+        // Return error if this operator can't be performed even with implicit cast
+        return Err(Diagnostic::error(&format!(
+            "Operator `AND` can't be performed between types `{}` and `{}`",
+            lhs_type.literal(),
+            rhs_type.literal()
+        ))
+        .with_location(operator.location)
+        .as_boxed());
     }
 
     Ok(lhs)
 }
 
+// TODO: Support new dynamic type system
+// TODO: Remove and implement OR in array and range
+/*
 fn parse_overlap_expression(
     context: &mut ParserContext,
     env: &mut Environment,
@@ -1827,7 +1851,7 @@ fn parse_overlap_expression(
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     let lhs = parse_bitwise_or_expression(context, env, tokens, position)?;
     if *position < tokens.len() && tokens[*position].kind == TokenKind::AndAnd {
-        let lhs_type = lhs.expr_type(env);
+        let lhs_type = lhs.expr_type();
         if lhs_type.is_array() || lhs_type.is_range() {
             let operator_location = tokens[*position].location;
             let overlap_operator = if lhs_type.is_array() {
@@ -1840,11 +1864,12 @@ fn parse_overlap_expression(
             *position += 1;
 
             let rhs = parse_bitwise_or_expression(context, env, tokens, position)?;
-            let rhs_type = rhs.expr_type(env);
-            if lhs_type != rhs_type {
+            let rhs_type = rhs.expr_type();
+            if !lhs_type.equals(&rhs_type) {
                 return Err(Diagnostic::error(&format!(
                     "Overlap expression right hand side expected to be `{}` but got `{}`",
-                    lhs_type, rhs_type
+                    lhs_type.literal(),
+                    rhs_type.literal()
                 ))
                 .with_location(operator_location)
                 .as_boxed());
@@ -1859,6 +1884,7 @@ fn parse_overlap_expression(
     }
     Ok(lhs)
 }
+*/
 
 fn parse_bitwise_or_expression(
     context: &mut ParserContext,
@@ -1867,33 +1893,55 @@ fn parse_bitwise_or_expression(
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     let lhs = parse_bitwise_xor_expression(context, env, tokens, position)?;
+
     if *position < tokens.len() && tokens[*position].kind == TokenKind::BitwiseOr {
+        let operator = &tokens[*position];
+
+        // Consume `|` token
         *position += 1;
 
-        if lhs.expr_type(env) != DataType::Integer {
-            return Err(type_mismatch_error(
-                tokens[*position - 2].location,
-                DataType::Integer,
-                lhs.expr_type(env),
-            )
-            .as_boxed());
-        }
-
         let rhs = parse_bitwise_xor_expression(context, env, tokens, position)?;
-        if rhs.expr_type(env) != DataType::Integer {
-            return Err(type_mismatch_error(
-                tokens[*position].location,
-                DataType::Integer,
-                lhs.expr_type(env),
-            )
-            .as_boxed());
+
+        let lhs_type = lhs.expr_type();
+        let rhs_type = rhs.expr_type();
+
+        let rhs_expected_types = lhs_type.can_perform_or_op_with();
+
+        // Can perform this operator between LHS and RHS
+        if rhs_expected_types.contains(&rhs_type) {
+            return Ok(Box::new(BitwiseExpression {
+                left: lhs,
+                operator: BinaryBitwiseOperator::Or,
+                right: rhs,
+                result_type: lhs_type.or_op_result_type(&rhs_type),
+            }));
         }
 
-        return Ok(Box::new(BitwiseExpression {
-            left: lhs,
-            operator: BinaryBitwiseOperator::Or,
-            right: rhs,
-        }));
+        // Check if can perform the operator with additonal implicit casting
+        for expected_type in rhs_expected_types {
+            if expected_type.has_implicit_cast_from(&rhs) {
+                let casting = Box::new(CastExpression {
+                    value: rhs,
+                    result_type: expected_type.clone(),
+                });
+
+                return Ok(Box::new(BitwiseExpression {
+                    left: lhs,
+                    operator: BinaryBitwiseOperator::Or,
+                    right: casting,
+                    result_type: lhs_type.or_op_result_type(&expected_type),
+                }));
+            }
+        }
+
+        // Return error if this operator can't be performed even with implicit cast
+        return Err(Diagnostic::error(&format!(
+            "Operator `|` can't be performed between types `{}` and `{}`",
+            lhs_type.literal(),
+            rhs_type.literal()
+        ))
+        .with_location(operator.location)
+        .as_boxed());
     }
 
     Ok(lhs)
@@ -1906,33 +1954,55 @@ fn parse_bitwise_xor_expression(
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     let lhs = parse_logical_xor_expression(context, env, tokens, position)?;
+
     if *position < tokens.len() && tokens[*position].kind == TokenKind::BitwiseXor {
+        let operator = &tokens[*position];
+
+        // Consume`#` operator
         *position += 1;
 
-        if lhs.expr_type(env) != DataType::Integer {
-            return Err(type_mismatch_error(
-                tokens[*position - 2].location,
-                DataType::Integer,
-                lhs.expr_type(env),
-            )
-            .as_boxed());
-        }
-
         let rhs = parse_logical_xor_expression(context, env, tokens, position)?;
-        if rhs.expr_type(env) != DataType::Integer {
-            return Err(type_mismatch_error(
-                tokens[*position].location,
-                DataType::Integer,
-                lhs.expr_type(env),
-            )
-            .as_boxed());
+
+        let lhs_type = lhs.expr_type();
+        let rhs_type = rhs.expr_type();
+
+        let rhs_expected_types = lhs_type.can_perform_xor_op_with();
+
+        // Can perform this operator between LHS and RHS
+        if rhs_expected_types.contains(&rhs_type) {
+            return Ok(Box::new(BitwiseExpression {
+                left: lhs,
+                operator: BinaryBitwiseOperator::Xor,
+                right: rhs,
+                result_type: lhs_type.xor_op_result_type(&rhs_type),
+            }));
         }
 
-        return Ok(Box::new(BitwiseExpression {
-            left: lhs,
-            operator: BinaryBitwiseOperator::Xor,
-            right: rhs,
-        }));
+        // Check if can perform the operator with additonal implicit casting
+        for expected_type in rhs_expected_types {
+            if expected_type.has_implicit_cast_from(&rhs) {
+                let casting = Box::new(CastExpression {
+                    value: rhs,
+                    result_type: expected_type.clone(),
+                });
+
+                return Ok(Box::new(BitwiseExpression {
+                    left: lhs,
+                    operator: BinaryBitwiseOperator::Xor,
+                    right: casting,
+                    result_type: lhs_type.or_op_result_type(&expected_type),
+                }));
+            }
+        }
+
+        // Return error if this operator can't be performed even with implicit cast
+        return Err(Diagnostic::error(&format!(
+            "Operator `#` can't be performed between types `{}` and `{}`",
+            lhs_type.literal(),
+            rhs_type.literal()
+        ))
+        .with_location(operator.location)
+        .as_boxed());
     }
 
     Ok(lhs)
@@ -1944,46 +2014,54 @@ fn parse_logical_xor_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
-    let mut lhs = parse_bitwise_and_expression(context, env, tokens, position)?;
-    while *position < tokens.len() && tokens[*position].kind == TokenKind::LogicalXor {
-        let expected_type = DataType::Boolean;
-        match is_expression_type_equals(env, &lhs, &expected_type) {
-            ExprTypeCheckResult::ImplicitCasted(expr) => lhs = expr,
-            ExprTypeCheckResult::Error(diagnostic) => return Err(diagnostic),
-            ExprTypeCheckResult::NotEqualAndCantImplicitCast => {
-                return Err(type_mismatch_error(
-                    tokens[*position - 1].location,
-                    expected_type,
-                    lhs.expr_type(env),
-                )
-                .as_boxed());
-            }
-            _ => {}
-        }
+    let lhs = parse_bitwise_and_expression(context, env, tokens, position)?;
 
-        // Consume operator
+    if *position < tokens.len() && tokens[*position].kind == TokenKind::LogicalXor {
+        let operator = &tokens[*position];
+
+        // Consume`XOR` operator
         *position += 1;
 
-        let mut rhs = parse_bitwise_and_expression(context, env, tokens, position)?;
-        match is_expression_type_equals(env, &rhs, &expected_type) {
-            ExprTypeCheckResult::ImplicitCasted(expr) => rhs = expr,
-            ExprTypeCheckResult::Error(diagnostic) => return Err(diagnostic),
-            ExprTypeCheckResult::NotEqualAndCantImplicitCast => {
-                return Err(type_mismatch_error(
-                    tokens[*position].location,
-                    expected_type,
-                    rhs.expr_type(env),
-                )
-                .as_boxed());
-            }
-            _ => {}
+        let rhs = parse_bitwise_and_expression(context, env, tokens, position)?;
+
+        let lhs_type = lhs.expr_type();
+        let rhs_type = rhs.expr_type();
+
+        let rhs_expected_types = lhs_type.can_perform_logical_xor_op_with();
+
+        // Can perform this operator between LHS and RHS
+        if rhs_expected_types.contains(&rhs_type) {
+            return Ok(Box::new(LogicalExpression {
+                left: lhs,
+                operator: BinaryLogicalOperator::Xor,
+                right: rhs,
+            }));
         }
 
-        lhs = Box::new(LogicalExpression {
-            left: lhs,
-            operator: BinaryLogicalOperator::Xor,
-            right: rhs,
-        });
+        // Check if can perform the operator with additonal implicit casting
+        for expected_type in rhs_expected_types {
+            if expected_type.has_implicit_cast_from(&rhs) {
+                let casting = Box::new(CastExpression {
+                    value: rhs,
+                    result_type: expected_type.clone(),
+                });
+
+                return Ok(Box::new(LogicalExpression {
+                    left: lhs,
+                    operator: BinaryLogicalOperator::Xor,
+                    right: casting,
+                }));
+            }
+        }
+
+        // Return error if this operator can't be performed even with implicit cast
+        return Err(Diagnostic::error(&format!(
+            "Operator `XOR` can't be performed between types `{}` and `{}`",
+            lhs_type.literal(),
+            rhs_type.literal()
+        ))
+        .with_location(operator.location)
+        .as_boxed());
     }
 
     Ok(lhs)
@@ -1995,32 +2073,56 @@ fn parse_bitwise_and_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
-    let mut lhs = parse_equality_expression(context, env, tokens, position)?;
+    let lhs = parse_equality_expression(context, env, tokens, position)?;
+
     if *position < tokens.len() && tokens[*position].kind == TokenKind::BitwiseAnd {
+        let operator = &tokens[*position];
+
+        // Consume `&&` token
         *position += 1;
 
-        if lhs.expr_type(env) != DataType::Integer {
-            return Err(type_mismatch_error(
-                tokens[*position - 2].location,
-                DataType::Integer,
-                lhs.expr_type(env),
-            ));
-        }
-
         let rhs = parse_equality_expression(context, env, tokens, position)?;
-        if rhs.expr_type(env) != DataType::Integer {
-            return Err(type_mismatch_error(
-                tokens[*position].location,
-                DataType::Integer,
-                lhs.expr_type(env),
-            ));
+
+        let lhs_type = lhs.expr_type();
+        let rhs_type = rhs.expr_type();
+
+        let rhs_expected_types = lhs_type.can_perform_and_op_with();
+
+        // Can perform this operator between LHS and RHS
+        if rhs_expected_types.contains(&rhs_type) {
+            return Ok(Box::new(BitwiseExpression {
+                left: lhs,
+                operator: BinaryBitwiseOperator::And,
+                right: rhs,
+                result_type: lhs_type.or_op_result_type(&rhs_type),
+            }));
         }
 
-        lhs = Box::new(BitwiseExpression {
-            left: lhs,
-            operator: BinaryBitwiseOperator::And,
-            right: rhs,
-        });
+        // Check if can perform the operator with additonal implicit casting
+        for expected_type in rhs_expected_types {
+            if expected_type.has_implicit_cast_from(&rhs) {
+                let casting = Box::new(CastExpression {
+                    value: rhs,
+                    result_type: expected_type.clone(),
+                });
+
+                return Ok(Box::new(BitwiseExpression {
+                    left: lhs,
+                    operator: BinaryBitwiseOperator::And,
+                    right: casting,
+                    result_type: lhs_type.or_op_result_type(&expected_type),
+                }));
+            }
+        }
+
+        // Return error if this operator can't be performed even with implicit cast
+        return Err(Diagnostic::error(&format!(
+            "Operator `&&` can't be performed between types `{}` and `{}`",
+            lhs_type.literal(),
+            rhs_type.literal()
+        ))
+        .with_location(operator.location)
+        .as_boxed());
     }
 
     Ok(lhs)
@@ -2032,59 +2134,96 @@ fn parse_equality_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
-    let expression = parse_comparison_expression(context, env, tokens, position);
-    if expression.is_err() || *position >= tokens.len() {
-        return expression;
-    }
+    let lhs = parse_comparison_expression(context, env, tokens, position)?;
 
-    let mut lhs = expression.ok().unwrap();
+    if *position < tokens.len() && is_equality_operator(&tokens[*position]) {
+        let operator = &tokens[*position];
 
-    let operator = &tokens[*position];
-    if operator.kind == TokenKind::Equal || operator.kind == TokenKind::BangEqual {
+        // Consume `=` or `!=` operator
         *position += 1;
-        let comparison_operator = if operator.kind == TokenKind::Equal {
-            ComparisonOperator::Equal
-        } else {
-            ComparisonOperator::NotEqual
-        };
 
-        let mut rhs = parse_comparison_expression(context, env, tokens, position)?;
+        let rhs = parse_comparison_expression(context, env, tokens, position)?;
 
-        match are_types_equals(env, &lhs, &rhs) {
-            TypeCheckResult::Equals => {}
-            TypeCheckResult::RightSideCasted(expr) => rhs = expr,
-            TypeCheckResult::LeftSideCasted(expr) => lhs = expr,
-            TypeCheckResult::NotEqualAndCantImplicitCast => {
-                let lhs_type = lhs.expr_type(env);
-                let rhs_type = rhs.expr_type(env);
-                let diagnostic = Diagnostic::error(&format!(
-                    "Can't compare values of different types `{}` and `{}`",
-                    lhs_type, rhs_type
-                ))
-                .with_location(get_safe_location(tokens, *position - 2));
+        let lhs_type = lhs.expr_type();
+        let rhs_type = rhs.expr_type();
 
-                // Provides help messages if use compare null to non null value
-                if lhs_type.is_null() || rhs_type.is_null() {
-                    return Err(diagnostic
-                        .add_help("Try to use `IS NULL expr` expression")
-                        .add_help("Try to use `ISNULL(expr)` function")
-                        .as_boxed());
+        // Parse and Check sides for `=` operator
+        if operator.kind == TokenKind::Equal {
+            let rhs_expected_types = lhs_type.can_perform_eq_op_with();
+
+            // Can perform this operator between LHS and RHS
+            if rhs_expected_types.contains(&rhs_type) {
+                return Ok(Box::new(ComparisonExpression {
+                    left: lhs,
+                    operator: ComparisonOperator::Equal,
+                    right: rhs,
+                }));
+            }
+
+            // Check if can perform the operator with additonal implicit casting
+            for expected_type in rhs_expected_types {
+                if expected_type.has_implicit_cast_from(&rhs) {
+                    let casting = Box::new(CastExpression {
+                        value: rhs,
+                        result_type: expected_type.clone(),
+                    });
+
+                    return Ok(Box::new(ComparisonExpression {
+                        left: lhs,
+                        operator: ComparisonOperator::Equal,
+                        right: casting,
+                    }));
                 }
-
-                return Err(diagnostic.as_boxed());
             }
-            TypeCheckResult::Error(diagnostic) => {
-                return Err(diagnostic
-                    .with_location(get_safe_location(tokens, *position - 2))
-                    .as_boxed());
-            }
-        };
 
-        return Ok(Box::new(ComparisonExpression {
-            left: lhs,
-            operator: comparison_operator,
-            right: rhs,
-        }));
+            // Return error if this operator can't be performed even with implicit cast
+            return Err(Diagnostic::error(&format!(
+                "Operator `=` can't be performed between types `{}` and `{}`",
+                lhs_type.literal(),
+                rhs_type.literal()
+            ))
+            .with_location(operator.location)
+            .as_boxed());
+        }
+
+        // Parse and Check sides for `!=` operator
+        if operator.kind == TokenKind::BangEqual {
+            let rhs_expected_types = lhs_type.can_perform_bang_eq_op_with();
+
+            // Can perform this operator between LHS and RHS
+            if rhs_expected_types.contains(&rhs_type) {
+                return Ok(Box::new(ComparisonExpression {
+                    left: lhs,
+                    operator: ComparisonOperator::NotEqual,
+                    right: rhs,
+                }));
+            }
+
+            // Check if can perform the operator with additonal implicit casting
+            for expected_type in rhs_expected_types {
+                if expected_type.has_implicit_cast_from(&rhs) {
+                    let casting = Box::new(CastExpression {
+                        value: rhs,
+                        result_type: expected_type.clone(),
+                    });
+
+                    return Ok(Box::new(ComparisonExpression {
+                        left: lhs,
+                        operator: ComparisonOperator::NotEqual,
+                        right: casting,
+                    }));
+                }
+            }
+
+            // Return error if this operator can't be performed even with implicit cast
+            return Err(Diagnostic::error(&format!(
+                "Operator `!=` can't be performed between types `{}` and `{}`",
+                lhs_type.literal(),
+                rhs_type.literal()
+            ))
+            .with_location(operator.location)
+            .as_boxed());
+        }
     }
 
     Ok(lhs)
@@ -2096,55 +2235,213 @@ fn parse_comparison_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
-    let mut lhs = parse_contains_expression(context, env, tokens, position)?;
+    let lhs = parse_contains_expression(context, env, tokens, position)?;
 
     if *position < tokens.len() && is_comparison_operator(&tokens[*position]) {
         let operator = &tokens[*position];
+
+        // Consume `>`, `<`, `>=`, `<=` or `<>` operator
         *position += 1;
-        let comparison_operator = match operator.kind {
-            TokenKind::Greater => ComparisonOperator::Greater,
-            TokenKind::GreaterEqual => ComparisonOperator::GreaterEqual,
-            TokenKind::Less => ComparisonOperator::Less,
-            TokenKind::LessEqual => ComparisonOperator::LessEqual,
-            _ => ComparisonOperator::NullSafeEqual,
-        };
 
-        let mut rhs = parse_contains_expression(context, env, tokens, position)?;
-        match are_types_equals(env, &lhs, &rhs) {
-            TypeCheckResult::Equals => {}
-            TypeCheckResult::RightSideCasted(expr) => rhs = expr,
-            TypeCheckResult::LeftSideCasted(expr) => lhs = expr,
-            TypeCheckResult::NotEqualAndCantImplicitCast => {
-                let lhs_type = lhs.expr_type(env);
-                let rhs_type = rhs.expr_type(env);
-                let diagnostic = Diagnostic::error(&format!(
-                    "Can't compare values of different types `{}` and `{}`",
-                    lhs_type, rhs_type
-                ))
-                .with_location(get_safe_location(tokens, *position - 2));
+        let rhs = parse_contains_expression(context, env, tokens, position)?;
 
-                // Provides help messages if use compare null to non null value
-                if lhs_type.is_null() || rhs_type.is_null() {
-                    return Err(diagnostic
-                        .add_help("Try to use `IS NULL expr` expression")
-                        .add_help("Try to use `ISNULL(expr)` function")
-                        .as_boxed());
+        let lhs_type = lhs.expr_type();
+        let rhs_type = rhs.expr_type();
+
+        // Parse and Check sides for `<` operator
+        if operator.kind == TokenKind::Greater {
+            let rhs_expected_types = lhs_type.can_perform_gt_op_with();
+
+            // Can perform this operator between LHS and RHS
+            if rhs_expected_types.contains(&rhs_type) {
+                return Ok(Box::new(ComparisonExpression {
+                    left: lhs,
+                    operator: ComparisonOperator::Greater,
+                    right: rhs,
+                }));
+            }
+
+            // Check if can perform the operator with additonal implicit casting
+            for expected_type in rhs_expected_types {
+                if expected_type.has_implicit_cast_from(&rhs) {
+                    let casting = Box::new(CastExpression {
+                        value: rhs,
+                        result_type: expected_type.clone(),
+                    });
+
+                    return Ok(Box::new(ComparisonExpression {
+                        left: lhs,
+                        operator: ComparisonOperator::Greater,
+                        right: casting,
+                    }));
                 }
-
-                return Err(diagnostic.as_boxed());
             }
-            TypeCheckResult::Error(diagnostic) => {
-                return Err(diagnostic
-                    .with_location(get_safe_location(tokens, *position - 2))
-                    .as_boxed());
-            }
-        };
 
-        return Ok(Box::new(ComparisonExpression {
-            left: lhs,
-            operator: comparison_operator,
-            right: rhs,
-        }));
+            // Return error if this operator can't be performed even with implicit cast
+            return Err(Diagnostic::error(&format!(
+                "Operator `<` can't be performed between types `{}` and `{}`",
+                lhs_type.literal(),
+                rhs_type.literal()
+            ))
+            .with_location(operator.location)
+            .as_boxed());
+        }
+
+        // Parse and Check sides for `<=` operator
+        if operator.kind == TokenKind::GreaterEqual {
+            let rhs_expected_types = lhs_type.can_perform_gte_op_with();
+
+            // Can perform this operator between LHS and RHS
+            if rhs_expected_types.contains(&rhs_type) {
+                return Ok(Box::new(ComparisonExpression {
+                    left: lhs,
+                    operator: ComparisonOperator::GreaterEqual,
+                    right: rhs,
+                }));
+            }
+
+            // Check if can perform the operator with additonal implicit casting
+            for expected_type in rhs_expected_types {
+                if expected_type.has_implicit_cast_from(&rhs) {
+                    let casting = Box::new(CastExpression {
+                        value: rhs,
+                        result_type: expected_type.clone(),
+                    });
+
+                    return Ok(Box::new(ComparisonExpression {
+                        left: lhs,
+                        operator: ComparisonOperator::GreaterEqual,
+                        right: casting,
+                    }));
+                }
+            }
+
+            // Return error if this operator can't be performed even with implicit cast
+            return Err(Diagnostic::error(&format!(
+                "Operator `<=` can't be performed between types `{}` and `{}`",
+                lhs_type.literal(),
+                rhs_type.literal()
+            ))
+            .with_location(operator.location)
+            .as_boxed());
+        }
+
+        // Parse and Check sides for `>` operator
+        if operator.kind == TokenKind::Less {
+            let rhs_expected_types = lhs_type.can_perform_lt_op_with();
+
+            // Can perform this operator between LHS and RHS
+            if rhs_expected_types.contains(&rhs_type) {
+                return Ok(Box::new(ComparisonExpression {
+                    left: lhs,
+                    operator: ComparisonOperator::Less,
+                    right: rhs,
+                }));
+            }
+
+            // Check if can perform the operator with additonal implicit casting
+            for expected_type in rhs_expected_types {
+                if expected_type.has_implicit_cast_from(&rhs) {
+                    let casting = Box::new(CastExpression {
+                        value: rhs,
+                        result_type: expected_type.clone(),
+                    });
+
+                    return Ok(Box::new(ComparisonExpression {
+                        left: lhs,
+                        operator: ComparisonOperator::Less,
+                        right: casting,
+                    }));
+                }
+            }
+
+            // Return error if this operator can't be performed even with implicit cast
+            return Err(Diagnostic::error(&format!(
+                "Operator `>` can't be performed between types `{}` and `{}`",
+                lhs_type.literal(),
+                rhs_type.literal()
+            ))
+            .with_location(operator.location)
+            .as_boxed());
+        }
+
+        // Parse and Check sides for `>=` operator
+        if operator.kind == TokenKind::LessEqual {
+            let rhs_expected_types = lhs_type.can_perform_lt_op_with();
+
+            // Can perform this operator between LHS and RHS
+            if rhs_expected_types.contains(&rhs_type) {
+                return Ok(Box::new(ComparisonExpression {
+                    left: lhs,
+                    operator: ComparisonOperator::LessEqual,
+                    right: rhs,
+                }));
+            }
+
+            // Check if can perform the operator with additonal implicit casting
+            for expected_type in rhs_expected_types {
+                if expected_type.has_implicit_cast_from(&rhs) {
+                    let casting = Box::new(CastExpression {
+                        value: rhs,
+                        result_type: expected_type.clone(),
+                    });
+
+                    return Ok(Box::new(ComparisonExpression {
+                        left: lhs,
+                        operator: ComparisonOperator::LessEqual,
+                        right: casting,
+                    }));
+                }
+            }
+
+            // Return error if this operator can't be performed even with implicit cast
+            return Err(Diagnostic::error(&format!(
+                "Operator `>=` can't be performed between types `{}` and `{}`",
+                lhs_type.literal(),
+                rhs_type.literal()
+            ))
+            .with_location(operator.location)
+            .as_boxed());
+        }
+
+        // Parse and Check sides for `<=>` operator
+        if operator.kind == TokenKind::NullSafeEqual {
+            let rhs_expected_types = lhs_type.can_perform_null_safe_eq_op_with();
+
+            // Can perform this operator between LHS and RHS
+            if rhs_expected_types.contains(&rhs_type) {
+                return Ok(Box::new(ComparisonExpression {
+                    left: lhs,
+                    operator: ComparisonOperator::NullSafeEqual,
+                    right: rhs,
+                }));
+            }
+
+            // Check if can perform the operator with additonal implicit casting
+            for expected_type in rhs_expected_types {
+                if expected_type.has_implicit_cast_from(&rhs) {
+                    let casting = Box::new(CastExpression {
+                        value: rhs,
+                        result_type: expected_type.clone(),
+                    });
+
+                    return Ok(Box::new(ComparisonExpression {
+                        left: lhs,
+                        operator: ComparisonOperator::NullSafeEqual,
+                        right: casting,
+                    }));
+                }
+            }
+
+            // Return error if this operator can't be performed even with implicit cast
+            return Err(Diagnostic::error(&format!(
+                "Operator `<=>` can't be performed between types `{}` and `{}`",
+                lhs_type.literal(),
+                rhs_type.literal()
+            ))
+            .with_location(operator.location)
+            .as_boxed());
+        }
     }
 
     Ok(lhs)
@@ -2159,55 +2456,51 @@ fn parse_contains_expression(
     let lhs = parse_bitwise_shift_expression(context, env, tokens, position)?;
 
     if *position < tokens.len() && tokens[*position].kind == TokenKind::AtRightArrow {
-        let operator_location = tokens[*position].location;
+        let operator = &tokens[*position];
 
         // Consume `@>` token
         *position += 1;
 
         let rhs = parse_bitwise_shift_expression(context, env, tokens, position)?;
 
-        let lhs_type = lhs.expr_type(env);
-        let rhs_type = rhs.expr_type(env);
-        let is_both_side_has_same_type = lhs_type == rhs_type;
+        let lhs_type = lhs.expr_type();
+        let rhs_type = rhs.expr_type();
 
-        // Make sure the left hand side is a Range or Array
-        match lhs_type {
-            DataType::Range(range_element_type) => {
-                // Is Range contains another Range of the same element type
-                // Example: Range<T> @> Range<T>
-                if is_both_side_has_same_type {
-                    return Ok(Box::new(ContainsExpression {
-                        left: lhs,
-                        right: rhs,
-                        operator: ContainsOperator::RangeContainsRange,
-                    }));
-                }
+        let rhs_expected_types = lhs_type.can_perform_contains_op_with();
 
-                // Is Range contains another element of the same Range element type
-                // Example: Range<T> @> T
-                if *range_element_type == rhs_type {
-                    return Ok(Box::new(ContainsExpression {
-                        left: lhs,
-                        right: rhs,
-                        operator: ContainsOperator::RangeContainsElement,
-                    }));
-                }
+        // Can perform this operator between LHS and RHS
+        if rhs_expected_types.contains(&rhs_type) {
+            return Ok(Box::new(ContainsExpression {
+                left: lhs,
+                right: rhs,
+                operator: ContainsOperator::RangeContainsRange,
+            }));
+        }
 
-                // Unexpected Right hand side
-                return Err(Diagnostic::error(
-                    "Element type must be match the range type or element type",
-                )
-                .with_location(operator_location)
-                .as_boxed());
+        // Check if can perform the operator with additonal implicit casting
+        for expected_type in rhs_expected_types {
+            if expected_type.has_implicit_cast_from(&rhs) {
+                let casting = Box::new(CastExpression {
+                    value: rhs,
+                    result_type: expected_type.clone(),
+                });
+
+                return Ok(Box::new(ContainsExpression {
+                    left: lhs,
+                    right: casting,
+                    operator: ContainsOperator::RangeContainsRange,
+                }));
             }
-            _ => {
-                return Err(
-                    Diagnostic::error("Contains expression expect left side to be Range")
-                        .with_location(operator_location)
-                        .as_boxed(),
-                );
-            }
-        };
+        }
+
+        // Return error if this operator can't be performed even with implicit cast
+        return Err(Diagnostic::error(&format!(
+            "Operator `@>` can't be performed between types `{}` and `{}`",
+            lhs_type.literal(),
+            rhs_type.literal()
+        ))
+        .with_location(operator.location)
+        .as_boxed());
     }
 
     Ok(lhs)
@@ -2219,35 +2512,99 @@ fn parse_bitwise_shift_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
-    let mut lhs = parse_term_expression(context, env, tokens, position)?;
+    let lhs = parse_term_expression(context, env, tokens, position)?;
 
-    while *position < tokens.len() && is_bitwise_shift_operator(&tokens[*position]) {
+    if *position < tokens.len() && is_bitwise_shift_operator(&tokens[*position]) {
         let operator = &tokens[*position];
+
+        // Consume `<<` or `>>` operator
         *position += 1;
-        let bitwise_operator = if operator.kind == TokenKind::BitwiseRightShift {
-            BinaryBitwiseOperator::RightShift
-        } else {
-            BinaryBitwiseOperator::LeftShift
-        };
 
         let rhs = parse_term_expression(context, env, tokens, position)?;
+        let lhs_type = lhs.expr_type();
+        let rhs_type = rhs.expr_type();
 
-        // Make sure right and left hand side types are numbers
-        if rhs.expr_type(env).is_int() && rhs.expr_type(env) != lhs.expr_type(env) {
+        // Parse and Check sides for `<<` operator
+        if operator.kind == TokenKind::BitwiseRightShift {
+            let rhs_expected_types = lhs_type.can_perform_shr_op_with();
+
+            // Can perform this operator between LHS and RHS
+            if rhs_expected_types.contains(&rhs_type) {
+                return Ok(Box::new(BitwiseExpression {
+                    left: lhs,
+                    operator: BinaryBitwiseOperator::RightShift,
+                    right: rhs,
+                    result_type: rhs_type.shr_op_result_type(&rhs_type),
+                }));
+            }
+
+            // Check if can perform the operator with additonal implicit casting
+            for expected_type in rhs_expected_types {
+                if expected_type.has_implicit_cast_from(&rhs) {
+                    let casting = Box::new(CastExpression {
+                        value: rhs,
+                        result_type: expected_type.clone(),
+                    });
+
+                    return Ok(Box::new(BitwiseExpression {
+                        left: lhs,
+                        operator: BinaryBitwiseOperator::RightShift,
+                        right: casting,
+                        result_type: lhs_type.shr_op_result_type(&expected_type),
+                    }));
+                }
+            }
+
+            // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
-                "Bitwise operators require number types but got `{}` and `{}`",
-                lhs.expr_type(env),
-                rhs.expr_type(env)
+                "Operator `>>` can't be performed between types `{}` and `{}`",
+                lhs_type.literal(),
+                rhs_type.literal()
             ))
-            .with_location(get_safe_location(tokens, *position - 2))
+            .with_location(operator.location)
             .as_boxed());
         }
 
-        lhs = Box::new(BitwiseExpression {
-            left: lhs,
-            operator: bitwise_operator,
-            right: rhs,
-        });
+        // Parse and Check sides for `>>` operator
+        if operator.kind == TokenKind::BitwiseLeftShift {
+            let rhs_expected_types = lhs_type.can_perform_shl_op_with();
+
+            // Can perform this operator between LHS and RHS
+            if rhs_expected_types.contains(&rhs_type) {
+                return Ok(Box::new(BitwiseExpression {
+                    left: lhs,
+                    operator: BinaryBitwiseOperator::LeftShift,
+                    right: rhs,
+                    result_type: lhs_type.shl_op_result_type(&rhs_type),
+                }));
+            }
+
+            // Check if can perform the operator with additonal implicit casting
+            for expected_type in rhs_expected_types {
+                if expected_type.has_implicit_cast_from(&rhs) {
+                    let casting = Box::new(CastExpression {
+                        value: rhs,
+                        result_type: expected_type.clone(),
+                    });
+
+                    return Ok(Box::new(BitwiseExpression {
+                        left: lhs,
+                        operator: BinaryBitwiseOperator::LeftShift,
+                        right: casting,
+                        result_type: lhs_type.shr_op_result_type(&expected_type),
+                    }));
+                }
+            }
+
+            // Return error if this operator can't be performed even with implicit cast
+            return Err(Diagnostic::error(&format!(
+                "Operator `<<` can't be performed between types `{}` and `{}`",
+                lhs_type.literal(),
+                rhs_type.literal()
+            ))
+            .with_location(operator.location)
+            .as_boxed());
+        }
     }
 
     Ok(lhs)
@@ -2259,38 +2616,54 @@ fn parse_term_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
-    let mut lhs = parse_factor_expression(context, env, tokens, position)?;
+    let lhs = parse_factor_expression(context, env, tokens, position)?;
 
-    while *position < tokens.len() && is_term_operator(&tokens[*position]) {
+    if *position < tokens.len() && is_term_operator(&tokens[*position]) {
         let operator = &tokens[*position];
+
+        // Consume `+` or `-` operator
         *position += 1;
-        let math_operator = if operator.kind == TokenKind::Plus {
-            ArithmeticOperator::Plus
-        } else {
-            ArithmeticOperator::Minus
-        };
 
         let rhs = parse_factor_expression(context, env, tokens, position)?;
 
-        let lhs_type = lhs.expr_type(env);
-        let rhs_type = rhs.expr_type(env);
+        let lhs_type = lhs.expr_type();
+        let rhs_type = rhs.expr_type();
 
-        // Make sure right and left hand side types are numbers
-        if lhs_type.is_number() && rhs_type.is_number() {
-            lhs = Box::new(ArithmeticExpression {
-                left: lhs,
-                operator: math_operator,
-                right: rhs,
-            });
+        // Parse and Check sides for `+` operator
+        if operator.kind == TokenKind::Plus {
+            let rhs_expected_types = lhs_type.can_perform_add_op_with();
 
-            continue;
-        }
+            // Can perform this operator between LHS and RHS
+            if rhs_expected_types.contains(&rhs_type) {
+                return Ok(Box::new(ArithmeticExpression {
+                    left: lhs,
+                    operator: ArithmeticOperator::Plus,
+                    right: rhs,
+                    result_type: lhs_type.add_op_result_type(&rhs_type),
+                }));
+            }
 
-        // Report Error message that suggest to replace `+` operator by `CONCAT` function
-        if math_operator == ArithmeticOperator::Plus {
+            // Check if can perform the operator with additonal implicit casting
+            for expected_type in rhs_expected_types {
+                if expected_type.has_implicit_cast_from(&rhs) {
+                    let casting = Box::new(CastExpression {
+                        value: rhs,
+                        result_type: expected_type.clone(),
+                    });
+
+                    return Ok(Box::new(ArithmeticExpression {
+                        left: lhs,
+                        operator: ArithmeticOperator::Plus,
+                        right: casting,
+                        result_type: lhs_type.add_op_result_type(&expected_type),
+                    }));
+                }
+            }
+
+            // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
-                "Math operators `+` both sides to be number types but got `{}` and `{}`",
-                lhs_type, rhs_type
+                "Operator `-` can't be performed between types `{}` and `{}`",
+                lhs_type.literal(), rhs_type.literal()
             ))
             .add_help(
                 "You can use `CONCAT(Any, Any, ...Any)` function to concatenate values with different types",
@@ -2299,12 +2672,46 @@ fn parse_term_expression(
             .as_boxed());
         }
 
-        return Err(Diagnostic::error(&format!(
-            "Math operators require number types but got `{}` and `{}`",
-            lhs_type, rhs_type
-        ))
-        .with_location(operator.location)
-        .as_boxed());
+        // Parse and Check sides for `-` operator
+        if operator.kind == TokenKind::Minus {
+            let rhs_expected_types = lhs_type.can_perform_sub_op_with();
+
+            // Can perform this operator between LHS and RHS
+            if rhs_expected_types.contains(&rhs_type) {
+                return Ok(Box::new(ArithmeticExpression {
+                    left: lhs,
+                    operator: ArithmeticOperator::Minus,
+                    right: rhs,
+                    result_type: lhs_type.sub_op_result_type(&rhs_type),
+                }));
+            }
+
+            // Check if can perform the operator with additonal implicit casting
+            for expected_type in rhs_expected_types {
+                if expected_type.has_implicit_cast_from(&rhs) {
+                    let casting = Box::new(CastExpression {
+                        value: rhs,
+                        result_type: expected_type.clone(),
+                    });
+
+                    return Ok(Box::new(ArithmeticExpression {
+                        left: lhs,
+                        operator: ArithmeticOperator::Minus,
+                        right: casting,
+                        result_type: lhs_type.sub_op_result_type(&expected_type),
+                    }));
+                }
+            }
+
+            // Return error if this operator can't be performed even with implicit cast
+            return Err(Diagnostic::error(&format!(
+                "Operator `-` can't be performed between types `{}` and `{}`",
+                lhs_type.literal(),
+                rhs_type.literal()
+            ))
+            .with_location(operator.location)
+            .as_boxed());
+        }
     }
 
     Ok(lhs)
@@ -2316,39 +2723,181 @@ fn parse_factor_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
-    let mut lhs = parse_like_expression(context, env, tokens, position)?;
-    while *position < tokens.len() && is_factor_operator(&tokens[*position]) {
-        let operator = &tokens[*position];
-        *position += 1;
+    let lhs = parse_like_expression(context, env, tokens, position)?;
 
-        let factor_operator = match operator.kind {
-            TokenKind::Star => ArithmeticOperator::Star,
-            TokenKind::Slash => ArithmeticOperator::Slash,
-            TokenKind::Caret => ArithmeticOperator::Exponentiation,
-            _ => ArithmeticOperator::Modulus,
-        };
+    if *position < tokens.len() && is_factor_operator(&tokens[*position]) {
+        let operator = &tokens[*position];
+
+        // Consume `*`, '/`, '%' or '^` operator
+        *position += 1;
 
         let rhs = parse_like_expression(context, env, tokens, position)?;
 
-        let lhs_type = lhs.expr_type(env);
-        let rhs_type = rhs.expr_type(env);
+        let lhs_type = lhs.expr_type();
+        let rhs_type = rhs.expr_type();
 
-        // Make sure right and left hand side types are numbers
-        if lhs_type.is_number() && rhs_type.is_number() {
-            lhs = Box::new(ArithmeticExpression {
-                left: lhs,
-                operator: factor_operator,
-                right: rhs,
-            });
-            continue;
+        // Parse and Check sides for `*` operator
+        if operator.kind == TokenKind::Star {
+            let rhs_expected_types = lhs_type.can_perform_mul_op_with();
+
+            // Can perform this operator between LHS and RHS
+            if rhs_expected_types.contains(&rhs_type) {
+                return Ok(Box::new(ArithmeticExpression {
+                    left: lhs,
+                    operator: ArithmeticOperator::Star,
+                    right: rhs,
+                    result_type: lhs_type.mul_op_result_type(&rhs_type),
+                }));
+            }
+
+            // Check if can perform the operator with additonal implicit casting
+            for expected_type in rhs_expected_types {
+                if expected_type.has_implicit_cast_from(&rhs) {
+                    let casting = Box::new(CastExpression {
+                        value: rhs,
+                        result_type: expected_type.clone(),
+                    });
+
+                    return Ok(Box::new(ArithmeticExpression {
+                        left: lhs,
+                        operator: ArithmeticOperator::Star,
+                        right: casting,
+                        result_type: lhs_type.mul_op_result_type(&expected_type),
+                    }));
+                }
+            }
+
+            // Return error if this operator can't be performed even with implicit cast
+            return Err(Diagnostic::error(&format!(
+                "Operator `*` can't be performed between types `{}` and `{}`",
+                lhs_type.literal(),
+                rhs_type.literal()
+            ))
+            .with_location(operator.location)
+            .as_boxed());
         }
 
-        return Err(Diagnostic::error(&format!(
-            "Math operators require number types but got `{}` and `{}`",
-            lhs_type, rhs_type
-        ))
-        .with_location(get_safe_location(tokens, *position - 2))
-        .as_boxed());
+        // Parse and Check sides for `/` operator
+        if operator.kind == TokenKind::Slash {
+            let rhs_expected_types = lhs_type.can_perform_div_op_with();
+
+            // Can perform this operator between LHS and RHS
+            if rhs_expected_types.contains(&rhs_type) {
+                return Ok(Box::new(ArithmeticExpression {
+                    left: lhs,
+                    operator: ArithmeticOperator::Slash,
+                    right: rhs,
+                    result_type: lhs_type.div_op_result_type(&rhs_type),
+                }));
+            }
+
+            // Check if can perform the operator with additonal implicit casting
+            for expected_type in rhs_expected_types {
+                if expected_type.has_implicit_cast_from(&rhs) {
+                    let casting = Box::new(CastExpression {
+                        value: rhs,
+                        result_type: expected_type.clone(),
+                    });
+
+                    return Ok(Box::new(ArithmeticExpression {
+                        left: lhs,
+                        operator: ArithmeticOperator::Slash,
+                        right: casting,
+                        result_type: lhs_type.div_op_result_type(&expected_type),
+                    }));
+                }
+            }
+
+            // Return error if this operator can't be performed even with implicit cast
+            return Err(Diagnostic::error(&format!(
+                "Operator `/` can't be performed between types `{}` and `{}`",
+                lhs_type.literal(),
+                rhs_type.literal()
+            ))
+            .with_location(operator.location)
+            .as_boxed());
+        }
+
+        // Parse and Check sides for `%` operator
+        if operator.kind == TokenKind::Percentage {
+            let rhs_expected_types = lhs_type.can_perform_rem_op_with();
+
+            // Can perform this operator between LHS and RHS
+            if rhs_expected_types.contains(&rhs_type) {
+                return Ok(Box::new(ArithmeticExpression {
+                    left: lhs,
+                    operator: ArithmeticOperator::Modulus,
+                    right: rhs,
+                    result_type: lhs_type.rem_op_result_type(&rhs_type),
+                }));
+            }
+
+            // Check if can perform the operator with additonal implicit casting
+            for expected_type in rhs_expected_types {
+                if expected_type.has_implicit_cast_from(&rhs) {
+                    let casting = Box::new(CastExpression {
+                        value: rhs,
+                        result_type: expected_type.clone(),
+                    });
+
+                    return Ok(Box::new(ArithmeticExpression {
+                        left: lhs,
+                        operator: ArithmeticOperator::Modulus,
+                        right: casting,
+                        result_type: lhs_type.rem_op_result_type(&expected_type),
+                    }));
+                }
+            }
+
+            // Return error if this operator can't be performed even with implicit cast
+            return Err(Diagnostic::error(&format!(
+                "Operator `%` can't be performed between types `{}` and `{}`",
+                lhs_type.literal(),
+                rhs_type.literal()
+            ))
+            .with_location(operator.location)
+            .as_boxed());
+        }
+
+        // Parse and Check sides for `^` operator
+        if operator.kind == TokenKind::Caret {
+            let rhs_expected_types = lhs_type.can_perform_caret_op_with();
+
+            if rhs_expected_types.contains(&rhs_type) {
+                return Ok(Box::new(ArithmeticExpression {
+                    left: lhs,
+                    operator: ArithmeticOperator::Exponentiation,
+                    right: rhs,
+                    result_type: lhs_type.caret_op_result_type(&rhs_type),
+                }));
+            }
+
+            // Check if can perform the operator with additonal implicit casting
+            for expected_type in rhs_expected_types {
+                if expected_type.has_implicit_cast_from(&rhs) {
+                    let casting = Box::new(CastExpression {
+                        value: rhs,
+                        result_type: expected_type.clone(),
+                    });
+
+                    return Ok(Box::new(ArithmeticExpression {
+                        left: lhs,
+                        operator: ArithmeticOperator::Exponentiation,
+                        right: casting,
+                        result_type: lhs_type.caret_op_result_type(&expected_type),
+                    }));
+                }
+            }
+
+            // Return error if this operator can't be performed even with implicit cast
+            return Err(Diagnostic::error(&format!(
+                "Operator `^` can't be performed between types `{}` and `{}`",
+                lhs_type.literal(),
+                rhs_type.literal()
+            ))
+            .with_location(operator.location)
+            .as_boxed());
+        }
     }
 
     Ok(lhs)
@@ -2370,20 +2919,20 @@ fn parse_like_expression(
         let location = tokens[*position].location;
         *position += 1;
 
-        if !lhs.expr_type(env).is_text() {
+        if !lhs.expr_type().is_text() {
             return Err(Diagnostic::error(&format!(
                 "Expect `LIKE` left hand side to be `TEXT` but got {}",
-                lhs.expr_type(env)
+                lhs.expr_type().literal()
             ))
             .with_location(location)
             .as_boxed());
         }
 
         let pattern = parse_glob_expression(context, env, tokens, position)?;
-        if !pattern.expr_type(env).is_text() {
+        if !pattern.expr_type().is_text() {
             return Err(Diagnostic::error(&format!(
                 "Expect `LIKE` right hand side to be `TEXT` but got {}",
-                pattern.expr_type(env)
+                pattern.expr_type().literal()
             ))
             .with_location(location)
             .as_boxed());
@@ -2414,20 +2963,20 @@ fn parse_glob_expression(
         let location = tokens[*position].location;
         *position += 1;
 
-        if !lhs.expr_type(env).is_text() {
+        if !lhs.expr_type().is_text() {
             return Err(Diagnostic::error(&format!(
                 "Expect `GLOB` left hand side to be `TEXT` but got {}",
-                lhs.expr_type(env)
+                lhs.expr_type().literal()
             ))
             .with_location(location)
             .as_boxed());
         }
 
         let pattern = parse_index_or_slice_expression(context, env, tokens, position)?;
-        if !pattern.expr_type(env).is_text() {
+        if !pattern.expr_type().is_text() {
             return Err(Diagnostic::error(&format!(
                 "Expect `GLOB` right hand side to be `TEXT` but got {}",
-                pattern.expr_type(env)
+                pattern.expr_type().literal()
             ))
             .with_location(location)
             .as_boxed());
@@ -2448,32 +2997,15 @@ fn parse_index_or_slice_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
-    let mut expression = parse_prefix_unary_expression(context, env, tokens, position)?;
+    let lhs = parse_prefix_unary_expression(context, env, tokens, position)?;
 
-    while *position < tokens.len() && tokens[*position].kind == TokenKind::LeftBracket {
+    if *position < tokens.len() && tokens[*position].kind == TokenKind::LeftBracket {
+        let operator = &tokens[*position];
+
         // Consume Left Bracket `[`
         *position += 1;
 
-        let expression_type = expression.expr_type(env);
-
-        if !expression_type.is_array() {
-            return Err(
-                Diagnostic::error("Expect Right side of index expression to be Array")
-                    .with_location(get_safe_location(tokens, *position))
-                    .as_boxed(),
-            );
-        }
-
-        // Make sure right hand side is an Array
-        let rhs_type = expression.expr_type(env);
-        if !rhs_type.is_array() {
-            return Err(Diagnostic::error(&format!(
-                "Expect right side of index expression to be Array but got {}",
-                rhs_type
-            ))
-            .with_location(get_safe_location(tokens, *position))
-            .as_boxed());
-        }
+        let lhs_type = lhs.expr_type();
 
         // Slice with end only range [:end]
         if *position < tokens.len() && tokens[*position].kind == TokenKind::Colon {
@@ -2485,15 +3017,28 @@ fn parse_index_or_slice_expression(
             if *position < tokens.len() && tokens[*position].kind == TokenKind::RightBracket {
                 // Consume right bracket `]`
                 *position += 1;
-                return Ok(expression);
+                return Ok(lhs);
             }
 
             let slice_end = parse_prefix_unary_expression(context, env, tokens, position)?;
-            let end_type = slice_end.expr_type(env);
-            if !end_type.is_int() {
+            let end_type = slice_end.expr_type();
+
+            // Check if LHS already support slice op
+            if !lhs_type.can_perform_slice_op() {
                 return Err(Diagnostic::error(&format!(
-                    "Expect Slice expression end value to be Int but got {}",
-                    end_type
+                    "Operator `[:]` can't be performed on type `{}`",
+                    lhs_type.literal()
+                ))
+                .with_location(get_safe_location(tokens, *position))
+                .as_boxed());
+            }
+
+            // Check that LHS support slice op with this type
+            let rhs_expected_types = lhs_type.can_perform_slice_op_with();
+            if rhs_expected_types.contains(&end_type) {
+                return Err(Diagnostic::error(&format!(
+                    "Operator `[:]` can't be performed with type of index `{}`",
+                    end_type.literal()
                 ))
                 .with_location(get_safe_location(tokens, *position))
                 .as_boxed());
@@ -2508,52 +3053,70 @@ fn parse_index_or_slice_expression(
                     .as_boxed());
             }
 
-            expression = Box::new(SliceExpression {
-                collection: expression,
+            return Ok(Box::new(SliceExpression {
+                collection: lhs,
                 start: None,
                 end: Some(slice_end),
-            });
-            continue;
+                result_type: lhs_type.clone(),
+            }));
         }
 
         let index = parse_prefix_unary_expression(context, env, tokens, position)?;
+        let index_type = index.expr_type();
 
         // Slice Expression with Start and End range [start:end]
         if *position < tokens.len() && tokens[*position].kind == TokenKind::Colon {
             // Consume Colon `:`
             *position += 1;
 
-            let start_type = index.expr_type(env);
-            if !start_type.is_int() {
-                return Err(Diagnostic::error(&format!(
-                    "Expect Slice expression start value to be Int but got {}",
-                    start_type
-                ))
-                .with_location(get_safe_location(tokens, *position))
-                .as_boxed());
-            }
-
             // Slice with start only range [start:]
             if *position < tokens.len() && tokens[*position].kind == TokenKind::RightBracket {
                 // Consume Right Bracket `]`
                 *position += 1;
 
-                expression = Box::new(SliceExpression {
-                    collection: expression,
-                    start: Some(index),
-                    end: None,
-                });
-                continue;
+                let rhs_expected_types = lhs_type.can_perform_slice_op_with();
+                if rhs_expected_types.contains(&index_type) {
+                    return Ok(Box::new(SliceExpression {
+                        collection: lhs,
+                        start: Some(index),
+                        end: None,
+                        result_type: lhs_type.clone(),
+                    }));
+                }
+
+                return Err(Diagnostic::error(&format!(
+                    "Operator Slice `[:]` can't be performed between on {} with start `{}` and end `{}`",
+                    lhs_type.literal(),
+                    index_type.literal(),
+                    "None"
+                ))
+                .with_location(operator.location)
+                .as_boxed());
             }
 
             let slice_end = parse_prefix_unary_expression(context, env, tokens, position)?;
-            let end_type = slice_end.expr_type(env);
-            if !end_type.is_int() {
+            let end_type = slice_end.expr_type();
+
+            // Make sure slice start and end types are equals
+            if !index_type.equals(&end_type) {
                 return Err(Diagnostic::error(&format!(
-                    "Expect Slice expression end value to be Int but got {}",
-                    end_type
+                    "Operator Slice `[:]` start and end types must be equals but found `{}` and  `{}`",
+                    index_type.literal(),
+                    end_type.literal()
                 ))
-                .with_location(get_safe_location(tokens, *position))
+                .with_location(operator.location)
+                .as_boxed());
+            }
+
+            let rhs_expected_types = lhs_type.can_perform_slice_op_with();
+            if !rhs_expected_types.contains(&end_type) {
+                return Err(Diagnostic::error(&format!(
+                    "Operator Slice `[:]` can't be performed between on {} with start `{}` and end `{}`",
+                    lhs_type.literal(),
+                    index_type.literal(),
+                    end_type.literal()
+                ))
+                .with_location(operator.location)
                 .as_boxed());
             }
 
@@ -2566,30 +3129,25 @@ fn parse_index_or_slice_expression(
                     .as_boxed());
             }
 
-            expression = Box::new(SliceExpression {
-                collection: expression,
+            return Ok(Box::new(SliceExpression {
+                collection: lhs,
                 start: Some(index),
                 end: Some(slice_end),
-            });
-            continue;
+                result_type: lhs_type.clone(),
+            }));
         }
 
         // Index Expression
-        // Make sure index is integer type
-        let index_type = index.expr_type(env);
-        if !index_type.is_int() {
+        let rhs_expected_types = lhs_type.can_perform_index_op_with();
+        if !rhs_expected_types.contains(&index_type) {
             return Err(Diagnostic::error(&format!(
-                "Expect Index value to be Int but got {}",
-                index_type
+                "Operator Index `[]` can't be performed between on {} with index `{}`",
+                lhs_type.literal(),
+                index_type.literal(),
             ))
-            .with_location(get_safe_location(tokens, *position))
+            .with_location(operator.location)
             .as_boxed());
         }
-
-        let array_element_type = match expression_type {
-            DataType::Array(element_type) => *element_type,
-            _ => DataType::Any,
-        };
 
         if *position < tokens.len() && tokens[*position].kind == TokenKind::RightBracket {
             // Consume Left Right `]`
@@ -2600,14 +3158,23 @@ fn parse_index_or_slice_expression(
                 .as_boxed());
         }
 
-        expression = Box::new(IndexExpression {
-            collection: expression,
-            element_type: array_element_type,
+        let array_element_type =
+            if let Some(array_type) = lhs_type.as_any().downcast_ref::<ArrayType>() {
+                array_type.base.clone()
+            } else {
+                Box::new(AnyType)
+            };
+
+        let result_type = lhs_type.index_op_result_type(&index_type);
+        return Ok(Box::new(IndexExpression {
+            collection: lhs,
+            element_type: array_element_type.clone(),
             index,
-        });
+            result_type,
+        }));
     }
 
-    Ok(expression)
+    Ok(lhs)
 }
 
 fn parse_prefix_unary_expression(
@@ -2617,35 +3184,127 @@ fn parse_prefix_unary_expression(
     position: &mut usize,
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     if *position < tokens.len() && is_prefix_unary_operator(&tokens[*position]) {
-        let op_location = tokens[*position].location;
-        let op = if tokens[*position].kind == TokenKind::Bang {
-            PrefixUnaryOperator::Bang
-        } else if tokens[*position].kind == TokenKind::Minus {
-            PrefixUnaryOperator::Minus
-        } else {
-            PrefixUnaryOperator::Not
-        };
+        let operator = &tokens[*position];
 
+        // Consume `!`, `-` or `~` operator
         *position += 1;
 
-        let mut rhs = parse_prefix_unary_expression(context, env, tokens, position)?;
-        match type_check_prefix_unary(env, &rhs, &op, op_location) {
-            ExprTypeCheckResult::NotEqualAndCantImplicitCast => {
-                return Err(type_mismatch_error(
-                    op_location,
-                    prefix_unary_expected_type(&op),
-                    rhs.expr_type(env),
-                ))
+        let rhs = parse_prefix_unary_expression(context, env, tokens, position)?;
+        let rhs_type = rhs.expr_type();
+
+        // Parse and Check side for unary `!` operator
+        if operator.kind == TokenKind::Bang {
+            let rhs_expected_types = rhs_type.can_perform_bang_op_with();
+
+            // Can perform this operator between RHS
+            if rhs_expected_types.contains(&rhs_type) {
+                return Ok(Box::new(UnaryExpression {
+                    right: rhs,
+                    operator: PrefixUnaryOperator::Bang,
+                    result_type: rhs_type.bang_op_result_type(),
+                }));
             }
-            ExprTypeCheckResult::Error(diagnostic) => return Err(diagnostic),
-            ExprTypeCheckResult::ImplicitCasted(new_expr) => rhs = new_expr,
-            _ => {}
+
+            // Check if can perform the operator with additonal implicit casting
+            for expected_type in rhs_expected_types {
+                if expected_type.has_implicit_cast_from(&rhs) {
+                    let casting = Box::new(CastExpression {
+                        value: rhs,
+                        result_type: expected_type.clone(),
+                    });
+
+                    return Ok(Box::new(UnaryExpression {
+                        right: casting,
+                        operator: PrefixUnaryOperator::Bang,
+                        result_type: expected_type.bang_op_result_type(),
+                    }));
+                }
+            }
+
+            // Return error if this operator can't be performed even with implicit cast
+            return Err(Diagnostic::error(&format!(
+                "Operator unary `!` can't be performed on type `{}`",
+                rhs_type.literal()
+            ))
+            .with_location(operator.location)
+            .as_boxed());
         }
 
-        return Ok(Box::new(UnaryExpression {
-            right: rhs,
-            operator: op,
-        }));
+        // Parse and Check side for unary `-` operator
+        if operator.kind == TokenKind::Minus {
+            let rhs_expected_types = rhs_type.can_perform_neg_op_with();
+
+            // Can perform this operator between RHS
+            if rhs_expected_types.contains(&rhs_type) {
+                return Ok(Box::new(UnaryExpression {
+                    right: rhs,
+                    operator: PrefixUnaryOperator::Minus,
+                    result_type: rhs_type.bang_op_result_type(),
+                }));
+            }
+
+            // Check if can perform the operator with additonal implicit casting
+            for expected_type in rhs_expected_types {
+                if expected_type.has_implicit_cast_from(&rhs) {
+                    let casting = Box::new(CastExpression {
+                        value: rhs,
+                        result_type: expected_type.clone(),
+                    });
+
+                    return Ok(Box::new(UnaryExpression {
+                        right: casting,
+                        operator: PrefixUnaryOperator::Minus,
+                        result_type: expected_type.neg_op_result_type(),
+                    }));
+                }
+            }
+
+            // Return error if this operator can't be performed even with implicit cast
+            return Err(Diagnostic::error(&format!(
+                "Operator unary `-` can't be performed on type `{}`",
+                rhs_type.literal()
+            ))
+            .with_location(operator.location)
+            .as_boxed());
+        }
+
+        // Parse and Check side for unary `~` operator
+        if operator.kind == TokenKind::Not {
+            let rhs_expected_types = rhs_type.can_perform_not_op_with();
+
+            // Can perform this operator between RHS
+            if rhs_expected_types.contains(&rhs_type) {
+                return Ok(Box::new(UnaryExpression {
+                    right: rhs,
+                    operator: PrefixUnaryOperator::Not,
+                    result_type: rhs_type.bang_op_result_type(),
+                }));
+            }
+
+            // Check if can perform the operator with additonal implicit casting
+            for expected_type in rhs_expected_types {
+                if expected_type.has_implicit_cast_from(&rhs) {
+                    let casting = Box::new(CastExpression {
+                        value: rhs,
+                        result_type: expected_type.clone(),
+                    });
+
+                    return Ok(Box::new(UnaryExpression {
+                        right: casting,
+                        operator: PrefixUnaryOperator::Not,
+                        result_type: expected_type.not_op_result_type(),
+                    }));
+                }
+            }
+
+            // Return error if this operator can't be performed even with implicit cast
+            return Err(Diagnostic::error(&format!(
+                "Operator unary `~` can't be performed on type `{}`",
+                rhs_type.literal()
+            ))
+            .with_location(operator.location)
+            .as_boxed());
+        }
     }
 
     parse_function_call_expression(context, env, tokens, position)
@@ -2672,7 +3331,6 @@ fn parse_function_call_expression(
                 let signature = env.std_signature(function_name.as_str()).unwrap();
 
                 check_function_call_arguments(
-                    env,
                     &mut arguments,
                     &signature.parameters,
                     function_name.to_string(),
@@ -2680,7 +3338,6 @@ fn parse_function_call_expression(
                 )?;
 
                 let return_type = resolve_dynamic_data_type(
-                    env,
                     &signature.parameters,
                     &arguments,
                     &signature.return_type,
@@ -2715,7 +3372,6 @@ fn parse_function_call_expression(
 
                 // Perform type checking and implicit casting if needed for function arguments
                 check_function_call_arguments(
-                    env,
                     &mut arguments,
                     &signature.parameters,
                     function_name.to_string(),
@@ -2726,14 +3382,13 @@ fn parse_function_call_expression(
                 context.hidden_selections.push(column_name.to_string());
 
                 let return_type = resolve_dynamic_data_type(
-                    env,
                     &signature.parameters,
                     &arguments,
                     &signature.return_type,
                 );
 
                 // Register aggregation generated name with return type after resolving it
-                env.define(column_name.to_string(), return_type);
+                env.define(column_name.to_string(), return_type.clone());
 
                 context.aggregations.insert(
                     column_name.clone(),
@@ -2741,7 +3396,10 @@ fn parse_function_call_expression(
                 );
 
                 // Return a Symbol that reference to the aggregation function generated name
-                return Ok(Box::new(SymbolExpression { value: column_name }));
+                return Ok(Box::new(SymbolExpression {
+                    value: column_name,
+                    result_type: return_type,
+                }));
             }
 
             // Report that this function name is not standard or aggregation
@@ -2826,9 +3484,15 @@ fn parse_primary_expression(
             }))
         }
         TokenKind::GlobalVariable => {
+            // TODO: Extract to function
             let name = tokens[*position].literal.to_string();
             *position += 1;
-            Ok(Box::new(GlobalVariableExpression { name }))
+            let result_type = if env.globals_types.contains_key(&name) {
+                env.globals_types[name.as_str()].clone()
+            } else {
+                Box::new(UndefType)
+            };
+            Ok(Box::new(GlobalVariableExpression { name, result_type }))
         }
         TokenKind::True => {
             *position += 1;
@@ -2852,7 +3516,7 @@ fn parse_const_integer_expression(
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     if let Ok(integer) = tokens[*position].literal.parse::<i64>() {
         *position += 1;
-        let value = Value::Integer(integer);
+        let value = Number::Int(integer);
         return Ok(Box::new(NumberExpression { value }));
     }
 
@@ -2873,7 +3537,7 @@ fn parse_const_float_expression(
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     if let Ok(float) = tokens[*position].literal.parse::<f64>() {
         *position += 1;
-        let value = Value::Float(float);
+        let value = Number::Float(float);
         return Ok(Box::new(NumberExpression { value }));
     }
 
@@ -2894,12 +3558,13 @@ fn parse_float_infinity_or_nan_expression(
 ) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
     if tokens[*position].kind == TokenKind::Infinity {
         *position += 1;
-        let value = Value::Float(f64::INFINITY);
+        let value = Number::Float(f64::INFINITY);
         return Ok(Box::new(NumberExpression { value }));
     }
 
     *position += 1;
-    let value = Value::Float(f64::NAN);
+
+    let value = Number::Float(f64::NAN);
     Ok(Box::new(NumberExpression { value }))
 }
 
@@ -2941,7 +3606,15 @@ fn parse_symbol_expression(
     // Consume Symbol
     *position += 1;
 
-    Ok(Box::new(SymbolExpression { value }))
+    let result_type = if env.contains(&value) {
+        env.scopes[value.as_str()].clone()
+    } else if env.schema.tables_fields_types.contains_key(&value.as_str()) {
+        env.schema.tables_fields_types[&value.as_str()].clone()
+    } else {
+        Box::new(UndefType)
+    };
+
+    Ok(Box::new(SymbolExpression { value, result_type }))
 }
 
 fn parse_array_value_expression(
@@ -2969,11 +3642,11 @@ fn parse_array_value_expression(
 
     // Parse array values
     let mut array_values: Vec<Box<dyn Expression>> = vec![];
-    let mut array_data_type = DataType::Any;
+    let mut array_data_type: Box<dyn DataType> = Box::new(AnyType);
     while *position < tokens.len() && tokens[*position].kind != TokenKind::RightBracket {
         let value = parse_expression(context, env, tokens, position)?;
-        let value_type = value.expr_type(env);
-        if value_type != array_data_type {
+        let value_type = value.expr_type();
+        if !value_type.equals(&array_data_type) {
             return Err(Diagnostic::error("Expect Array values to have same types")
                 .with_location(get_safe_location(tokens, *position))
                 .as_boxed());
@@ -3044,7 +3717,7 @@ fn parse_benchmark_call_expression(
     *position += 1;
 
     let count = parse_expression(context, env, tokens, position)?;
-    if !count.expr_type(env).is_int() {
+    if !count.expr_type().is_int() {
         return Err(
             Diagnostic::error("Benchmark expect first argument to be integer")
                 .with_location(get_safe_location(tokens, *position))
@@ -3130,7 +3803,7 @@ fn parse_case_expression(
         *position += 1;
 
         let condition = parse_expression(context, env, tokens, position)?;
-        if condition.expr_type(env) != DataType::Boolean {
+        if !condition.expr_type().is_bool() {
             return Err(Diagnostic::error("Case condition must be a boolean type")
                 .with_location(get_safe_location(tokens, *position))
                 .as_boxed());
@@ -3179,9 +3852,9 @@ fn parse_case_expression(
     }
 
     // Assert that all values has the same type
-    let values_type: DataType = values[0].expr_type(env);
+    let values_type = values[0].expr_type();
     for (i, value) in values.iter().enumerate().skip(1) {
-        if values_type != value.expr_type(env) {
+        if !values_type.equals(&value.expr_type()) {
             return Err(Diagnostic::error(&format!(
                 "Case value in branch {} has different type than the last branch",
                 i + 1
@@ -3400,6 +4073,11 @@ fn is_prefix_unary_operator(token: &Token) -> bool {
     token.kind == TokenKind::Bang
         || token.kind == TokenKind::Minus
         || token.kind == TokenKind::BitwiseNot
+}
+
+#[inline(always)]
+fn is_equality_operator(token: &Token) -> bool {
+    token.kind == TokenKind::Equal || token.kind == TokenKind::BangEqual
 }
 
 #[inline(always)]

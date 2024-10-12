@@ -1,16 +1,21 @@
 use std::any::Any;
 
-use gitql_core::environment::Environment;
-use gitql_core::types::DataType;
-use gitql_core::value::Value;
+use super::types::array::ArrayType;
+use super::types::base::DataType;
+use super::types::boolean::BoolType;
+use super::types::date::DateType;
+use super::types::integer::IntType;
+use super::types::null::NullType;
+use super::types::text::TextType;
+use super::types::time::TimeType;
 
 use crate::operator::ArithmeticOperator;
 use crate::operator::BinaryBitwiseOperator;
 use crate::operator::BinaryLogicalOperator;
 use crate::operator::ComparisonOperator;
 use crate::operator::ContainsOperator;
-use crate::operator::OverlapOperator;
 use crate::operator::PrefixUnaryOperator;
+use crate::types::float::FloatType;
 
 #[derive(PartialEq)]
 pub enum ExpressionKind {
@@ -27,7 +32,6 @@ pub enum ExpressionKind {
     Arithmetic,
     Comparison,
     Contains,
-    Overlap,
     Like,
     Regex,
     Glob,
@@ -40,11 +44,12 @@ pub enum ExpressionKind {
     In,
     IsNull,
     Null,
+    Cast,
 }
 
 pub trait Expression {
     fn kind(&self) -> ExpressionKind;
-    fn expr_type(&self, scope: &Environment) -> DataType;
+    fn expr_type(&self) -> Box<dyn DataType>;
     fn as_any(&self) -> &dyn Any;
 }
 
@@ -70,8 +75,8 @@ impl Expression for AssignmentExpression {
         ExpressionKind::Assignment
     }
 
-    fn expr_type(&self, scope: &Environment) -> DataType {
-        self.value.expr_type(scope)
+    fn expr_type(&self) -> Box<dyn DataType> {
+        self.value.expr_type()
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -97,13 +102,13 @@ impl Expression for StringExpression {
         ExpressionKind::String
     }
 
-    fn expr_type(&self, _scope: &Environment) -> DataType {
+    fn expr_type(&self) -> Box<dyn DataType> {
         match self.value_type {
-            StringValueType::Text => DataType::Text,
-            StringValueType::Time => DataType::Time,
-            StringValueType::Date => DataType::Date,
-            StringValueType::DateTime => DataType::DateTime,
-            StringValueType::Boolean => DataType::Boolean,
+            StringValueType::Text => Box::new(TextType),
+            StringValueType::Time => Box::new(TimeType),
+            StringValueType::Date => Box::new(DateType),
+            StringValueType::DateTime => Box::new(TimeType),
+            StringValueType::Boolean => Box::new(BoolType),
         }
     }
 
@@ -114,6 +119,7 @@ impl Expression for StringExpression {
 
 pub struct SymbolExpression {
     pub value: String,
+    pub result_type: Box<dyn DataType>,
 }
 
 impl Expression for SymbolExpression {
@@ -121,22 +127,8 @@ impl Expression for SymbolExpression {
         ExpressionKind::Symbol
     }
 
-    fn expr_type(&self, scope: &Environment) -> DataType {
-        // Search in symbol table
-        if scope.contains(&self.value) {
-            return scope.scopes[self.value.as_str()].clone();
-        }
-
-        // Search in static table fields types
-        if scope
-            .schema
-            .tables_fields_types
-            .contains_key(&self.value.as_str())
-        {
-            return scope.schema.tables_fields_types[&self.value.as_str()].clone();
-        }
-
-        DataType::Undefined
+    fn expr_type(&self) -> Box<dyn DataType> {
+        self.result_type.clone()
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -146,7 +138,7 @@ impl Expression for SymbolExpression {
 
 pub struct ArrayExpression {
     pub values: Vec<Box<dyn Expression>>,
-    pub element_type: DataType,
+    pub element_type: Box<dyn DataType>,
 }
 
 impl Expression for ArrayExpression {
@@ -154,8 +146,10 @@ impl Expression for ArrayExpression {
         ExpressionKind::Array
     }
 
-    fn expr_type(&self, _scope: &Environment) -> DataType {
-        DataType::Array(Box::new(self.element_type.clone()))
+    fn expr_type(&self) -> Box<dyn DataType> {
+        Box::new(ArrayType {
+            base: self.element_type.clone(),
+        })
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -165,6 +159,7 @@ impl Expression for ArrayExpression {
 
 pub struct GlobalVariableExpression {
     pub name: String,
+    pub result_type: Box<dyn DataType>,
 }
 
 impl Expression for GlobalVariableExpression {
@@ -172,11 +167,8 @@ impl Expression for GlobalVariableExpression {
         ExpressionKind::GlobalVariable
     }
 
-    fn expr_type(&self, scope: &Environment) -> DataType {
-        if scope.globals_types.contains_key(&self.name) {
-            return scope.globals_types[self.name.as_str()].clone();
-        }
-        DataType::Undefined
+    fn expr_type(&self) -> Box<dyn DataType> {
+        self.result_type.clone()
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -184,8 +176,13 @@ impl Expression for GlobalVariableExpression {
     }
 }
 
+pub enum Number {
+    Int(i64),
+    Float(f64),
+}
+
 pub struct NumberExpression {
-    pub value: Value,
+    pub value: Number,
 }
 
 impl Expression for NumberExpression {
@@ -193,8 +190,11 @@ impl Expression for NumberExpression {
         ExpressionKind::Number
     }
 
-    fn expr_type(&self, _scope: &Environment) -> DataType {
-        self.value.data_type()
+    fn expr_type(&self) -> Box<dyn DataType> {
+        match self.value {
+            Number::Int(_) => Box::new(IntType),
+            Number::Float(_) => Box::new(FloatType),
+        }
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -211,8 +211,8 @@ impl Expression for BooleanExpression {
         ExpressionKind::Boolean
     }
 
-    fn expr_type(&self, _scope: &Environment) -> DataType {
-        DataType::Boolean
+    fn expr_type(&self) -> Box<dyn DataType> {
+        Box::new(BoolType)
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -223,6 +223,7 @@ impl Expression for BooleanExpression {
 pub struct UnaryExpression {
     pub right: Box<dyn Expression>,
     pub operator: PrefixUnaryOperator,
+    pub result_type: Box<dyn DataType>,
 }
 
 impl Expression for UnaryExpression {
@@ -230,12 +231,8 @@ impl Expression for UnaryExpression {
         ExpressionKind::PrefixUnary
     }
 
-    fn expr_type(&self, scope: &Environment) -> DataType {
-        if self.operator == PrefixUnaryOperator::Bang {
-            DataType::Boolean
-        } else {
-            self.right.expr_type(scope)
-        }
+    fn expr_type(&self) -> Box<dyn DataType> {
+        self.result_type.clone()
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -245,8 +242,9 @@ impl Expression for UnaryExpression {
 
 pub struct IndexExpression {
     pub collection: Box<dyn Expression>,
-    pub element_type: DataType,
+    pub element_type: Box<dyn DataType>,
     pub index: Box<dyn Expression>,
+    pub result_type: Box<dyn DataType>,
 }
 
 impl Expression for IndexExpression {
@@ -254,8 +252,8 @@ impl Expression for IndexExpression {
         ExpressionKind::Index
     }
 
-    fn expr_type(&self, _scope: &Environment) -> DataType {
-        self.element_type.clone()
+    fn expr_type(&self) -> Box<dyn DataType> {
+        self.result_type.clone()
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -267,6 +265,7 @@ pub struct SliceExpression {
     pub collection: Box<dyn Expression>,
     pub start: Option<Box<dyn Expression>>,
     pub end: Option<Box<dyn Expression>>,
+    pub result_type: Box<dyn DataType>,
 }
 
 impl Expression for SliceExpression {
@@ -274,8 +273,8 @@ impl Expression for SliceExpression {
         ExpressionKind::Slice
     }
 
-    fn expr_type(&self, scope: &Environment) -> DataType {
-        self.collection.expr_type(scope)
+    fn expr_type(&self) -> Box<dyn DataType> {
+        self.result_type.clone()
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -287,6 +286,7 @@ pub struct ArithmeticExpression {
     pub left: Box<dyn Expression>,
     pub operator: ArithmeticOperator,
     pub right: Box<dyn Expression>,
+    pub result_type: Box<dyn DataType>,
 }
 
 impl Expression for ArithmeticExpression {
@@ -294,22 +294,8 @@ impl Expression for ArithmeticExpression {
         ExpressionKind::Arithmetic
     }
 
-    fn expr_type(&self, scope: &Environment) -> DataType {
-        let lhs_type = self.left.expr_type(scope);
-        let rhs_type = self.right.expr_type(scope);
-
-        if self.operator == ArithmeticOperator::Exponentiation {
-            if lhs_type.is_float() {
-                return DataType::Float;
-            }
-            return DataType::Integer;
-        }
-
-        if lhs_type.is_int() && rhs_type.is_int() {
-            return DataType::Integer;
-        }
-
-        DataType::Float
+    fn expr_type(&self) -> Box<dyn DataType> {
+        self.result_type.clone()
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -328,11 +314,11 @@ impl Expression for ComparisonExpression {
         ExpressionKind::Comparison
     }
 
-    fn expr_type(&self, _scope: &Environment) -> DataType {
+    fn expr_type(&self) -> Box<dyn DataType> {
         if self.operator == ComparisonOperator::NullSafeEqual {
-            DataType::Integer
+            Box::new(IntType)
         } else {
-            DataType::Boolean
+            Box::new(BoolType)
         }
     }
 
@@ -352,28 +338,8 @@ impl Expression for ContainsExpression {
         ExpressionKind::Contains
     }
 
-    fn expr_type(&self, _scope: &Environment) -> DataType {
-        DataType::Boolean
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-}
-
-pub struct OverlapExpression {
-    pub left: Box<dyn Expression>,
-    pub right: Box<dyn Expression>,
-    pub operator: OverlapOperator,
-}
-
-impl Expression for OverlapExpression {
-    fn kind(&self) -> ExpressionKind {
-        ExpressionKind::Overlap
-    }
-
-    fn expr_type(&self, _scope: &Environment) -> DataType {
-        DataType::Boolean
+    fn expr_type(&self) -> Box<dyn DataType> {
+        Box::new(BoolType)
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -391,8 +357,8 @@ impl Expression for LikeExpression {
         ExpressionKind::Like
     }
 
-    fn expr_type(&self, _scope: &Environment) -> DataType {
-        DataType::Boolean
+    fn expr_type(&self) -> Box<dyn DataType> {
+        Box::new(BoolType)
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -410,8 +376,8 @@ impl Expression for RegexExpression {
         ExpressionKind::Regex
     }
 
-    fn expr_type(&self, _scope: &Environment) -> DataType {
-        DataType::Boolean
+    fn expr_type(&self) -> Box<dyn DataType> {
+        Box::new(BoolType)
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -429,8 +395,8 @@ impl Expression for GlobExpression {
         ExpressionKind::Glob
     }
 
-    fn expr_type(&self, _scope: &Environment) -> DataType {
-        DataType::Boolean
+    fn expr_type(&self) -> Box<dyn DataType> {
+        Box::new(BoolType)
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -449,8 +415,8 @@ impl Expression for LogicalExpression {
         ExpressionKind::Logical
     }
 
-    fn expr_type(&self, _scope: &Environment) -> DataType {
-        DataType::Boolean
+    fn expr_type(&self) -> Box<dyn DataType> {
+        Box::new(BoolType)
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -462,6 +428,7 @@ pub struct BitwiseExpression {
     pub left: Box<dyn Expression>,
     pub operator: BinaryBitwiseOperator,
     pub right: Box<dyn Expression>,
+    pub result_type: Box<dyn DataType>,
 }
 
 impl Expression for BitwiseExpression {
@@ -469,8 +436,8 @@ impl Expression for BitwiseExpression {
         ExpressionKind::Bitwise
     }
 
-    fn expr_type(&self, _scope: &Environment) -> DataType {
-        DataType::Integer
+    fn expr_type(&self) -> Box<dyn DataType> {
+        self.result_type.clone()
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -481,7 +448,7 @@ impl Expression for BitwiseExpression {
 pub struct CallExpression {
     pub function_name: String,
     pub arguments: Vec<Box<dyn Expression>>,
-    pub return_type: DataType,
+    pub return_type: Box<dyn DataType>,
 }
 
 impl Expression for CallExpression {
@@ -489,7 +456,7 @@ impl Expression for CallExpression {
         ExpressionKind::Call
     }
 
-    fn expr_type(&self, _scope: &Environment) -> DataType {
+    fn expr_type(&self) -> Box<dyn DataType> {
         self.return_type.clone()
     }
 
@@ -508,8 +475,8 @@ impl Expression for BenchmarkExpression {
         ExpressionKind::BenchmarkCall
     }
 
-    fn expr_type(&self, _scope: &Environment) -> DataType {
-        DataType::Integer
+    fn expr_type(&self) -> Box<dyn DataType> {
+        Box::new(IntType)
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -528,8 +495,8 @@ impl Expression for BetweenExpression {
         ExpressionKind::Between
     }
 
-    fn expr_type(&self, _scope: &Environment) -> DataType {
-        DataType::Boolean
+    fn expr_type(&self) -> Box<dyn DataType> {
+        Box::new(BoolType)
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -541,7 +508,7 @@ pub struct CaseExpression {
     pub conditions: Vec<Box<dyn Expression>>,
     pub values: Vec<Box<dyn Expression>>,
     pub default_value: Option<Box<dyn Expression>>,
-    pub values_type: DataType,
+    pub values_type: Box<dyn DataType>,
 }
 
 impl Expression for CaseExpression {
@@ -549,7 +516,7 @@ impl Expression for CaseExpression {
         ExpressionKind::Case
     }
 
-    fn expr_type(&self, _scope: &Environment) -> DataType {
+    fn expr_type(&self) -> Box<dyn DataType> {
         self.values_type.clone()
     }
 
@@ -561,7 +528,7 @@ impl Expression for CaseExpression {
 pub struct InExpression {
     pub argument: Box<dyn Expression>,
     pub values: Vec<Box<dyn Expression>>,
-    pub values_type: DataType,
+    pub values_type: Box<dyn DataType>,
     pub has_not_keyword: bool,
 }
 
@@ -570,7 +537,7 @@ impl Expression for InExpression {
         ExpressionKind::In
     }
 
-    fn expr_type(&self, _scope: &Environment) -> DataType {
+    fn expr_type(&self) -> Box<dyn DataType> {
         self.values_type.clone()
     }
 
@@ -589,8 +556,8 @@ impl Expression for IsNullExpression {
         ExpressionKind::IsNull
     }
 
-    fn expr_type(&self, _scope: &Environment) -> DataType {
-        DataType::Boolean
+    fn expr_type(&self) -> Box<dyn DataType> {
+        Box::new(BoolType)
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -605,8 +572,27 @@ impl Expression for NullExpression {
         ExpressionKind::Null
     }
 
-    fn expr_type(&self, _scope: &Environment) -> DataType {
-        DataType::Null
+    fn expr_type(&self) -> Box<dyn DataType> {
+        Box::new(NullType)
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+pub struct CastExpression {
+    pub value: Box<dyn Expression>,
+    pub result_type: Box<dyn DataType>,
+}
+
+impl Expression for CastExpression {
+    fn kind(&self) -> ExpressionKind {
+        ExpressionKind::Cast
+    }
+
+    fn expr_type(&self) -> Box<dyn DataType> {
+        self.result_type.clone()
     }
 
     fn as_any(&self) -> &dyn Any {

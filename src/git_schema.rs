@@ -1,34 +1,36 @@
-use gitql_core::types::DataType;
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
-pub fn tables_fields_types() -> &'static HashMap<&'static str, DataType> {
-    static HASHMAP: OnceLock<HashMap<&'static str, DataType>> = OnceLock::new();
-    HASHMAP.get_or_init(|| {
-        let mut map = HashMap::new();
-        map.insert("commit_id", DataType::Text);
-        map.insert("title", DataType::Text);
-        map.insert("message", DataType::Text);
-        map.insert("name", DataType::Text);
-        map.insert("author_name", DataType::Text);
-        map.insert("author_email", DataType::Text);
-        map.insert("committer_name", DataType::Text);
-        map.insert("committer_email", DataType::Text);
-        map.insert("full_name", DataType::Text);
-        map.insert("insertions", DataType::Integer);
-        map.insert("deletions", DataType::Integer);
-        map.insert("files_changed", DataType::Integer);
-        map.insert("email", DataType::Text);
-        map.insert("type", DataType::Text);
-        map.insert("datetime", DataType::DateTime);
-        map.insert("is_head", DataType::Boolean);
-        map.insert("is_remote", DataType::Boolean);
-        map.insert("commit_count", DataType::Integer);
-        map.insert("parents_count", DataType::Integer);
-        map.insert("updated", DataType::DateTime);
-        map.insert("repo", DataType::Text);
-        map
-    })
+use gitql_ast::types::base::DataType;
+use gitql_ast::types::boolean::BoolType;
+use gitql_ast::types::date::DateType;
+use gitql_ast::types::integer::IntType;
+use gitql_ast::types::text::TextType;
+
+pub fn tables_fields_types() -> HashMap<&'static str, Box<dyn DataType>> {
+    let mut map: HashMap<&'static str, Box<dyn DataType>> = HashMap::new();
+    map.insert("commit_id", Box::new(TextType));
+    map.insert("title", Box::new(TextType));
+    map.insert("message", Box::new(TextType));
+    map.insert("name", Box::new(TextType));
+    map.insert("author_name", Box::new(TextType));
+    map.insert("author_email", Box::new(TextType));
+    map.insert("committer_name", Box::new(TextType));
+    map.insert("committer_email", Box::new(TextType));
+    map.insert("full_name", Box::new(TextType));
+    map.insert("insertions", Box::new(IntType));
+    map.insert("deletions", Box::new(IntType));
+    map.insert("files_changed", Box::new(IntType));
+    map.insert("email", Box::new(TextType));
+    map.insert("type", Box::new(TextType));
+    map.insert("datetime", Box::new(DateType));
+    map.insert("is_head", Box::new(BoolType));
+    map.insert("is_remote", Box::new(BoolType));
+    map.insert("commit_count", Box::new(IntType));
+    map.insert("parents_count", Box::new(IntType));
+    map.insert("updated", Box::new(DateType));
+    map.insert("repo", Box::new(TextType));
+    map
 }
 
 pub fn tables_fields_names() -> &'static HashMap<&'static str, Vec<&'static str>> {

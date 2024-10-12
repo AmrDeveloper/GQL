@@ -45,7 +45,7 @@ fn apply_distinct_all_operation(object: &mut GitQLObject, hidden_selections: &[S
         let mut row_values: Vec<String> = Vec::with_capacity(titles_count);
         for i in 0..titles.len() {
             if let Some(value) = object.values.get(i + hidden_selection_count) {
-                row_values.push(value.to_string());
+                row_values.push(value.literal());
             }
         }
 
@@ -81,7 +81,7 @@ fn apply_distinct_on_operation(object: &mut GitQLObject, distinct_fields: &[Stri
         let mut row_values: Vec<String> = Vec::with_capacity(distinct_fields.len());
         for field in distinct_fields {
             if let Some(index) = titles.iter().position(|r| r.eq(field)) {
-                row_values.push(object.values.get(index).unwrap().to_string());
+                row_values.push(object.values.get(index).unwrap().literal());
             }
         }
 

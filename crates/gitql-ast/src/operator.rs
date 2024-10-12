@@ -47,9 +47,3 @@ pub enum ContainsOperator {
     RangeContainsElement,
     RangeContainsRange,
 }
-
-#[derive(PartialEq)]
-pub enum OverlapOperator {
-    RangeOverlap,
-    ArrayOverlap,
-}

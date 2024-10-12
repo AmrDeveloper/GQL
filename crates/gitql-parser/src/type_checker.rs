@@ -6,8 +6,14 @@ use gitql_ast::expression::StringExpression;
 use gitql_ast::expression::StringValueType;
 use gitql_ast::operator::PrefixUnaryOperator;
 use gitql_ast::statement::TableSelection;
+use gitql_ast::types::any::AnyType;
+use gitql_ast::types::base::DataType;
+use gitql_ast::types::boolean::BoolType;
+use gitql_ast::types::dynamic::DynamicType;
+use gitql_ast::types::float::FloatType;
+use gitql_ast::types::integer::IntType;
+use gitql_ast::types::variant::VariantType;
 use gitql_core::environment::Environment;
-use gitql_core::types::DataType;
 
 use crate::diagnostic::Diagnostic;
 use crate::format_checker::is_valid_date_format;
@@ -56,14 +62,13 @@ pub enum ExprTypeCheckResult {
 ///
 #[allow(clippy::borrowed_box)]
 pub fn is_expression_type_equals(
-    scope: &Environment,
     expr: &Box<dyn Expression>,
-    data_type: &DataType,
+    data_type: &Box<dyn DataType>,
 ) -> ExprTypeCheckResult {
-    let expr_type = expr.expr_type(scope);
+    let expr_type = expr.expr_type();
 
     // Both types are already equals without need for implicit casting
-    if expr_type == *data_type {
+    if expr_type.equals(data_type) {
         return ExprTypeCheckResult::Equals;
     }
 
@@ -73,7 +78,7 @@ pub fn is_expression_type_equals(
     }
 
     // Implicit Casting expression type from Text literal to time
-    if data_type.is_time() || data_type.is_variant_with(&DataType::Time) {
+    if data_type.is_time() || data_type.is_variant_with(|ty| ty.is_time()) {
         let literal = expr.as_any().downcast_ref::<StringExpression>().unwrap();
         let string_literal_value = &literal.value;
         if !is_valid_time_format(string_literal_value) {
@@ -94,7 +99,7 @@ pub fn is_expression_type_equals(
     }
 
     // Implicit Casting expression type from Text literal to Date
-    if data_type.is_date() || data_type.is_variant_with(&DataType::Date) {
+    if data_type.is_date() || data_type.is_variant_with(|ty| ty.is_date()) {
         let literal = expr.as_any().downcast_ref::<StringExpression>().unwrap();
         let string_literal_value = &literal.value;
         if !is_valid_date_format(string_literal_value) {
@@ -115,7 +120,7 @@ pub fn is_expression_type_equals(
     }
 
     // Implicit Casting expression type from Text literal to DateTime
-    if data_type.is_datetime() || data_type.is_variant_with(&DataType::DateTime) {
+    if data_type.is_datetime() || data_type.is_variant_with(|ty| ty.is_datetime()) {
         let literal = expr.as_any().downcast_ref::<StringExpression>().unwrap();
         let string_literal_value = &literal.value;
         if !is_valid_datetime_format(string_literal_value) {
@@ -135,7 +140,7 @@ pub fn is_expression_type_equals(
     }
 
     // Implicit Casting expression type from Text literal to Boolean
-    if data_type.is_bool() || data_type.is_variant_with(&DataType::Boolean) {
+    if data_type.is_bool() || data_type.is_variant_with(|ty| ty.is_bool()) {
         let literal = expr.as_any().downcast_ref::<StringExpression>().unwrap();
         let string_literal_value = &literal.value;
         if !BOOLEANS_VALUES_LITERAL.contains(&string_literal_value.as_str()) {
@@ -160,21 +165,17 @@ pub fn is_expression_type_equals(
 /// Check if two expressions types are equals
 /// If not then check if one can be implicit casted to the other
 #[allow(clippy::borrowed_box)]
-pub fn are_types_equals(
-    scope: &Environment,
-    lhs: &Box<dyn Expression>,
-    rhs: &Box<dyn Expression>,
-) -> TypeCheckResult {
-    let lhs_type = lhs.expr_type(scope);
-    let rhs_type = rhs.expr_type(scope);
+pub fn are_types_equals(lhs: &Box<dyn Expression>, rhs: &Box<dyn Expression>) -> TypeCheckResult {
+    let lhs_type = lhs.expr_type();
+    let rhs_type = rhs.expr_type();
 
     // Both types are already equals without need for implicit casting
-    if lhs_type == rhs_type {
+    if lhs_type.equals(&rhs_type) {
         return TypeCheckResult::Equals;
     }
 
     // Check if can cast right hand side to left hand side type
-    match is_expression_type_equals(scope, rhs, &lhs_type) {
+    match is_expression_type_equals(rhs, &lhs_type) {
         ExprTypeCheckResult::ImplicitCasted(expr) => {
             return TypeCheckResult::RightSideCasted(expr);
         }
@@ -185,7 +186,7 @@ pub fn are_types_equals(
     }
 
     // Check if can cast left hand side to right hand side type
-    match is_expression_type_equals(scope, lhs, &rhs_type) {
+    match is_expression_type_equals(lhs, &rhs_type) {
         ExprTypeCheckResult::ImplicitCasted(expr) => {
             return TypeCheckResult::LeftSideCasted(expr);
         }
@@ -201,18 +202,17 @@ pub fn are_types_equals(
 /// Checks if all values has the same type
 /// If they have the same type, return it or return None
 pub fn check_all_values_are_same_type(
-    env: &mut Environment,
     arguments: &[Box<dyn Expression>],
-) -> Option<DataType> {
+) -> Option<Box<dyn DataType>> {
     let arguments_count = arguments.len();
     if arguments_count == 0 {
-        return Some(DataType::Any);
+        return Some(Box::new(AnyType));
     }
 
-    let data_type = arguments[0].expr_type(env);
+    let data_type = arguments[0].expr_type();
     for argument in arguments.iter().take(arguments_count).skip(1) {
-        let expr_type = argument.expr_type(env);
-        if data_type != expr_type {
+        let expr_type = argument.expr_type();
+        if !data_type.equals(&expr_type) {
             return None;
         }
     }
@@ -223,9 +223,8 @@ pub fn check_all_values_are_same_type(
 /// Check That function call arguments types are matches the parameter types
 /// Return a Diagnostic Error if anything is wrong
 pub fn check_function_call_arguments(
-    env: &Environment,
     arguments: &mut [Box<dyn Expression>],
-    parameters: &[DataType],
+    parameters: &[Box<dyn DataType>],
     function_name: String,
     location: Location,
 ) -> Result<(), Box<Diagnostic>> {
@@ -272,11 +271,11 @@ pub fn check_function_call_arguments(
     // Type check the min required arguments
     for index in 0..min_arguments_count {
         let parameter_type =
-            resolve_dynamic_data_type(env, parameters, arguments, parameters.get(index).unwrap());
+            resolve_dynamic_data_type(parameters, arguments, parameters.get(index).unwrap());
         let argument = arguments.get(index).unwrap();
 
         // Catch undefined arguments
-        if argument.expr_type(env).is_undefined() {
+        if argument.expr_type().is_undefined() {
             return Err(Diagnostic::error(&format!(
                 "Function `{}` argument number {} has Undefined type",
                 function_name, index,
@@ -287,15 +286,15 @@ pub fn check_function_call_arguments(
             .as_boxed());
         }
 
-        match is_expression_type_equals(env, argument, &parameter_type) {
+        match is_expression_type_equals(argument, &parameter_type) {
             ExprTypeCheckResult::ImplicitCasted(new_expr) => {
                 arguments[index] = new_expr;
             }
             ExprTypeCheckResult::NotEqualAndCantImplicitCast => {
-                let argument_type = argument.expr_type(env);
+                let argument_type = argument.expr_type();
                 return Err(Diagnostic::error(&format!(
                     "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
-                    function_name, index, argument_type, parameter_type
+                    function_name, index, argument_type.literal(), parameter_type.literal()
                 ))
                 .with_location(location).as_boxed());
             }
@@ -312,11 +311,11 @@ pub fn check_function_call_arguments(
         }
 
         let parameter_type =
-            resolve_dynamic_data_type(env, parameters, arguments, parameters.get(index).unwrap());
+            resolve_dynamic_data_type(parameters, arguments, parameters.get(index).unwrap());
         let argument = arguments.get(index).unwrap();
 
         // Catch undefined arguments
-        if argument.expr_type(env).is_undefined() {
+        if argument.expr_type().is_undefined() {
             return Err(Diagnostic::error(&format!(
                 "Function `{}` argument number {} has Undefined type",
                 function_name, index,
@@ -327,15 +326,15 @@ pub fn check_function_call_arguments(
             .as_boxed());
         }
 
-        match is_expression_type_equals(env, argument, &parameter_type) {
+        match is_expression_type_equals(argument, &parameter_type) {
             ExprTypeCheckResult::ImplicitCasted(new_expr) => {
                 arguments[index] = new_expr;
             }
             ExprTypeCheckResult::NotEqualAndCantImplicitCast => {
-                let argument_type = argument.expr_type(env);
+                let argument_type = argument.expr_type();
                 return Err(Diagnostic::error(&format!(
                     "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
-                    function_name, index, argument_type, parameter_type
+                    function_name, index, argument_type.literal(), parameter_type.literal()
                 ))
                 .with_location(location).as_boxed());
             }
@@ -347,12 +346,12 @@ pub fn check_function_call_arguments(
     // Type check the variable parameters if exists
     if has_varargs_parameter {
         let varargs_type =
-            resolve_dynamic_data_type(env, parameters, arguments, parameters.last().unwrap());
+            resolve_dynamic_data_type(parameters, arguments, parameters.last().unwrap());
         for index in last_optional_param_index..arguments_count {
             let argument = arguments.get(index).unwrap();
 
             // Catch undefined arguments
-            if argument.expr_type(env).is_undefined() {
+            if argument.expr_type().is_undefined() {
                 return Err(Diagnostic::error(&format!(
                     "Function `{}` argument number {} has Undefined type",
                     function_name, index,
@@ -363,15 +362,15 @@ pub fn check_function_call_arguments(
                 .as_boxed());
             }
 
-            match is_expression_type_equals(env, argument, &varargs_type) {
+            match is_expression_type_equals(argument, &varargs_type) {
                 ExprTypeCheckResult::ImplicitCasted(new_expr) => {
                     arguments[index] = new_expr;
                 }
                 ExprTypeCheckResult::NotEqualAndCantImplicitCast => {
-                    let argument_type = argument.expr_type(env);
+                    let argument_type = argument.expr_type();
                     return Err(Diagnostic::error(&format!(
                         "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
-                        function_name, index, argument_type, varargs_type
+                        function_name, index, &argument_type.literal(), &varargs_type.literal()
                     ))
                     .with_location(location).as_boxed());
                 }
@@ -484,77 +483,41 @@ pub fn type_check_projection_symbols(
     Ok(())
 }
 
-/// Type check the right hand side of prefix unary expression
-/// Return Equals, Error, or new expression after implicit casting
-#[allow(clippy::borrowed_box)]
-pub fn type_check_prefix_unary(
-    env: &Environment,
-    right: &Box<dyn Expression>,
-    op: &PrefixUnaryOperator,
-    location: Location,
-) -> ExprTypeCheckResult {
-    let right_type = right.expr_type(env);
-    let expected_type = prefix_unary_expected_type(op);
-
-    if *op == PrefixUnaryOperator::Bang {
-        return is_expression_type_equals(env, right, &expected_type);
-    }
-
-    if *op == PrefixUnaryOperator::Minus {
-        if !right_type.is_number() {
-            return ExprTypeCheckResult::Error(type_mismatch_error(
-                location,
-                expected_type,
-                right_type,
-            ));
-        }
-        return ExprTypeCheckResult::Equals;
-    }
-
-    if *op == PrefixUnaryOperator::Not {
-        if !right_type.is_int() {
-            return ExprTypeCheckResult::Error(type_mismatch_error(
-                location,
-                expected_type,
-                right_type,
-            ));
-        }
-        return ExprTypeCheckResult::Equals;
-    }
-
-    ExprTypeCheckResult::Equals
-}
-
 /// Return the expected [DataType] depending on the prefix unary operator
 #[inline(always)]
-pub fn prefix_unary_expected_type(op: &PrefixUnaryOperator) -> DataType {
+pub fn prefix_unary_expected_type(op: &PrefixUnaryOperator) -> Box<dyn DataType> {
     match op {
-        PrefixUnaryOperator::Minus => DataType::Variant(vec![DataType::Integer, DataType::Float]),
-        PrefixUnaryOperator::Bang => DataType::Boolean,
-        PrefixUnaryOperator::Not => DataType::Integer,
+        PrefixUnaryOperator::Minus => Box::new(VariantType {
+            variants: vec![Box::new(IntType), Box::new(FloatType)],
+        }),
+        PrefixUnaryOperator::Bang => Box::new(BoolType),
+        PrefixUnaryOperator::Not => Box::new(IntType),
     }
 }
 
 /// Resolve dynamic data type depending on the parameters and arguments types
 pub fn resolve_dynamic_data_type(
-    env: &Environment,
-    parameters: &[DataType],
+    parameters: &[Box<dyn DataType>],
     arguments: &[Box<dyn Expression>],
-    data_type: &DataType,
-) -> DataType {
+    data_type: &Box<dyn DataType>,
+) -> Box<dyn DataType> {
     let mut resolved_data_type = data_type.clone();
-    if let DataType::Dynamic(calculate_type) = resolved_data_type {
-        resolved_data_type = calculate_type(parameters);
+    if let Some(dynamic_type) = resolved_data_type
+        .clone()
+        .as_any()
+        .downcast_ref::<DynamicType>()
+    {
+        resolved_data_type = (dynamic_type.function)(parameters);
 
         // In Case that data type is Any or Variant [Type1 | Type2...] need to resolve it from arguments types
         // To be able to use it with other expressions
         if !arguments.is_empty() && (resolved_data_type.is_variant() || resolved_data_type.is_any())
         {
-            let mut arguments_types = Vec::with_capacity(arguments.len());
+            let mut arguments_types: Vec<Box<dyn DataType>> = Vec::with_capacity(arguments.len());
             for argument in arguments {
-                arguments_types.push(argument.expr_type(env));
+                arguments_types.push(argument.expr_type());
             }
-            resolved_data_type = calculate_type(&arguments_types);
+            resolved_data_type = (dynamic_type.function)(&arguments_types);
         }
     }
     resolved_data_type
@@ -564,12 +527,13 @@ pub fn resolve_dynamic_data_type(
 #[inline(always)]
 pub fn type_mismatch_error(
     location: Location,
-    expected: DataType,
-    actual: DataType,
+    expected: &Box<dyn DataType>,
+    actual: &Box<dyn DataType>,
 ) -> Box<Diagnostic> {
     Diagnostic::error(&format!(
         "Type mismatch expected `{}`, got `{}`",
-        expected, actual
+        expected.literal(),
+        actual.literal()
     ))
     .with_location(location)
     .as_boxed()

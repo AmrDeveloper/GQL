@@ -6,7 +6,9 @@ use gitql_ast::statement::JoinOperand;
 use gitql_ast::statement::TableSelection;
 use gitql_core::environment::Environment;
 use gitql_core::object::Row;
-use gitql_core::value::Value;
+use gitql_core::values::base::Value;
+use gitql_core::values::boolean::BoolValue;
+use gitql_core::values::null::NullValue;
 
 use crate::engine_evaluator::evaluate_expression;
 
@@ -73,7 +75,7 @@ pub(crate) fn apply_join_operation(
         for outer in left_rows {
             for inner in right_rows {
                 let row_len = outer.values.len() + inner.values.len();
-                let mut joined_row: Vec<Value> = Vec::with_capacity(row_len);
+                let mut joined_row: Vec<Box<dyn Value>> = Vec::with_capacity(row_len);
                 joined_row.append(&mut outer.values.clone());
 
                 let inner_rows = inner.values.clone();
@@ -89,9 +91,11 @@ pub(crate) fn apply_join_operation(
                 // If join has predicate, insert the joined row only if the predicate value is true
                 if let Some(predicate) = &join.predicate {
                     let predicate_value = evaluate_expression(env, predicate, titles, &joined_row)?;
-                    if predicate_value.as_bool() {
-                        current_join_rows.push(Row { values: joined_row });
-                        continue;
+                    if let Some(bool_value) = predicate_value.as_any().downcast_ref::<BoolValue>() {
+                        if bool_value.value {
+                            current_join_rows.push(Row { values: joined_row });
+                            continue;
+                        }
                     }
 
                     // For LEFT and RIGHT Join only if the predicate is false we need to create new joined row
@@ -99,19 +103,21 @@ pub(crate) fn apply_join_operation(
                     // Nulls as RGIHT table row values if the join type is `LEFT OUTER`
                     match join.kind {
                         JoinKind::Left => {
-                            let mut left_joined_row: Vec<Value> = Vec::with_capacity(row_len);
+                            let mut left_joined_row: Vec<Box<dyn Value>> =
+                                Vec::with_capacity(row_len);
                             // Push the LEFT values row
                             left_joined_row.append(&mut outer.values.clone());
                             // Push (N * NULL) values as RIGHT values row
                             for _ in 0..inner.values.len() {
-                                left_joined_row.push(Value::Null);
+                                left_joined_row.push(Box::new(NullValue));
                             }
                         }
                         JoinKind::Right => {
-                            let mut right_joined_row: Vec<Value> = Vec::with_capacity(row_len);
+                            let mut right_joined_row: Vec<Box<dyn Value>> =
+                                Vec::with_capacity(row_len);
                             // Push (N * NULL) values as LEFT values row
                             for _ in 0..outer.values.len() {
-                                right_joined_row.push(Value::Null);
+                                right_joined_row.push(Box::new(NullValue));
                             }
                             // Push the RIGHT values row
                             right_joined_row.append(&mut inner.values.clone());

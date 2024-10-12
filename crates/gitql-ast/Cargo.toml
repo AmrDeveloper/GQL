@@ -10,4 +10,4 @@ keywords = ["cli", "gql", "language", "git", "sql"]
 categories = ["command-line-utilities"]
 
 [dependencies]
-gitql-core = { path = "../gitql-core", version = "0.5.0" }
+dyn-clone = "1.0.17"

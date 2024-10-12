@@ -24,8 +24,8 @@ use gitql_core::environment::Environment;
 use gitql_core::object::GitQLObject;
 use gitql_core::object::Group;
 use gitql_core::object::Row;
-use gitql_core::types::DataType;
-use gitql_core::value::Value;
+use gitql_core::values::base::Value;
+use gitql_core::values::null::NullValue;
 
 use crate::data_provider::DataProvider;
 use crate::engine_evaluator::evaluate_expression;
@@ -251,13 +251,18 @@ fn execute_expression_selection(
             let expr_title = &selected_expr_titles[index];
             let value_index = *titles_index_map.get(expr_title).unwrap();
 
-            if index < row.values.len() && row.values[value_index].data_type() != DataType::Null {
+            if index < row.values.len()
+                && row.values[value_index]
+                    .as_any()
+                    .downcast_ref::<NullValue>()
+                    .is_some()
+            {
                 continue;
             }
 
             // Ignore evaluating expression if it symbol, that mean it a reference to aggregated value or function
             let value = if expr.kind() == ExpressionKind::Symbol {
-                Value::Null
+                Box::new(NullValue)
             } else {
                 evaluate_expression(env, expr, object_titles, &row.values)?
             };
@@ -389,11 +394,11 @@ fn execute_order_by_statement(
 
             // Compare the two set of attributes using the current argument
             let first = &evaluate_expression(env, argument, &gitql_object.titles, &a.values)
-                .unwrap_or(Value::Null);
+                .unwrap_or(Box::new(NullValue));
             let other = &evaluate_expression(env, argument, &gitql_object.titles, &b.values)
-                .unwrap_or(Value::Null);
+                .unwrap_or(Box::new(NullValue));
 
-            let current_ordering = first.compare(other);
+            let current_ordering = first.compare(other).unwrap();
 
             // If comparing result still equal, check the next argument
             if current_ordering == Ordering::Equal {
@@ -450,9 +455,11 @@ fn execute_aggregation_function_statement(
                     .unwrap();
 
                 // Evaluate the Arguments to Values
-                let mut group_values: Vec<Vec<Value>> = Vec::with_capacity(group.rows.len());
+                let mut group_values: Vec<Vec<Box<dyn Value>>> =
+                    Vec::with_capacity(group.rows.len());
                 for object in &mut group.rows {
-                    let mut row_values: Vec<Value> = Vec::with_capacity(object.values.len());
+                    let mut row_values: Vec<Box<dyn Value>> =
+                        Vec::with_capacity(object.values.len());
                     for argument in arguments {
                         let value = evaluate_expression(
                             env,
@@ -561,11 +568,11 @@ fn execute_into_statement(
 }
 
 #[inline(always)]
-fn value_to_string_with_optional_enclosing(value: &Value, enclosed: &String) -> String {
+fn value_to_string_with_optional_enclosing(value: &Box<dyn Value>, enclosed: &String) -> String {
     if enclosed.is_empty() {
-        return value.to_string();
+        return value.literal();
     }
-    format!("{}{}{}", enclosed, value, enclosed)
+    format!("{}{}{}", enclosed, value.literal(), enclosed)
 }
 
 pub fn execute_global_variable_statement(

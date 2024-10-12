@@ -1,9 +1,9 @@
-use crate::value::Value;
+use super::values::base::Value;
 
 /// In memory representation of the list of [`Value`] in one Row
 #[derive(Clone, Default)]
 pub struct Row {
-    pub values: Vec<Value>,
+    pub values: Vec<Box<dyn Value>>,
 }
 
 /// In memory representation of the Rows of one [`Group`]
