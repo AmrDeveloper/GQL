@@ -23,7 +23,6 @@ pub trait Value: DynClone {
 
     fn equals(&self, other: &Box<dyn Value>) -> bool;
 
-    ///
     fn compare(&self, other: &Box<dyn Value>) -> Option<Ordering>;
 
     fn data_type(&self) -> Box<dyn DataType>;
@@ -152,12 +151,33 @@ impl dyn Value {
         self.as_any().downcast_ref::<TextValue>().is_some()
     }
 
+    pub fn as_text(&self) -> Option<String> {
+        if let Some(text_value) = self.as_any().downcast_ref::<TextValue>() {
+            return Some(text_value.value.to_string());
+        }
+        None
+    }
+
     pub fn is_int(&self) -> bool {
         self.as_any().downcast_ref::<IntValue>().is_some()
     }
 
+    pub fn as_int(&self) -> Option<i64> {
+        if let Some(int_value) = self.as_any().downcast_ref::<IntValue>() {
+            return Some(int_value.value);
+        }
+        None
+    }
+
     pub fn is_float(&self) -> bool {
         self.as_any().downcast_ref::<FloatValue>().is_some()
+    }
+
+    pub fn as_float(&self) -> Option<f64> {
+        if let Some(float_value) = self.as_any().downcast_ref::<FloatValue>() {
+            return Some(float_value.value);
+        }
+        None
     }
 
     pub fn is_number(&self) -> bool {
@@ -168,24 +188,66 @@ impl dyn Value {
         self.as_any().downcast_ref::<BoolValue>().is_some()
     }
 
+    pub fn as_bool(&self) -> Option<bool> {
+        if let Some(bool_value) = self.as_any().downcast_ref::<BoolValue>() {
+            return Some(bool_value.value);
+        }
+        None
+    }
+
     pub fn is_date(&self) -> bool {
         self.as_any().downcast_ref::<DateValue>().is_some()
+    }
+
+    pub fn as_date(&self) -> Option<i64> {
+        if let Some(date_value) = self.as_any().downcast_ref::<DateValue>() {
+            return Some(date_value.value);
+        }
+        None
     }
 
     pub fn is_time(&self) -> bool {
         self.as_any().downcast_ref::<TimeValue>().is_some()
     }
 
+    pub fn as_time(&self) -> Option<String> {
+        if let Some(time_value) = self.as_any().downcast_ref::<DateValue>() {
+            return Some(time_value.value.to_string());
+        }
+        None
+    }
+
     pub fn is_datetime(&self) -> bool {
         self.as_any().downcast_ref::<DateTimeValue>().is_some()
+    }
+
+    pub fn as_datetime(&self) -> Option<i64> {
+        if let Some(datetime_value) = self.as_any().downcast_ref::<DateTimeValue>() {
+            return Some(datetime_value.value);
+        }
+        None
     }
 
     pub fn is_array(&self) -> bool {
         self.as_any().downcast_ref::<ArrayValue>().is_some()
     }
 
+    pub fn as_array(&self) -> Option<Vec<Box<dyn Value>>> {
+        if let Some(array_value) = self.as_any().downcast_ref::<ArrayValue>() {
+            return Some(array_value.values.clone());
+        }
+        None
+    }
+
     pub fn is_range(&self) -> bool {
         self.as_any().downcast_ref::<RangeValue>().is_some()
+    }
+
+    pub fn as_range(&self) -> Option<(Box<dyn Value>, Box<dyn Value>)> {
+        if let Some(range_value) = self.as_any().downcast_ref::<RangeValue>() {
+            return Some((range_value.start.clone(), range_value.end.clone()));
+        }
+        None
     }
 
     pub fn is_null(&self) -> bool {

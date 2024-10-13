@@ -1,7 +1,15 @@
+use gitql_ast::types::any::AnyType;
+use gitql_ast::types::float::FloatType;
+use gitql_ast::types::integer::IntType;
+use gitql_ast::types::optional::OptionType;
+use gitql_ast::types::text::TextType;
+use gitql_ast::types::variant::VariantType;
 use gitql_core::signature::Function;
 use gitql_core::signature::Signature;
-use gitql_core::types::DataType;
-use gitql_core::value::Value;
+use gitql_core::values::base::Value;
+use gitql_core::values::integer::IntValue;
+use gitql_core::values::null::NullValue;
+use gitql_core::values::text::TextValue;
 
 use std::collections::HashMap;
 
@@ -42,317 +50,368 @@ pub fn register_std_text_function_signatures(map: &mut HashMap<&'static str, Sig
     map.insert(
         "bin",
         Signature {
-            parameters: vec![DataType::Integer],
-            return_type: DataType::Text,
+            parameters: vec![Box::new(IntType)],
+            return_type: Box::new(TextType),
         },
     );
     map.insert(
         "lower",
         Signature {
-            parameters: vec![DataType::Text],
-            return_type: DataType::Text,
+            parameters: vec![Box::new(TextType)],
+            return_type: Box::new(TextType),
         },
     );
     map.insert(
         "upper",
         Signature {
-            parameters: vec![DataType::Text],
-            return_type: DataType::Text,
+            parameters: vec![Box::new(TextType)],
+            return_type: Box::new(TextType),
         },
     );
     map.insert(
         "reverse",
         Signature {
-            parameters: vec![DataType::Text],
-            return_type: DataType::Text,
+            parameters: vec![Box::new(TextType)],
+            return_type: Box::new(TextType),
         },
     );
     map.insert(
         "replicate",
         Signature {
-            parameters: vec![DataType::Text, DataType::Integer],
-            return_type: DataType::Text,
+            parameters: vec![Box::new(TextType), Box::new(IntType)],
+            return_type: Box::new(TextType),
         },
     );
     map.insert(
         "space",
         Signature {
-            parameters: vec![DataType::Integer],
-            return_type: DataType::Text,
+            parameters: vec![Box::new(IntType)],
+            return_type: Box::new(TextType),
         },
     );
     map.insert(
         "trim",
         Signature {
-            parameters: vec![DataType::Text],
-            return_type: DataType::Text,
+            parameters: vec![Box::new(TextType)],
+            return_type: Box::new(TextType),
         },
     );
     map.insert(
         "ltrim",
         Signature {
-            parameters: vec![DataType::Text],
-            return_type: DataType::Text,
+            parameters: vec![Box::new(TextType)],
+            return_type: Box::new(TextType),
         },
     );
     map.insert(
         "rtrim",
         Signature {
-            parameters: vec![DataType::Text],
-            return_type: DataType::Text,
+            parameters: vec![Box::new(TextType)],
+            return_type: Box::new(TextType),
         },
     );
     map.insert(
         "len",
         Signature {
-            parameters: vec![DataType::Text],
-            return_type: DataType::Integer,
+            parameters: vec![Box::new(TextType)],
+            return_type: Box::new(IntType),
         },
     );
     map.insert(
         "ascii",
         Signature {
-            parameters: vec![DataType::Text],
-            return_type: DataType::Integer,
+            parameters: vec![Box::new(TextType)],
+            return_type: Box::new(IntType),
         },
     );
     map.insert(
         "left",
         Signature {
-            parameters: vec![DataType::Text, DataType::Integer],
-            return_type: DataType::Text,
+            parameters: vec![Box::new(TextType), Box::new(IntType)],
+            return_type: Box::new(TextType),
         },
     );
     map.insert(
         "datalength",
         Signature {
-            parameters: vec![DataType::Text],
-            return_type: DataType::Integer,
+            parameters: vec![Box::new(TextType)],
+            return_type: Box::new(IntType),
         },
     );
     map.insert(
         "char",
         Signature {
-            parameters: vec![DataType::Integer],
-            return_type: DataType::Text,
+            parameters: vec![Box::new(IntType)],
+            return_type: Box::new(TextType),
         },
     );
     map.insert(
         "nchar",
         Signature {
-            parameters: vec![DataType::Integer],
-            return_type: DataType::Text,
+            parameters: vec![Box::new(IntType)],
+            return_type: Box::new(TextType),
         },
     );
     map.insert(
         "charindex",
         Signature {
-            parameters: vec![DataType::Text, DataType::Text],
-            return_type: DataType::Integer,
+            parameters: vec![Box::new(TextType), Box::new(TextType)],
+            return_type: Box::new(IntType),
         },
     );
     map.insert(
         "replace",
         Signature {
-            parameters: vec![DataType::Text, DataType::Text, DataType::Text],
-            return_type: DataType::Text,
+            parameters: vec![Box::new(TextType), Box::new(TextType), Box::new(TextType)],
+            return_type: Box::new(TextType),
         },
     );
     map.insert(
         "substring",
         Signature {
-            parameters: vec![DataType::Text, DataType::Integer, DataType::Integer],
-            return_type: DataType::Text,
+            parameters: vec![Box::new(TextType), Box::new(IntType), Box::new(IntType)],
+            return_type: Box::new(TextType),
         },
     );
     map.insert(
         "stuff",
         Signature {
             parameters: vec![
-                DataType::Text,
-                DataType::Integer,
-                DataType::Integer,
-                DataType::Text,
+                Box::new(TextType),
+                Box::new(IntType),
+                Box::new(IntType),
+                Box::new(TextType),
             ],
-            return_type: DataType::Text,
+            return_type: Box::new(TextType),
         },
     );
     map.insert(
         "right",
         Signature {
-            parameters: vec![DataType::Text, DataType::Integer],
-            return_type: DataType::Text,
+            parameters: vec![Box::new(TextType), Box::new(IntType)],
+            return_type: Box::new(TextType),
         },
     );
     map.insert(
         "translate",
         Signature {
-            parameters: vec![DataType::Text, DataType::Text, DataType::Text],
-            return_type: DataType::Text,
+            parameters: vec![Box::new(TextType), Box::new(TextType), Box::new(TextType)],
+            return_type: Box::new(TextType),
         },
     );
     map.insert(
         "soundex",
         Signature {
-            parameters: vec![DataType::Text],
-            return_type: DataType::Text,
+            parameters: vec![Box::new(TextType)],
+            return_type: Box::new(TextType),
         },
     );
     map.insert(
         "concat",
         Signature {
             parameters: vec![
-                DataType::Any,
-                DataType::Any,
-                DataType::Varargs(Box::new(DataType::Any)),
+                Box::new(AnyType),
+                Box::new(AnyType),
+                Box::new(VariantType {
+                    variants: vec![Box::new(AnyType)],
+                }),
             ],
-            return_type: DataType::Text,
+            return_type: Box::new(TextType),
         },
     );
     map.insert(
         "concat_ws",
         Signature {
             parameters: vec![
-                DataType::Text,
-                DataType::Any,
-                DataType::Any,
-                DataType::Varargs(Box::new(DataType::Any)),
+                Box::new(TextType),
+                Box::new(AnyType),
+                Box::new(AnyType),
+                Box::new(VariantType {
+                    variants: vec![Box::new(AnyType)],
+                }),
             ],
-            return_type: DataType::Text,
+            return_type: Box::new(TextType),
         },
     );
     map.insert(
         "unicode",
         Signature {
-            parameters: vec![DataType::Text],
-            return_type: DataType::Integer,
+            parameters: vec![Box::new(TextType)],
+            return_type: Box::new(IntType),
         },
     );
     map.insert(
         "strcmp",
         Signature {
-            parameters: vec![DataType::Text, DataType::Text],
-            return_type: DataType::Integer,
+            parameters: vec![Box::new(TextType), Box::new(TextType)],
+            return_type: Box::new(IntType),
         },
     );
     map.insert(
         "quotename",
         Signature {
-            parameters: vec![DataType::Text, DataType::Optional(Box::new(DataType::Text))],
-            return_type: DataType::Text,
+            parameters: vec![
+                Box::new(TextType),
+                Box::new(OptionType {
+                    base: Some(Box::new(TextType)),
+                }),
+            ],
+            return_type: Box::new(TextType),
         },
     );
     map.insert(
         "str",
         Signature {
             parameters: vec![
-                DataType::Variant(vec![DataType::Integer, DataType::Float]),
-                DataType::Optional(Box::new(DataType::Integer)),
-                DataType::Optional(Box::new(DataType::Integer)),
+                Box::new(VariantType {
+                    variants: vec![Box::new(IntType), Box::new(FloatType)],
+                }),
+                Box::new(OptionType {
+                    base: Some(Box::new(IntType)),
+                }),
+                Box::new(OptionType {
+                    base: Some(Box::new(IntType)),
+                }),
             ],
-            return_type: DataType::Text,
+            return_type: Box::new(TextType),
         },
     );
 }
 
-pub fn text_bin(inputs: &[Value]) -> Value {
-    let number = inputs[0].as_int();
-    Value::Text(format!("{number:b}"))
+pub fn text_bin(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let number = inputs[0].as_int().unwrap();
+    Box::new(TextValue {
+        value: format!("{number:b}"),
+    })
 }
 
-pub fn text_lowercase(inputs: &[Value]) -> Value {
-    Value::Text(inputs[0].as_text().to_lowercase())
+pub fn text_lowercase(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    Box::new(TextValue {
+        value: inputs[0].as_text().unwrap().to_lowercase(),
+    })
 }
 
-pub fn text_uppercase(inputs: &[Value]) -> Value {
-    Value::Text(inputs[0].as_text().to_uppercase())
+pub fn text_uppercase(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    Box::new(TextValue {
+        value: inputs[0].as_text().unwrap().to_uppercase(),
+    })
 }
 
-pub fn text_reverse(inputs: &[Value]) -> Value {
-    Value::Text(inputs[0].as_text().chars().rev().collect::<String>())
+pub fn text_reverse(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    Box::new(TextValue {
+        value: inputs[0]
+            .as_text()
+            .unwrap()
+            .chars()
+            .rev()
+            .collect::<String>(),
+    })
 }
 
-pub fn text_replicate(inputs: &[Value]) -> Value {
-    let str = inputs[0].as_text();
-    let count = inputs[1].as_int() as usize;
-    Value::Text(str.repeat(count))
+pub fn text_replicate(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let str = inputs[0].as_text().unwrap();
+    let count = inputs[1].as_int().unwrap() as usize;
+    Box::new(TextValue {
+        value: str.repeat(count),
+    })
 }
 
-pub fn text_space(inputs: &[Value]) -> Value {
-    let n = inputs[0].as_int() as usize;
-    Value::Text(" ".repeat(n))
+pub fn text_space(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let n = inputs[0].as_int().unwrap() as usize;
+    Box::new(TextValue {
+        value: " ".repeat(n),
+    })
 }
 
-pub fn text_trim(inputs: &[Value]) -> Value {
-    Value::Text(inputs[0].as_text().trim().to_string())
+pub fn text_trim(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    Box::new(TextValue {
+        value: inputs[0].as_text().unwrap().trim().to_string(),
+    })
 }
 
-pub fn text_left_trim(inputs: &[Value]) -> Value {
-    Value::Text(inputs[0].as_text().trim_start().to_string())
+pub fn text_left_trim(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    Box::new(TextValue {
+        value: inputs[0].as_text().unwrap().trim_start().to_string(),
+    })
 }
 
-pub fn text_right_trim(inputs: &[Value]) -> Value {
-    Value::Text(inputs[0].as_text().trim_end().to_string())
+pub fn text_right_trim(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    Box::new(TextValue {
+        value: inputs[0].as_text().unwrap().trim_end().to_string(),
+    })
 }
 
-pub fn text_len(inputs: &[Value]) -> Value {
-    Value::Integer(inputs[0].as_text().len() as i64)
+pub fn text_len(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    Box::new(IntValue {
+        value: inputs[0].as_text().unwrap().len() as i64,
+    })
 }
 
-pub fn text_ascii(inputs: &[Value]) -> Value {
-    let text = inputs[0].as_text();
+pub fn text_ascii(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let text = inputs[0].as_text().unwrap();
+    let value = if text.is_empty() {
+        0
+    } else {
+        text.chars().next().unwrap() as i64
+    };
+
+    Box::new(IntValue { value })
+}
+
+pub fn text_left(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let text = inputs[0].as_text().unwrap();
     if text.is_empty() {
-        return Value::Integer(0);
-    }
-    Value::Integer(text.chars().next().unwrap() as i64)
-}
-
-pub fn text_left(inputs: &[Value]) -> Value {
-    let text = inputs[0].as_text();
-    if text.is_empty() {
-        return Value::Text("".to_string());
+        return Box::new(TextValue {
+            value: "".to_string(),
+        });
     }
 
-    let number_of_chars = inputs[1].as_int();
+    let number_of_chars = inputs[1].as_int().unwrap();
     if number_of_chars > text.len() as i64 {
-        return Value::Text(text);
+        return Box::new(TextValue { value: text });
     }
 
     let substring = text
         .chars()
         .take(number_of_chars as usize)
         .collect::<String>();
-    Value::Text(substring)
+    return Box::new(TextValue { value: substring });
 }
 
-pub fn text_datalength(inputs: &[Value]) -> Value {
-    let text = inputs[0].as_text();
-    Value::Integer(text.as_bytes().len() as i64)
+pub fn text_datalength(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let text = inputs[0].as_text().unwrap();
+    Box::new(IntValue {
+        value: text.as_bytes().len() as i64,
+    })
 }
 
-pub fn text_char(inputs: &[Value]) -> Value {
-    let code = inputs[0].as_int() as u32;
-    if let Some(character) = char::from_u32(code) {
-        return Value::Text(character.to_string());
-    }
-    Value::Text("".to_string())
-}
-
-pub fn text_charindex(inputs: &[Value]) -> Value {
-    let substr = inputs[0].as_text();
-    let input = inputs[1].as_text();
-
-    if let Some(index) = input.to_lowercase().find(&substr.to_lowercase()) {
-        Value::Integer(index as i64 + 1)
+pub fn text_char(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let code = inputs[0].as_int().unwrap() as u32;
+    let value = if let Some(character) = char::from_u32(code) {
+        character.to_string()
     } else {
-        Value::Integer(0)
-    }
+        "".to_string()
+    };
+    Box::new(TextValue { value })
 }
 
-pub fn text_replace(inputs: &[Value]) -> Value {
-    let text = inputs[0].as_text();
-    let old_string = inputs[1].as_text();
-    let new_string = inputs[2].as_text();
+pub fn text_charindex(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let substr = inputs[0].as_text().unwrap();
+    let input = inputs[1].as_text().unwrap();
+
+    let value = if let Some(index) = input.to_lowercase().find(&substr.to_lowercase()) {
+        index as i64 + 1
+    } else {
+        0
+    };
+
+    Box::new(IntValue { value })
+}
+
+pub fn text_replace(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let text = inputs[0].as_text().unwrap();
+    let old_string = inputs[1].as_text().unwrap();
+    let new_string = inputs[2].as_text().unwrap();
 
     let mut result = String::new();
     let mut end = 0;
@@ -366,71 +425,83 @@ pub fn text_replace(inputs: &[Value]) -> Value {
     }
 
     result.push_str(text.get(end..text.len()).unwrap());
-    Value::Text(result)
+    Box::new(TextValue { value: result })
 }
 
-pub fn text_substring(inputs: &[Value]) -> Value {
-    let text = inputs[0].as_text();
+pub fn text_substring(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let text = inputs[0].as_text().unwrap();
     // According to the specs, a string starts at position 1.
     // but in Rust, the index of a string starts from 0
-    let start = inputs[1].as_int() as usize - 1;
-    let length = inputs[2].as_int();
+    let start = inputs[1].as_int().unwrap() as usize - 1;
+    let length = inputs[2].as_int().unwrap();
 
     if start > text.len() || length > text.len() as i64 {
-        return Value::Text(text);
+        return Box::new(TextValue { value: text });
     }
     if length < 0 {
-        return Value::Text("".to_string());
+        return Box::new(TextValue {
+            value: "".to_string(),
+        });
     }
 
     // Convert it to Vec<Char> to be easy to substring with support of unicode
     let chars: Vec<char> = text.chars().collect();
     let slice = &chars[start..(start + length as usize)];
-    Value::Text(slice.iter().collect())
+    Box::new(TextValue {
+        value: slice.iter().collect(),
+    })
 }
 
-pub fn text_stuff(inputs: &[Value]) -> Value {
-    let text = inputs[0].as_text();
-    let start = (inputs[1].as_int() - 1) as usize;
-    let length = inputs[2].as_int() as usize;
-    let new_string = inputs[3].as_text();
+pub fn text_stuff(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let text = inputs[0].as_text().unwrap();
+    let start = (inputs[1].as_int().unwrap() - 1) as usize;
+    let length = inputs[2].as_int().unwrap() as usize;
+    let new_string = inputs[3].as_text().unwrap();
 
     if text.is_empty() {
-        return Value::Text(text);
+        return Box::new(TextValue { value: text });
     }
 
     if start > text.len() || length > text.len() {
-        return Value::Text(text);
+        return Box::new(TextValue { value: text });
     }
 
     let mut text = text.chars().collect::<Vec<_>>();
     let new_string = new_string.chars().collect::<Vec<_>>();
     text.splice(start..(start + length), new_string);
-    Value::Text(text.into_iter().collect())
+    Box::new(TextValue {
+        value: text.into_iter().collect(),
+    })
 }
 
-pub fn text_right(inputs: &[Value]) -> Value {
-    let text = inputs[0].as_text();
+pub fn text_right(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let text = inputs[0].as_text().unwrap();
     if text.is_empty() {
-        return Value::Text("".to_string());
+        return Box::new(TextValue {
+            value: "".to_string(),
+        });
     }
 
-    let number_of_chars = inputs[1].as_int() as usize;
+    let number_of_chars = inputs[1].as_int().unwrap() as usize;
     if number_of_chars > text.len() {
-        return Value::Text(text);
+        return Box::new(TextValue { value: text });
     }
 
     let text = text.as_str();
-    Value::Text(text[text.len() - number_of_chars..text.len()].to_string())
+    Box::new(TextValue {
+        value: text[text.len() - number_of_chars..text.len()].to_string(),
+    })
 }
 
-pub fn text_translate(inputs: &[Value]) -> Value {
-    let mut text = inputs[0].as_text();
-    let characters = inputs[1].as_text();
-    let translations = inputs[2].as_text();
+pub fn text_translate(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let mut text = inputs[0].as_text().unwrap();
+    let characters = inputs[1].as_text().unwrap();
+    let translations = inputs[2].as_text().unwrap();
 
     if translations.len() != characters.len() {
-        return Value::Text("".to_string());
+        return Box::new(TextValue {
+            value: "".to_string(),
+        });
     }
 
     let translations = translations.chars().collect::<Vec<_>>();
@@ -438,20 +509,25 @@ pub fn text_translate(inputs: &[Value]) -> Value {
         text = text.replace(letter, &char::to_string(&translations[idx]));
     }
 
-    Value::Text(text)
+    Box::new(TextValue { value: text })
 }
 
-pub fn text_unicode(inputs: &[Value]) -> Value {
-    if let Some(c) = inputs[0].as_text().chars().next() {
-        return Value::Integer((c as u32).into());
-    }
-    Value::Integer(0)
+pub fn text_unicode(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let value = if let Some(c) = inputs[0].as_text().unwrap().chars().next() {
+        (c as u32).into()
+    } else {
+        0
+    };
+
+    Box::new(IntValue { value })
 }
 
-pub fn text_soundex(inputs: &[Value]) -> Value {
-    let text = inputs[0].as_text();
+pub fn text_soundex(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let text = inputs[0].as_text().unwrap();
     if text.is_empty() {
-        return Value::Text("".to_string());
+        return Box::new(TextValue {
+            value: "".to_string(),
+        });
     }
 
     let mut result = String::from(text.chars().next().unwrap());
@@ -472,7 +548,7 @@ pub fn text_soundex(inputs: &[Value]) -> Value {
                 result.push_str(&int.to_string());
 
                 if result.len() == 4 {
-                    return Value::Text(result);
+                    return Box::new(TextValue { value: result });
                 }
             }
         }
@@ -485,79 +561,100 @@ pub fn text_soundex(inputs: &[Value]) -> Value {
         }
     }
 
-    Value::Text(result)
+    Box::new(TextValue { value: result })
 }
 
-pub fn text_concat(inputs: &[Value]) -> Value {
+pub fn text_concat(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
     let text: Vec<String> = inputs.iter().map(|v| v.to_string()).collect();
-    Value::Text(text.concat())
-}
-
-pub fn text_concat_ws(inputs: &[Value]) -> Value {
-    let separator = inputs[0].as_text();
-    let text: Vec<String> = inputs.iter().skip(1).map(|v| v.to_string()).collect();
-    Value::Text(text.join(&separator))
-}
-
-pub fn text_strcmp(inputs: &[Value]) -> Value {
-    Value::Integer(match inputs[0].as_text().cmp(&inputs[1].as_text()) {
-        std::cmp::Ordering::Less => 1,
-        std::cmp::Ordering::Equal => 2,
-        std::cmp::Ordering::Greater => 0,
+    Box::new(TextValue {
+        value: text.concat(),
     })
 }
 
-pub fn text_quotename(inputs: &[Value]) -> Value {
-    let str = inputs[0].as_text();
+pub fn text_concat_ws(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let separator = inputs[0].as_text().unwrap();
+    let text: Vec<String> = inputs.iter().skip(1).map(|v| v.to_string()).collect();
+    let value = text.join(&separator);
+    Box::new(TextValue { value })
+}
+
+pub fn text_strcmp(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let value = match inputs[0].as_text().cmp(&inputs[1].as_text()) {
+        std::cmp::Ordering::Less => 1,
+        std::cmp::Ordering::Equal => 2,
+        std::cmp::Ordering::Greater => 0,
+    };
+    Box::new(IntValue { value })
+}
+
+pub fn text_quotename(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let str = inputs[0].as_text().unwrap();
     let quote = inputs
         .get(1)
-        .map(Value::as_text)
+        .map(|v| v.as_text().unwrap())
         .map(|str| str.chars().collect())
         .unwrap_or_else(|| vec!['[', ']']);
 
     match quote.as_slice() {
-        [single] => Value::Text(format!("{single}{str}{single}")),
-        [start, end] => Value::Text(format!("{start}{str}{end}")),
-        _ => Value::Null,
+        [single] => Box::new(TextValue {
+            value: format!("{single}{str}{single}"),
+        }),
+        [start, end] => Box::new(TextValue {
+            value: format!("{start}{str}{end}"),
+        }),
+        _ => Box::new(NullValue),
     }
 }
 
-pub fn text_str(inputs: &[Value]) -> Value {
+pub fn text_str(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
     let value = &inputs[0];
     let length = if inputs.len() == 3 {
-        inputs[1].as_int()
+        inputs[1].as_int().unwrap()
     } else {
         10
     };
 
     let decimals = if inputs.len() == 3 {
-        inputs[2].as_int()
+        inputs[2].as_int().unwrap()
     } else {
         0
     };
 
     if value.data_type().is_int() {
-        let int_value = value.as_int();
+        let int_value = value.as_int().unwrap();
         let number_string = format!("{:.dec$}", int_value, dec = decimals as usize);
         if length > 0 {
             if (length as usize) < number_string.len() {
-                return Value::Text(number_string[..length as usize].to_owned());
+                return Box::new(TextValue {
+                    value: number_string[..length as usize].to_owned(),
+                });
             } else {
-                return Value::Text(format!("{:<len$}", number_string, len = length as usize));
+                return Box::new(TextValue {
+                    value: format!("{:<len$}", number_string, len = length as usize),
+                });
             }
         }
-        return Value::Text(number_string.clone());
+
+        return Box::new(TextValue {
+            value: number_string.clone(),
+        });
     }
 
-    let float_value = value.as_float();
+    let float_value = value.as_float().unwrap();
     let number_string = format!("{:.dec$}", float_value, dec = decimals as usize);
     if length > 0 {
         if (length as usize) < number_string.len() {
-            return Value::Text(number_string[..length as usize].to_owned());
+            return Box::new(TextValue {
+                value: number_string[..length as usize].to_owned(),
+            });
         } else {
-            return Value::Text(format!("{:<len$}", number_string, len = length as usize));
+            return Box::new(TextValue {
+                value: format!("{:<len$}", number_string, len = length as usize),
+            });
         }
     }
 
-    Value::Text(number_string.clone())
+    Box::new(TextValue {
+        value: number_string.clone(),
+    })
 }
