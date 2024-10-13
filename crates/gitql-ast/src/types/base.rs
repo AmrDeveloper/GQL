@@ -1,4 +1,5 @@
 use std::any::Any;
+use std::fmt;
 
 use dyn_clone::DynClone;
 
@@ -30,12 +31,6 @@ pub trait DataType: DynClone {
 
     fn as_any(&self) -> &dyn Any;
 
-    /*
-       fn has_add_op_with(&self, _other: &Box<dyn DataType>) -> bool {
-           false
-       }
-    */
-
     fn can_perform_add_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
@@ -43,12 +38,6 @@ pub trait DataType: DynClone {
     fn add_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
-
-    /*
-    fn has_sub_op_with(&self, _other: &Box<dyn DataType>) -> bool {
-        false
-    }
-    */
 
     fn can_perform_sub_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
@@ -58,12 +47,6 @@ pub trait DataType: DynClone {
         Box::new(NullType)
     }
 
-    /*
-       fn has_mul_op_with(&self, _other: &Box<dyn DataType>) -> bool {
-           false
-       }
-    */
-
     fn can_perform_mul_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
@@ -72,12 +55,6 @@ pub trait DataType: DynClone {
         Box::new(NullType)
     }
 
-    /*
-       fn has_div_op_with(&self, _other: &Box<dyn DataType>) -> bool {
-           false
-       }
-    */
-
     fn can_perform_div_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
@@ -85,12 +62,6 @@ pub trait DataType: DynClone {
     fn div_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
-
-    /*
-        fn has_rem_op_with(&self, _other: &Box<dyn DataType>) -> bool {
-            false
-        }
-    */
 
     fn can_perform_rem_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
@@ -104,12 +75,6 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    /*
-    fn has_caret_op_with(&self, _other: &Box<dyn DataType>) -> bool {
-            false
-        }
-    */
-
     fn caret_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
@@ -117,12 +82,6 @@ pub trait DataType: DynClone {
     fn can_perform_or_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
-
-    /*
-    fn has_or_op_with(&self, _other: &Box<dyn DataType>) -> bool {
-            false
-        }
-    */
 
     fn or_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
@@ -132,12 +91,6 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    /*
-    fn has_and_op_with(&self, _other: &Box<dyn DataType>) -> bool {
-            false
-        }
-    */
-
     fn and_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
@@ -145,12 +98,6 @@ pub trait DataType: DynClone {
     fn can_perform_xor_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
-
-    /*
-       fn has_xor_op_with(&self, _other: &Box<dyn DataType>) -> bool {
-           false
-       }
-    */
 
     fn xor_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
@@ -160,12 +107,6 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    /*
-    fn has_shl_op_with(&self, _other: &Box<dyn DataType>) -> bool {
-           false
-       }
-    */
-
     fn shl_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
@@ -173,12 +114,6 @@ pub trait DataType: DynClone {
     fn can_perform_shr_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
-
-    /*
-    fn has_shr_op_with(&self, _other: &Box<dyn DataType>) -> bool {
-           false
-       }
-    */
 
     fn shr_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
@@ -188,12 +123,6 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    /*
-    fn has_logical_or_op_with(&self, _other: &Box<dyn DataType>) -> bool {
-            false
-        }
-    */
-
     fn logical_or_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
@@ -201,12 +130,6 @@ pub trait DataType: DynClone {
     fn can_perform_logical_and_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
-
-    /*
-       fn has_logical_and_op_with(&self, _other: &Box<dyn DataType>) -> bool {
-           false
-       }
-    */
 
     fn logical_and_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
@@ -216,12 +139,6 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    /*
-       fn has_logical_xor_op_with(&self, _other: &Box<dyn DataType>) -> bool {
-           false
-       }
-    */
-
     fn logical_xor_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
@@ -229,12 +146,6 @@ pub trait DataType: DynClone {
     fn can_perform_index_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
-
-    /*
-       fn has_index_op_with(&self, _other: &Box<dyn DataType>) -> bool {
-           false
-       }
-    */
 
     fn index_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
@@ -248,25 +159,9 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    /*
-    fn has_slice_op_with(
-        &self,
-        _start: &Option<Box<dyn DataType>>,
-        _end: &Option<Box<dyn DataType>>,
-    ) -> bool {
-        false
-    }
-     */
-
     fn slice_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
-
-    /*
-        fn has_eq_op_with(&self, _other: &Box<dyn DataType>) -> bool {
-            false
-        }
-    */
 
     fn can_perform_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
@@ -276,20 +171,9 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    /*
-    fn has_bang_eq_op_with(&self, _other: &Box<dyn DataType>) -> bool {
-        false
-    } */
-
     fn can_perform_null_safe_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
-
-    /*
-       fn has_null_safe_eq_op_with(&self, _other: &Box<dyn DataType>) -> bool {
-           false
-       }
-    */
 
     fn can_perform_gt_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
@@ -307,33 +191,9 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    /*
-       fn has_gt_op_with(&self, _other: &Box<dyn DataType>) -> bool {
-           false
-       }
-
-       fn has_gte_op_with(&self, _other: &Box<dyn DataType>) -> bool {
-           false
-       }
-
-       fn has_lt_op_with(&self, _other: &Box<dyn DataType>) -> bool {
-           false
-       }
-
-       fn has_lte_op_with(&self, _other: &Box<dyn DataType>) -> bool {
-           false
-       }
-    */
-
     fn can_perform_not_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
-
-    /*
-       fn has_not_op(&self) -> bool {
-           false
-       }
-    */
 
     fn not_op_result_type(&self) -> Box<dyn DataType> {
         Box::new(NullType)
@@ -343,12 +203,6 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    /*
-       fn has_neg_op(&self) -> bool {
-           false
-       }
-    */
-
     fn neg_op_result_type(&self) -> Box<dyn DataType> {
         Box::new(NullType)
     }
@@ -356,12 +210,6 @@ pub trait DataType: DynClone {
     fn can_perform_bang_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
-
-    /*
-       fn has_bang_op(&self) -> bool {
-           false
-       }
-    */
 
     fn bang_op_result_type(&self) -> Box<dyn DataType> {
         Box::new(NullType)
@@ -371,17 +219,10 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    /*
-       fn has_contains_op_with(&self, _other: &Box<dyn DataType>) -> bool {
-           false
-       }
-    */
-
     fn contains_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
-    // Performed with constants values
     fn has_implicit_cast_from(&self, _expr: &Box<dyn Expression>) -> bool {
         false
     }
@@ -472,6 +313,12 @@ impl dyn DataType {
 
     pub fn is_null(&self) -> bool {
         self.as_any().downcast_ref::<NullType>().is_some()
+    }
+}
+
+impl fmt::Display for Box<dyn DataType> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.literal())
     }
 }
 
