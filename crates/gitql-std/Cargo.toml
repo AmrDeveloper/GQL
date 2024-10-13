@@ -11,6 +11,7 @@ categories = ["command-line-utilities"]
 
 [dependencies]
 gitql-core = { path = "../gitql-core", version = "0.5.0" }
+gitql-ast = { path = "../gitql-ast", version = "0.25.0" }
 chrono = "0.4.38"
 regex = "1.10.4"
 rand = "0.8.5"

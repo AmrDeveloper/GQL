@@ -451,6 +451,13 @@ impl dyn DataType {
         false
     }
 
+    pub fn is_variant_contains(&self, other: &Box<dyn DataType>) -> bool {
+        if let Some(variant_type) = self.as_any().downcast_ref::<VariantType>() {
+            return variant_type.variants.contains(other);
+        }
+        false
+    }
+
     pub fn is_optional(&self) -> bool {
         self.as_any().downcast_ref::<OptionType>().is_some()
     }

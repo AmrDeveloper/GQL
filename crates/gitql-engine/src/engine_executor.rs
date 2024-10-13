@@ -225,6 +225,7 @@ fn execute_select_statement(
     };
 
     gitql_object.groups.push(main_group);
+
     Ok(())
 }
 
@@ -251,12 +252,7 @@ fn execute_expression_selection(
             let expr_title = &selected_expr_titles[index];
             let value_index = *titles_index_map.get(expr_title).unwrap();
 
-            if index < row.values.len()
-                && row.values[value_index]
-                    .as_any()
-                    .downcast_ref::<NullValue>()
-                    .is_some()
-            {
+            if index < row.values.len() && !row.values[value_index].is_null() {
                 continue;
             }
 

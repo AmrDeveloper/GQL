@@ -48,19 +48,19 @@ impl Value for RangeValue {
                 return Err("Overlap operator expect both Ranges to have same type".to_string());
             }
 
-            let max_start = if self.start.compare(&other_range.start).unwrap().is_le() {
+            let max_start = if self.start.compare(&other_range.start).unwrap().is_ge() {
                 &self.start
             } else {
                 &other_range.start
             };
 
-            let max_end = if self.end.compare(&other_range.end).unwrap().is_gt() {
+            let max_end = if self.end.compare(&other_range.end).unwrap().is_lt() {
                 &self.end
             } else {
                 &other_range.end
             };
 
-            let is_overlap = max_end.compare(max_start).unwrap().is_le();
+            let is_overlap = max_end.compare(max_start).unwrap().is_ge();
             return Ok(Box::new(BoolValue { value: is_overlap }));
         }
         Err("Unexpected type to perform `Range Overlap &&` with".to_string())
@@ -72,14 +72,14 @@ impl Value for RangeValue {
                 return Err("Contains operator expect both Ranges to have same type".to_string());
             }
 
-            let is_in_range = other_range.start.compare(&self.start).unwrap().is_ge()
-                && other_range.end.compare(&self.end).unwrap().is_le();
+            let is_in_range = other_range.start.compare(&self.start).unwrap().is_le()
+                && other_range.end.compare(&self.end).unwrap().is_ge();
             return Ok(Box::new(BoolValue { value: is_in_range }));
         }
 
         if self.base_type.equals(&other.data_type()) {
-            let is_in_range = other.compare(&self.start).unwrap().is_ge()
-                && other.compare(&self.start).unwrap().is_le();
+            let is_in_range = other.compare(&self.start).unwrap().is_le()
+                && other.compare(&self.start).unwrap().is_ge();
             return Ok(Box::new(BoolValue { value: is_in_range }));
         }
 

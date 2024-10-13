@@ -1,16 +1,29 @@
 use std::any::Any;
 use std::cmp::Ordering;
+use std::fmt;
 
 use dyn_clone::DynClone;
 use gitql_ast::types::base::DataType;
+
+use super::array::ArrayValue;
+use super::boolean::BoolValue;
+use super::date::DateValue;
+use super::datetime::DateTimeValue;
+use super::float::FloatValue;
+use super::integer::IntValue;
+use super::null::NullValue;
+use super::range::RangeValue;
+use super::text::TextValue;
+use super::time::TimeValue;
 
 dyn_clone::clone_trait_object!(Value);
 
 pub trait Value: DynClone {
     fn literal(&self) -> String;
-    
+
     fn equals(&self, other: &Box<dyn Value>) -> bool;
 
+    ///
     fn compare(&self, other: &Box<dyn Value>) -> Option<Ordering>;
 
     fn data_type(&self) -> Box<dyn DataType>;
@@ -131,6 +144,58 @@ pub trait Value: DynClone {
 
     fn perform_cast_op(&self, _target_type: &Box<dyn DataType>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
+    }
+}
+
+impl dyn Value {
+    pub fn is_text(&self) -> bool {
+        self.as_any().downcast_ref::<TextValue>().is_some()
+    }
+
+    pub fn is_int(&self) -> bool {
+        self.as_any().downcast_ref::<IntValue>().is_some()
+    }
+
+    pub fn is_float(&self) -> bool {
+        self.as_any().downcast_ref::<FloatValue>().is_some()
+    }
+
+    pub fn is_number(&self) -> bool {
+        self.is_int() || self.is_float()
+    }
+
+    pub fn is_bool(&self) -> bool {
+        self.as_any().downcast_ref::<BoolValue>().is_some()
+    }
+
+    pub fn is_date(&self) -> bool {
+        self.as_any().downcast_ref::<DateValue>().is_some()
+    }
+
+    pub fn is_time(&self) -> bool {
+        self.as_any().downcast_ref::<TimeValue>().is_some()
+    }
+
+    pub fn is_datetime(&self) -> bool {
+        self.as_any().downcast_ref::<DateTimeValue>().is_some()
+    }
+
+    pub fn is_array(&self) -> bool {
+        self.as_any().downcast_ref::<ArrayValue>().is_some()
+    }
+
+    pub fn is_range(&self) -> bool {
+        self.as_any().downcast_ref::<RangeValue>().is_some()
+    }
+
+    pub fn is_null(&self) -> bool {
+        self.as_any().downcast_ref::<NullValue>().is_some()
+    }
+}
+
+impl fmt::Display for Box<dyn Value> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.literal())
     }
 }
 

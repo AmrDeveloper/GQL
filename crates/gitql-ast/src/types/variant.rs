@@ -32,6 +32,7 @@ impl DataType for VariantType {
                 return true;
             }
         }
+
         return false;
     }
 

@@ -15,7 +15,8 @@ impl DataType for ArrayType {
     }
 
     fn equals(&self, other: &Box<dyn DataType>) -> bool {
-        if other.is_any() {
+        let array_type: Box<dyn DataType> = Box::new(self.clone());
+        if other.is_any() || other.is_variant_contains(&array_type) {
             return true;
         }
 

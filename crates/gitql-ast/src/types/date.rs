@@ -13,7 +13,7 @@ impl DataType for DateType {
     }
 
     fn equals(&self, other: &Box<dyn DataType>) -> bool {
-        other.is_any() || other.is_date()
+        other.is_any() || other.is_date() || other.is_variant_with(|t| t.is_date())
     }
 
     fn as_any(&self) -> &dyn Any {

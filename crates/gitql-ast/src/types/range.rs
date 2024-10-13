@@ -14,7 +14,8 @@ impl DataType for RangeType {
     }
 
     fn equals(&self, other: &Box<dyn DataType>) -> bool {
-        if other.is_any() {
+        let range_type: Box<dyn DataType> = Box::new(self.clone());
+        if other.is_any() || other.is_variant_contains(&range_type) {
             return true;
         }
 

@@ -11,7 +11,7 @@ impl DataType for TextType {
     }
 
     fn equals(&self, other: &Box<dyn DataType>) -> bool {
-        other.is_any() || other.is_text()
+        other.is_any() || other.is_text() || other.is_variant_with(|t| t.is_text())
     }
 
     fn as_any(&self) -> &dyn Any {

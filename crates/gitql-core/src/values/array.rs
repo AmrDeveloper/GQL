@@ -102,7 +102,7 @@ impl Value for ArrayValue {
         if end.is_some() {
             if let Some(end_value) = end.clone().unwrap().as_any().downcast_ref::<IntValue>() {
                 if end_value.value < start_index as i64
-                    || end_value.value >= self.values.len() as i64
+                    || end_value.value > self.values.len() as i64
                 {
                     return Err("Slice end must be between start and length of Array".to_string());
                 }
