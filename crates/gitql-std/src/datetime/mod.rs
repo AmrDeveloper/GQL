@@ -1,9 +1,22 @@
 extern crate chrono;
 
+use gitql_ast::types::any::AnyType;
+use gitql_ast::types::boolean::BoolType;
+use gitql_ast::types::date::DateType;
+use gitql_ast::types::datetime::DateTimeType;
+use gitql_ast::types::integer::IntType;
+use gitql_ast::types::text::TextType;
+use gitql_ast::types::time::TimeType;
+use gitql_ast::types::variant::VariantType;
 use gitql_core::signature::Function;
 use gitql_core::signature::Signature;
-use gitql_core::types::DataType;
-use gitql_core::value::Value;
+use gitql_core::values::base::Value;
+use gitql_core::values::boolean::BoolValue;
+use gitql_core::values::date::DateValue;
+use gitql_core::values::datetime::DateTimeValue;
+use gitql_core::values::integer::IntValue;
+use gitql_core::values::text::TextValue;
+use gitql_core::values::time::TimeValue;
 
 use std::collections::HashMap;
 
@@ -48,222 +61,228 @@ pub fn register_std_datetime_function_signatures(map: &mut HashMap<&'static str,
     map.insert(
         "date",
         Signature {
-            parameters: vec![DataType::Variant(vec![DataType::Date, DataType::DateTime])],
-            return_type: DataType::Date,
+            parameters: vec![Box::new(VariantType {
+                variants: vec![Box::new(DateType), Box::new(DateTimeType)],
+            })],
+            return_type: Box::new(DateType),
         },
     );
     map.insert(
         "current_date",
         Signature {
             parameters: vec![],
-            return_type: DataType::Date,
+            return_type: Box::new(DateType),
         },
     );
     map.insert(
         "current_time",
         Signature {
             parameters: vec![],
-            return_type: DataType::Time,
+            return_type: Box::new(TimeType),
         },
     );
     map.insert(
         "current_timestamp",
         Signature {
             parameters: vec![],
-            return_type: DataType::DateTime,
+            return_type: Box::new(DateTimeType),
         },
     );
     map.insert(
         "now",
         Signature {
             parameters: vec![],
-            return_type: DataType::DateTime,
+            return_type: Box::new(DateTimeType),
         },
     );
     map.insert(
         "makedate",
         Signature {
-            parameters: vec![DataType::Integer, DataType::Integer],
-            return_type: DataType::Date,
+            parameters: vec![Box::new(IntType), Box::new(IntType)],
+            return_type: Box::new(DateType),
         },
     );
     map.insert(
         "maketime",
         Signature {
-            parameters: vec![DataType::Integer, DataType::Integer, DataType::Integer],
-            return_type: DataType::Time,
+            parameters: vec![Box::new(IntType), Box::new(IntType), Box::new(IntType)],
+            return_type: Box::new(TimeType),
         },
     );
     map.insert(
         "dayname",
         Signature {
-            parameters: vec![DataType::Date],
-            return_type: DataType::Text,
+            parameters: vec![Box::new(DateType)],
+            return_type: Box::new(TextType),
         },
     );
     map.insert(
         "day",
         Signature {
-            parameters: vec![DataType::Date],
-            return_type: DataType::Integer,
+            parameters: vec![Box::new(DateType)],
+            return_type: Box::new(IntType),
         },
     );
     map.insert(
         "monthname",
         Signature {
-            parameters: vec![DataType::Date],
-            return_type: DataType::Text,
+            parameters: vec![Box::new(DateType)],
+            return_type: Box::new(TextType),
         },
     );
     map.insert(
         "hour",
         Signature {
-            parameters: vec![DataType::DateTime],
-            return_type: DataType::Integer,
+            parameters: vec![Box::new(DateTimeType)],
+            return_type: Box::new(IntType),
         },
     );
     map.insert(
         "minute",
         Signature {
-            parameters: vec![DataType::DateTime],
-            return_type: DataType::Integer,
+            parameters: vec![Box::new(DateTimeType)],
+            return_type: Box::new(IntType),
         },
     );
     map.insert(
         "isdate",
         Signature {
-            parameters: vec![DataType::Any],
-            return_type: DataType::Boolean,
+            parameters: vec![Box::new(AnyType)],
+            return_type: Box::new(BoolType),
         },
     );
     map.insert(
         "dayofweek",
         Signature {
-            parameters: vec![DataType::Date],
-            return_type: DataType::Integer,
+            parameters: vec![Box::new(DateType)],
+            return_type: Box::new(IntType),
         },
     );
     map.insert(
         "dayofmonth",
         Signature {
-            parameters: vec![DataType::Date],
-            return_type: DataType::Integer,
+            parameters: vec![Box::new(DateType)],
+            return_type: Box::new(IntType),
         },
     );
     map.insert(
         "dayofyear",
         Signature {
-            parameters: vec![DataType::Date],
-            return_type: DataType::Integer,
+            parameters: vec![Box::new(DateType)],
+            return_type: Box::new(IntType),
         },
     );
     map.insert(
         "weekofyear",
         Signature {
-            parameters: vec![DataType::Date],
-            return_type: DataType::Integer,
+            parameters: vec![Box::new(DateType)],
+            return_type: Box::new(IntType),
         },
     );
     map.insert(
         "quarter",
         Signature {
-            parameters: vec![DataType::Date],
-            return_type: DataType::Integer,
+            parameters: vec![Box::new(DateType)],
+            return_type: Box::new(IntType),
         },
     );
     map.insert(
         "year",
         Signature {
-            parameters: vec![DataType::Date],
-            return_type: DataType::Integer,
+            parameters: vec![Box::new(DateType)],
+            return_type: Box::new(IntType),
         },
     );
     map.insert(
         "month",
         Signature {
-            parameters: vec![DataType::Date],
-            return_type: DataType::Integer,
+            parameters: vec![Box::new(DateType)],
+            return_type: Box::new(IntType),
         },
     );
     map.insert(
         "weekday",
         Signature {
-            parameters: vec![DataType::Date],
-            return_type: DataType::Integer,
+            parameters: vec![Box::new(DateType)],
+            return_type: Box::new(IntType),
         },
     );
     map.insert(
         "to_days",
         Signature {
-            parameters: vec![DataType::Date],
-            return_type: DataType::Integer,
+            parameters: vec![Box::new(DateType)],
+            return_type: Box::new(IntType),
         },
     );
     map.insert(
         "last_day",
         Signature {
-            parameters: vec![DataType::Date],
-            return_type: DataType::Date,
+            parameters: vec![Box::new(DateType)],
+            return_type: Box::new(DateType),
         },
     );
     map.insert(
         "yearweek",
         Signature {
-            parameters: vec![DataType::Date],
-            return_type: DataType::Text,
+            parameters: vec![Box::new(DateType)],
+            return_type: Box::new(TextType),
         },
     );
 }
 
-pub fn date_extract_date(inputs: &[Value]) -> Value {
+pub fn date_extract_date(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
     let argument_type = inputs[0].data_type();
     if argument_type.is_date() {
         return inputs[0].clone();
     }
-    let timestamp = inputs[0].as_date_time();
-    Value::Date(timestamp)
+    let timestamp = inputs[0].as_datetime().unwrap();
+    Box::new(DateValue { value: timestamp })
 }
 
-pub fn date_current_date(_inputs: &[Value]) -> Value {
-    let time_stamp = Utc::now().timestamp();
-    Value::Date(time_stamp)
+pub fn date_current_date(_inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let timestamp = Utc::now().timestamp();
+    Box::new(DateValue { value: timestamp })
 }
 
-pub fn date_current_time(_inputs: &[Value]) -> Value {
+pub fn date_current_time(_inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
     let time_stamp = Utc::now().timestamp();
     let datetime = DateTime::from_timestamp(time_stamp, 0).unwrap();
     let time = datetime.format("%H:%M:%S").to_string();
-    Value::Time(time)
+    Box::new(TimeValue { value: time })
 }
 
-pub fn date_current_timestamp(_inputs: &[Value]) -> Value {
-    let time_stamp = Utc::now().timestamp();
-    Value::DateTime(time_stamp)
+pub fn date_current_timestamp(_inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let timestamp = Utc::now().timestamp();
+    Box::new(DateTimeValue { value: timestamp })
 }
 
-pub fn date_make_date(inputs: &[Value]) -> Value {
-    let year = inputs[0].as_int() as i32;
-    let day_of_year = inputs[1].as_int() as u32;
+pub fn date_make_date(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let year = inputs[0].as_int().unwrap() as i32;
+    let day_of_year = inputs[1].as_int().unwrap() as u32;
     let date = NaiveDate::from_yo_opt(year, day_of_year).unwrap();
     let datetime = date.and_hms_opt(0, 0, 0).unwrap();
-    Value::Date(Utc.from_utc_datetime(&datetime).timestamp())
+    let timestamp = Utc.from_utc_datetime(&datetime).timestamp();
+    Box::new(DateValue { value: timestamp })
 }
 
-pub fn date_make_time(inputs: &[Value]) -> Value {
-    let hour = inputs[0].as_int();
-    let minute = inputs[1].as_int();
-    let second = inputs[2].as_int();
-    Value::Time(format!("{}:{:02}:{:02}", hour, minute, second))
+pub fn date_make_time(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let hour = inputs[0].as_int().unwrap();
+    let minute = inputs[1].as_int().unwrap();
+    let second = inputs[2].as_int().unwrap();
+    let time = format!("{}:{:02}:{:02}", hour, minute, second);
+    Box::new(TimeValue { value: time })
 }
 
-pub fn date_day(inputs: &[Value]) -> Value {
-    let date = inputs[0].as_date();
+pub fn date_day(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let date = inputs[0].as_date().unwrap();
     let parsed_date = DateTime::from_timestamp(date, 0).unwrap();
-    Value::Integer(parsed_date.day().into())
+    Box::new(IntValue {
+        value: parsed_date.day().into(),
+    })
 }
 
-pub fn date_dayname(inputs: &[Value]) -> Value {
-    let date = inputs[0].as_date();
+pub fn date_dayname(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let date = inputs[0].as_date().unwrap();
     let parsed_date = DateTime::from_timestamp(date, 0).unwrap();
     let day_name = match parsed_date.weekday() {
         Weekday::Mon => "Monday",
@@ -273,12 +292,13 @@ pub fn date_dayname(inputs: &[Value]) -> Value {
         Weekday::Fri => "Friday",
         Weekday::Sat => "Saturday",
         Weekday::Sun => "Sunday",
-    };
-    Value::Text(day_name.to_string())
+    }
+    .to_string();
+    Box::new(TextValue { value: day_name })
 }
 
-pub fn date_monthname(inputs: &[Value]) -> Value {
-    let date = inputs[0].as_date();
+pub fn date_monthname(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let date = inputs[0].as_date().unwrap();
     let parsed_date = DateTime::from_timestamp(date, 0).unwrap();
     let month_name = match parsed_date.month() {
         1 => "January",
@@ -294,48 +314,59 @@ pub fn date_monthname(inputs: &[Value]) -> Value {
         11 => "November",
         12 => "December",
         _ => "",
-    };
-    Value::Text(month_name.to_string())
+    }
+    .to_string();
+    Box::new(TextValue { value: month_name })
 }
 
-pub fn date_hour(inputs: &[Value]) -> Value {
-    let date = inputs[0].as_date_time();
+pub fn date_hour(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let date = inputs[0].as_datetime().unwrap();
     let date_time = DateTime::from_timestamp(date, 0);
     let dt = date_time.unwrap().time();
-    Value::Integer(dt.hour() as i64)
+    Box::new(IntValue {
+        value: dt.hour() as i64,
+    })
 }
 
-pub fn date_minute(inputs: &[Value]) -> Value {
-    let date = inputs[0].as_date_time();
+pub fn date_minute(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let date = inputs[0].as_datetime().unwrap();
     let date_time = DateTime::from_timestamp(date, 0);
     let dt = date_time.unwrap().time();
-    Value::Integer(dt.minute() as i64)
+    Box::new(IntValue {
+        value: dt.minute() as i64,
+    })
 }
 
-pub fn date_is_date(inputs: &[Value]) -> Value {
-    Value::Boolean(inputs[0].data_type().is_date())
+pub fn date_is_date(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let is_date = inputs[0].data_type().is_date();
+    Box::new(BoolValue { value: is_date })
 }
 
-pub fn date_day_of_week(inputs: &[Value]) -> Value {
-    let date = inputs[0].as_date();
+pub fn date_day_of_week(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let date = inputs[0].as_date().unwrap();
     let parsed_date = DateTime::from_timestamp(date, 0).unwrap();
-    Value::Integer(parsed_date.weekday().number_from_sunday().into())
+    let value = parsed_date.weekday().number_from_sunday().into();
+    Box::new(IntValue { value })
 }
 
-pub fn date_day_of_month(inputs: &[Value]) -> Value {
-    let date = inputs[0].as_date();
+pub fn date_day_of_month(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let date = inputs[0].as_date().unwrap();
     let parsed_date = DateTime::from_timestamp(date, 0).unwrap();
-    Value::Integer(parsed_date.day().into())
+    Box::new(IntValue {
+        value: parsed_date.day().into(),
+    })
 }
 
-pub fn date_day_of_year(inputs: &[Value]) -> Value {
-    let date = inputs[0].as_date();
+pub fn date_day_of_year(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let date = inputs[0].as_date().unwrap();
     let parsed_date = DateTime::from_timestamp(date, 0).unwrap();
-    Value::Integer(parsed_date.ordinal().into())
+    Box::new(IntValue {
+        value: parsed_date.ordinal().into(),
+    })
 }
 
-pub fn date_week_of_year(inputs: &[Value]) -> Value {
-    let date = inputs[0].as_date();
+pub fn date_week_of_year(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let date = inputs[0].as_date().unwrap();
 
     let parsed_date = DateTime::from_timestamp(date, 0).unwrap();
     let native_date = parsed_date.date_naive();
@@ -349,11 +380,12 @@ pub fn date_week_of_year(inputs: &[Value]) -> Value {
     };
 
     let days_with_offset = days_diff + week_offset;
-    Value::Integer(((days_with_offset / 7) as u32 + 1).into())
+    let value = ((days_with_offset / 7) as u32 + 1).into();
+    Box::new(IntValue { value })
 }
 
-pub fn date_year_and_week(inputs: &[Value]) -> Value {
-    let date = inputs[0].as_date();
+pub fn date_year_and_week(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let date = inputs[0].as_date().unwrap();
     let parsed_date = DateTime::from_timestamp(date, 0).unwrap();
     let year = parsed_date.year();
     let parsed_date = DateTime::from_timestamp(date, 0).unwrap();
@@ -369,47 +401,56 @@ pub fn date_year_and_week(inputs: &[Value]) -> Value {
 
     let days_with_offset = days_diff + week_offset;
     let week_number = (days_with_offset / 7) as u32 + 1;
-    Value::Text(format!("{}{}", year, week_number))
+    Box::new(TextValue {
+        value: format!("{}{}", year, week_number),
+    })
 }
 
-pub fn date_quarter(inputs: &[Value]) -> Value {
-    let date = inputs[0].as_date();
+pub fn date_quarter(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let date = inputs[0].as_date().unwrap();
     let parsed_date = DateTime::from_timestamp(date, 0).unwrap();
     let month = parsed_date.month() as i64;
-    Value::Integer((month - 1) / 3 + 1)
+    Box::new(IntValue {
+        value: (month - 1) / 3 + 1,
+    })
 }
 
-pub fn date_year(inputs: &[Value]) -> Value {
-    let date = inputs[0].as_date();
+pub fn date_year(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let date = inputs[0].as_date().unwrap();
     let parsed_date = DateTime::from_timestamp(date, 0).unwrap();
-    Value::Integer(parsed_date.year().into())
+    Box::new(IntValue {
+        value: parsed_date.year().into(),
+    })
 }
 
-pub fn date_month(inputs: &[Value]) -> Value {
-    let date = inputs[0].as_date();
+pub fn date_month(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let date = inputs[0].as_date().unwrap();
     let parsed_date = DateTime::from_timestamp(date, 0).unwrap();
-    Value::Integer(parsed_date.month().into())
+    Box::new(IntValue {
+        value: parsed_date.month().into(),
+    })
 }
 
-pub fn date_weekday(inputs: &[Value]) -> Value {
-    let date = inputs[0].as_date();
+pub fn date_weekday(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let date = inputs[0].as_date().unwrap();
     let parsed_date = DateTime::from_timestamp(date, 0).unwrap();
-    Value::Integer((parsed_date.weekday().number_from_monday() - 1) as i64)
+    let value = (parsed_date.weekday().number_from_monday() - 1) as i64;
+    Box::new(IntValue { value })
 }
 
-pub fn date_to_days(inputs: &[Value]) -> Value {
-    let date = inputs[0].as_date();
+pub fn date_to_days(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let date = inputs[0].as_date().unwrap();
     let parsed_date = DateTime::from_timestamp(date, 0).unwrap();
     let days_since_year_0 = parsed_date.ordinal0() as i64;
     let year = parsed_date.year() as i64;
     let leap_years = (year - 1) / 4 - (year - 1) / 100 + (year - 1) / 400;
     let non_leap_years = year - leap_years;
     let days = 365 * non_leap_years + 366 * leap_years + days_since_year_0;
-    Value::Integer(days)
+    Box::new(IntValue { value: days })
 }
 
-pub fn date_last_day(inputs: &[Value]) -> Value {
-    let date = inputs[0].as_date();
+pub fn date_last_day(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let date = inputs[0].as_date().unwrap();
     let parsed_date = DateTime::from_timestamp(date, 0).unwrap();
     let (year, month) = (parsed_date.year(), parsed_date.month());
 
@@ -425,5 +466,7 @@ pub fn date_last_day(inputs: &[Value]) -> Value {
     let parsed_date = parsed_date.with_day(1).unwrap();
     let last_day = parsed_date + days_in_month - chrono::Duration::days(1);
 
-    Value::Date(last_day.timestamp())
+    Box::new(DateValue {
+        value: last_day.timestamp(),
+    })
 }

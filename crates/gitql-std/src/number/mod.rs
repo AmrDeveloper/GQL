@@ -1,8 +1,15 @@
+use gitql_ast::types::dynamic::DynamicType;
+use gitql_ast::types::float::FloatType;
+use gitql_ast::types::integer::IntType;
+use gitql_ast::types::optional::OptionType;
+use gitql_ast::types::variant::VariantType;
 use gitql_core::dynamic_types::first_element_type;
 use gitql_core::signature::Function;
 use gitql_core::signature::Signature;
-use gitql_core::types::DataType;
-use gitql_core::value::Value;
+use gitql_core::values::base::Value;
+use gitql_core::values::float::FloatValue;
+use gitql_core::values::integer::IntValue;
+use gitql_core::values::null::NullValue;
 
 use std::collections::HashMap;
 use std::ops::Rem;
@@ -36,215 +43,253 @@ pub fn register_std_number_function_signatures(map: &mut HashMap<&'static str, S
     map.insert(
         "abs",
         Signature {
-            parameters: vec![DataType::Variant(vec![DataType::Integer, DataType::Float])],
-            return_type: DataType::Dynamic(first_element_type),
+            parameters: vec![Box::new(VariantType {
+                variants: vec![Box::new(IntType), Box::new(FloatType)],
+            })],
+            return_type: Box::new(DynamicType {
+                function: first_element_type,
+            }),
         },
     );
     map.insert(
         "pi",
         Signature {
             parameters: vec![],
-            return_type: DataType::Float,
+            return_type: Box::new(FloatType),
         },
     );
     map.insert(
         "floor",
         Signature {
-            parameters: vec![DataType::Float],
-            return_type: DataType::Integer,
+            parameters: vec![Box::new(FloatType)],
+            return_type: Box::new(IntType),
         },
     );
     map.insert(
         "round",
         Signature {
             parameters: vec![
-                DataType::Float,
-                DataType::Optional(Box::new(DataType::Integer)),
+                Box::new(FloatType),
+                Box::new(OptionType {
+                    base: Some(Box::new(IntType)),
+                }),
             ],
-            return_type: DataType::Float,
+            return_type: Box::new(FloatType),
         },
     );
     map.insert(
         "square",
         Signature {
-            parameters: vec![DataType::Integer],
-            return_type: DataType::Integer,
+            parameters: vec![Box::new(IntType)],
+            return_type: Box::new(IntType),
         },
     );
     map.insert(
         "sin",
         Signature {
-            parameters: vec![DataType::Float],
-            return_type: DataType::Float,
+            parameters: vec![Box::new(FloatType)],
+            return_type: Box::new(FloatType),
         },
     );
     map.insert(
         "asin",
         Signature {
-            parameters: vec![DataType::Float],
-            return_type: DataType::Float,
+            parameters: vec![Box::new(FloatType)],
+            return_type: Box::new(FloatType),
         },
     );
     map.insert(
         "cos",
         Signature {
-            parameters: vec![DataType::Float],
-            return_type: DataType::Float,
+            parameters: vec![Box::new(FloatType)],
+            return_type: Box::new(FloatType),
         },
     );
     map.insert(
         "acos",
         Signature {
-            parameters: vec![DataType::Float],
-            return_type: DataType::Float,
+            parameters: vec![Box::new(FloatType)],
+            return_type: Box::new(FloatType),
         },
     );
     map.insert(
         "tan",
         Signature {
-            parameters: vec![DataType::Float],
-            return_type: DataType::Float,
+            parameters: vec![Box::new(FloatType)],
+            return_type: Box::new(FloatType),
         },
     );
     map.insert(
         "atan",
         Signature {
-            parameters: vec![DataType::Float],
-            return_type: DataType::Float,
+            parameters: vec![Box::new(FloatType)],
+            return_type: Box::new(FloatType),
         },
     );
     map.insert(
         "atn2",
         Signature {
-            parameters: vec![DataType::Float, DataType::Float],
-            return_type: DataType::Float,
+            parameters: vec![Box::new(FloatType), Box::new(FloatType)],
+            return_type: Box::new(FloatType),
         },
     );
     map.insert(
         "sign",
         Signature {
-            parameters: vec![DataType::Variant(vec![DataType::Integer, DataType::Float])],
-            return_type: DataType::Integer,
+            parameters: vec![Box::new(VariantType {
+                variants: vec![Box::new(IntType), Box::new(FloatType)],
+            })],
+            return_type: Box::new(IntType),
         },
     );
     map.insert(
         "mod",
         Signature {
-            parameters: vec![DataType::Integer, DataType::Integer],
-            return_type: DataType::Integer,
+            parameters: vec![Box::new(IntType), Box::new(IntType)],
+            return_type: Box::new(IntType),
         },
     );
     map.insert(
         "rand",
         Signature {
-            parameters: vec![DataType::Optional(Box::new(DataType::Float))],
-            return_type: DataType::Float,
+            parameters: vec![Box::new(OptionType {
+                base: Some(Box::new(FloatType)),
+            })],
+            return_type: Box::new(FloatType),
         },
     );
 }
 
-pub fn numeric_abs(inputs: &[Value]) -> Value {
+pub fn numeric_abs(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
     let input_type = inputs[0].data_type();
     if input_type.is_float() {
-        return Value::Float(inputs[0].as_float().abs());
+        return Box::new(FloatValue {
+            value: inputs[0].as_float().unwrap().abs(),
+        });
     }
-    Value::Integer(inputs[0].as_int().abs())
+
+    Box::new(IntValue {
+        value: inputs[0].as_int().unwrap().abs(),
+    })
 }
 
-pub fn numeric_pi(_inputs: &[Value]) -> Value {
+pub fn numeric_pi(_inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
     let pi = std::f64::consts::PI;
-    Value::Float(pi)
+    Box::new(FloatValue { value: pi })
 }
 
-pub fn numeric_floor(inputs: &[Value]) -> Value {
-    let float_value = inputs[0].as_float();
-    Value::Integer(float_value.floor() as i64)
+pub fn numeric_floor(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let float_value = inputs[0].as_float().unwrap();
+    Box::new(IntValue {
+        value: float_value.floor() as i64,
+    })
 }
 
-pub fn numeric_round(inputs: &[Value]) -> Value {
-    let number = inputs[0].as_float();
+pub fn numeric_round(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let number = inputs[0].as_float().unwrap();
     let decimal_places = if inputs.len() == 2 {
-        inputs[1].as_int()
+        inputs[1].as_int().unwrap()
     } else {
         0
     };
     let multiplier = 10_f64.powi(decimal_places.try_into().unwrap());
     let result = (number * multiplier).round() / multiplier;
-    Value::Float(result)
+    Box::new(FloatValue { value: result })
 }
 
-pub fn numeric_square(inputs: &[Value]) -> Value {
-    let int_value = inputs[0].as_int();
-    Value::Integer(int_value * int_value)
+pub fn numeric_square(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let int_value = inputs[0].as_int().unwrap();
+    Box::new(IntValue {
+        value: int_value * int_value,
+    })
 }
 
-pub fn numeric_sin(inputs: &[Value]) -> Value {
-    let float_value = inputs[0].as_float();
-    Value::Float(f64::sin(float_value))
+pub fn numeric_sin(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let float_value = inputs[0].as_float().unwrap();
+    Box::new(FloatValue {
+        value: f64::sin(float_value),
+    })
 }
 
-pub fn numeric_asin(inputs: &[Value]) -> Value {
-    let float_value = inputs[0].as_float();
-    Value::Float(f64::asin(float_value))
+pub fn numeric_asin(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let float_value = inputs[0].as_float().unwrap();
+    Box::new(FloatValue {
+        value: f64::asin(float_value),
+    })
 }
 
-pub fn numeric_cos(inputs: &[Value]) -> Value {
-    let float_value = inputs[0].as_float();
-    Value::Float(f64::cos(float_value))
+pub fn numeric_cos(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let float_value = inputs[0].as_float().unwrap();
+    Box::new(FloatValue {
+        value: f64::cos(float_value),
+    })
 }
 
-pub fn numeric_acos(inputs: &[Value]) -> Value {
-    let float_value = inputs[0].as_float();
-    Value::Float(f64::acos(float_value))
+pub fn numeric_acos(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let float_value = inputs[0].as_float().unwrap();
+    Box::new(FloatValue {
+        value: f64::acos(float_value),
+    })
 }
 
-pub fn numeric_tan(inputs: &[Value]) -> Value {
-    let float_value = inputs[0].as_float();
-    Value::Float(f64::tan(float_value))
+pub fn numeric_tan(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let float_value = inputs[0].as_float().unwrap();
+    Box::new(FloatValue {
+        value: f64::tan(float_value),
+    })
 }
 
-pub fn numeric_atan(inputs: &[Value]) -> Value {
-    let float_value = inputs[0].as_float();
-    Value::Float(f64::atan(float_value))
+pub fn numeric_atan(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let float_value = inputs[0].as_float().unwrap();
+    Box::new(FloatValue {
+        value: f64::atan(float_value),
+    })
 }
 
-pub fn numeric_atn2(inputs: &[Value]) -> Value {
-    let first = inputs[0].as_float();
-    let other = inputs[1].as_float();
-    Value::Float(f64::atan2(first, other))
+pub fn numeric_atn2(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let first = inputs[0].as_float().unwrap();
+    let other = inputs[1].as_float().unwrap();
+    Box::new(FloatValue {
+        value: f64::atan2(first, other),
+    })
 }
 
-pub fn numeric_sign(inputs: &[Value]) -> Value {
+pub fn numeric_sign(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
     let value = &inputs[0];
     if value.data_type().is_int() {
-        let int_value = value.as_int();
-        return Value::Integer(int_value.signum());
+        let value = value.as_int().unwrap().signum();
+        return Box::new(IntValue { value });
     }
 
-    let float_value = value.as_float();
-    if float_value == 0.0 {
-        Value::Integer(0)
+    let float_value = value.as_float().unwrap();
+    let value = if float_value == 0.0 {
+        0
     } else if float_value > 0.0 {
-        Value::Integer(1)
+        1
     } else {
-        Value::Integer(-1)
-    }
+        -1
+    };
+    Box::new(IntValue { value })
 }
 
-pub fn numeric_mod(inputs: &[Value]) -> Value {
-    let other = &inputs[1];
-    if other.as_int() == 0 {
-        return Value::Null;
+pub fn numeric_mod(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let other = inputs[1].as_int().unwrap();
+    if other == 0 {
+        return Box::new(NullValue);
     }
 
-    let first = &inputs[0];
-    Value::Integer(first.as_int().rem(other.as_int()))
+    let first = inputs[0].as_int().unwrap();
+    let value = first.rem(other);
+    Box::new(IntValue { value })
 }
 
-pub fn numeric_rand(inputs: &[Value]) -> Value {
+pub fn numeric_rand(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
     let mut rng: StdRng = match inputs.first() {
-        Some(s) => SeedableRng::seed_from_u64(s.as_int().try_into().unwrap()),
+        Some(s) => SeedableRng::seed_from_u64(s.as_int().unwrap().try_into().unwrap()),
         None => SeedableRng::from_entropy(),
     };
-    Value::Float(rng.sample(Uniform::from(0.0..1.0)))
+
+    Box::new(FloatValue {
+        value: rng.sample(Uniform::from(0.0..1.0)),
+    })
 }

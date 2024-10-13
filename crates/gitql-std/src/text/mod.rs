@@ -375,7 +375,7 @@ pub fn text_left(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
         .chars()
         .take(number_of_chars as usize)
         .collect::<String>();
-    return Box::new(TextValue { value: substring });
+    Box::new(TextValue { value: substring })
 }
 
 pub fn text_datalength(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {

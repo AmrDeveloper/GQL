@@ -1,7 +1,12 @@
+use gitql_ast::types::boolean::BoolType;
+use gitql_ast::types::integer::IntType;
+use gitql_ast::types::text::TextType;
 use gitql_core::signature::Function;
 use gitql_core::signature::Signature;
-use gitql_core::types::DataType;
-use gitql_core::value::Value;
+use gitql_core::values::base::Value;
+use gitql_core::values::boolean::BoolValue;
+use gitql_core::values::integer::IntValue;
+use gitql_core::values::text::TextValue;
 
 use std::collections::HashMap;
 
@@ -20,29 +25,29 @@ pub fn register_std_regex_function_signatures(map: &mut HashMap<&'static str, Si
     map.insert(
         "regexp_instr",
         Signature {
-            parameters: vec![DataType::Text, DataType::Text],
-            return_type: DataType::Integer,
+            parameters: vec![Box::new(TextType), Box::new(TextType)],
+            return_type: Box::new(IntType),
         },
     );
     map.insert(
         "regexp_like",
         Signature {
-            parameters: vec![DataType::Text, DataType::Text],
-            return_type: DataType::Boolean,
+            parameters: vec![Box::new(TextType), Box::new(TextType)],
+            return_type: Box::new(BoolType),
         },
     );
     map.insert(
         "regexp_replace",
         Signature {
-            parameters: vec![DataType::Text, DataType::Text, DataType::Text],
-            return_type: DataType::Text,
+            parameters: vec![Box::new(TextType), Box::new(TextType), Box::new(TextType)],
+            return_type: Box::new(TextType),
         },
     );
     map.insert(
         "regexp_substr",
         Signature {
-            parameters: vec![DataType::Text, DataType::Text],
-            return_type: DataType::Text,
+            parameters: vec![Box::new(TextType), Box::new(TextType)],
+            return_type: Box::new(TextType),
         },
     );
 }
@@ -50,47 +55,55 @@ pub fn register_std_regex_function_signatures(map: &mut HashMap<&'static str, Si
 /// Return the position of the pattern in the input
 /// If the pattern compilation fails, it returns -1
 /// If a match is found returns the position of the match's start offset (adjusted by 1)
-pub fn regexp_instr(inputs: &[Value]) -> Value {
-    let input = inputs[0].as_text();
-    let pattern = inputs[1].as_text();
+pub fn regexp_instr(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let input = inputs[0].as_text().unwrap();
+    let pattern = inputs[1].as_text().unwrap();
     if let Ok(regex) = Regex::new(&pattern) {
         if let Some(match_result) = regex.find(&input) {
-            return Value::Integer((match_result.start() + 1) as i64);
+            let value = (match_result.start() + 1) as i64;
+            return Box::new(IntValue { value });
         }
     }
-    Value::Integer(-1)
+    Box::new(IntValue { value: -1 })
 }
 
 /// Return true if a match is found, overwise return false
-pub fn regexp_like(inputs: &[Value]) -> Value {
-    let input = inputs[0].as_text();
-    let pattern = inputs[1].as_text();
+pub fn regexp_like(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let input = inputs[0].as_text().unwrap();
+    let pattern = inputs[1].as_text().unwrap();
     if let Ok(regex) = Regex::new(&pattern) {
-        return Value::Boolean(regex.is_match(&input));
+        return Box::new(BoolValue {
+            value: regex.is_match(&input),
+        });
     }
-    Value::Boolean(false)
+    Box::new(BoolValue { value: false })
 }
 
 /// Return the input after replacing pattern with new content
 /// Or return the same input if the pattern is invalid
-pub fn regexp_replace(inputs: &[Value]) -> Value {
-    let input = inputs[0].as_text();
-    let pattern = inputs[1].as_text();
-    let replacement = inputs[2].as_text();
+pub fn regexp_replace(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let input = inputs[0].as_text().unwrap();
+    let pattern = inputs[1].as_text().unwrap();
+    let replacement = inputs[2].as_text().unwrap();
     if let Ok(regex) = Regex::new(&pattern) {
-        return Value::Text(regex.replace_all(&input, replacement).to_string());
+        let value = regex.replace_all(&input, replacement).to_string();
+        return Box::new(TextValue { value });
     }
-    Value::Text(input)
+    Box::new(TextValue { value: input })
 }
 
 /// Return substring matching regular expression or empty string if no match found
-pub fn regexp_substr(inputs: &[Value]) -> Value {
-    let input = inputs[0].as_text();
-    let pattern = inputs[1].as_text();
+pub fn regexp_substr(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let input = inputs[0].as_text().unwrap();
+    let pattern = inputs[1].as_text().unwrap();
     if let Ok(regex) = Regex::new(&pattern) {
         if let Some(mat) = regex.find(&input) {
-            return Value::Text(mat.as_str().to_string());
+            return Box::new(TextValue {
+                value: mat.as_str().to_string(),
+            });
         }
     }
-    Value::Text("".to_string())
+    Box::new(TextValue {
+        value: "".to_string(),
+    })
 }

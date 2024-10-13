@@ -26,17 +26,14 @@ pub fn standard_functions() -> &'static HashMap<&'static str, Function> {
     })
 }
 
-pub fn standard_function_signatures() -> &'static HashMap<&'static str, Signature> {
-    static HASHMAP: OnceLock<HashMap<&'static str, Signature>> = OnceLock::new();
-    HASHMAP.get_or_init(|| {
-        let mut map: HashMap<&'static str, Signature> = HashMap::new();
-        register_std_text_function_signatures(&mut map);
-        register_std_datetime_function_signatures(&mut map);
-        register_std_number_function_signatures(&mut map);
-        register_std_general_function_signatures(&mut map);
-        register_std_regex_function_signatures(&mut map);
-        register_std_array_function_signatures(&mut map);
-        register_std_range_function_signatures(&mut map);
-        map
-    })
+pub fn standard_function_signatures() -> HashMap<&'static str, Signature> {
+    let mut map: HashMap<&'static str, Signature> = HashMap::new();
+    register_std_text_function_signatures(&mut map);
+    register_std_datetime_function_signatures(&mut map);
+    register_std_number_function_signatures(&mut map);
+    register_std_general_function_signatures(&mut map);
+    register_std_regex_function_signatures(&mut map);
+    register_std_array_function_signatures(&mut map);
+    register_std_range_function_signatures(&mut map);
+    map
 }

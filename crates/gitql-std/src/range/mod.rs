@@ -1,7 +1,14 @@
+use gitql_ast::types::any::AnyType;
+use gitql_ast::types::boolean::BoolType;
+use gitql_ast::types::date::DateType;
+use gitql_ast::types::datetime::DateTimeType;
+use gitql_ast::types::integer::IntType;
+use gitql_ast::types::range::RangeType;
 use gitql_core::signature::Function;
 use gitql_core::signature::Signature;
-use gitql_core::types::DataType;
-use gitql_core::value::Value;
+use gitql_core::values::base::Value;
+use gitql_core::values::boolean::BoolValue;
+use gitql_core::values::range::RangeValue;
 
 use std::collections::HashMap;
 
@@ -18,58 +25,68 @@ pub fn register_std_range_function_signatures(map: &mut HashMap<&'static str, Si
     map.insert(
         "int4range",
         Signature {
-            parameters: vec![DataType::Integer, DataType::Integer],
-            return_type: DataType::Range(Box::new(DataType::Integer)),
+            parameters: vec![Box::new(IntType), Box::new(IntType)],
+            return_type: Box::new(RangeType {
+                base: Box::new(IntType),
+            }),
         },
     );
     map.insert(
         "daterange",
         Signature {
-            parameters: vec![DataType::Date, DataType::Date],
-            return_type: DataType::Range(Box::new(DataType::Date)),
+            parameters: vec![Box::new(DateType), Box::new(DateType)],
+            return_type: Box::new(RangeType {
+                base: Box::new(DateType),
+            }),
         },
     );
     map.insert(
         "tsrange",
         Signature {
-            parameters: vec![DataType::DateTime, DataType::DateTime],
-            return_type: DataType::Range(Box::new(DataType::DateTime)),
+            parameters: vec![Box::new(DateTimeType), Box::new(DateTimeType)],
+            return_type: Box::new(RangeType {
+                base: Box::new(DateTimeType),
+            }),
         },
     );
     map.insert(
         "isempty",
         Signature {
-            parameters: vec![DataType::Range(Box::new(DataType::Any))],
-            return_type: DataType::Boolean,
+            parameters: vec![Box::new(RangeType {
+                base: Box::new(AnyType),
+            })],
+            return_type: Box::new(BoolType),
         },
     );
 }
 
-pub fn int4range(inputs: &[Value]) -> Value {
-    Value::Range(
-        DataType::Integer,
-        Box::new(inputs[0].clone()),
-        Box::new(inputs[1].clone()),
-    )
+pub fn int4range(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    Box::new(RangeValue {
+        start: inputs[0].clone(),
+        end: inputs[1].clone(),
+        base_type: Box::new(IntType),
+    })
 }
 
-pub fn daterange(inputs: &[Value]) -> Value {
-    Value::Range(
-        DataType::Date,
-        Box::new(inputs[0].clone()),
-        Box::new(inputs[1].clone()),
-    )
+pub fn daterange(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    Box::new(RangeValue {
+        start: inputs[0].clone(),
+        end: inputs[1].clone(),
+        base_type: Box::new(DateType),
+    })
 }
 
-pub fn tsrange(inputs: &[Value]) -> Value {
-    Value::Range(
-        DataType::DateTime,
-        Box::new(inputs[0].clone()),
-        Box::new(inputs[1].clone()),
-    )
+pub fn tsrange(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    Box::new(RangeValue {
+        start: inputs[0].clone(),
+        end: inputs[1].clone(),
+        base_type: Box::new(DateTimeType),
+    })
 }
 
-pub fn isempty(inputs: &[Value]) -> Value {
-    let range = inputs[0].as_range();
-    Value::Boolean(range.0.equals(&range.1))
+pub fn isempty(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let range = inputs[0].as_range().unwrap();
+    Box::new(BoolValue {
+        value: range.0.equals(&range.1),
+    })
 }
