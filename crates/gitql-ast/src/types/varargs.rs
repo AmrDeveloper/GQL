@@ -13,7 +13,7 @@ impl DataType for VarargsType {
     }
 
     fn equals(&self, other: &Box<dyn DataType>) -> bool {
-        other.is_any() || self.base.equals(&other)
+        other.is_any() || self.base.equals(other)
     }
 
     fn as_any(&self) -> &dyn Any {

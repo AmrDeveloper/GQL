@@ -3035,7 +3035,7 @@ fn parse_index_or_slice_expression(
 
             // Check that LHS support slice op with this type
             let rhs_expected_types = lhs_type.can_perform_slice_op_with();
-            if rhs_expected_types.contains(&end_type) {
+            if !rhs_expected_types.contains(&end_type) {
                 return Err(Diagnostic::error(&format!(
                     "Operator `[:]` can't be performed with type of index `{}`",
                     end_type.literal()

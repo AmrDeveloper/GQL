@@ -25,7 +25,9 @@ dyn_clone::clone_trait_object!(DataType);
 pub trait DataType: DynClone {
     fn literal(&self) -> String;
 
-    fn equals(&self, _other: &Box<dyn DataType>) -> bool {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn equals(&self, other: &Box<dyn DataType>) -> bool {
         false
     }
 
@@ -35,15 +37,21 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    fn add_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn add_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
     fn can_perform_sub_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
-    fn sub_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn sub_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
@@ -51,15 +59,21 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    fn mul_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn mul_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
     fn can_perform_div_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
-    fn div_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn div_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
@@ -67,7 +81,9 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    fn rem_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn rem_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
@@ -75,7 +91,9 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    fn caret_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn caret_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
@@ -83,7 +101,9 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    fn or_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn or_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
@@ -91,7 +111,9 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    fn and_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn and_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
@@ -99,7 +121,9 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    fn xor_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn xor_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
@@ -107,7 +131,9 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    fn shl_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn shl_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
@@ -115,7 +141,9 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    fn shr_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn shr_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
@@ -123,7 +151,9 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    fn logical_or_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn logical_or_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
@@ -131,7 +161,9 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    fn logical_and_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn logical_and_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
@@ -139,7 +171,9 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    fn logical_xor_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn logical_xor_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
@@ -147,7 +181,9 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    fn index_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn index_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
@@ -159,7 +195,9 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    fn slice_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn slice_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
@@ -219,11 +257,15 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    fn contains_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn contains_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
-    fn has_implicit_cast_from(&self, _expr: &Box<dyn Expression>) -> bool {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn has_implicit_cast_from(&self, expr: &Box<dyn Expression>) -> bool {
         false
     }
 
@@ -292,6 +334,7 @@ impl dyn DataType {
         false
     }
 
+    #[allow(clippy::borrowed_box)]
     pub fn is_variant_contains(&self, other: &Box<dyn DataType>) -> bool {
         if let Some(variant_type) = self.as_any().downcast_ref::<VariantType>() {
             return variant_type.variants.contains(other);

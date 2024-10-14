@@ -564,6 +564,7 @@ fn execute_into_statement(
 }
 
 #[inline(always)]
+#[allow(clippy::borrowed_box)]
 fn value_to_string_with_optional_enclosing(value: &Box<dyn Value>, enclosed: &String) -> String {
     if enclosed.is_empty() {
         return value.literal();

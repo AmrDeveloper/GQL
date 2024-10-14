@@ -21,107 +21,155 @@ dyn_clone::clone_trait_object!(Value);
 pub trait Value: DynClone {
     fn literal(&self) -> String;
 
+    #[allow(clippy::borrowed_box)]
     fn equals(&self, other: &Box<dyn Value>) -> bool;
 
+    #[allow(clippy::borrowed_box)]
     fn compare(&self, other: &Box<dyn Value>) -> Option<Ordering>;
 
     fn data_type(&self) -> Box<dyn DataType>;
 
     fn as_any(&self) -> &dyn Any;
 
-    fn perform_add_op(&self, _other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn perform_add_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    fn perform_sub_op(&self, _other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn perform_sub_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    fn perform_mul_op(&self, _other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn perform_mul_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    fn perform_div_op(&self, _other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn perform_div_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    fn perform_rem_op(&self, _other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn perform_rem_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    fn perform_caret_op(&self, _other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn perform_caret_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    fn perform_or_op(&self, _other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn perform_or_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    fn perform_and_op(&self, _other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn perform_and_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    fn perform_xor_op(&self, _other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn perform_xor_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    fn perform_logical_or_op(&self, _other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn perform_logical_or_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    fn perform_logical_and_op(&self, _other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn perform_logical_and_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    fn perform_logical_xor_op(&self, _other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn perform_logical_xor_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    fn perform_shl_op(&self, _other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn perform_shl_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    fn perform_shr_op(&self, _other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn perform_shr_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    fn perform_index_op(&self, _index: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn perform_index_op(&self, index: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
     fn perform_slice_op(
         &self,
-        _start: &Option<Box<dyn Value>>,
-        _end: &Option<Box<dyn Value>>,
+        start: &Option<Box<dyn Value>>,
+        end: &Option<Box<dyn Value>>,
     ) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    fn perform_eq_op(&self, _other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn perform_eq_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    fn perform_bang_eq_op(&self, _other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn perform_bang_eq_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    fn perform_null_safe_eq_op(&self, _other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn perform_null_safe_eq_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    fn perform_gt_op(&self, _other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn perform_gt_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    fn perform_gte_op(&self, _other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn perform_gte_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    fn perform_lt_op(&self, _other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn perform_lt_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    fn perform_lte_op(&self, _other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn perform_lte_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
@@ -137,11 +185,15 @@ pub trait Value: DynClone {
         Err("Unsupported operator for this type".to_string())
     }
 
-    fn perform_contains_op(&self, _other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn perform_contains_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    fn perform_cast_op(&self, _target_type: &Box<dyn DataType>) -> Result<Box<dyn Value>, String> {
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn perform_cast_op(&self, target_type: &Box<dyn DataType>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 }

@@ -3,6 +3,8 @@ use std::any::Any;
 use super::base::DataType;
 
 #[derive(Clone)]
+#[allow(clippy::borrowed_box)]
+#[allow(clippy::type_complexity)]
 pub struct DynamicType {
     pub function: fn(&[Box<dyn DataType>]) -> Box<dyn DataType>,
 }

@@ -38,6 +38,10 @@ impl DataType for ArrayType {
         self.base.clone()
     }
 
+    fn can_perform_slice_op(&self) -> bool {
+        true
+    }
+
     fn can_perform_slice_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(IntType)]
     }

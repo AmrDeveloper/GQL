@@ -496,6 +496,7 @@ pub fn prefix_unary_expected_type(op: &PrefixUnaryOperator) -> Box<dyn DataType>
 }
 
 /// Resolve dynamic data type depending on the parameters and arguments types
+#[allow(clippy::borrowed_box)]
 pub fn resolve_dynamic_data_type(
     parameters: &[Box<dyn DataType>],
     arguments: &[Box<dyn Expression>],
@@ -521,20 +522,4 @@ pub fn resolve_dynamic_data_type(
         }
     }
     resolved_data_type
-}
-
-/// Return a [Diagnostic] with common type mismatch error message
-#[inline(always)]
-pub fn type_mismatch_error(
-    location: Location,
-    expected: &Box<dyn DataType>,
-    actual: &Box<dyn DataType>,
-) -> Box<Diagnostic> {
-    Diagnostic::error(&format!(
-        "Type mismatch expected `{}`, got `{}`",
-        expected.literal(),
-        actual.literal()
-    ))
-    .with_location(location)
-    .as_boxed()
 }

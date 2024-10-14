@@ -117,6 +117,7 @@ impl Environment {
     }
 
     /// Resolve Global or Local type using symbol name
+    #[allow(clippy::borrowed_box)]
     pub fn resolve_type(&self, str: &String) -> Option<&Box<dyn DataType>> {
         if str.starts_with('@') {
             return self.globals_types.get(str);

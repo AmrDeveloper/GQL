@@ -66,14 +66,12 @@ impl Value for ArrayValue {
 
     fn perform_index_op(&self, index: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(index) = index.as_any().downcast_ref::<IntValue>() {
-            if index.value < 0 {
-                return Err("Array Index can't be negative value".to_string());
+            if (index.value < 1) || (index.value as usize > self.values.len()) {
+                return Err("Array Index must be between 1 and length of Array".to_string());
             }
 
-            if index.value as usize > self.values.len() {
-                return Err("Array Index can't be larger than array length".to_string());
-            }
-            return Ok(self.values[index.value as usize].clone());
+            let array_index = (index.value - 1) as usize;
+            return Ok(self.values[array_index].clone());
         }
         Err("Unexpected Array Index type".to_string())
     }

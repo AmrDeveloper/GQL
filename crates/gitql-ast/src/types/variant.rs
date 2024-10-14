@@ -33,7 +33,7 @@ impl DataType for VariantType {
             }
         }
 
-        return false;
+        false
     }
 
     fn as_any(&self) -> &dyn Any {
