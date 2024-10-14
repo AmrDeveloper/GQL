@@ -30,11 +30,9 @@ use crate::tokenizer::Token;
 use crate::tokenizer::TokenKind;
 use crate::type_checker::check_all_values_are_same_type;
 use crate::type_checker::check_function_call_arguments;
-use crate::type_checker::is_expression_type_equals;
 use crate::type_checker::resolve_dynamic_data_type;
 use crate::type_checker::type_check_and_classify_selected_fields;
 use crate::type_checker::type_check_projection_symbols;
-use crate::type_checker::ExprTypeCheckResult;
 
 pub fn parse_gql(tokens: Vec<Token>, env: &mut Environment) -> Result<Query, Box<Diagnostic>> {
     let mut position = 0;
@@ -904,15 +902,11 @@ fn parse_where_statement(
     // Make sure WHERE condition expression has boolean type or can implicit casted to boolean
     let condition_location = tokens[*position].location;
     let mut condition = parse_expression(context, env, tokens, position)?;
-    let expected_type: Box<dyn DataType> = Box::new(BoolType);
-    match is_expression_type_equals(&condition, &expected_type) {
-        ExprTypeCheckResult::ImplicitCasted(expr) => {
-            condition = expr;
-        }
-        ExprTypeCheckResult::Error(diagnostic) => {
-            return Err(diagnostic);
-        }
-        ExprTypeCheckResult::NotEqualAndCantImplicitCast => {
+
+    // Make sure that the condition type is boolean, or can implicit cast to boolean.
+    if !condition.expr_type().is_bool() {
+        let expected_type: Box<dyn DataType> = Box::new(BoolType);
+        if !expected_type.has_implicit_cast_from(&condition) {
             return Err(Diagnostic::error(&format!(
                 "Expect `WHERE` condition to be type {} but got {}",
                 "Boolean",
@@ -922,7 +916,12 @@ fn parse_where_statement(
             .with_location(condition_location)
             .as_boxed());
         }
-        _ => {}
+
+        // Implicit cast the condition to boolean
+        condition = Box::new(CastExpr {
+            value: condition,
+            result_type: expected_type.clone(),
+        })
     }
 
     let aggregations_count_after = context.aggregations.len();
@@ -1020,15 +1019,11 @@ fn parse_having_statement(
     // Make sure HAVING condition expression has boolean type
     let condition_location = tokens[*position].location;
     let mut condition = parse_expression(context, env, tokens, position)?;
-    let expected_type: Box<dyn DataType> = Box::new(BoolType);
-    match is_expression_type_equals(&condition, &expected_type) {
-        ExprTypeCheckResult::ImplicitCasted(expr) => {
-            condition = expr;
-        }
-        ExprTypeCheckResult::Error(diagnostic) => {
-            return Err(diagnostic);
-        }
-        ExprTypeCheckResult::NotEqualAndCantImplicitCast => {
+
+    // Make sure that the condition type is boolean, or can implicit cast to boolean.
+    if !condition.expr_type().is_bool() {
+        let expected_type: Box<dyn DataType> = Box::new(BoolType);
+        if !expected_type.has_implicit_cast_from(&condition) {
             return Err(Diagnostic::error(&format!(
                 "Expect `HAVING` condition to be type {} but got {}",
                 "Boolean",
@@ -1038,7 +1033,12 @@ fn parse_having_statement(
             .with_location(condition_location)
             .as_boxed());
         }
-        _ => {}
+
+        // Implicit cast the condition to boolean
+        condition = Box::new(CastExpr {
+            value: condition,
+            result_type: expected_type.clone(),
+        })
     }
 
     Ok(Box::new(HavingStatement { condition }))
@@ -3530,23 +3530,12 @@ fn parse_primary_expression(
         TokenKind::LeftParen => parse_group_expression(context, env, tokens, position),
         TokenKind::Case => parse_case_expression(context, env, tokens, position),
         TokenKind::Benchmark => parse_benchmark_call_expression(context, env, tokens, position),
+        TokenKind::GlobalVariable => parse_global_variable_expression(env, tokens, position),
         TokenKind::String => {
             *position += 1;
             Ok(Box::new(StringExpr {
                 value: tokens[*position - 1].literal.to_string(),
-                value_type: StringValueType::Text,
             }))
-        }
-        TokenKind::GlobalVariable => {
-            // TODO: Extract to function
-            let name = tokens[*position].literal.to_string();
-            *position += 1;
-            let result_type = if env.globals_types.contains_key(&name) {
-                env.globals_types[name.as_str()].clone()
-            } else {
-                Box::new(UndefType)
-            };
-            Ok(Box::new(GlobalVariableExpr { name, result_type }))
         }
         TokenKind::True => {
             *position += 1;
@@ -3751,62 +3740,6 @@ fn parse_group_expression(
     Ok(expression)
 }
 
-fn parse_benchmark_call_expression(
-    context: &mut ParserContext,
-    env: &mut Environment,
-    tokens: &[Token],
-    position: &mut usize,
-) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
-    // Consume `BENCHMARK` token
-    *position += 1;
-
-    if *position >= tokens.len() || tokens[*position].kind != TokenKind::LeftParen {
-        return Err(Diagnostic::error("Expect `(` after `Benchmark` keyword")
-            .with_location(get_safe_location(tokens, *position))
-            .add_help("Try to add '(' right after `Benchmark` keyword")
-            .as_boxed());
-    }
-
-    // Consume `(` token
-    *position += 1;
-
-    let count = parse_expression(context, env, tokens, position)?;
-    if !count.expr_type().is_int() {
-        return Err(
-            Diagnostic::error("Benchmark expect first argument to be integer")
-                .with_location(get_safe_location(tokens, *position))
-                .add_help("Try to integer value as first argument, eg: `Benchmark(10, 1 + 1)`")
-                .as_boxed(),
-        );
-    }
-
-    if *position >= tokens.len() || tokens[*position].kind != TokenKind::Comma {
-        return Err(
-            Diagnostic::error("Expect `,` after Benchmark first argument value")
-                .with_location(get_safe_location(tokens, *position))
-                .add_help("Make sure you passed two arguments to the Benchmark function")
-                .as_boxed(),
-        );
-    }
-
-    // Consume `,` token
-    *position += 1;
-
-    let expression = parse_expression(context, env, tokens, position)?;
-
-    if *position >= tokens.len() || tokens[*position].kind != TokenKind::RightParen {
-        return Err(Diagnostic::error("Expect `)` after `Benchmark` arguments")
-            .with_location(get_safe_location(tokens, *position))
-            .add_help("Try to add ')` after `Benchmark` arguments")
-            .as_boxed());
-    }
-
-    // Consume `)` token
-    *position += 1;
-
-    Ok(Box::new(BenchmarkCallExpr { expression, count }))
-}
-
 fn parse_case_expression(
     context: &mut ParserContext,
     env: &mut Environment,
@@ -3925,6 +3858,77 @@ fn parse_case_expression(
         default_value,
         values_type,
     }))
+}
+
+fn parse_benchmark_call_expression(
+    context: &mut ParserContext,
+    env: &mut Environment,
+    tokens: &[Token],
+    position: &mut usize,
+) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
+    // Consume `BENCHMARK` token
+    *position += 1;
+
+    if *position >= tokens.len() || tokens[*position].kind != TokenKind::LeftParen {
+        return Err(Diagnostic::error("Expect `(` after `Benchmark` keyword")
+            .with_location(get_safe_location(tokens, *position))
+            .add_help("Try to add '(' right after `Benchmark` keyword")
+            .as_boxed());
+    }
+
+    // Consume `(` token
+    *position += 1;
+
+    let count = parse_expression(context, env, tokens, position)?;
+    if !count.expr_type().is_int() {
+        return Err(
+            Diagnostic::error("Benchmark expect first argument to be integer")
+                .with_location(get_safe_location(tokens, *position))
+                .add_help("Try to integer value as first argument, eg: `Benchmark(10, 1 + 1)`")
+                .as_boxed(),
+        );
+    }
+
+    if *position >= tokens.len() || tokens[*position].kind != TokenKind::Comma {
+        return Err(
+            Diagnostic::error("Expect `,` after Benchmark first argument value")
+                .with_location(get_safe_location(tokens, *position))
+                .add_help("Make sure you passed two arguments to the Benchmark function")
+                .as_boxed(),
+        );
+    }
+
+    // Consume `,` token
+    *position += 1;
+
+    let expression = parse_expression(context, env, tokens, position)?;
+
+    if *position >= tokens.len() || tokens[*position].kind != TokenKind::RightParen {
+        return Err(Diagnostic::error("Expect `)` after `Benchmark` arguments")
+            .with_location(get_safe_location(tokens, *position))
+            .add_help("Try to add ')` after `Benchmark` arguments")
+            .as_boxed());
+    }
+
+    // Consume `)` token
+    *position += 1;
+
+    Ok(Box::new(BenchmarkCallExpr { expression, count }))
+}
+
+fn parse_global_variable_expression(
+    env: &mut Environment,
+    tokens: &[Token],
+    position: &mut usize,
+) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
+    let name = tokens[*position].literal.to_string();
+    *position += 1;
+    let result_type = if env.globals_types.contains_key(&name) {
+        env.globals_types[name.as_str()].clone()
+    } else {
+        Box::new(UndefType)
+    };
+    Ok(Box::new(GlobalVariableExpr { name, result_type }))
 }
 
 fn un_expected_statement_error(tokens: &[Token], position: &mut usize) -> Box<Diagnostic> {

@@ -6,6 +6,10 @@ use gitql_ast::types::text::TextType;
 
 use super::base::Value;
 use super::boolean::BoolValue;
+use super::converters::string_literal_to_boolean;
+use super::converters::string_literal_to_date;
+use super::converters::string_literal_to_date_time;
+use super::converters::string_literal_to_time;
 
 #[derive(Clone)]
 pub struct TextValue {
@@ -49,13 +53,19 @@ impl Value for TextValue {
 
     fn perform_cast_op(&self, target_type: &Box<dyn DataType>) -> Result<Box<dyn Value>, String> {
         if target_type.is_bool() {
-            if matches!(self.value.as_str(), "t" | "true" | "y" | "yes" | "1") {
-                return Ok(Box::new(BoolValue { value: true }));
-            }
+            return Ok(string_literal_to_boolean(&self.value));
+        }
 
-            if matches!(self.value.as_str(), "f" | "false" | "n" | "no" | "0") {
-                return Ok(Box::new(BoolValue { value: false }));
-            }
+        if target_type.is_time() {
+            return Ok(string_literal_to_time(&self.value));
+        }
+
+        if target_type.is_date() {
+            return Ok(string_literal_to_date(&self.value));
+        }
+
+        if target_type.is_datetime() {
+            return Ok(string_literal_to_date_time(&self.value));
         }
 
         Err("Unexpected value to perform `CAST` with".to_string())

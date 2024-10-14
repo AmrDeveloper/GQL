@@ -1,11 +1,11 @@
-#[derive(PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum PrefixUnaryOperator {
     Minus,
     Bang,
     Not,
 }
 
-#[derive(PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum ArithmeticOperator {
     Plus,
     Minus,
@@ -15,7 +15,7 @@ pub enum ArithmeticOperator {
     Exponentiation,
 }
 
-#[derive(PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum ComparisonOperator {
     Greater,
     GreaterEqual,
@@ -26,14 +26,14 @@ pub enum ComparisonOperator {
     NullSafeEqual,
 }
 
-#[derive(PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum BinaryLogicalOperator {
     Or,
     And,
     Xor,
 }
 
-#[derive(PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum BinaryBitwiseOperator {
     Or,
     And,

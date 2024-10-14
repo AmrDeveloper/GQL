@@ -1,13 +1,13 @@
 use std::any::Any;
 
+use dyn_clone::DynClone;
+
 use super::types::array::ArrayType;
 use super::types::base::DataType;
 use super::types::boolean::BoolType;
-use super::types::date::DateType;
 use super::types::integer::IntType;
 use super::types::null::NullType;
 use super::types::text::TextType;
-use super::types::time::TimeType;
 
 use crate::operator::ArithmeticOperator;
 use crate::operator::BinaryBitwiseOperator;
@@ -47,7 +47,9 @@ pub enum ExprKind {
     Cast,
 }
 
-pub trait Expr {
+dyn_clone::clone_trait_object!(Expr);
+
+pub trait Expr: DynClone {
     fn kind(&self) -> ExprKind;
     fn expr_type(&self) -> Box<dyn DataType>;
     fn as_any(&self) -> &dyn Any;
@@ -62,6 +64,7 @@ impl dyn Expr {
     }
 }
 
+#[derive(Clone)]
 pub struct AssignmentExpr {
     pub symbol: String,
     pub value: Box<dyn Expr>,
@@ -81,17 +84,9 @@ impl Expr for AssignmentExpr {
     }
 }
 
-pub enum StringValueType {
-    Text,
-    Time,
-    Date,
-    DateTime,
-    Boolean,
-}
-
+#[derive(Clone)]
 pub struct StringExpr {
     pub value: String,
-    pub value_type: StringValueType,
 }
 
 impl Expr for StringExpr {
@@ -100,13 +95,7 @@ impl Expr for StringExpr {
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
-        match self.value_type {
-            StringValueType::Text => Box::new(TextType),
-            StringValueType::Time => Box::new(TimeType),
-            StringValueType::Date => Box::new(DateType),
-            StringValueType::DateTime => Box::new(TimeType),
-            StringValueType::Boolean => Box::new(BoolType),
-        }
+        Box::new(TextType)
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -114,6 +103,7 @@ impl Expr for StringExpr {
     }
 }
 
+#[derive(Clone)]
 pub struct SymbolExpr {
     pub value: String,
     pub result_type: Box<dyn DataType>,
@@ -133,6 +123,7 @@ impl Expr for SymbolExpr {
     }
 }
 
+#[derive(Clone)]
 pub struct ArrayExpr {
     pub values: Vec<Box<dyn Expr>>,
     pub element_type: Box<dyn DataType>,
@@ -154,6 +145,7 @@ impl Expr for ArrayExpr {
     }
 }
 
+#[derive(Clone)]
 pub struct GlobalVariableExpr {
     pub name: String,
     pub result_type: Box<dyn DataType>,
@@ -173,11 +165,13 @@ impl Expr for GlobalVariableExpr {
     }
 }
 
+#[derive(Clone, PartialEq)]
 pub enum Number {
     Int(i64),
     Float(f64),
 }
 
+#[derive(Clone)]
 pub struct NumberExpr {
     pub value: Number,
 }
@@ -199,6 +193,7 @@ impl Expr for NumberExpr {
     }
 }
 
+#[derive(Clone)]
 pub struct BooleanExpr {
     pub is_true: bool,
 }
@@ -217,6 +212,7 @@ impl Expr for BooleanExpr {
     }
 }
 
+#[derive(Clone)]
 pub struct UnaryExpr {
     pub right: Box<dyn Expr>,
     pub operator: PrefixUnaryOperator,
@@ -237,6 +233,7 @@ impl Expr for UnaryExpr {
     }
 }
 
+#[derive(Clone)]
 pub struct IndexExpr {
     pub collection: Box<dyn Expr>,
     pub element_type: Box<dyn DataType>,
@@ -258,6 +255,7 @@ impl Expr for IndexExpr {
     }
 }
 
+#[derive(Clone)]
 pub struct SliceExpr {
     pub collection: Box<dyn Expr>,
     pub start: Option<Box<dyn Expr>>,
@@ -279,6 +277,7 @@ impl Expr for SliceExpr {
     }
 }
 
+#[derive(Clone)]
 pub struct ArithmeticExpr {
     pub left: Box<dyn Expr>,
     pub operator: ArithmeticOperator,
@@ -300,6 +299,7 @@ impl Expr for ArithmeticExpr {
     }
 }
 
+#[derive(Clone)]
 pub struct ComparisonExpr {
     pub left: Box<dyn Expr>,
     pub operator: ComparisonOperator,
@@ -324,6 +324,7 @@ impl Expr for ComparisonExpr {
     }
 }
 
+#[derive(Clone)]
 pub struct ContainsExpr {
     pub left: Box<dyn Expr>,
     pub right: Box<dyn Expr>,
@@ -343,6 +344,7 @@ impl Expr for ContainsExpr {
     }
 }
 
+#[derive(Clone)]
 pub struct ContainedByExpr {
     pub left: Box<dyn Expr>,
     pub right: Box<dyn Expr>,
@@ -362,6 +364,7 @@ impl Expr for ContainedByExpr {
     }
 }
 
+#[derive(Clone)]
 pub struct LikeExpr {
     pub input: Box<dyn Expr>,
     pub pattern: Box<dyn Expr>,
@@ -381,6 +384,7 @@ impl Expr for LikeExpr {
     }
 }
 
+#[derive(Clone)]
 pub struct RegexExpr {
     pub input: Box<dyn Expr>,
     pub pattern: Box<dyn Expr>,
@@ -400,6 +404,7 @@ impl Expr for RegexExpr {
     }
 }
 
+#[derive(Clone)]
 pub struct GlobExpr {
     pub input: Box<dyn Expr>,
     pub pattern: Box<dyn Expr>,
@@ -419,6 +424,7 @@ impl Expr for GlobExpr {
     }
 }
 
+#[derive(Clone)]
 pub struct LogicalExpr {
     pub left: Box<dyn Expr>,
     pub operator: BinaryLogicalOperator,
@@ -439,6 +445,7 @@ impl Expr for LogicalExpr {
     }
 }
 
+#[derive(Clone)]
 pub struct BitwiseExpr {
     pub left: Box<dyn Expr>,
     pub operator: BinaryBitwiseOperator,
@@ -460,6 +467,7 @@ impl Expr for BitwiseExpr {
     }
 }
 
+#[derive(Clone)]
 pub struct CallExpr {
     pub function_name: String,
     pub arguments: Vec<Box<dyn Expr>>,
@@ -480,6 +488,7 @@ impl Expr for CallExpr {
     }
 }
 
+#[derive(Clone)]
 pub struct BenchmarkCallExpr {
     pub expression: Box<dyn Expr>,
     pub count: Box<dyn Expr>,
@@ -499,6 +508,7 @@ impl Expr for BenchmarkCallExpr {
     }
 }
 
+#[derive(Clone)]
 pub struct BetweenExpr {
     pub value: Box<dyn Expr>,
     pub range_start: Box<dyn Expr>,
@@ -519,6 +529,7 @@ impl Expr for BetweenExpr {
     }
 }
 
+#[derive(Clone)]
 pub struct CaseExpr {
     pub conditions: Vec<Box<dyn Expr>>,
     pub values: Vec<Box<dyn Expr>>,
@@ -540,6 +551,7 @@ impl Expr for CaseExpr {
     }
 }
 
+#[derive(Clone)]
 pub struct InExpr {
     pub argument: Box<dyn Expr>,
     pub values: Vec<Box<dyn Expr>>,
@@ -561,6 +573,7 @@ impl Expr for InExpr {
     }
 }
 
+#[derive(Clone)]
 pub struct IsNullExpr {
     pub argument: Box<dyn Expr>,
     pub has_not: bool,
@@ -580,6 +593,7 @@ impl Expr for IsNullExpr {
     }
 }
 
+#[derive(Clone)]
 pub struct NullExpr;
 
 impl Expr for NullExpr {
@@ -596,6 +610,7 @@ impl Expr for NullExpr {
     }
 }
 
+#[derive(Clone)]
 pub struct CastExpr {
     pub value: Box<dyn Expr>,
     pub result_type: Box<dyn DataType>,

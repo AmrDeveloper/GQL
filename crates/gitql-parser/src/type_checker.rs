@@ -1,203 +1,15 @@
 use std::collections::HashMap;
 
+use gitql_ast::expression::CastExpr;
 use gitql_ast::expression::Expr;
-use gitql_ast::expression::ExprKind;
-use gitql_ast::expression::StringExpr;
-use gitql_ast::expression::StringValueType;
-use gitql_ast::operator::PrefixUnaryOperator;
 use gitql_ast::statement::TableSelection;
 use gitql_ast::types::any::AnyType;
 use gitql_ast::types::base::DataType;
-use gitql_ast::types::boolean::BoolType;
 use gitql_ast::types::dynamic::DynamicType;
-use gitql_ast::types::float::FloatType;
-use gitql_ast::types::integer::IntType;
-use gitql_ast::types::variant::VariantType;
 use gitql_core::environment::Environment;
 
 use crate::diagnostic::Diagnostic;
-use crate::format_checker::is_valid_date_format;
-use crate::format_checker::is_valid_datetime_format;
-use crate::format_checker::is_valid_time_format;
 use crate::tokenizer::Location;
-
-/// The return result after performing types checking with implicit casting option
-pub enum TypeCheckResult {
-    /// Both right and left hand sides types are equals without implicit casting
-    Equals,
-    /// Both right and left hand sides types are not equals and can't perform implicit casting
-    NotEqualAndCantImplicitCast,
-    /// Not Equals and can't perform implicit casting with error message provided
-    Error(Box<Diagnostic>),
-    /// Right hand side type will match the left side after implicit casting
-    RightSideCasted(Box<dyn Expr>),
-    /// Left hand side type will match the right side after implicit casting
-    LeftSideCasted(Box<dyn Expr>),
-}
-
-/// List of valid boolean values
-const BOOLEANS_VALUES_LITERAL: [&str; 10] =
-    ["t", "true", "y", "yes", "1", "f", "false", "n", "no", "0"];
-
-/// The return result after performing types checking with implicit casting option
-pub enum ExprTypeCheckResult {
-    /// Both right and left hand sides types are equals without implicit casting
-    Equals,
-    /// Both right and left hand sides types are not equals and can't perform implicit casting
-    NotEqualAndCantImplicitCast,
-    /// Not Equals and can't perform implicit casting with error message provided
-    Error(Box<Diagnostic>),
-    /// Left hand side type will match the right side after implicit casting
-    ImplicitCasted(Box<dyn Expr>),
-}
-
-/// Check if expression type and data type are equals
-/// If not then check if one can be implicit casted to the other
-///
-/// Supported Implicit casting:
-/// - String to Time.
-/// - String to Date.
-/// - String to DateTime
-/// - String to Boolean
-///
-#[allow(clippy::borrowed_box)]
-pub fn is_expression_type_equals(
-    expr: &Box<dyn Expr>,
-    data_type: &Box<dyn DataType>,
-) -> ExprTypeCheckResult {
-    let expr_type = expr.expr_type();
-
-    // Both types are already equals without need for implicit casting
-    if expr_type.equals(data_type) {
-        return ExprTypeCheckResult::Equals;
-    }
-
-    // Current implicit casting require expression kind to be string literal
-    if expr.kind() != ExprKind::String || !expr_type.is_text() {
-        return ExprTypeCheckResult::NotEqualAndCantImplicitCast;
-    }
-
-    // Implicit Casting expression type from Text literal to time
-    if data_type.is_time() || data_type.is_variant_with(|ty| ty.is_time()) {
-        let literal = expr.as_any().downcast_ref::<StringExpr>().unwrap();
-        let string_literal_value = &literal.value;
-        if !is_valid_time_format(string_literal_value) {
-            return ExprTypeCheckResult::Error(
-                Diagnostic::error(&format!(
-                    "Can't compare Time and Text `{}` because it can't be implicitly casted to Time",
-                    string_literal_value
-                )).add_help("A valid Time format must match `HH:MM:SS` or `HH:MM:SS.SSS`")
-                .add_help("You can use `MAKETIME(hour, minute, second)` function to create date value")
-                .as_boxed(),
-            );
-        }
-
-        return ExprTypeCheckResult::ImplicitCasted(Box::new(StringExpr {
-            value: string_literal_value.to_owned(),
-            value_type: StringValueType::Time,
-        }));
-    }
-
-    // Implicit Casting expression type from Text literal to Date
-    if data_type.is_date() || data_type.is_variant_with(|ty| ty.is_date()) {
-        let literal = expr.as_any().downcast_ref::<StringExpr>().unwrap();
-        let string_literal_value = &literal.value;
-        if !is_valid_date_format(string_literal_value) {
-            return ExprTypeCheckResult::Error(
-                Diagnostic::error(&format!(
-                    "Can't compare Date and Text `{}` because it can't be implicitly casted to Date",
-                    string_literal_value
-                )).add_help("A valid Date format must match `YYYY-MM-DD`")
-                .add_help("You can use `MAKEDATE(year, dayOfYear)` function to a create date value")
-                .as_boxed(),
-            );
-        }
-
-        return ExprTypeCheckResult::ImplicitCasted(Box::new(StringExpr {
-            value: string_literal_value.to_owned(),
-            value_type: StringValueType::Date,
-        }));
-    }
-
-    // Implicit Casting expression type from Text literal to DateTime
-    if data_type.is_datetime() || data_type.is_variant_with(|ty| ty.is_datetime()) {
-        let literal = expr.as_any().downcast_ref::<StringExpr>().unwrap();
-        let string_literal_value = &literal.value;
-        if !is_valid_datetime_format(string_literal_value) {
-            return ExprTypeCheckResult::Error(
-                Diagnostic::error(&format!(
-                    "Can't compare DateTime and Text `{}` because it can't be implicitly casted to DateTime",
-                    string_literal_value
-                )).add_help("A valid DateTime format must match one of the values `YYYY-MM-DD HH:MM:SS` or `YYYY-MM-DD HH:MM:SS.SSS`")
-                .as_boxed(),
-            );
-        }
-
-        return ExprTypeCheckResult::ImplicitCasted(Box::new(StringExpr {
-            value: string_literal_value.to_owned(),
-            value_type: StringValueType::DateTime,
-        }));
-    }
-
-    // Implicit Casting expression type from Text literal to Boolean
-    if data_type.is_bool() || data_type.is_variant_with(|ty| ty.is_bool()) {
-        let literal = expr.as_any().downcast_ref::<StringExpr>().unwrap();
-        let string_literal_value = &literal.value;
-        if !BOOLEANS_VALUES_LITERAL.contains(&string_literal_value.as_str()) {
-            return ExprTypeCheckResult::Error(
-                Diagnostic::error(&format!(
-                    "Can't compare Boolean and Text `{}` because it can't be implicitly casted to Boolean",
-                    string_literal_value
-                )).add_help("A valid Boolean value must match `t, true, y, yes, 1, f, false, n, no, 0`")
-                .as_boxed(),
-            );
-        }
-
-        return ExprTypeCheckResult::ImplicitCasted(Box::new(StringExpr {
-            value: string_literal_value.to_owned(),
-            value_type: StringValueType::Boolean,
-        }));
-    }
-
-    ExprTypeCheckResult::NotEqualAndCantImplicitCast
-}
-
-/// Check if two expressions types are equals
-/// If not then check if one can be implicit casted to the other
-#[allow(clippy::borrowed_box)]
-pub fn are_types_equals(lhs: &Box<dyn Expr>, rhs: &Box<dyn Expr>) -> TypeCheckResult {
-    let lhs_type = lhs.expr_type();
-    let rhs_type = rhs.expr_type();
-
-    // Both types are already equals without need for implicit casting
-    if lhs_type.equals(&rhs_type) {
-        return TypeCheckResult::Equals;
-    }
-
-    // Check if can cast right hand side to left hand side type
-    match is_expression_type_equals(rhs, &lhs_type) {
-        ExprTypeCheckResult::ImplicitCasted(expr) => {
-            return TypeCheckResult::RightSideCasted(expr);
-        }
-        ExprTypeCheckResult::Error(diagnostic) => {
-            return TypeCheckResult::Error(diagnostic);
-        }
-        _ => {}
-    }
-
-    // Check if can cast left hand side to right hand side type
-    match is_expression_type_equals(lhs, &rhs_type) {
-        ExprTypeCheckResult::ImplicitCasted(expr) => {
-            return TypeCheckResult::LeftSideCasted(expr);
-        }
-        ExprTypeCheckResult::Error(diagnostic) => {
-            return TypeCheckResult::Error(diagnostic);
-        }
-        _ => {}
-    }
-
-    TypeCheckResult::NotEqualAndCantImplicitCast
-}
 
 /// Checks if all values has the same type
 /// If they have the same type, return it or return None
@@ -271,9 +83,10 @@ pub fn check_function_call_arguments(
         let parameter_type =
             resolve_dynamic_data_type(parameters, arguments, parameters.get(index).unwrap());
         let argument = arguments.get(index).unwrap();
+        let argument_type = argument.expr_type();
 
         // Catch undefined arguments
-        if argument.expr_type().is_undefined() {
+        if argument_type.is_undefined() {
             return Err(Diagnostic::error(&format!(
                 "Function `{}` argument number {} has Undefined type",
                 function_name, index,
@@ -284,21 +97,30 @@ pub fn check_function_call_arguments(
             .as_boxed());
         }
 
-        match is_expression_type_equals(argument, &parameter_type) {
-            ExprTypeCheckResult::ImplicitCasted(new_expr) => {
-                arguments[index] = new_expr;
-            }
-            ExprTypeCheckResult::NotEqualAndCantImplicitCast => {
-                let argument_type = argument.expr_type();
-                return Err(Diagnostic::error(&format!(
-                    "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
-                    function_name, index, argument_type.literal(), parameter_type.literal()
-                ))
-                .with_location(location).as_boxed());
-            }
-            ExprTypeCheckResult::Error(error) => return Err(error),
-            ExprTypeCheckResult::Equals => {}
+        // Both types are equals
+        if parameter_type.equals(&argument_type) {
+            continue;
         }
+
+        // Argument exp can be implicit casted to Parameter type
+        if parameter_type.has_implicit_cast_from(argument) {
+            arguments[index] = Box::new(CastExpr {
+                value: argument.clone(),
+                result_type: parameter_type.clone(),
+            });
+            continue;
+        }
+
+        // Argument type is not equal and can't be casted to parameter type
+        return Err(Diagnostic::error(&format!(
+            "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
+            function_name,
+            index,
+            argument_type.literal(),
+            parameter_type.literal()
+        ))
+        .with_location(location)
+        .as_boxed());
     }
 
     // Type check the optional parameters
@@ -311,9 +133,10 @@ pub fn check_function_call_arguments(
         let parameter_type =
             resolve_dynamic_data_type(parameters, arguments, parameters.get(index).unwrap());
         let argument = arguments.get(index).unwrap();
+        let argument_type = argument.expr_type();
 
         // Catch undefined arguments
-        if argument.expr_type().is_undefined() {
+        if argument_type.is_undefined() {
             return Err(Diagnostic::error(&format!(
                 "Function `{}` argument number {} has Undefined type",
                 function_name, index,
@@ -324,21 +147,30 @@ pub fn check_function_call_arguments(
             .as_boxed());
         }
 
-        match is_expression_type_equals(argument, &parameter_type) {
-            ExprTypeCheckResult::ImplicitCasted(new_expr) => {
-                arguments[index] = new_expr;
-            }
-            ExprTypeCheckResult::NotEqualAndCantImplicitCast => {
-                let argument_type = argument.expr_type();
-                return Err(Diagnostic::error(&format!(
-                    "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
-                    function_name, index, argument_type.literal(), parameter_type.literal()
-                ))
-                .with_location(location).as_boxed());
-            }
-            ExprTypeCheckResult::Error(error) => return Err(error),
-            ExprTypeCheckResult::Equals => {}
+        // Both types are equals
+        if parameter_type.equals(&argument_type) {
+            continue;
         }
+
+        // Argument exp can be implicit casted to Parameter type
+        if parameter_type.has_implicit_cast_from(argument) {
+            arguments[index] = Box::new(CastExpr {
+                value: argument.clone(),
+                result_type: parameter_type.clone(),
+            });
+            continue;
+        }
+
+        // Argument type is not equal and can't be casted to parameter type
+        return Err(Diagnostic::error(&format!(
+            "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
+            function_name,
+            index,
+            argument_type.literal(),
+            parameter_type.literal()
+        ))
+        .with_location(location)
+        .as_boxed());
     }
 
     // Type check the variable parameters if exists
@@ -347,9 +179,10 @@ pub fn check_function_call_arguments(
             resolve_dynamic_data_type(parameters, arguments, parameters.last().unwrap());
         for index in last_optional_param_index..arguments_count {
             let argument = arguments.get(index).unwrap();
+            let argument_type = argument.expr_type();
 
             // Catch undefined arguments
-            if argument.expr_type().is_undefined() {
+            if argument_type.is_undefined() {
                 return Err(Diagnostic::error(&format!(
                     "Function `{}` argument number {} has Undefined type",
                     function_name, index,
@@ -360,21 +193,29 @@ pub fn check_function_call_arguments(
                 .as_boxed());
             }
 
-            match is_expression_type_equals(argument, &varargs_type) {
-                ExprTypeCheckResult::ImplicitCasted(new_expr) => {
-                    arguments[index] = new_expr;
-                }
-                ExprTypeCheckResult::NotEqualAndCantImplicitCast => {
-                    let argument_type = argument.expr_type();
-                    return Err(Diagnostic::error(&format!(
-                        "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
-                        function_name, index, &argument_type.literal(), &varargs_type.literal()
-                    ))
-                    .with_location(location).as_boxed());
-                }
-                ExprTypeCheckResult::Error(error) => return Err(error),
-                ExprTypeCheckResult::Equals => {}
+            // Both types are equals
+            if varargs_type.equals(&argument_type) {
+                continue;
             }
+
+            // Argument exp can be implicit casted to Parameter type
+            if varargs_type.has_implicit_cast_from(argument) {
+                arguments[index] = Box::new(CastExpr {
+                    value: argument.clone(),
+                    result_type: varargs_type.clone(),
+                });
+                continue;
+            }
+
+            return Err(Diagnostic::error(&format!(
+                "Function `{}` argument number {} with type `{}` don't match expected type `{}`",
+                function_name,
+                index,
+                &argument_type.literal(),
+                &varargs_type.literal()
+            ))
+            .with_location(location)
+            .as_boxed());
         }
     }
 
@@ -479,18 +320,6 @@ pub fn type_check_projection_symbols(
     }
 
     Ok(())
-}
-
-/// Return the expected [DataType] depending on the prefix unary operator
-#[inline(always)]
-pub fn prefix_unary_expected_type(op: &PrefixUnaryOperator) -> Box<dyn DataType> {
-    match op {
-        PrefixUnaryOperator::Minus => Box::new(VariantType {
-            variants: vec![Box::new(IntType), Box::new(FloatType)],
-        }),
-        PrefixUnaryOperator::Bang => Box::new(BoolType),
-        PrefixUnaryOperator::Not => Box::new(IntType),
-    }
 }
 
 /// Resolve dynamic data type depending on the parameters and arguments types

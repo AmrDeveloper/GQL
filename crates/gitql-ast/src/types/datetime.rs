@@ -1,6 +1,8 @@
 use std::any::Any;
 
 use crate::expression::Expr;
+use crate::expression::StringExpr;
+use crate::format_checker::is_valid_datetime_format;
 
 use super::base::DataType;
 
@@ -44,7 +46,10 @@ impl DataType for DateTimeType {
         vec![Box::new(DateTimeType)]
     }
 
-    fn has_implicit_cast_from(&self, _expr: &Box<dyn Expr>) -> bool {
+    fn has_implicit_cast_from(&self, expr: &Box<dyn Expr>) -> bool {
+        if let Some(string_expr) = expr.as_any().downcast_ref::<StringExpr>() {
+            return is_valid_datetime_format(&string_expr.value);
+        }
         false
     }
 }
