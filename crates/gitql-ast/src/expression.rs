@@ -13,12 +13,11 @@ use crate::operator::ArithmeticOperator;
 use crate::operator::BinaryBitwiseOperator;
 use crate::operator::BinaryLogicalOperator;
 use crate::operator::ComparisonOperator;
-use crate::operator::ContainsOperator;
 use crate::operator::PrefixUnaryOperator;
 use crate::types::float::FloatType;
 
 #[derive(PartialEq)]
-pub enum ExpressionKind {
+pub enum ExprKind {
     Assignment,
     String,
     Symbol,
@@ -32,6 +31,7 @@ pub enum ExpressionKind {
     Arithmetic,
     Comparison,
     Contains,
+    ContainedBy,
     Like,
     Regex,
     Glob,
@@ -47,32 +47,29 @@ pub enum ExpressionKind {
     Cast,
 }
 
-pub trait Expression {
-    fn kind(&self) -> ExpressionKind;
+pub trait Expr {
+    fn kind(&self) -> ExprKind;
     fn expr_type(&self) -> Box<dyn DataType>;
     fn as_any(&self) -> &dyn Any;
 }
 
-impl dyn Expression {
+impl dyn Expr {
     pub fn is_const(&self) -> bool {
         matches!(
             self.kind(),
-            ExpressionKind::Number
-                | ExpressionKind::Boolean
-                | ExpressionKind::String
-                | ExpressionKind::Null
+            ExprKind::Number | ExprKind::Boolean | ExprKind::String | ExprKind::Null
         )
     }
 }
 
-pub struct AssignmentExpression {
+pub struct AssignmentExpr {
     pub symbol: String,
-    pub value: Box<dyn Expression>,
+    pub value: Box<dyn Expr>,
 }
 
-impl Expression for AssignmentExpression {
-    fn kind(&self) -> ExpressionKind {
-        ExpressionKind::Assignment
+impl Expr for AssignmentExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::Assignment
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
@@ -92,14 +89,14 @@ pub enum StringValueType {
     Boolean,
 }
 
-pub struct StringExpression {
+pub struct StringExpr {
     pub value: String,
     pub value_type: StringValueType,
 }
 
-impl Expression for StringExpression {
-    fn kind(&self) -> ExpressionKind {
-        ExpressionKind::String
+impl Expr for StringExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::String
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
@@ -117,14 +114,14 @@ impl Expression for StringExpression {
     }
 }
 
-pub struct SymbolExpression {
+pub struct SymbolExpr {
     pub value: String,
     pub result_type: Box<dyn DataType>,
 }
 
-impl Expression for SymbolExpression {
-    fn kind(&self) -> ExpressionKind {
-        ExpressionKind::Symbol
+impl Expr for SymbolExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::Symbol
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
@@ -136,14 +133,14 @@ impl Expression for SymbolExpression {
     }
 }
 
-pub struct ArrayExpression {
-    pub values: Vec<Box<dyn Expression>>,
+pub struct ArrayExpr {
+    pub values: Vec<Box<dyn Expr>>,
     pub element_type: Box<dyn DataType>,
 }
 
-impl Expression for ArrayExpression {
-    fn kind(&self) -> ExpressionKind {
-        ExpressionKind::Array
+impl Expr for ArrayExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::Array
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
@@ -157,14 +154,14 @@ impl Expression for ArrayExpression {
     }
 }
 
-pub struct GlobalVariableExpression {
+pub struct GlobalVariableExpr {
     pub name: String,
     pub result_type: Box<dyn DataType>,
 }
 
-impl Expression for GlobalVariableExpression {
-    fn kind(&self) -> ExpressionKind {
-        ExpressionKind::GlobalVariable
+impl Expr for GlobalVariableExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::GlobalVariable
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
@@ -181,13 +178,13 @@ pub enum Number {
     Float(f64),
 }
 
-pub struct NumberExpression {
+pub struct NumberExpr {
     pub value: Number,
 }
 
-impl Expression for NumberExpression {
-    fn kind(&self) -> ExpressionKind {
-        ExpressionKind::Number
+impl Expr for NumberExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::Number
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
@@ -202,13 +199,13 @@ impl Expression for NumberExpression {
     }
 }
 
-pub struct BooleanExpression {
+pub struct BooleanExpr {
     pub is_true: bool,
 }
 
-impl Expression for BooleanExpression {
-    fn kind(&self) -> ExpressionKind {
-        ExpressionKind::Boolean
+impl Expr for BooleanExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::Boolean
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
@@ -220,15 +217,15 @@ impl Expression for BooleanExpression {
     }
 }
 
-pub struct UnaryExpression {
-    pub right: Box<dyn Expression>,
+pub struct UnaryExpr {
+    pub right: Box<dyn Expr>,
     pub operator: PrefixUnaryOperator,
     pub result_type: Box<dyn DataType>,
 }
 
-impl Expression for UnaryExpression {
-    fn kind(&self) -> ExpressionKind {
-        ExpressionKind::PrefixUnary
+impl Expr for UnaryExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::PrefixUnary
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
@@ -240,16 +237,16 @@ impl Expression for UnaryExpression {
     }
 }
 
-pub struct IndexExpression {
-    pub collection: Box<dyn Expression>,
+pub struct IndexExpr {
+    pub collection: Box<dyn Expr>,
     pub element_type: Box<dyn DataType>,
-    pub index: Box<dyn Expression>,
+    pub index: Box<dyn Expr>,
     pub result_type: Box<dyn DataType>,
 }
 
-impl Expression for IndexExpression {
-    fn kind(&self) -> ExpressionKind {
-        ExpressionKind::Index
+impl Expr for IndexExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::Index
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
@@ -261,16 +258,16 @@ impl Expression for IndexExpression {
     }
 }
 
-pub struct SliceExpression {
-    pub collection: Box<dyn Expression>,
-    pub start: Option<Box<dyn Expression>>,
-    pub end: Option<Box<dyn Expression>>,
+pub struct SliceExpr {
+    pub collection: Box<dyn Expr>,
+    pub start: Option<Box<dyn Expr>>,
+    pub end: Option<Box<dyn Expr>>,
     pub result_type: Box<dyn DataType>,
 }
 
-impl Expression for SliceExpression {
-    fn kind(&self) -> ExpressionKind {
-        ExpressionKind::Slice
+impl Expr for SliceExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::Slice
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
@@ -282,16 +279,16 @@ impl Expression for SliceExpression {
     }
 }
 
-pub struct ArithmeticExpression {
-    pub left: Box<dyn Expression>,
+pub struct ArithmeticExpr {
+    pub left: Box<dyn Expr>,
     pub operator: ArithmeticOperator,
-    pub right: Box<dyn Expression>,
+    pub right: Box<dyn Expr>,
     pub result_type: Box<dyn DataType>,
 }
 
-impl Expression for ArithmeticExpression {
-    fn kind(&self) -> ExpressionKind {
-        ExpressionKind::Arithmetic
+impl Expr for ArithmeticExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::Arithmetic
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
@@ -303,15 +300,15 @@ impl Expression for ArithmeticExpression {
     }
 }
 
-pub struct ComparisonExpression {
-    pub left: Box<dyn Expression>,
+pub struct ComparisonExpr {
+    pub left: Box<dyn Expr>,
     pub operator: ComparisonOperator,
-    pub right: Box<dyn Expression>,
+    pub right: Box<dyn Expr>,
 }
 
-impl Expression for ComparisonExpression {
-    fn kind(&self) -> ExpressionKind {
-        ExpressionKind::Comparison
+impl Expr for ComparisonExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::Comparison
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
@@ -327,15 +324,14 @@ impl Expression for ComparisonExpression {
     }
 }
 
-pub struct ContainsExpression {
-    pub left: Box<dyn Expression>,
-    pub right: Box<dyn Expression>,
-    pub operator: ContainsOperator,
+pub struct ContainsExpr {
+    pub left: Box<dyn Expr>,
+    pub right: Box<dyn Expr>,
 }
 
-impl Expression for ContainsExpression {
-    fn kind(&self) -> ExpressionKind {
-        ExpressionKind::Contains
+impl Expr for ContainsExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::Contains
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
@@ -347,14 +343,14 @@ impl Expression for ContainsExpression {
     }
 }
 
-pub struct LikeExpression {
-    pub input: Box<dyn Expression>,
-    pub pattern: Box<dyn Expression>,
+pub struct ContainedByExpr {
+    pub left: Box<dyn Expr>,
+    pub right: Box<dyn Expr>,
 }
 
-impl Expression for LikeExpression {
-    fn kind(&self) -> ExpressionKind {
-        ExpressionKind::Like
+impl Expr for ContainedByExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::ContainedBy
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
@@ -366,14 +362,14 @@ impl Expression for LikeExpression {
     }
 }
 
-pub struct RegexExpression {
-    pub input: Box<dyn Expression>,
-    pub pattern: Box<dyn Expression>,
+pub struct LikeExpr {
+    pub input: Box<dyn Expr>,
+    pub pattern: Box<dyn Expr>,
 }
 
-impl Expression for RegexExpression {
-    fn kind(&self) -> ExpressionKind {
-        ExpressionKind::Regex
+impl Expr for LikeExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::Like
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
@@ -385,14 +381,14 @@ impl Expression for RegexExpression {
     }
 }
 
-pub struct GlobExpression {
-    pub input: Box<dyn Expression>,
-    pub pattern: Box<dyn Expression>,
+pub struct RegexExpr {
+    pub input: Box<dyn Expr>,
+    pub pattern: Box<dyn Expr>,
 }
 
-impl Expression for GlobExpression {
-    fn kind(&self) -> ExpressionKind {
-        ExpressionKind::Glob
+impl Expr for RegexExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::Regex
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
@@ -404,15 +400,34 @@ impl Expression for GlobExpression {
     }
 }
 
-pub struct LogicalExpression {
-    pub left: Box<dyn Expression>,
+pub struct GlobExpr {
+    pub input: Box<dyn Expr>,
+    pub pattern: Box<dyn Expr>,
+}
+
+impl Expr for GlobExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::Glob
+    }
+
+    fn expr_type(&self) -> Box<dyn DataType> {
+        Box::new(BoolType)
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+pub struct LogicalExpr {
+    pub left: Box<dyn Expr>,
     pub operator: BinaryLogicalOperator,
-    pub right: Box<dyn Expression>,
+    pub right: Box<dyn Expr>,
 }
 
-impl Expression for LogicalExpression {
-    fn kind(&self) -> ExpressionKind {
-        ExpressionKind::Logical
+impl Expr for LogicalExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::Logical
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
@@ -424,16 +439,16 @@ impl Expression for LogicalExpression {
     }
 }
 
-pub struct BitwiseExpression {
-    pub left: Box<dyn Expression>,
+pub struct BitwiseExpr {
+    pub left: Box<dyn Expr>,
     pub operator: BinaryBitwiseOperator,
-    pub right: Box<dyn Expression>,
+    pub right: Box<dyn Expr>,
     pub result_type: Box<dyn DataType>,
 }
 
-impl Expression for BitwiseExpression {
-    fn kind(&self) -> ExpressionKind {
-        ExpressionKind::Bitwise
+impl Expr for BitwiseExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::Bitwise
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
@@ -445,15 +460,15 @@ impl Expression for BitwiseExpression {
     }
 }
 
-pub struct CallExpression {
+pub struct CallExpr {
     pub function_name: String,
-    pub arguments: Vec<Box<dyn Expression>>,
+    pub arguments: Vec<Box<dyn Expr>>,
     pub return_type: Box<dyn DataType>,
 }
 
-impl Expression for CallExpression {
-    fn kind(&self) -> ExpressionKind {
-        ExpressionKind::Call
+impl Expr for CallExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::Call
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
@@ -465,14 +480,14 @@ impl Expression for CallExpression {
     }
 }
 
-pub struct BenchmarkExpression {
-    pub expression: Box<dyn Expression>,
-    pub count: Box<dyn Expression>,
+pub struct BenchmarkCallExpr {
+    pub expression: Box<dyn Expr>,
+    pub count: Box<dyn Expr>,
 }
 
-impl Expression for BenchmarkExpression {
-    fn kind(&self) -> ExpressionKind {
-        ExpressionKind::BenchmarkCall
+impl Expr for BenchmarkCallExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::BenchmarkCall
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
@@ -484,15 +499,15 @@ impl Expression for BenchmarkExpression {
     }
 }
 
-pub struct BetweenExpression {
-    pub value: Box<dyn Expression>,
-    pub range_start: Box<dyn Expression>,
-    pub range_end: Box<dyn Expression>,
+pub struct BetweenExpr {
+    pub value: Box<dyn Expr>,
+    pub range_start: Box<dyn Expr>,
+    pub range_end: Box<dyn Expr>,
 }
 
-impl Expression for BetweenExpression {
-    fn kind(&self) -> ExpressionKind {
-        ExpressionKind::Between
+impl Expr for BetweenExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::Between
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
@@ -504,16 +519,16 @@ impl Expression for BetweenExpression {
     }
 }
 
-pub struct CaseExpression {
-    pub conditions: Vec<Box<dyn Expression>>,
-    pub values: Vec<Box<dyn Expression>>,
-    pub default_value: Option<Box<dyn Expression>>,
+pub struct CaseExpr {
+    pub conditions: Vec<Box<dyn Expr>>,
+    pub values: Vec<Box<dyn Expr>>,
+    pub default_value: Option<Box<dyn Expr>>,
     pub values_type: Box<dyn DataType>,
 }
 
-impl Expression for CaseExpression {
-    fn kind(&self) -> ExpressionKind {
-        ExpressionKind::Case
+impl Expr for CaseExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::Case
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
@@ -525,16 +540,16 @@ impl Expression for CaseExpression {
     }
 }
 
-pub struct InExpression {
-    pub argument: Box<dyn Expression>,
-    pub values: Vec<Box<dyn Expression>>,
+pub struct InExpr {
+    pub argument: Box<dyn Expr>,
+    pub values: Vec<Box<dyn Expr>>,
     pub values_type: Box<dyn DataType>,
     pub has_not_keyword: bool,
 }
 
-impl Expression for InExpression {
-    fn kind(&self) -> ExpressionKind {
-        ExpressionKind::In
+impl Expr for InExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::In
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
@@ -546,14 +561,14 @@ impl Expression for InExpression {
     }
 }
 
-pub struct IsNullExpression {
-    pub argument: Box<dyn Expression>,
+pub struct IsNullExpr {
+    pub argument: Box<dyn Expr>,
     pub has_not: bool,
 }
 
-impl Expression for IsNullExpression {
-    fn kind(&self) -> ExpressionKind {
-        ExpressionKind::IsNull
+impl Expr for IsNullExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::IsNull
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
@@ -565,11 +580,11 @@ impl Expression for IsNullExpression {
     }
 }
 
-pub struct NullExpression {}
+pub struct NullExpr;
 
-impl Expression for NullExpression {
-    fn kind(&self) -> ExpressionKind {
-        ExpressionKind::Null
+impl Expr for NullExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::Null
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
@@ -581,14 +596,14 @@ impl Expression for NullExpression {
     }
 }
 
-pub struct CastExpression {
-    pub value: Box<dyn Expression>,
+pub struct CastExpr {
+    pub value: Box<dyn Expr>,
     pub result_type: Box<dyn DataType>,
 }
 
-impl Expression for CastExpression {
-    fn kind(&self) -> ExpressionKind {
-        ExpressionKind::Cast
+impl Expr for CastExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::Cast
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {

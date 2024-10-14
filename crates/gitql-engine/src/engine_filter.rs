@@ -1,4 +1,4 @@
-use gitql_ast::expression::Expression;
+use gitql_ast::expression::Expr;
 use gitql_core::environment::Environment;
 use gitql_core::object::Row;
 use gitql_core::values::boolean::BoolValue;
@@ -9,7 +9,7 @@ use crate::engine_evaluator::evaluate_expression;
 #[allow(clippy::borrowed_box)]
 pub(crate) fn apply_filter_operation(
     env: &mut Environment,
-    condition: &Box<dyn Expression>,
+    condition: &Box<dyn Expr>,
     titles: &[String],
     objects: &Vec<Row>,
 ) -> Result<Vec<Row>, String> {

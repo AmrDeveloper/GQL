@@ -1,7 +1,7 @@
 use std::any::Any;
 
-use crate::expression::Expression;
-use crate::expression::StringExpression;
+use crate::expression::Expr;
+use crate::expression::StringExpr;
 
 use super::base::DataType;
 
@@ -73,8 +73,8 @@ impl DataType for BoolType {
         Box::new(self.clone())
     }
 
-    fn has_implicit_cast_from(&self, expr: &Box<dyn Expression>) -> bool {
-        if let Some(string_expr) = expr.as_any().downcast_ref::<StringExpression>() {
+    fn has_implicit_cast_from(&self, expr: &Box<dyn Expr>) -> bool {
+        if let Some(string_expr) = expr.as_any().downcast_ref::<StringExpr>() {
             const BOOLEANS_VALUES_LITERAL: [&str; 10] =
                 ["t", "true", "y", "yes", "1", "f", "false", "n", "no", "0"];
             return BOOLEANS_VALUES_LITERAL.contains(&string_expr.value.as_str());

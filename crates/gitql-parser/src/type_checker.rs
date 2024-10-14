@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use gitql_ast::expression::Expression;
-use gitql_ast::expression::ExpressionKind;
-use gitql_ast::expression::StringExpression;
+use gitql_ast::expression::Expr;
+use gitql_ast::expression::ExprKind;
+use gitql_ast::expression::StringExpr;
 use gitql_ast::expression::StringValueType;
 use gitql_ast::operator::PrefixUnaryOperator;
 use gitql_ast::statement::TableSelection;
@@ -30,9 +30,9 @@ pub enum TypeCheckResult {
     /// Not Equals and can't perform implicit casting with error message provided
     Error(Box<Diagnostic>),
     /// Right hand side type will match the left side after implicit casting
-    RightSideCasted(Box<dyn Expression>),
+    RightSideCasted(Box<dyn Expr>),
     /// Left hand side type will match the right side after implicit casting
-    LeftSideCasted(Box<dyn Expression>),
+    LeftSideCasted(Box<dyn Expr>),
 }
 
 /// List of valid boolean values
@@ -48,7 +48,7 @@ pub enum ExprTypeCheckResult {
     /// Not Equals and can't perform implicit casting with error message provided
     Error(Box<Diagnostic>),
     /// Left hand side type will match the right side after implicit casting
-    ImplicitCasted(Box<dyn Expression>),
+    ImplicitCasted(Box<dyn Expr>),
 }
 
 /// Check if expression type and data type are equals
@@ -62,7 +62,7 @@ pub enum ExprTypeCheckResult {
 ///
 #[allow(clippy::borrowed_box)]
 pub fn is_expression_type_equals(
-    expr: &Box<dyn Expression>,
+    expr: &Box<dyn Expr>,
     data_type: &Box<dyn DataType>,
 ) -> ExprTypeCheckResult {
     let expr_type = expr.expr_type();
@@ -73,13 +73,13 @@ pub fn is_expression_type_equals(
     }
 
     // Current implicit casting require expression kind to be string literal
-    if expr.kind() != ExpressionKind::String || !expr_type.is_text() {
+    if expr.kind() != ExprKind::String || !expr_type.is_text() {
         return ExprTypeCheckResult::NotEqualAndCantImplicitCast;
     }
 
     // Implicit Casting expression type from Text literal to time
     if data_type.is_time() || data_type.is_variant_with(|ty| ty.is_time()) {
-        let literal = expr.as_any().downcast_ref::<StringExpression>().unwrap();
+        let literal = expr.as_any().downcast_ref::<StringExpr>().unwrap();
         let string_literal_value = &literal.value;
         if !is_valid_time_format(string_literal_value) {
             return ExprTypeCheckResult::Error(
@@ -92,7 +92,7 @@ pub fn is_expression_type_equals(
             );
         }
 
-        return ExprTypeCheckResult::ImplicitCasted(Box::new(StringExpression {
+        return ExprTypeCheckResult::ImplicitCasted(Box::new(StringExpr {
             value: string_literal_value.to_owned(),
             value_type: StringValueType::Time,
         }));
@@ -100,7 +100,7 @@ pub fn is_expression_type_equals(
 
     // Implicit Casting expression type from Text literal to Date
     if data_type.is_date() || data_type.is_variant_with(|ty| ty.is_date()) {
-        let literal = expr.as_any().downcast_ref::<StringExpression>().unwrap();
+        let literal = expr.as_any().downcast_ref::<StringExpr>().unwrap();
         let string_literal_value = &literal.value;
         if !is_valid_date_format(string_literal_value) {
             return ExprTypeCheckResult::Error(
@@ -113,7 +113,7 @@ pub fn is_expression_type_equals(
             );
         }
 
-        return ExprTypeCheckResult::ImplicitCasted(Box::new(StringExpression {
+        return ExprTypeCheckResult::ImplicitCasted(Box::new(StringExpr {
             value: string_literal_value.to_owned(),
             value_type: StringValueType::Date,
         }));
@@ -121,7 +121,7 @@ pub fn is_expression_type_equals(
 
     // Implicit Casting expression type from Text literal to DateTime
     if data_type.is_datetime() || data_type.is_variant_with(|ty| ty.is_datetime()) {
-        let literal = expr.as_any().downcast_ref::<StringExpression>().unwrap();
+        let literal = expr.as_any().downcast_ref::<StringExpr>().unwrap();
         let string_literal_value = &literal.value;
         if !is_valid_datetime_format(string_literal_value) {
             return ExprTypeCheckResult::Error(
@@ -133,7 +133,7 @@ pub fn is_expression_type_equals(
             );
         }
 
-        return ExprTypeCheckResult::ImplicitCasted(Box::new(StringExpression {
+        return ExprTypeCheckResult::ImplicitCasted(Box::new(StringExpr {
             value: string_literal_value.to_owned(),
             value_type: StringValueType::DateTime,
         }));
@@ -141,7 +141,7 @@ pub fn is_expression_type_equals(
 
     // Implicit Casting expression type from Text literal to Boolean
     if data_type.is_bool() || data_type.is_variant_with(|ty| ty.is_bool()) {
-        let literal = expr.as_any().downcast_ref::<StringExpression>().unwrap();
+        let literal = expr.as_any().downcast_ref::<StringExpr>().unwrap();
         let string_literal_value = &literal.value;
         if !BOOLEANS_VALUES_LITERAL.contains(&string_literal_value.as_str()) {
             return ExprTypeCheckResult::Error(
@@ -153,7 +153,7 @@ pub fn is_expression_type_equals(
             );
         }
 
-        return ExprTypeCheckResult::ImplicitCasted(Box::new(StringExpression {
+        return ExprTypeCheckResult::ImplicitCasted(Box::new(StringExpr {
             value: string_literal_value.to_owned(),
             value_type: StringValueType::Boolean,
         }));
@@ -165,7 +165,7 @@ pub fn is_expression_type_equals(
 /// Check if two expressions types are equals
 /// If not then check if one can be implicit casted to the other
 #[allow(clippy::borrowed_box)]
-pub fn are_types_equals(lhs: &Box<dyn Expression>, rhs: &Box<dyn Expression>) -> TypeCheckResult {
+pub fn are_types_equals(lhs: &Box<dyn Expr>, rhs: &Box<dyn Expr>) -> TypeCheckResult {
     let lhs_type = lhs.expr_type();
     let rhs_type = rhs.expr_type();
 
@@ -201,9 +201,7 @@ pub fn are_types_equals(lhs: &Box<dyn Expression>, rhs: &Box<dyn Expression>) ->
 
 /// Checks if all values has the same type
 /// If they have the same type, return it or return None
-pub fn check_all_values_are_same_type(
-    arguments: &[Box<dyn Expression>],
-) -> Option<Box<dyn DataType>> {
+pub fn check_all_values_are_same_type(arguments: &[Box<dyn Expr>]) -> Option<Box<dyn DataType>> {
     let arguments_count = arguments.len();
     if arguments_count == 0 {
         return Some(Box::new(AnyType));
@@ -223,7 +221,7 @@ pub fn check_all_values_are_same_type(
 /// Check That function call arguments types are matches the parameter types
 /// Return a Diagnostic Error if anything is wrong
 pub fn check_function_call_arguments(
-    arguments: &mut [Box<dyn Expression>],
+    arguments: &mut [Box<dyn Expr>],
     parameters: &[Box<dyn DataType>],
     function_name: String,
     location: Location,
@@ -499,7 +497,7 @@ pub fn prefix_unary_expected_type(op: &PrefixUnaryOperator) -> Box<dyn DataType>
 #[allow(clippy::borrowed_box)]
 pub fn resolve_dynamic_data_type(
     parameters: &[Box<dyn DataType>],
-    arguments: &[Box<dyn Expression>],
+    arguments: &[Box<dyn Expr>],
     data_type: &Box<dyn DataType>,
 ) -> Box<dyn DataType> {
     let mut resolved_data_type = data_type.clone();

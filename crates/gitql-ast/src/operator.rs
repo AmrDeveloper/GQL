@@ -41,9 +41,3 @@ pub enum BinaryBitwiseOperator {
     RightShift,
     LeftShift,
 }
-
-#[derive(PartialEq)]
-pub enum ContainsOperator {
-    RangeContainsElement,
-    RangeContainsRange,
-}

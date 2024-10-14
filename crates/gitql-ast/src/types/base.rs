@@ -3,7 +3,7 @@ use std::fmt;
 
 use dyn_clone::DynClone;
 
-use crate::expression::Expression;
+use crate::expression::Expr;
 
 use super::any::AnyType;
 use super::array::ArrayType;
@@ -257,6 +257,10 @@ pub trait DataType: DynClone {
         vec![]
     }
 
+    fn can_perform_contained_by_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![]
+    }
+
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn contains_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
@@ -265,7 +269,7 @@ pub trait DataType: DynClone {
 
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
-    fn has_implicit_cast_from(&self, expr: &Box<dyn Expression>) -> bool {
+    fn has_implicit_cast_from(&self, expr: &Box<dyn Expr>) -> bool {
         false
     }
 

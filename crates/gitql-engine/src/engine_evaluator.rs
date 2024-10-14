@@ -1,32 +1,33 @@
-use gitql_ast::expression::ArithmeticExpression;
-use gitql_ast::expression::ArrayExpression;
-use gitql_ast::expression::AssignmentExpression;
-use gitql_ast::expression::BenchmarkExpression;
-use gitql_ast::expression::BetweenExpression;
-use gitql_ast::expression::BitwiseExpression;
-use gitql_ast::expression::BooleanExpression;
-use gitql_ast::expression::CallExpression;
-use gitql_ast::expression::CaseExpression;
-use gitql_ast::expression::CastExpression;
-use gitql_ast::expression::ComparisonExpression;
-use gitql_ast::expression::ContainsExpression;
-use gitql_ast::expression::Expression;
-use gitql_ast::expression::ExpressionKind::*;
-use gitql_ast::expression::GlobExpression;
-use gitql_ast::expression::GlobalVariableExpression;
-use gitql_ast::expression::InExpression;
-use gitql_ast::expression::IndexExpression;
-use gitql_ast::expression::IsNullExpression;
-use gitql_ast::expression::LikeExpression;
-use gitql_ast::expression::LogicalExpression;
+use gitql_ast::expression::ArithmeticExpr;
+use gitql_ast::expression::ArrayExpr;
+use gitql_ast::expression::AssignmentExpr;
+use gitql_ast::expression::BenchmarkCallExpr;
+use gitql_ast::expression::BetweenExpr;
+use gitql_ast::expression::BitwiseExpr;
+use gitql_ast::expression::BooleanExpr;
+use gitql_ast::expression::CallExpr;
+use gitql_ast::expression::CaseExpr;
+use gitql_ast::expression::CastExpr;
+use gitql_ast::expression::ComparisonExpr;
+use gitql_ast::expression::ContainedByExpr;
+use gitql_ast::expression::ContainsExpr;
+use gitql_ast::expression::Expr;
+use gitql_ast::expression::ExprKind::*;
+use gitql_ast::expression::GlobExpr;
+use gitql_ast::expression::GlobalVariableExpr;
+use gitql_ast::expression::InExpr;
+use gitql_ast::expression::IndexExpr;
+use gitql_ast::expression::IsNullExpr;
+use gitql_ast::expression::LikeExpr;
+use gitql_ast::expression::LogicalExpr;
 use gitql_ast::expression::Number;
-use gitql_ast::expression::NumberExpression;
-use gitql_ast::expression::RegexExpression;
-use gitql_ast::expression::SliceExpression;
-use gitql_ast::expression::StringExpression;
+use gitql_ast::expression::NumberExpr;
+use gitql_ast::expression::RegexExpr;
+use gitql_ast::expression::SliceExpr;
+use gitql_ast::expression::StringExpr;
 use gitql_ast::expression::StringValueType;
-use gitql_ast::expression::SymbolExpression;
-use gitql_ast::expression::UnaryExpression;
+use gitql_ast::expression::SymbolExpr;
+use gitql_ast::expression::UnaryExpr;
 use gitql_ast::operator::ArithmeticOperator;
 use gitql_ast::operator::BinaryBitwiseOperator;
 use gitql_ast::operator::BinaryLogicalOperator;
@@ -50,7 +51,7 @@ use std::string::String;
 #[allow(clippy::borrowed_box)]
 pub fn evaluate_expression(
     env: &mut Environment,
-    expression: &Box<dyn Expression>,
+    expression: &Box<dyn Expr>,
     titles: &[String],
     object: &Vec<Box<dyn Value>>,
 ) -> Result<Box<dyn Value>, String> {
@@ -58,174 +59,123 @@ pub fn evaluate_expression(
         Assignment => {
             let expr = expression
                 .as_any()
-                .downcast_ref::<AssignmentExpression>()
+                .downcast_ref::<AssignmentExpr>()
                 .unwrap();
             evaluate_assignment(env, expr, titles, object)
         }
         String => {
-            let expr = expression
-                .as_any()
-                .downcast_ref::<StringExpression>()
-                .unwrap();
+            let expr = expression.as_any().downcast_ref::<StringExpr>().unwrap();
             evaluate_string(expr)
         }
         Symbol => {
-            let expr = expression
-                .as_any()
-                .downcast_ref::<SymbolExpression>()
-                .unwrap();
+            let expr = expression.as_any().downcast_ref::<SymbolExpr>().unwrap();
             evaluate_symbol(expr, titles, object)
         }
         Array => {
-            let expr = expression
-                .as_any()
-                .downcast_ref::<ArrayExpression>()
-                .unwrap();
+            let expr = expression.as_any().downcast_ref::<ArrayExpr>().unwrap();
             evaluate_array(env, expr, titles, object)
         }
         GlobalVariable => {
             let expr = expression
                 .as_any()
-                .downcast_ref::<GlobalVariableExpression>()
+                .downcast_ref::<GlobalVariableExpr>()
                 .unwrap();
             evaluate_global_variable(env, expr)
         }
         Number => {
-            let expr = expression
-                .as_any()
-                .downcast_ref::<NumberExpression>()
-                .unwrap();
+            let expr = expression.as_any().downcast_ref::<NumberExpr>().unwrap();
             evaluate_number(expr)
         }
         Boolean => {
-            let expr = expression
-                .as_any()
-                .downcast_ref::<BooleanExpression>()
-                .unwrap();
+            let expr = expression.as_any().downcast_ref::<BooleanExpr>().unwrap();
             evaluate_boolean(expr)
         }
         PrefixUnary => {
-            let expr = expression
-                .as_any()
-                .downcast_ref::<UnaryExpression>()
-                .unwrap();
+            let expr = expression.as_any().downcast_ref::<UnaryExpr>().unwrap();
             evaluate_prefix_unary(env, expr, titles, object)
         }
         Index => {
-            let expr = expression
-                .as_any()
-                .downcast_ref::<IndexExpression>()
-                .unwrap();
+            let expr = expression.as_any().downcast_ref::<IndexExpr>().unwrap();
             evaluate_collection_index(env, expr, titles, object)
         }
         Slice => {
-            let expr = expression
-                .as_any()
-                .downcast_ref::<SliceExpression>()
-                .unwrap();
+            let expr = expression.as_any().downcast_ref::<SliceExpr>().unwrap();
             evaluate_collection_slice(env, expr, titles, object)
         }
         Arithmetic => {
             let expr = expression
                 .as_any()
-                .downcast_ref::<ArithmeticExpression>()
+                .downcast_ref::<ArithmeticExpr>()
                 .unwrap();
             evaluate_arithmetic(env, expr, titles, object)
         }
         Comparison => {
             let expr = expression
                 .as_any()
-                .downcast_ref::<ComparisonExpression>()
+                .downcast_ref::<ComparisonExpr>()
                 .unwrap();
             evaluate_comparison(env, expr, titles, object)
         }
         Contains => {
-            let expr = expression
-                .as_any()
-                .downcast_ref::<ContainsExpression>()
-                .unwrap();
+            let expr = expression.as_any().downcast_ref::<ContainsExpr>().unwrap();
             evaluate_contains(env, expr, titles, object)
         }
-
-        Like => {
+        ContainedBy => {
             let expr = expression
                 .as_any()
-                .downcast_ref::<LikeExpression>()
+                .downcast_ref::<ContainedByExpr>()
                 .unwrap();
+            evaluate_contained_by(env, expr, titles, object)
+        }
+        Like => {
+            let expr = expression.as_any().downcast_ref::<LikeExpr>().unwrap();
             evaluate_like(env, expr, titles, object)
         }
         Regex => {
-            let expr = expression
-                .as_any()
-                .downcast_ref::<RegexExpression>()
-                .unwrap();
+            let expr = expression.as_any().downcast_ref::<RegexExpr>().unwrap();
             evaluate_regex(env, expr, titles, object)
         }
         Glob => {
-            let expr = expression
-                .as_any()
-                .downcast_ref::<GlobExpression>()
-                .unwrap();
+            let expr = expression.as_any().downcast_ref::<GlobExpr>().unwrap();
             evaluate_glob(env, expr, titles, object)
         }
         Logical => {
-            let expr = expression
-                .as_any()
-                .downcast_ref::<LogicalExpression>()
-                .unwrap();
+            let expr = expression.as_any().downcast_ref::<LogicalExpr>().unwrap();
             evaluate_logical(env, expr, titles, object)
         }
         Bitwise => {
-            let expr = expression
-                .as_any()
-                .downcast_ref::<BitwiseExpression>()
-                .unwrap();
+            let expr = expression.as_any().downcast_ref::<BitwiseExpr>().unwrap();
             evaluate_bitwise(env, expr, titles, object)
         }
         Call => {
-            let expr = expression
-                .as_any()
-                .downcast_ref::<CallExpression>()
-                .unwrap();
+            let expr = expression.as_any().downcast_ref::<CallExpr>().unwrap();
             evaluate_call(env, expr, titles, object)
         }
         BenchmarkCall => {
             let expr = expression
                 .as_any()
-                .downcast_ref::<BenchmarkExpression>()
+                .downcast_ref::<BenchmarkCallExpr>()
                 .unwrap();
             evaluate_benchmark_call(env, expr, titles, object)
         }
         Between => {
-            let expr = expression
-                .as_any()
-                .downcast_ref::<BetweenExpression>()
-                .unwrap();
+            let expr = expression.as_any().downcast_ref::<BetweenExpr>().unwrap();
             evaluate_between(env, expr, titles, object)
         }
         Case => {
-            let expr = expression
-                .as_any()
-                .downcast_ref::<CaseExpression>()
-                .unwrap();
+            let expr = expression.as_any().downcast_ref::<CaseExpr>().unwrap();
             evaluate_case(env, expr, titles, object)
         }
         In => {
-            let expr = expression.as_any().downcast_ref::<InExpression>().unwrap();
+            let expr = expression.as_any().downcast_ref::<InExpr>().unwrap();
             evaluate_in(env, expr, titles, object)
         }
         IsNull => {
-            let expr = expression
-                .as_any()
-                .downcast_ref::<IsNullExpression>()
-                .unwrap();
+            let expr = expression.as_any().downcast_ref::<IsNullExpr>().unwrap();
             evaluate_is_null(env, expr, titles, object)
         }
         Cast => {
-            let expr = expression
-                .as_any()
-                .downcast_ref::<CastExpression>()
-                .unwrap();
+            let expr = expression.as_any().downcast_ref::<CastExpr>().unwrap();
             evaluate_cast(env, expr, titles, object)
         }
         Null => Ok(Box::new(NullValue)),
@@ -234,7 +184,7 @@ pub fn evaluate_expression(
 
 fn evaluate_assignment(
     env: &mut Environment,
-    expr: &AssignmentExpression,
+    expr: &AssignmentExpr,
     titles: &[String],
     object: &Vec<Box<dyn Value>>,
 ) -> Result<Box<dyn Value>, String> {
@@ -243,7 +193,7 @@ fn evaluate_assignment(
     Ok(value)
 }
 
-fn evaluate_string(expr: &StringExpression) -> Result<Box<dyn Value>, String> {
+fn evaluate_string(expr: &StringExpr) -> Result<Box<dyn Value>, String> {
     match expr.value_type {
         StringValueType::Text => Ok(Box::new(TextValue {
             value: expr.value.to_owned(),
@@ -305,7 +255,7 @@ fn string_literal_to_boolean(literal: &str) -> Box<dyn Value> {
 }
 
 fn evaluate_symbol(
-    expr: &SymbolExpression,
+    expr: &SymbolExpr,
     titles: &[String],
     object: &[Box<dyn Value>],
 ) -> Result<Box<dyn Value>, String> {
@@ -319,7 +269,7 @@ fn evaluate_symbol(
 
 fn evaluate_array(
     env: &mut Environment,
-    expr: &ArrayExpression,
+    expr: &ArrayExpr,
     titles: &[String],
     object: &Vec<Box<dyn Value>>,
 ) -> Result<Box<dyn Value>, String> {
@@ -336,7 +286,7 @@ fn evaluate_array(
 
 fn evaluate_global_variable(
     env: &mut Environment,
-    expr: &GlobalVariableExpression,
+    expr: &GlobalVariableExpr,
 ) -> Result<Box<dyn Value>, String> {
     let name = &expr.name;
     if env.globals.contains_key(name) {
@@ -349,21 +299,21 @@ fn evaluate_global_variable(
     ))
 }
 
-fn evaluate_number(expr: &NumberExpression) -> Result<Box<dyn Value>, String> {
+fn evaluate_number(expr: &NumberExpr) -> Result<Box<dyn Value>, String> {
     Ok(match expr.value {
         Number::Int(integer) => Box::new(IntValue { value: integer }),
         Number::Float(float) => Box::new(FloatValue { value: float }),
     })
 }
 
-fn evaluate_boolean(expr: &BooleanExpression) -> Result<Box<dyn Value>, String> {
+fn evaluate_boolean(expr: &BooleanExpr) -> Result<Box<dyn Value>, String> {
     let value = expr.is_true;
     Ok(Box::new(BoolValue { value }))
 }
 
 fn evaluate_collection_index(
     env: &mut Environment,
-    expr: &IndexExpression,
+    expr: &IndexExpr,
     titles: &[String],
     object: &Vec<Box<dyn Value>>,
 ) -> Result<Box<dyn Value>, String> {
@@ -374,7 +324,7 @@ fn evaluate_collection_index(
 
 fn evaluate_collection_slice(
     env: &mut Environment,
-    expr: &SliceExpression,
+    expr: &SliceExpr,
     titles: &[String],
     object: &Vec<Box<dyn Value>>,
 ) -> Result<Box<dyn Value>, String> {
@@ -397,7 +347,7 @@ fn evaluate_collection_slice(
 
 fn evaluate_prefix_unary(
     env: &mut Environment,
-    expr: &UnaryExpression,
+    expr: &UnaryExpr,
     titles: &[String],
     object: &Vec<Box<dyn Value>>,
 ) -> Result<Box<dyn Value>, String> {
@@ -411,7 +361,7 @@ fn evaluate_prefix_unary(
 
 fn evaluate_arithmetic(
     env: &mut Environment,
-    expr: &ArithmeticExpression,
+    expr: &ArithmeticExpr,
     titles: &[String],
     object: &Vec<Box<dyn Value>>,
 ) -> Result<Box<dyn Value>, String> {
@@ -430,7 +380,7 @@ fn evaluate_arithmetic(
 
 fn evaluate_comparison(
     env: &mut Environment,
-    expr: &ComparisonExpression,
+    expr: &ComparisonExpr,
     titles: &[String],
     object: &Vec<Box<dyn Value>>,
 ) -> Result<Box<dyn Value>, String> {
@@ -450,7 +400,7 @@ fn evaluate_comparison(
 
 fn evaluate_contains(
     env: &mut Environment,
-    expr: &ContainsExpression,
+    expr: &ContainsExpr,
     titles: &[String],
     object: &Vec<Box<dyn Value>>,
 ) -> Result<Box<dyn Value>, String> {
@@ -459,9 +409,20 @@ fn evaluate_contains(
     lhs.perform_contains_op(&rhs)
 }
 
+fn evaluate_contained_by(
+    env: &mut Environment,
+    expr: &ContainedByExpr,
+    titles: &[String],
+    object: &Vec<Box<dyn Value>>,
+) -> Result<Box<dyn Value>, String> {
+    let lhs = evaluate_expression(env, &expr.left, titles, object)?;
+    let rhs = evaluate_expression(env, &expr.right, titles, object)?;
+    lhs.perform_contained_by_op(&rhs)
+}
+
 fn evaluate_like(
     env: &mut Environment,
-    expr: &LikeExpression,
+    expr: &LikeExpr,
     titles: &[String],
     object: &Vec<Box<dyn Value>>,
 ) -> Result<Box<dyn Value>, String> {
@@ -492,7 +453,7 @@ fn evaluate_like(
 
 fn evaluate_regex(
     env: &mut Environment,
-    expr: &RegexExpression,
+    expr: &RegexExpr,
     titles: &[String],
     object: &Vec<Box<dyn Value>>,
 ) -> Result<Box<dyn Value>, String> {
@@ -524,7 +485,7 @@ fn evaluate_regex(
 
 fn evaluate_glob(
     env: &mut Environment,
-    expr: &GlobExpression,
+    expr: &GlobExpr,
     titles: &[String],
     object: &Vec<Box<dyn Value>>,
 ) -> Result<Box<dyn Value>, String> {
@@ -555,7 +516,7 @@ fn evaluate_glob(
 
 fn evaluate_logical(
     env: &mut Environment,
-    expr: &LogicalExpression,
+    expr: &LogicalExpr,
     titles: &[String],
     object: &Vec<Box<dyn Value>>,
 ) -> Result<Box<dyn Value>, String> {
@@ -570,7 +531,7 @@ fn evaluate_logical(
 
 fn evaluate_bitwise(
     env: &mut Environment,
-    expr: &BitwiseExpression,
+    expr: &BitwiseExpr,
     titles: &[String],
     object: &Vec<Box<dyn Value>>,
 ) -> Result<Box<dyn Value>, String> {
@@ -588,7 +549,7 @@ fn evaluate_bitwise(
 
 fn evaluate_call(
     env: &mut Environment,
-    expr: &CallExpression,
+    expr: &CallExpr,
     titles: &[String],
     object: &Vec<Box<dyn Value>>,
 ) -> Result<Box<dyn Value>, String> {
@@ -604,7 +565,7 @@ fn evaluate_call(
 
 fn evaluate_benchmark_call(
     env: &mut Environment,
-    expr: &BenchmarkExpression,
+    expr: &BenchmarkCallExpr,
     titles: &[String],
     object: &Vec<Box<dyn Value>>,
 ) -> Result<Box<dyn Value>, String> {
@@ -620,7 +581,7 @@ fn evaluate_benchmark_call(
 
 fn evaluate_between(
     env: &mut Environment,
-    expr: &BetweenExpression,
+    expr: &BetweenExpr,
     titles: &[String],
     object: &Vec<Box<dyn Value>>,
 ) -> Result<Box<dyn Value>, String> {
@@ -634,7 +595,7 @@ fn evaluate_between(
 
 fn evaluate_case(
     env: &mut Environment,
-    expr: &CaseExpression,
+    expr: &CaseExpr,
     titles: &[String],
     object: &Vec<Box<dyn Value>>,
 ) -> Result<Box<dyn Value>, String> {
@@ -658,7 +619,7 @@ fn evaluate_case(
 
 fn evaluate_in(
     env: &mut Environment,
-    expr: &InExpression,
+    expr: &InExpr,
     titles: &[String],
     object: &Vec<Box<dyn Value>>,
 ) -> Result<Box<dyn Value>, String> {
@@ -680,7 +641,7 @@ fn evaluate_in(
 
 fn evaluate_is_null(
     env: &mut Environment,
-    expr: &IsNullExpression,
+    expr: &IsNullExpr,
     titles: &[String],
     object: &Vec<Box<dyn Value>>,
 ) -> Result<Box<dyn Value>, String> {
@@ -693,7 +654,7 @@ fn evaluate_is_null(
 
 fn evaluate_cast(
     env: &mut Environment,
-    expr: &CastExpression,
+    expr: &CastExpr,
     titles: &[String],
     object: &Vec<Box<dyn Value>>,
 ) -> Result<Box<dyn Value>, String> {

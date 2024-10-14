@@ -1,7 +1,7 @@
 use std::any::Any;
 use std::collections::HashMap;
 
-use crate::expression::Expression;
+use crate::expression::Expr;
 
 pub enum StatementKind {
     Do,
@@ -39,7 +39,7 @@ pub struct GQLQuery {
 }
 
 pub struct DoStatement {
-    pub expression: Box<dyn Expression>,
+    pub expression: Box<dyn Expr>,
 }
 
 impl Statement for DoStatement {
@@ -82,14 +82,14 @@ pub enum JoinOperand {
 pub struct Join {
     pub operand: JoinOperand,
     pub kind: JoinKind,
-    pub predicate: Option<Box<dyn Expression>>,
+    pub predicate: Option<Box<dyn Expr>>,
 }
 
 pub struct SelectStatement {
     pub table_selections: Vec<TableSelection>,
     pub joins: Vec<Join>,
     pub selected_expr_titles: Vec<String>,
-    pub selected_expr: Vec<Box<dyn Expression>>,
+    pub selected_expr: Vec<Box<dyn Expr>>,
     pub distinct: Distinct,
 }
 
@@ -104,7 +104,7 @@ impl Statement for SelectStatement {
 }
 
 pub struct WhereStatement {
-    pub condition: Box<dyn Expression>,
+    pub condition: Box<dyn Expr>,
 }
 
 impl Statement for WhereStatement {
@@ -118,7 +118,7 @@ impl Statement for WhereStatement {
 }
 
 pub struct HavingStatement {
-    pub condition: Box<dyn Expression>,
+    pub condition: Box<dyn Expr>,
 }
 
 impl Statement for HavingStatement {
@@ -166,7 +166,7 @@ pub enum SortingOrder {
 }
 
 pub struct OrderByStatement {
-    pub arguments: Vec<Box<dyn Expression>>,
+    pub arguments: Vec<Box<dyn Expr>>,
     pub sorting_orders: Vec<SortingOrder>,
 }
 
@@ -181,7 +181,7 @@ impl Statement for OrderByStatement {
 }
 
 pub struct GroupByStatement {
-    pub values: Vec<Box<dyn Expression>>,
+    pub values: Vec<Box<dyn Expr>>,
     pub has_with_rollup: bool,
 }
 
@@ -196,8 +196,8 @@ impl Statement for GroupByStatement {
 }
 
 pub enum AggregateValue {
-    Expression(Box<dyn Expression>),
-    Function(String, Vec<Box<dyn Expression>>),
+    Expression(Box<dyn Expr>),
+    Function(String, Vec<Box<dyn Expr>>),
 }
 
 pub struct AggregationsStatement {
@@ -216,7 +216,7 @@ impl Statement for AggregationsStatement {
 
 pub struct GlobalVariableStatement {
     pub name: String,
-    pub value: Box<dyn Expression>,
+    pub value: Box<dyn Expr>,
 }
 
 impl Statement for GlobalVariableStatement {

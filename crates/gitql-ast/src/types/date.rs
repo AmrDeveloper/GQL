@@ -1,6 +1,6 @@
 use std::any::Any;
 
-use crate::expression::Expression;
+use crate::expression::Expr;
 
 use super::base::DataType;
 
@@ -44,7 +44,7 @@ impl DataType for DateType {
         vec![Box::new(DateType)]
     }
 
-    fn has_implicit_cast_from(&self, _expr: &Box<dyn Expression>) -> bool {
+    fn has_implicit_cast_from(&self, _expr: &Box<dyn Expr>) -> bool {
         false
     }
 }

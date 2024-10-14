@@ -193,6 +193,12 @@ pub trait Value: DynClone {
 
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
+    fn perform_contained_by_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+        Err("Unsupported operator for this type".to_string())
+    }
+
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
     fn perform_cast_op(&self, target_type: &Box<dyn DataType>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }

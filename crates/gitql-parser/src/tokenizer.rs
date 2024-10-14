@@ -58,7 +58,11 @@ pub enum TokenKind {
     BangEqual,
     NullSafeEqual,
 
+    /// @>
     AtRightArrow,
+
+    /// <@
+    ArrowRightAt,
 
     As,
 
@@ -571,6 +575,10 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
                 position += 1;
                 kind = TokenKind::BangEqual;
                 "<>"
+            } else if position < len && characters[position] == '@' {
+                position += 1;
+                kind = TokenKind::ArrowRightAt;
+                "<@"
             } else {
                 "<"
             };

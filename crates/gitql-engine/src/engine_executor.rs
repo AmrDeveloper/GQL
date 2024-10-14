@@ -3,8 +3,8 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::io::Write;
 
-use gitql_ast::expression::Expression;
-use gitql_ast::expression::ExpressionKind;
+use gitql_ast::expression::Expr;
+use gitql_ast::expression::ExprKind;
 use gitql_ast::statement::AggregateValue;
 use gitql_ast::statement::AggregationsStatement;
 use gitql_ast::statement::DoStatement;
@@ -235,7 +235,7 @@ fn execute_expression_selection(
     selected_rows: &mut [Row],
     object_titles: &[String],
     selected_expr_titles: &[String],
-    selected_expr: &[Box<dyn Expression>],
+    selected_expr: &[Box<dyn Expr>],
 ) -> Result<(), String> {
     // Cache the index of each expression position to provide fast insertion
     let mut titles_index_map: HashMap<String, usize> = HashMap::new();
@@ -257,7 +257,7 @@ fn execute_expression_selection(
             }
 
             // Ignore evaluating expression if it symbol, that mean it a reference to aggregated value or function
-            let value = if expr.kind() == ExpressionKind::Symbol {
+            let value = if expr.kind() == ExprKind::Symbol {
                 Box::new(NullValue)
             } else {
                 evaluate_expression(env, expr, object_titles, &row.values)?
