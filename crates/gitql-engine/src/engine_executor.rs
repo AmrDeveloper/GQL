@@ -401,11 +401,11 @@ fn execute_order_by_statement(
                 continue;
             }
 
-            // Reverse the order if its not ASC order
+            // Reverse the order if DESC order
             ordering = if statement.sorting_orders[i] == SortingOrder::Descending {
-                current_ordering
-            } else {
                 current_ordering.reverse()
+            } else {
+                current_ordering
             };
             break;
         }
