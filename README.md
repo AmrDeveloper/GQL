@@ -51,8 +51,8 @@ SELECT * FROM refs ORDER BY type
 SELECT * FROM commits
 SELECT author_name, author_email FROM commits
 SELECT author_name, author_email FROM commits ORDER BY author_name DESC, author_email ASC
-SELECT author_name, author_email FROM commits WHERE name LIKE "%gmail%" ORDER BY author_name
-SELECT * FROM commits WHERE LOWER(name) = "amrdeveloper"
+SELECT author_name, author_email FROM commits WHERE author_email LIKE "%gmail%" ORDER BY author_name
+SELECT * FROM commits WHERE LOWER(author_name) = "amrdeveloper"
 SELECT author_name FROM commits GROUP By author_name
 SELECT author_name FROM commits GROUP By author_name having author_name = "AmrDeveloper"
 
