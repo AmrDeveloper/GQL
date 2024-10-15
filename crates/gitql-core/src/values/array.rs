@@ -136,6 +136,6 @@ impl Value for ArrayValue {
             }
         }
 
-        return Ok(Box::new(BoolValue { value: false }));
+        Ok(Box::new(BoolValue { value: false }))
     }
 }

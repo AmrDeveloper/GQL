@@ -1,5 +1,4 @@
 use std::cmp;
-use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::io::Write;
 
@@ -16,7 +15,6 @@ use gitql_ast::statement::LimitStatement;
 use gitql_ast::statement::OffsetStatement;
 use gitql_ast::statement::OrderByStatement;
 use gitql_ast::statement::SelectStatement;
-use gitql_ast::statement::SortingOrder;
 use gitql_ast::statement::Statement;
 use gitql_ast::statement::StatementKind::*;
 use gitql_ast::statement::WhereStatement;
@@ -32,6 +30,7 @@ use crate::engine_evaluator::evaluate_expression;
 use crate::engine_filter::apply_filter_operation;
 use crate::engine_group::execute_group_by_statement;
 use crate::engine_join::apply_join_operation;
+use crate::engine_ordering::execute_order_by_statement;
 
 #[allow(clippy::borrowed_box)]
 pub fn execute_statement(
@@ -355,63 +354,6 @@ fn execute_offset_statement(
     main_group
         .rows
         .drain(0..cmp::min(statement.count, main_group.len()));
-
-    Ok(())
-}
-
-fn execute_order_by_statement(
-    env: &mut Environment,
-    statement: &OrderByStatement,
-    gitql_object: &mut GitQLObject,
-) -> Result<(), String> {
-    if gitql_object.is_empty() {
-        return Ok(());
-    }
-
-    if gitql_object.len() > 1 {
-        gitql_object.flat();
-    }
-
-    let main_group: &mut Group = &mut gitql_object.groups[0];
-    if main_group.is_empty() {
-        return Ok(());
-    }
-
-    main_group.rows.sort_by(|a, b| {
-        // The default ordering
-        let mut ordering = Ordering::Equal;
-
-        for i in 0..statement.arguments.len() {
-            let argument = &statement.arguments[i];
-            // No need to compare if the ordering argument is constants
-            if argument.is_const() {
-                continue;
-            }
-
-            // Compare the two set of attributes using the current argument
-            let first = &evaluate_expression(env, argument, &gitql_object.titles, &a.values)
-                .unwrap_or(Box::new(NullValue));
-            let other = &evaluate_expression(env, argument, &gitql_object.titles, &b.values)
-                .unwrap_or(Box::new(NullValue));
-
-            let current_ordering = first.compare(other).unwrap();
-
-            // If comparing result still equal, check the next argument
-            if current_ordering == Ordering::Equal {
-                continue;
-            }
-
-            // Reverse the order if DESC order
-            ordering = if statement.sorting_orders[i] == SortingOrder::Descending {
-                current_ordering.reverse()
-            } else {
-                current_ordering
-            };
-            break;
-        }
-
-        ordering
-    });
 
     Ok(())
 }
