@@ -20,7 +20,7 @@ impl DataType for RangeType {
         }
 
         if let Some(other_range) = other.as_any().downcast_ref::<RangeType>() {
-            return self.equals(&other_range.base);
+            return self.base.equals(&other_range.base);
         }
         false
     }

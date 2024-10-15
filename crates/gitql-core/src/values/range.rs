@@ -68,18 +68,14 @@ impl Value for RangeValue {
 
     fn perform_contains_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_range) = other.as_any().downcast_ref::<RangeValue>() {
-            if !self.equals(other) {
-                return Err("Contains operator expect both Ranges to have same type".to_string());
-            }
-
-            let is_in_range = other_range.start.compare(&self.start).unwrap().is_le()
-                && other_range.end.compare(&self.end).unwrap().is_ge();
+            let is_in_range = other_range.start.compare(&self.start).unwrap().is_ge()
+                && other_range.end.compare(&self.end).unwrap().is_le();
             return Ok(Box::new(BoolValue { value: is_in_range }));
         }
 
         if self.base_type.equals(&other.data_type()) {
-            let is_in_range = other.compare(&self.start).unwrap().is_le()
-                && other.compare(&self.start).unwrap().is_ge();
+            let is_in_range = other.compare(&self.start).unwrap().is_ge()
+                && other.compare(&self.end).unwrap().is_le();
             return Ok(Box::new(BoolValue { value: is_in_range }));
         }
 

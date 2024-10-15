@@ -128,4 +128,14 @@ impl Value for ArrayValue {
         }
         Err("Unexpected Array overlap type".to_string())
     }
+
+    fn perform_contains_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+        for value in self.values.iter() {
+            if value.equals(other) {
+                return Ok(Box::new(BoolValue { value: true }));
+            }
+        }
+
+        return Ok(Box::new(BoolValue { value: false }));
+    }
 }
