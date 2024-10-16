@@ -195,12 +195,6 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    #[allow(unused_variables)]
-    #[allow(clippy::borrowed_box)]
-    fn slice_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
-        Box::new(NullType)
-    }
-
     fn can_perform_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
@@ -259,12 +253,6 @@ pub trait DataType: DynClone {
 
     fn can_perform_contained_by_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
-    }
-
-    #[allow(unused_variables)]
-    #[allow(clippy::borrowed_box)]
-    fn contains_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
-        Box::new(NullType)
     }
 
     #[allow(unused_variables)]

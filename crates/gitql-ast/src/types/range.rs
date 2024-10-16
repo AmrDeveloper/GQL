@@ -33,10 +33,6 @@ impl DataType for RangeType {
         vec![Box::new(self.clone()), self.base.clone()]
     }
 
-    fn contains_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
-        Box::new(BoolType)
-    }
-
     fn can_perform_logical_or_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(self.clone())]
     }
