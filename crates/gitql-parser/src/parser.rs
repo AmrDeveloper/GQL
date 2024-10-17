@@ -1839,52 +1839,6 @@ fn parse_logical_and_expression(
     Ok(lhs)
 }
 
-// TODO: Support new dynamic type system
-// TODO: Remove and implement OR in array and range
-/*
-fn parse_overlap_expression(
-    context: &mut ParserContext,
-    env: &mut Environment,
-    tokens: &[Token],
-    position: &mut usize,
-) -> Result<Box<dyn Expression>, Box<Diagnostic>> {
-    let lhs = parse_bitwise_or_expression(context, env, tokens, position)?;
-    if *position < tokens.len() && tokens[*position].kind == TokenKind::AndAnd {
-        let lhs_type = lhs.expr_type();
-        if lhs_type.is_array() || lhs_type.is_range() {
-            let operator_location = tokens[*position].location;
-            let overlap_operator = if lhs_type.is_array() {
-                OverlapOperator::ArrayOverlap
-            } else {
-                OverlapOperator::RangeOverlap
-            };
-
-            // Consume `&&` operator
-            *position += 1;
-
-            let rhs = parse_bitwise_or_expression(context, env, tokens, position)?;
-            let rhs_type = rhs.expr_type();
-            if !lhs_type.equals(&rhs_type) {
-                return Err(Diagnostic::error(&format!(
-                    "Overlap expression right hand side expected to be `{}` but got `{}`",
-                    lhs_type.literal(),
-                    rhs_type.literal()
-                ))
-                .with_location(operator_location)
-                .as_boxed());
-            }
-
-            return Ok(Box::new(OverlapExpression {
-                left: lhs,
-                right: rhs,
-                operator: overlap_operator,
-            }));
-        }
-    }
-    Ok(lhs)
-}
-*/
-
 fn parse_bitwise_or_expression(
     context: &mut ParserContext,
     env: &mut Environment,
@@ -3248,31 +3202,13 @@ fn parse_prefix_unary_expression(
 
         // Parse and Check side for unary `!` operator
         if operator.kind == TokenKind::Bang {
-            let rhs_expected_types = rhs_type.can_perform_bang_op_with();
-
             // Can perform this operator between RHS
-            if rhs_expected_types.contains(&rhs_type) {
+            if rhs_type.can_perform_bang_op() {
                 return Ok(Box::new(UnaryExpr {
                     right: rhs,
                     operator: PrefixUnaryOperator::Bang,
                     result_type: rhs_type.bang_op_result_type(),
                 }));
-            }
-
-            // Check if can perform the operator with additonal implicit casting
-            for expected_type in rhs_expected_types {
-                if expected_type.has_implicit_cast_from(&rhs) {
-                    let casting = Box::new(CastExpr {
-                        value: rhs,
-                        result_type: expected_type.clone(),
-                    });
-
-                    return Ok(Box::new(UnaryExpr {
-                        right: casting,
-                        operator: PrefixUnaryOperator::Bang,
-                        result_type: expected_type.bang_op_result_type(),
-                    }));
-                }
             }
 
             // Return error if this operator can't be performed even with implicit cast
@@ -3286,31 +3222,13 @@ fn parse_prefix_unary_expression(
 
         // Parse and Check side for unary `-` operator
         if operator.kind == TokenKind::Minus {
-            let rhs_expected_types = rhs_type.can_perform_neg_op_with();
-
             // Can perform this operator between RHS
-            if rhs_expected_types.contains(&rhs_type) {
+            if rhs_type.can_perform_neg_op() {
                 return Ok(Box::new(UnaryExpr {
                     right: rhs,
                     operator: PrefixUnaryOperator::Minus,
-                    result_type: rhs_type.bang_op_result_type(),
+                    result_type: rhs_type.neg_op_result_type(),
                 }));
-            }
-
-            // Check if can perform the operator with additonal implicit casting
-            for expected_type in rhs_expected_types {
-                if expected_type.has_implicit_cast_from(&rhs) {
-                    let casting = Box::new(CastExpr {
-                        value: rhs,
-                        result_type: expected_type.clone(),
-                    });
-
-                    return Ok(Box::new(UnaryExpr {
-                        right: casting,
-                        operator: PrefixUnaryOperator::Minus,
-                        result_type: expected_type.neg_op_result_type(),
-                    }));
-                }
             }
 
             // Return error if this operator can't be performed even with implicit cast
@@ -3324,31 +3242,13 @@ fn parse_prefix_unary_expression(
 
         // Parse and Check side for unary `~` operator
         if operator.kind == TokenKind::Not {
-            let rhs_expected_types = rhs_type.can_perform_not_op_with();
-
             // Can perform this operator between RHS
-            if rhs_expected_types.contains(&rhs_type) {
+            if rhs_type.can_perform_not_op() {
                 return Ok(Box::new(UnaryExpr {
                     right: rhs,
                     operator: PrefixUnaryOperator::Not,
-                    result_type: rhs_type.bang_op_result_type(),
+                    result_type: rhs_type.not_op_result_type(),
                 }));
-            }
-
-            // Check if can perform the operator with additonal implicit casting
-            for expected_type in rhs_expected_types {
-                if expected_type.has_implicit_cast_from(&rhs) {
-                    let casting = Box::new(CastExpr {
-                        value: rhs,
-                        result_type: expected_type.clone(),
-                    });
-
-                    return Ok(Box::new(UnaryExpr {
-                        right: casting,
-                        operator: PrefixUnaryOperator::Not,
-                        result_type: expected_type.not_op_result_type(),
-                    }));
-                }
             }
 
             // Return error if this operator can't be performed even with implicit cast

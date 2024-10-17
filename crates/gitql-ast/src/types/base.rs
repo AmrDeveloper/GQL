@@ -223,24 +223,24 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    fn can_perform_not_op_with(&self) -> Vec<Box<dyn DataType>> {
-        vec![]
+    fn can_perform_not_op(&self) -> bool {
+        false
     }
 
     fn not_op_result_type(&self) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
-    fn can_perform_neg_op_with(&self) -> Vec<Box<dyn DataType>> {
-        vec![]
+    fn can_perform_neg_op(&self) -> bool {
+        false
     }
 
     fn neg_op_result_type(&self) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
-    fn can_perform_bang_op_with(&self) -> Vec<Box<dyn DataType>> {
-        vec![]
+    fn can_perform_bang_op(&self) -> bool {
+        false
     }
 
     fn bang_op_result_type(&self) -> Box<dyn DataType> {

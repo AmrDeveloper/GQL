@@ -73,4 +73,12 @@ impl DataType for FloatType {
     fn can_perform_lte_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(FloatType)]
     }
+
+    fn can_perform_neg_op(&self) -> bool {
+        true
+    }
+
+    fn neg_op_result_type(&self) -> Box<dyn DataType> {
+        Box::new(self.clone())
+    }
 }
