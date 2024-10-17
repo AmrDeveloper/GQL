@@ -1727,9 +1727,9 @@ fn parse_logical_or_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
-    let lhs = parse_logical_and_expression(context, env, tokens, position)?;
+    let mut lhs = parse_logical_and_expression(context, env, tokens, position)?;
 
-    if *position < tokens.len() && tokens[*position].kind == TokenKind::OrOr {
+    'parse_expr: while *position < tokens.len() && tokens[*position].kind == TokenKind::OrOr {
         let operator = &tokens[*position];
 
         // Consume`OR` operator
@@ -1744,11 +1744,13 @@ fn parse_logical_or_expression(
 
         // Can perform this operator between LHS and RHS
         if rhs_expected_types.contains(&rhs_type) {
-            return Ok(Box::new(LogicalExpr {
+            lhs = Box::new(LogicalExpr {
                 left: lhs,
                 operator: BinaryLogicalOperator::Or,
                 right: rhs,
-            }));
+            });
+
+            continue 'parse_expr;
         }
 
         // Check if can perform the operator with additonal implicit casting
@@ -1759,11 +1761,13 @@ fn parse_logical_or_expression(
                     result_type: expected_type.clone(),
                 });
 
-                return Ok(Box::new(LogicalExpr {
+                lhs = Box::new(LogicalExpr {
                     left: lhs,
                     operator: BinaryLogicalOperator::Or,
                     right: casting,
-                }));
+                });
+
+                continue 'parse_expr;
             }
         }
 
@@ -1786,9 +1790,9 @@ fn parse_logical_and_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
-    let lhs = parse_bitwise_or_expression(context, env, tokens, position)?;
+    let mut lhs = parse_bitwise_or_expression(context, env, tokens, position)?;
 
-    if *position < tokens.len() && tokens[*position].kind == TokenKind::AndAnd {
+    'parse_expr: while *position < tokens.len() && tokens[*position].kind == TokenKind::AndAnd {
         let operator = &tokens[*position];
 
         // Consume`AND` operator
@@ -1803,11 +1807,13 @@ fn parse_logical_and_expression(
 
         // Can perform this operator between LHS and RHS
         if rhs_expected_types.contains(&rhs_type) {
-            return Ok(Box::new(LogicalExpr {
+            lhs = Box::new(LogicalExpr {
                 left: lhs,
                 operator: BinaryLogicalOperator::And,
                 right: rhs,
-            }));
+            });
+
+            continue 'parse_expr;
         }
 
         // Check if can perform the operator with additonal implicit casting
@@ -1818,11 +1824,13 @@ fn parse_logical_and_expression(
                     result_type: expected_type.clone(),
                 });
 
-                return Ok(Box::new(LogicalExpr {
+                lhs = Box::new(LogicalExpr {
                     left: lhs,
                     operator: BinaryLogicalOperator::And,
                     right: casting,
-                }));
+                });
+
+                continue 'parse_expr;
             }
         }
 
@@ -1845,9 +1853,9 @@ fn parse_bitwise_or_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
-    let lhs = parse_bitwise_xor_expression(context, env, tokens, position)?;
+    let mut lhs = parse_bitwise_xor_expression(context, env, tokens, position)?;
 
-    if *position < tokens.len() && tokens[*position].kind == TokenKind::BitwiseOr {
+    'parse_expr: while *position < tokens.len() && tokens[*position].kind == TokenKind::BitwiseOr {
         let operator = &tokens[*position];
 
         // Consume `|` token
@@ -1862,12 +1870,14 @@ fn parse_bitwise_or_expression(
 
         // Can perform this operator between LHS and RHS
         if rhs_expected_types.contains(&rhs_type) {
-            return Ok(Box::new(BitwiseExpr {
+            lhs = Box::new(BitwiseExpr {
                 left: lhs,
                 operator: BinaryBitwiseOperator::Or,
                 right: rhs,
                 result_type: lhs_type.or_op_result_type(&rhs_type),
-            }));
+            });
+
+            continue 'parse_expr;
         }
 
         // Check if can perform the operator with additonal implicit casting
@@ -1878,12 +1888,14 @@ fn parse_bitwise_or_expression(
                     result_type: expected_type.clone(),
                 });
 
-                return Ok(Box::new(BitwiseExpr {
+                lhs = Box::new(BitwiseExpr {
                     left: lhs,
                     operator: BinaryBitwiseOperator::Or,
                     right: casting,
                     result_type: lhs_type.or_op_result_type(&expected_type),
-                }));
+                });
+
+                continue 'parse_expr;
             }
         }
 
@@ -1906,9 +1918,9 @@ fn parse_bitwise_xor_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
-    let lhs = parse_logical_xor_expression(context, env, tokens, position)?;
+    let mut lhs = parse_logical_xor_expression(context, env, tokens, position)?;
 
-    if *position < tokens.len() && tokens[*position].kind == TokenKind::BitwiseXor {
+    'parse_expr: while *position < tokens.len() && tokens[*position].kind == TokenKind::BitwiseXor {
         let operator = &tokens[*position];
 
         // Consume`#` operator
@@ -1923,12 +1935,14 @@ fn parse_bitwise_xor_expression(
 
         // Can perform this operator between LHS and RHS
         if rhs_expected_types.contains(&rhs_type) {
-            return Ok(Box::new(BitwiseExpr {
+            lhs = Box::new(BitwiseExpr {
                 left: lhs,
                 operator: BinaryBitwiseOperator::Xor,
                 right: rhs,
                 result_type: lhs_type.xor_op_result_type(&rhs_type),
-            }));
+            });
+
+            continue 'parse_expr;
         }
 
         // Check if can perform the operator with additonal implicit casting
@@ -1939,12 +1953,14 @@ fn parse_bitwise_xor_expression(
                     result_type: expected_type.clone(),
                 });
 
-                return Ok(Box::new(BitwiseExpr {
+                lhs = Box::new(BitwiseExpr {
                     left: lhs,
                     operator: BinaryBitwiseOperator::Xor,
                     right: casting,
                     result_type: lhs_type.or_op_result_type(&expected_type),
-                }));
+                });
+
+                continue 'parse_expr;
             }
         }
 
@@ -1967,9 +1983,9 @@ fn parse_logical_xor_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
-    let lhs = parse_bitwise_and_expression(context, env, tokens, position)?;
+    let mut lhs = parse_bitwise_and_expression(context, env, tokens, position)?;
 
-    if *position < tokens.len() && tokens[*position].kind == TokenKind::LogicalXor {
+    'parse_expr: while *position < tokens.len() && tokens[*position].kind == TokenKind::LogicalXor {
         let operator = &tokens[*position];
 
         // Consume`XOR` operator
@@ -1984,11 +2000,13 @@ fn parse_logical_xor_expression(
 
         // Can perform this operator between LHS and RHS
         if rhs_expected_types.contains(&rhs_type) {
-            return Ok(Box::new(LogicalExpr {
+            lhs = Box::new(LogicalExpr {
                 left: lhs,
                 operator: BinaryLogicalOperator::Xor,
                 right: rhs,
-            }));
+            });
+
+            continue 'parse_expr;
         }
 
         // Check if can perform the operator with additonal implicit casting
@@ -1999,11 +2017,13 @@ fn parse_logical_xor_expression(
                     result_type: expected_type.clone(),
                 });
 
-                return Ok(Box::new(LogicalExpr {
+                lhs = Box::new(LogicalExpr {
                     left: lhs,
                     operator: BinaryLogicalOperator::Xor,
                     right: casting,
-                }));
+                });
+
+                continue 'parse_expr;
             }
         }
 
@@ -2026,9 +2046,9 @@ fn parse_bitwise_and_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
-    let lhs = parse_equality_expression(context, env, tokens, position)?;
+    let mut lhs = parse_equality_expression(context, env, tokens, position)?;
 
-    if *position < tokens.len() && tokens[*position].kind == TokenKind::BitwiseAnd {
+    'parse_expr: while *position < tokens.len() && tokens[*position].kind == TokenKind::BitwiseAnd {
         let operator = &tokens[*position];
 
         // Consume `&&` token
@@ -2043,12 +2063,14 @@ fn parse_bitwise_and_expression(
 
         // Can perform this operator between LHS and RHS
         if rhs_expected_types.contains(&rhs_type) {
-            return Ok(Box::new(BitwiseExpr {
+            lhs = Box::new(BitwiseExpr {
                 left: lhs,
                 operator: BinaryBitwiseOperator::And,
                 right: rhs,
                 result_type: lhs_type.or_op_result_type(&rhs_type),
-            }));
+            });
+
+            continue 'parse_expr;
         }
 
         // Check if can perform the operator with additonal implicit casting
@@ -2059,12 +2081,14 @@ fn parse_bitwise_and_expression(
                     result_type: expected_type.clone(),
                 });
 
-                return Ok(Box::new(BitwiseExpr {
+                lhs = Box::new(BitwiseExpr {
                     left: lhs,
                     operator: BinaryBitwiseOperator::And,
                     right: casting,
                     result_type: lhs_type.or_op_result_type(&expected_type),
-                }));
+                });
+
+                continue 'parse_expr;
             }
         }
 
@@ -2520,9 +2544,9 @@ fn parse_bitwise_shift_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
-    let lhs = parse_term_expression(context, env, tokens, position)?;
+    let mut lhs = parse_term_expression(context, env, tokens, position)?;
 
-    if *position < tokens.len() && is_bitwise_shift_operator(&tokens[*position]) {
+    'parse_expr: while *position < tokens.len() && is_bitwise_shift_operator(&tokens[*position]) {
         let operator = &tokens[*position];
 
         // Consume `<<` or `>>` operator
@@ -2538,12 +2562,14 @@ fn parse_bitwise_shift_expression(
 
             // Can perform this operator between LHS and RHS
             if rhs_expected_types.contains(&rhs_type) {
-                return Ok(Box::new(BitwiseExpr {
+                lhs = Box::new(BitwiseExpr {
                     left: lhs,
                     operator: BinaryBitwiseOperator::RightShift,
                     right: rhs,
                     result_type: rhs_type.shr_op_result_type(&rhs_type),
-                }));
+                });
+
+                continue 'parse_expr;
             }
 
             // Check if can perform the operator with additonal implicit casting
@@ -2554,12 +2580,14 @@ fn parse_bitwise_shift_expression(
                         result_type: expected_type.clone(),
                     });
 
-                    return Ok(Box::new(BitwiseExpr {
+                    lhs = Box::new(BitwiseExpr {
                         left: lhs,
                         operator: BinaryBitwiseOperator::RightShift,
                         right: casting,
                         result_type: lhs_type.shr_op_result_type(&expected_type),
-                    }));
+                    });
+
+                    continue 'parse_expr;
                 }
             }
 
@@ -2579,12 +2607,14 @@ fn parse_bitwise_shift_expression(
 
             // Can perform this operator between LHS and RHS
             if rhs_expected_types.contains(&rhs_type) {
-                return Ok(Box::new(BitwiseExpr {
+                lhs = Box::new(BitwiseExpr {
                     left: lhs,
                     operator: BinaryBitwiseOperator::LeftShift,
                     right: rhs,
                     result_type: lhs_type.shl_op_result_type(&rhs_type),
-                }));
+                });
+
+                continue 'parse_expr;
             }
 
             // Check if can perform the operator with additonal implicit casting
@@ -2595,12 +2625,14 @@ fn parse_bitwise_shift_expression(
                         result_type: expected_type.clone(),
                     });
 
-                    return Ok(Box::new(BitwiseExpr {
+                    lhs = Box::new(BitwiseExpr {
                         left: lhs,
                         operator: BinaryBitwiseOperator::LeftShift,
                         right: casting,
                         result_type: lhs_type.shr_op_result_type(&expected_type),
-                    }));
+                    });
+
+                    continue 'parse_expr;
                 }
             }
 
@@ -2624,9 +2656,9 @@ fn parse_term_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
-    let lhs = parse_factor_expression(context, env, tokens, position)?;
+    let mut lhs = parse_factor_expression(context, env, tokens, position)?;
 
-    if *position < tokens.len() && is_term_operator(&tokens[*position]) {
+    'parse_expr: while *position < tokens.len() && is_term_operator(&tokens[*position]) {
         let operator = &tokens[*position];
 
         // Consume `+` or `-` operator
@@ -2643,12 +2675,14 @@ fn parse_term_expression(
 
             // Can perform this operator between LHS and RHS
             if rhs_expected_types.contains(&rhs_type) {
-                return Ok(Box::new(ArithmeticExpr {
+                lhs = Box::new(ArithmeticExpr {
                     left: lhs,
                     operator: ArithmeticOperator::Plus,
                     right: rhs,
                     result_type: lhs_type.add_op_result_type(&rhs_type),
-                }));
+                });
+
+                continue 'parse_expr;
             }
 
             // Check if can perform the operator with additonal implicit casting
@@ -2659,12 +2693,14 @@ fn parse_term_expression(
                         result_type: expected_type.clone(),
                     });
 
-                    return Ok(Box::new(ArithmeticExpr {
+                    lhs = Box::new(ArithmeticExpr {
                         left: lhs,
                         operator: ArithmeticOperator::Plus,
                         right: casting,
                         result_type: lhs_type.add_op_result_type(&expected_type),
-                    }));
+                    });
+
+                    continue 'parse_expr;
                 }
             }
 
@@ -2686,12 +2722,13 @@ fn parse_term_expression(
 
             // Can perform this operator between LHS and RHS
             if rhs_expected_types.contains(&rhs_type) {
-                return Ok(Box::new(ArithmeticExpr {
+                lhs = Box::new(ArithmeticExpr {
                     left: lhs,
                     operator: ArithmeticOperator::Minus,
                     right: rhs,
                     result_type: lhs_type.sub_op_result_type(&rhs_type),
-                }));
+                });
+                continue 'parse_expr;
             }
 
             // Check if can perform the operator with additonal implicit casting
@@ -2702,12 +2739,14 @@ fn parse_term_expression(
                         result_type: expected_type.clone(),
                     });
 
-                    return Ok(Box::new(ArithmeticExpr {
+                    lhs = Box::new(ArithmeticExpr {
                         left: lhs,
                         operator: ArithmeticOperator::Minus,
                         right: casting,
                         result_type: lhs_type.sub_op_result_type(&expected_type),
-                    }));
+                    });
+
+                    continue 'parse_expr;
                 }
             }
 
@@ -2731,9 +2770,9 @@ fn parse_factor_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
-    let lhs = parse_like_expression(context, env, tokens, position)?;
+    let mut lhs = parse_like_expression(context, env, tokens, position)?;
 
-    if *position < tokens.len() && is_factor_operator(&tokens[*position]) {
+    'parse_expr: while *position < tokens.len() && is_factor_operator(&tokens[*position]) {
         let operator = &tokens[*position];
 
         // Consume `*`, '/`, '%' or '^` operator
@@ -2750,12 +2789,14 @@ fn parse_factor_expression(
 
             // Can perform this operator between LHS and RHS
             if rhs_expected_types.contains(&rhs_type) {
-                return Ok(Box::new(ArithmeticExpr {
+                lhs = Box::new(ArithmeticExpr {
                     left: lhs,
                     operator: ArithmeticOperator::Star,
                     right: rhs,
                     result_type: lhs_type.mul_op_result_type(&rhs_type),
-                }));
+                });
+
+                continue 'parse_expr;
             }
 
             // Check if can perform the operator with additonal implicit casting
@@ -2766,12 +2807,14 @@ fn parse_factor_expression(
                         result_type: expected_type.clone(),
                     });
 
-                    return Ok(Box::new(ArithmeticExpr {
+                    lhs = Box::new(ArithmeticExpr {
                         left: lhs,
                         operator: ArithmeticOperator::Star,
                         right: casting,
                         result_type: lhs_type.mul_op_result_type(&expected_type),
-                    }));
+                    });
+
+                    continue 'parse_expr;
                 }
             }
 
@@ -2791,12 +2834,14 @@ fn parse_factor_expression(
 
             // Can perform this operator between LHS and RHS
             if rhs_expected_types.contains(&rhs_type) {
-                return Ok(Box::new(ArithmeticExpr {
+                lhs = Box::new(ArithmeticExpr {
                     left: lhs,
                     operator: ArithmeticOperator::Slash,
                     right: rhs,
                     result_type: lhs_type.div_op_result_type(&rhs_type),
-                }));
+                });
+
+                continue 'parse_expr;
             }
 
             // Check if can perform the operator with additonal implicit casting
@@ -2807,12 +2852,14 @@ fn parse_factor_expression(
                         result_type: expected_type.clone(),
                     });
 
-                    return Ok(Box::new(ArithmeticExpr {
+                    lhs = Box::new(ArithmeticExpr {
                         left: lhs,
                         operator: ArithmeticOperator::Slash,
                         right: casting,
                         result_type: lhs_type.div_op_result_type(&expected_type),
-                    }));
+                    });
+
+                    continue 'parse_expr;
                 }
             }
 
@@ -2832,12 +2879,14 @@ fn parse_factor_expression(
 
             // Can perform this operator between LHS and RHS
             if rhs_expected_types.contains(&rhs_type) {
-                return Ok(Box::new(ArithmeticExpr {
+                lhs = Box::new(ArithmeticExpr {
                     left: lhs,
                     operator: ArithmeticOperator::Modulus,
                     right: rhs,
                     result_type: lhs_type.rem_op_result_type(&rhs_type),
-                }));
+                });
+
+                continue 'parse_expr;
             }
 
             // Check if can perform the operator with additonal implicit casting
@@ -2848,12 +2897,14 @@ fn parse_factor_expression(
                         result_type: expected_type.clone(),
                     });
 
-                    return Ok(Box::new(ArithmeticExpr {
+                    lhs = Box::new(ArithmeticExpr {
                         left: lhs,
                         operator: ArithmeticOperator::Modulus,
                         right: casting,
                         result_type: lhs_type.rem_op_result_type(&expected_type),
-                    }));
+                    });
+
+                    continue 'parse_expr;
                 }
             }
 
@@ -2872,12 +2923,14 @@ fn parse_factor_expression(
             let rhs_expected_types = lhs_type.can_perform_caret_op_with();
 
             if rhs_expected_types.contains(&rhs_type) {
-                return Ok(Box::new(ArithmeticExpr {
+                lhs = Box::new(ArithmeticExpr {
                     left: lhs,
                     operator: ArithmeticOperator::Exponentiation,
                     right: rhs,
                     result_type: lhs_type.caret_op_result_type(&rhs_type),
-                }));
+                });
+
+                continue 'parse_expr;
             }
 
             // Check if can perform the operator with additonal implicit casting
@@ -2888,12 +2941,14 @@ fn parse_factor_expression(
                         result_type: expected_type.clone(),
                     });
 
-                    return Ok(Box::new(ArithmeticExpr {
+                    lhs = Box::new(ArithmeticExpr {
                         left: lhs,
                         operator: ArithmeticOperator::Exponentiation,
                         right: casting,
                         result_type: lhs_type.caret_op_result_type(&expected_type),
-                    }));
+                    });
+
+                    continue 'parse_expr;
                 }
             }
 
@@ -3005,9 +3060,10 @@ fn parse_index_or_slice_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
-    let lhs = parse_prefix_unary_expression(context, env, tokens, position)?;
+    let mut lhs = parse_prefix_unary_expression(context, env, tokens, position)?;
 
-    if *position < tokens.len() && tokens[*position].kind == TokenKind::LeftBracket {
+    'parse_expr: while *position < tokens.len() && tokens[*position].kind == TokenKind::LeftBracket
+    {
         let operator = &tokens[*position];
 
         // Consume Left Bracket `[`
@@ -3061,12 +3117,14 @@ fn parse_index_or_slice_expression(
                     .as_boxed());
             }
 
-            return Ok(Box::new(SliceExpr {
+            lhs = Box::new(SliceExpr {
                 collection: lhs,
                 start: None,
                 end: Some(slice_end),
                 result_type: lhs_type.clone(),
-            }));
+            });
+
+            continue 'parse_expr;
         }
 
         let index = parse_prefix_unary_expression(context, env, tokens, position)?;
@@ -3137,12 +3195,14 @@ fn parse_index_or_slice_expression(
                     .as_boxed());
             }
 
-            return Ok(Box::new(SliceExpr {
+            lhs = Box::new(SliceExpr {
                 collection: lhs,
                 start: Some(index),
                 end: Some(slice_end),
                 result_type: lhs_type.clone(),
-            }));
+            });
+
+            continue 'parse_expr;
         }
 
         // Index Expression
@@ -3174,12 +3234,15 @@ fn parse_index_or_slice_expression(
             };
 
         let result_type = lhs_type.index_op_result_type(&index_type);
-        return Ok(Box::new(IndexExpr {
+
+        lhs = Box::new(IndexExpr {
             collection: lhs,
             element_type: array_element_type.clone(),
             index,
             result_type,
-        }));
+        });
+
+        continue 'parse_expr;
     }
 
     Ok(lhs)
@@ -3226,7 +3289,7 @@ fn parse_prefix_unary_expression(
             if rhs_type.can_perform_neg_op() {
                 return Ok(Box::new(UnaryExpr {
                     right: rhs,
-                    operator: PrefixUnaryOperator::Minus,
+                    operator: PrefixUnaryOperator::Negative,
                     result_type: rhs_type.neg_op_result_type(),
                 }));
             }

@@ -294,7 +294,7 @@ fn evaluate_prefix_unary(
 ) -> Result<Box<dyn Value>, String> {
     let rhs = evaluate_expression(env, &expr.right, titles, object)?;
     match expr.operator {
-        PrefixUnaryOperator::Minus => rhs.perform_neg_op(),
+        PrefixUnaryOperator::Negative => rhs.perform_neg_op(),
         PrefixUnaryOperator::Bang => rhs.perform_bang_op(),
         PrefixUnaryOperator::Not => rhs.perform_not_op(),
     }
