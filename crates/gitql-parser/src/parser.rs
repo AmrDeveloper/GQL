@@ -3345,29 +3345,37 @@ fn parse_function_call_expression(
             // Check if this function is a Standard library functions
             if env.is_std_function(function_name.as_str()) {
                 let mut arguments = parse_arguments_expressions(context, env, tokens, position)?;
-                let signature = env.std_signature(function_name.as_str()).unwrap();
+                if let Some(signature) = env.std_signature(function_name.as_str()) {
+                    check_function_call_arguments(
+                        &mut arguments,
+                        &signature.parameters,
+                        function_name.to_string(),
+                        function_name_location,
+                    )?;
 
-                check_function_call_arguments(
-                    &mut arguments,
-                    &signature.parameters,
-                    function_name.to_string(),
-                    function_name_location,
-                )?;
+                    let return_type = resolve_dynamic_data_type(
+                        &signature.parameters,
+                        &arguments,
+                        &signature.return_type,
+                    );
 
-                let return_type = resolve_dynamic_data_type(
-                    &signature.parameters,
-                    &arguments,
-                    &signature.return_type,
-                );
+                    // Register function name with return type after resolving it
+                    env.define(function_name.to_string(), return_type.clone());
 
-                // Register function name with return type after resolving it
-                env.define(function_name.to_string(), return_type.clone());
+                    return Ok(Box::new(CallExpr {
+                        function_name: function_name.to_string(),
+                        arguments,
+                        return_type,
+                    }));
+                }
 
-                return Ok(Box::new(CallExpr {
-                    function_name: function_name.to_string(),
-                    arguments,
-                    return_type,
-                }));
+                // Function has no signature registered on the signature table
+                return Err(Diagnostic::error(&format!(
+                    "Can't find signature for function with name {}",
+                    function_name
+                ))
+                .with_location(function_name_location)
+                .as_boxed());
             }
 
             // Check if this function is an Aggregation functions
@@ -3385,38 +3393,46 @@ fn parse_function_call_expression(
                     .as_boxed());
                 }
 
-                let signature = env.aggregation_signature(function_name.as_str()).unwrap();
+                if let Some(signature) = env.aggregation_signature(function_name.as_str()) {
+                    // Perform type checking and implicit casting if needed for function arguments
+                    check_function_call_arguments(
+                        &mut arguments,
+                        &signature.parameters,
+                        function_name.to_string(),
+                        function_name_location,
+                    )?;
 
-                // Perform type checking and implicit casting if needed for function arguments
-                check_function_call_arguments(
-                    &mut arguments,
-                    &signature.parameters,
-                    function_name.to_string(),
-                    function_name_location,
-                )?;
+                    let column_name = generate_column_name();
+                    context.hidden_selections.push(column_name.to_string());
 
-                let column_name = generate_column_name();
-                context.hidden_selections.push(column_name.to_string());
+                    let return_type = resolve_dynamic_data_type(
+                        &signature.parameters,
+                        &arguments,
+                        &signature.return_type,
+                    );
 
-                let return_type = resolve_dynamic_data_type(
-                    &signature.parameters,
-                    &arguments,
-                    &signature.return_type,
-                );
+                    // Register aggregation generated name with return type after resolving it
+                    env.define(column_name.to_string(), return_type.clone());
 
-                // Register aggregation generated name with return type after resolving it
-                env.define(column_name.to_string(), return_type.clone());
+                    context.aggregations.insert(
+                        column_name.clone(),
+                        AggregateValue::Function(function_name.to_string(), arguments),
+                    );
 
-                context.aggregations.insert(
-                    column_name.clone(),
-                    AggregateValue::Function(function_name.to_string(), arguments),
-                );
+                    // Return a Symbol that reference to the aggregation function generated name
+                    return Ok(Box::new(SymbolExpr {
+                        value: column_name,
+                        result_type: return_type,
+                    }));
+                }
 
-                // Return a Symbol that reference to the aggregation function generated name
-                return Ok(Box::new(SymbolExpr {
-                    value: column_name,
-                    result_type: return_type,
-                }));
+                // Aggregation Function has no signature registered on the signature table
+                return Err(Diagnostic::error(&format!(
+                    "Can't find signature for Aggregation function with name {}",
+                    function_name
+                ))
+                .with_location(function_name_location)
+                .as_boxed());
             }
 
             // Report that this function name is not standard or aggregation
