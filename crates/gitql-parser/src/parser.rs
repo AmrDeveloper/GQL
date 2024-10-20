@@ -771,7 +771,7 @@ fn parse_from_option(
         // Register the table
         tables_to_select_from.push(table_name.to_string());
         context.selected_tables.push(table_name.to_string());
-        register_current_table_fields_types(env, table_name);
+        register_current_table_fields_types(env, table_name)?;
 
         // Consume table name
         *position += 1;
@@ -842,7 +842,7 @@ fn parse_from_option(
 
             tables_to_select_from.push(other_table_name.to_string());
             context.selected_tables.push(other_table_name.to_string());
-            register_current_table_fields_types(env, other_table_name);
+            register_current_table_fields_types(env, other_table_name)?;
 
             // Consume Other table name
             *position += 1;
@@ -4027,12 +4027,29 @@ fn expression_literal(expression: &Box<dyn Expr>) -> Option<String> {
 }
 
 #[inline(always)]
-fn register_current_table_fields_types(env: &mut Environment, table_name: &str) {
+fn register_current_table_fields_types(
+    env: &mut Environment,
+    table_name: &str,
+) -> Result<(), Box<Diagnostic>> {
     let table_fields_names = &env.schema.tables_fields_names[table_name].clone();
     for field_name in table_fields_names {
-        let field_type = env.schema.tables_fields_types[field_name].clone();
-        env.define(field_name.to_string(), field_type);
+        if env.schema.tables_fields_types.contains_key(field_name) {
+            let field_type = env.schema.tables_fields_types[field_name].clone();
+            env.define(field_name.to_string(), field_type);
+            continue;
+        }
+
+        return Err(Diagnostic::error(
+            &format!(
+                "Column name {} in table {} has no type registered in the schema",
+                field_name, table_name
+            )
+            .to_string(),
+        )
+        .as_boxed());
     }
+
+    Ok(())
 }
 
 #[inline(always)]
