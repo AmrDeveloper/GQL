@@ -42,6 +42,7 @@ use gitql_core::values::null::NullValue;
 use gitql_core::values::text::TextValue;
 
 use regex::Regex;
+use regex::RegexBuilder;
 use std::string::String;
 
 #[allow(clippy::borrowed_box)]
@@ -379,7 +380,12 @@ fn evaluate_like(
                     .replace('%', ".*")
                     .replace('_', ".")
             );
-            let regex_result = Regex::new(pattern);
+
+            let regex_result = RegexBuilder::new(pattern)
+                .multi_line(true)
+                .unicode(true)
+                .build();
+
             if regex_result.is_err() {
                 return Err(regex_result.err().unwrap().to_string());
             }
@@ -411,7 +417,11 @@ fn evaluate_regex(
                     .replace('_', ".")
             );
 
-            let regex_result = Regex::new(pattern);
+            let regex_result = RegexBuilder::new(pattern)
+                .multi_line(true)
+                .unicode(true)
+                .build();
+
             if regex_result.is_err() {
                 return Err(regex_result.err().unwrap().to_string());
             }
