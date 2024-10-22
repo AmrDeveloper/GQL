@@ -9,7 +9,7 @@ repo_name: Amrdeveloper/GQL
 repo_url: https://github.com/amrdeveloper/GQL
 
 # Copyright
-copyright: Copyright &copy; 2023 Amr Hesham
+copyright: Copyright &copy; 2024 Amr Hesham
 
 # Configuration
 theme:
@@ -41,13 +41,30 @@ theme:
         name: Switch to light mode
 
   features:
+    # Content features
     - content.code.annotate
     - content.code.copy
+    - content.code.select
     - content.action.edit
+    - content.tooltips
+
+    # Navigation features
+    - navigation.footer
+    - navigation.indexes
+    - navigation.sections
+    - navigation.tabs
+    - navigation.top
+    - navigation.tracking
+
+    # Search features
+    - search.suggest
+    - search.highlight
+    - search.share
 
   plugins:
     - optimize
     - offline
+    - search
 
 # Extensions
 markdown_extensions:
@@ -58,16 +75,21 @@ markdown_extensions:
       pygments_lang_class: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
 
 # Page tree
 nav:
-  - Home: index.md
-  - Setup: setup.md
-  - Structure:
+  - GitQL:
+    - Setup: setup.md
+    - Structure:
       - Tables: structure/tables.md
       - Types: structure/types.md
-  - Statement:
+    - Statements:
+      - "statement/index.md"
       - Variables: statement/variables.md
       - Do: statement/do.md
       - Select: statement/select.md
@@ -76,12 +98,14 @@ nav:
       - Having: statement/having.md
       - Order by: statement/order_by.md
       - Limit & Offset: statement/limit_and_offset.md
-  - Expression:
+    - Expression:
+      - "expression/index.md"
       - Array: expression/array.md
       - Unary: expression/unary.md
       - Binary: expression/binary.md
       - Case: expression/case.md
-  - Functions and Operators:
+    - STD Functions and Operators:
+      - "functions/index.md"
       - Logical: functions/logical.md
       - Comparison: functions/comparison.md
       - Mathematical: functions/math.md
@@ -92,8 +116,15 @@ nav:
       - Range: functions/range.md
       - Other: functions/other.md
       - Aggregate Functions: functions/aggregations.md
-  - GitQL Functions: gitql_functions.md
-  - GitQL SDK: sdk.md
+    - GitQL Functions: gitql_functions.md
+  - GitQL SDK:
+    - "sdk/index.md"
+    - Schema: sdk/schema.md
+    - Data Provider: sdk/provider.md
+    - Functions: sdk/functions.md
+    - Types: sdk/types.md
+    - Values: sdk/values.md
+    - Start the SDK: sdk/assemble.md
 
 extra:
   social:

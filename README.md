@@ -66,17 +66,26 @@ SELECT * FROM tags OFFSET 1 LIMIT 1
 
 ---
 
-## Documentation:
+## GitQL Documentation
 
-  - [Full Documentation](https://amrdeveloper.github.io/GQL/)
-  - [Install or Build](docs/setup.md)
-  - [Tables](docs/structure/tables.md)
-  - [Types](docs/structure/types.md)
-  - [Statements](docs/statement)
-  - [Expressions](docs/expression)
-  - [Functions and Operators](docs/functions)
-  - [Aggregations](docs/function/aggregations.md)
-  - [GitQL SDK](docs/sdk.md)
+- [Full Documentation](https://amrdeveloper.github.io/GQL/)
+- [Install or Build](https://amrdeveloper.github.io/GQL/setup)
+- [Tables](https://amrdeveloper.github.io/GQL/structure/tables)
+- [Types](https://amrdeveloper.github.io/GQL/structure/types)
+- [Statements](https://amrdeveloper.github.io/GQL/statement)
+- [Expressions](https://amrdeveloper.github.io/GQL/expression)
+- [Functions and Operators](https://amrdeveloper.github.io/GQL/functions)
+- [Aggregations](https://amrdeveloper.github.io/GQL/functions/aggregations)
+
+## GitQL SDK Documentations
+
+- [GitQL SDK](https://amrdeveloper.github.io/GQL/sdk/)
+- [Customize the Data Schema](https://amrdeveloper.github.io/GQL/sdk/schema.md).
+- [Customize the Data Provider](https://amrdeveloper.github.io/GQL/sdk/provider.md).
+- [Customize the Standard library](https://amrdeveloper.github.io/GQL/sdk/functions.md).
+- [Customize the Type system](https://amrdeveloper.github.io/GQL/sdk/types.md).
+- [Customize the Value system](https://amrdeveloper.github.io/GQL/sdk/values.md).
+- [Connect Components together](https://amrdeveloper.github.io/GQL/sdk/assemble.md).
 
 ---
 
