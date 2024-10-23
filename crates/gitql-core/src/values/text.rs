@@ -64,7 +64,7 @@ impl Value for TextValue {
             return Ok(string_literal_to_date(&self.value));
         }
 
-        if target_type.is_datetime() {
+        if target_type.is_date_time() {
             return Ok(string_literal_to_date_time(&self.value));
         }
 

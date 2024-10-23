@@ -33,288 +33,441 @@ pub trait DataType: DynClone {
 
     fn as_any(&self) -> &dyn Any;
 
+    /// Return a list of types that it's possible to perform `+` operator with
+    /// between current DataType and any one of them
     fn can_perform_add_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
+    /// Return the expected type after perform `=` operator between current type and argument type
+    ///
+    /// Note that you don't need to check again that the argument type is possible to perform operator with
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn add_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
+    /// Return a list of types that it's possible to perform `-` operator with
+    /// between current DataType and any one of them
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn can_perform_sub_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
+    /// Return the expected type after perform `-` operator between current type and argument type
+    ///
+    /// Note that you don't need to check again that the argument type is possible to perform operator with
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn sub_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
+    /// Return a list of types that it's possible to perform `*` operator with
+    /// between current DataType and any one of them
     fn can_perform_mul_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
+    /// Return the expected type after perform `*` operator between current type and argument type
+    ///
+    /// Note that you don't need to check again that the argument type is possible to perform operator with
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn mul_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
-    #[allow(unused_variables)]
-    #[allow(clippy::borrowed_box)]
+    /// Return a list of types that it's possible to perform `/` operator with
+    /// between current DataType and any one of them
     fn can_perform_div_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
+    /// Return the expected type after perform `/` operator between current type and argument type
+    ///
+    /// Note that you don't need to check again that the argument type is possible to perform operator with
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn div_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
+    /// Return a list of types that it's possible to perform `%` operator with
+    /// between current DataType and any one of them
     fn can_perform_rem_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
+    /// Return the expected type after perform `&` operator between current type and argument type
+    ///
+    /// Note that you don't need to check again that the argument type is possible to perform operator with
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn rem_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
+    /// Return a list of types that it's possible to perform `^` operator with
+    /// between current DataType and any one of them
     fn can_perform_caret_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
+    /// Return the expected type after perform `^` operator between current type and argument type
+    ///
+    /// Note that you don't need to check again that the argument type is possible to perform operator with
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn caret_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
+    /// Return a list of types that it's possible to perform `|` operator with
+    /// between current DataType and any one of them
     fn can_perform_or_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
+    /// Return the expected type after perform `|` operator between current type and argument type
+    ///
+    /// Note that you don't need to check again that the argument type is possible to perform operator with
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn or_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
+    /// Return a list of types that it's possible to perform `&` operator with
+    /// between current DataType and any one of them
     fn can_perform_and_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
+    /// Return the expected type after perform `&` operator between current type and argument type
+    ///
+    /// Note that you don't need to check again that the argument type is possible to perform operator with
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn and_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
+    /// Return a list of types that it's possible to perform `#` operator with
+    /// between current DataType and any one of them
     fn can_perform_xor_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
+    /// Return the expected type after perform `#` operator between current type and argument type
+    ///
+    /// Note that you don't need to check again that the argument type is possible to perform operator with
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn xor_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
+    /// Return a list of types that it's possible to perform `<<` operator with
+    /// between current DataType and any one of them
     fn can_perform_shl_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
+    /// Return the expected type after perform `<<` operator between current type and argument type
+    ///
+    /// Note that you don't need to check again that the argument type is possible to perform operator with
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn shl_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
+    /// Return a list of types that it's possible to perform `>>` operator with
+    /// between current DataType and any one of them
     fn can_perform_shr_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
+    /// Return the expected type after perform `>>` operator between current type and argument type
+    ///
+    /// Note that you don't need to check again that the argument type is possible to perform operator with
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn shr_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
+    /// Return a list of types that it's possible to perform `||`, 'OR' operator with
+    /// between current DataType and any one of them
     fn can_perform_logical_or_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
+    /// Return the expected type after perform `||`, 'OR' operator between current type and argument type
+    ///
+    /// Note that you don't need to check again that the argument type is possible to perform operator with
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn logical_or_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
+    /// Return a list of types that it's possible to perform `&&`, 'AND' operator with
+    /// between current DataType and any one of them
     fn can_perform_logical_and_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
+    /// Return the expected type after perform `&&`, 'AND' operator between current type and argument type
+    ///
+    /// Note that you don't need to check again that the argument type is possible to perform operator with
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn logical_and_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
+    /// Return a list of types that it's possible to perform `XOR' operator with
+    /// between current DataType and any one of them
     fn can_perform_logical_xor_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
+    /// Return the expected type after perform 'XOR' operator between current type and argument type
+    ///
+    /// Note that you don't need to check again that the argument type is possible to perform operator with
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn logical_xor_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
+    /// Return a list of types that it's possible to perform `[T]' operator with
+    /// between current DataType and any one of them
     fn can_perform_index_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
+    /// Return the expected type after perform '[]' operator on current type
+    ///
+    /// * `other` - The index type
+    ///
+    /// Note that you don't need to check again that the argument type is possible to perform operator with
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn index_op_result_type(&self, other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
+    /// Return true if this type support Slice operator with
     fn can_perform_slice_op(&self) -> bool {
         false
     }
 
+    /// Return a list of types that it's possible to perform `[T : T]' operator with
+    /// between current DataType and any one of them
     fn can_perform_slice_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
+    /// Return a list of types that it's possible to perform `=' operator with
+    /// between current DataType and any one of them
+    ///
+    /// No need to define the result type, it always BoolType
     fn can_perform_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
+    /// Return a list of types that it's possible to perform `!=' operator with
+    /// between current DataType and any one of them
+    ///
+    /// No need to define the result type, it always BoolType
     fn can_perform_bang_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
+    /// Return a list of types that it's possible to perform `<=>' operator with
+    /// between current DataType and any one of them
+    ///
+    /// No need to define the result type, it always BoolType
     fn can_perform_null_safe_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
+    /// Return a list of types that it's possible to perform `>' operator with
+    /// between current DataType and any one of them
+    ///
+    /// No need to define the result type, it always BoolType
     fn can_perform_gt_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
+    /// Return a list of types that it's possible to perform `>=' operator with
+    /// between current DataType and any one of them
+    ///
+    /// No need to define the result type, it always BoolType
     fn can_perform_gte_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
+    /// Return a list of types that it's possible to perform `<' operator with
+    /// between current DataType and any one of them
+    ///
+    /// No need to define the result type, it always BoolType
     fn can_perform_lt_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
+    /// Return a list of types that it's possible to perform `=<' operator with
+    /// between current DataType and any one of them
+    ///
+    /// No need to define the result type, it always BoolType
     fn can_perform_lte_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
+    /// Return a list of types that it's possible to perform unary `NOT' operator with
+    /// between current DataType and any one of them
     fn can_perform_not_op(&self) -> bool {
         false
     }
 
+    /// Return the expected type after perform unary `NOT' operator on current type
+    ///
+    /// Note that you don't need to check again that the argument type is possible to perform operator with
     fn not_op_result_type(&self) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
+    /// Return a list of types that it's possible to perform unary `-' operator with
+    /// between current DataType and any one of them
     fn can_perform_neg_op(&self) -> bool {
         false
     }
 
+    /// Return the expected type after perform unary `-' operator on current type
+    ///
+    /// Note that you don't need to check again that the argument type is possible to perform operator with
     fn neg_op_result_type(&self) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
+    /// Return a list of types that it's possible to perform unary `!' operator with
+    /// between current DataType and any one of them
     fn can_perform_bang_op(&self) -> bool {
         false
     }
 
+    /// Return the expected type after perform unary `!' operator on current type
+    ///
+    /// Note that you don't need to check again that the argument type is possible to perform operator with
     fn bang_op_result_type(&self) -> Box<dyn DataType> {
         Box::new(NullType)
     }
 
+    /// Return a list of types that it's possible to perform unary `@>' operator with
+    /// between current DataType and any one of them
+    ///
+    /// No need to define the result type, it always BoolType
     fn can_perform_contains_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
+    /// Return a list of types that it's possible to perform unary `<@' operator with
+    /// between current DataType and any one of them
+    ///
+    /// No need to define the result type, it always BoolType
     fn can_perform_contained_by_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
+    /// Return true if this Expression can be casted to the current type without any evaluation
+    ///
+    /// For example casting Text with specific format to Date or Time
+    ///
+    /// The result type is equal to the current type
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn has_implicit_cast_from(&self, expr: &Box<dyn Expr>) -> bool {
         false
     }
 
+    /// Return a list of types that it's possible to perform `Cast' operator with
+    ///
+    /// For example casting column with float value to integer or verse versa
+    ///
+    /// The result type is equal to the current type
     fn can_perform_explicit_cast_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 }
 
 impl dyn DataType {
+    /// Return tue if this type is [`AnyType`]
     pub fn is_any(&self) -> bool {
         self.as_any().downcast_ref::<AnyType>().is_some()
     }
 
+    /// Return tue if this type is [`TextType`]
     pub fn is_text(&self) -> bool {
         self.as_any().downcast_ref::<TextType>().is_some()
     }
 
+    /// Return tue if this type is [`IntType`]
     pub fn is_int(&self) -> bool {
         self.as_any().downcast_ref::<IntType>().is_some()
     }
 
+    /// Return tue if this type is [`FloatType`]
     pub fn is_float(&self) -> bool {
         self.as_any().downcast_ref::<FloatType>().is_some()
     }
 
+    /// Return tue if this type is [`IntType`] or [`FloatType`]
     pub fn is_number(&self) -> bool {
         self.is_int() || self.is_float()
     }
 
+    /// Return tue if this type is [`BoolType`]
     pub fn is_bool(&self) -> bool {
         self.as_any().downcast_ref::<BoolType>().is_some()
     }
 
+    /// Return tue if this type is [`DateType`]
     pub fn is_date(&self) -> bool {
         self.as_any().downcast_ref::<DateType>().is_some()
     }
 
+    /// Return tue if this type is [`TimeType`]
     pub fn is_time(&self) -> bool {
         self.as_any().downcast_ref::<TimeType>().is_some()
     }
 
-    pub fn is_datetime(&self) -> bool {
+    /// Return tue if this type is [`DateTimeType`]
+    pub fn is_date_time(&self) -> bool {
         self.as_any().downcast_ref::<DateTimeType>().is_some()
     }
 
+    /// Return tue if this type is [`ArrayType`]
     pub fn is_array(&self) -> bool {
         self.as_any().downcast_ref::<ArrayType>().is_some()
     }
 
+    /// Return tue if this type is [`RangeType`]
     pub fn is_range(&self) -> bool {
         self.as_any().downcast_ref::<RangeType>().is_some()
     }
 
+    /// Return tue if this type is [`VariantType`]
     pub fn is_variant(&self) -> bool {
         self.as_any().downcast_ref::<VariantType>().is_some()
     }
 
+    /// Return tue if this type is [`VariantType`]
+    /// and applying the matcher function is return true on one of the variants
     pub fn is_variant_with(&self, matcher: fn(&Box<dyn DataType>) -> bool) -> bool {
         if let Some(variant_type) = self.as_any().downcast_ref::<VariantType>() {
             for variant in variant_type.variants.iter() {
@@ -326,6 +479,7 @@ impl dyn DataType {
         false
     }
 
+    /// Return tue if this type is [`VariantType`] and contain specific type as one of it variants
     #[allow(clippy::borrowed_box)]
     pub fn is_variant_contains(&self, other: &Box<dyn DataType>) -> bool {
         if let Some(variant_type) = self.as_any().downcast_ref::<VariantType>() {
@@ -334,18 +488,22 @@ impl dyn DataType {
         false
     }
 
+    /// Return tue if this type is [`OptionType`]
     pub fn is_optional(&self) -> bool {
         self.as_any().downcast_ref::<OptionType>().is_some()
     }
 
+    /// Return tue if this type is [`VariantType`]
     pub fn is_varargs(&self) -> bool {
         self.as_any().downcast_ref::<VariantType>().is_some()
     }
 
+    /// Return tue if this type is [`UndefType`]
     pub fn is_undefined(&self) -> bool {
         self.as_any().downcast_ref::<UndefType>().is_some()
     }
 
+    /// Return tue if this type is [`NullType`]
     pub fn is_null(&self) -> bool {
         self.as_any().downcast_ref::<NullType>().is_some()
     }
