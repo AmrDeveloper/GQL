@@ -235,7 +235,7 @@ pub fn date_extract_date(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
     if argument_type.is_date() {
         return inputs[0].clone();
     }
-    let timestamp = inputs[0].as_datetime().unwrap();
+    let timestamp = inputs[0].as_date_time().unwrap();
     Box::new(DateValue { value: timestamp })
 }
 
@@ -320,7 +320,7 @@ pub fn date_monthname(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
 }
 
 pub fn date_hour(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
-    let date = inputs[0].as_datetime().unwrap();
+    let date = inputs[0].as_date_time().unwrap();
     let date_time = DateTime::from_timestamp(date, 0);
     let dt = date_time.unwrap().time();
     Box::new(IntValue {
@@ -329,7 +329,7 @@ pub fn date_hour(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
 }
 
 pub fn date_minute(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
-    let date = inputs[0].as_datetime().unwrap();
+    let date = inputs[0].as_date_time().unwrap();
     let date_time = DateTime::from_timestamp(date, 0);
     let dt = date_time.unwrap().time();
     Box::new(IntValue {

@@ -64,7 +64,7 @@ impl Value for ArrayValue {
         self
     }
 
-    fn perform_index_op(&self, index: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    fn index_op(&self, index: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(index) = index.as_any().downcast_ref::<IntValue>() {
             if (index.value < 1) || (index.value as usize > self.values.len()) {
                 return Err("Array Index must be between 1 and length of Array".to_string());
@@ -76,7 +76,7 @@ impl Value for ArrayValue {
         Err("Unexpected Array Index type".to_string())
     }
 
-    fn perform_slice_op(
+    fn slice_op(
         &self,
         start: &Option<Box<dyn Value>>,
         end: &Option<Box<dyn Value>>,
@@ -115,7 +115,7 @@ impl Value for ArrayValue {
         }))
     }
 
-    fn perform_logical_or_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    fn logical_or_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_array) = other.as_any().downcast_ref::<ArrayValue>() {
             for value in self.values.iter() {
                 for other_value in other_array.values.iter() {
@@ -129,7 +129,7 @@ impl Value for ArrayValue {
         Err("Unexpected Array overlap type".to_string())
     }
 
-    fn perform_contains_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    fn contains_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         for value in self.values.iter() {
             if value.equals(other) {
                 return Ok(Box::new(BoolValue { value: true }));

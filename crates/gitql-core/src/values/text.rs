@@ -43,7 +43,7 @@ impl Value for TextValue {
         self
     }
 
-    fn perform_eq_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    fn eq_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_text) = other.as_any().downcast_ref::<TextValue>() {
             let are_equals = self.value == other_text.value;
             return Ok(Box::new(BoolValue { value: are_equals }));
@@ -51,7 +51,7 @@ impl Value for TextValue {
         Err("Unexpected type to perform `=` with".to_string())
     }
 
-    fn perform_cast_op(&self, target_type: &Box<dyn DataType>) -> Result<Box<dyn Value>, String> {
+    fn cast_op(&self, target_type: &Box<dyn DataType>) -> Result<Box<dyn Value>, String> {
         if target_type.is_bool() {
             return Ok(string_literal_to_boolean(&self.value));
         }

@@ -261,7 +261,7 @@ fn evaluate_collection_index(
 ) -> Result<Box<dyn Value>, String> {
     let array = evaluate_expression(env, &expr.collection, titles, object)?;
     let index = evaluate_expression(env, &expr.index, titles, object)?;
-    array.perform_index_op(&index)
+    array.index_op(&index)
 }
 
 fn evaluate_collection_slice(
@@ -284,7 +284,7 @@ fn evaluate_collection_slice(
         None
     };
 
-    array.perform_slice_op(&start, &end)
+    array.slice_op(&start, &end)
 }
 
 fn evaluate_prefix_unary(
@@ -295,9 +295,9 @@ fn evaluate_prefix_unary(
 ) -> Result<Box<dyn Value>, String> {
     let rhs = evaluate_expression(env, &expr.right, titles, object)?;
     match expr.operator {
-        PrefixUnaryOperator::Negative => rhs.perform_neg_op(),
-        PrefixUnaryOperator::Bang => rhs.perform_bang_op(),
-        PrefixUnaryOperator::Not => rhs.perform_not_op(),
+        PrefixUnaryOperator::Negative => rhs.neg_op(),
+        PrefixUnaryOperator::Bang => rhs.bang_op(),
+        PrefixUnaryOperator::Not => rhs.not_op(),
     }
 }
 
@@ -311,12 +311,12 @@ fn evaluate_arithmetic(
     let rhs = evaluate_expression(env, &expr.right, titles, object)?;
 
     match expr.operator {
-        ArithmeticOperator::Plus => lhs.perform_add_op(&rhs),
-        ArithmeticOperator::Minus => lhs.perform_sub_op(&rhs),
-        ArithmeticOperator::Star => lhs.perform_mul_op(&rhs),
-        ArithmeticOperator::Slash => lhs.perform_div_op(&rhs),
-        ArithmeticOperator::Modulus => lhs.perform_rem_op(&rhs),
-        ArithmeticOperator::Exponentiation => lhs.perform_caret_op(&rhs),
+        ArithmeticOperator::Plus => lhs.add_op(&rhs),
+        ArithmeticOperator::Minus => lhs.sub_op(&rhs),
+        ArithmeticOperator::Star => lhs.mul_op(&rhs),
+        ArithmeticOperator::Slash => lhs.div_op(&rhs),
+        ArithmeticOperator::Modulus => lhs.rem_op(&rhs),
+        ArithmeticOperator::Exponentiation => lhs.caret_op(&rhs),
     }
 }
 
@@ -330,13 +330,13 @@ fn evaluate_comparison(
     let rhs = evaluate_expression(env, &expr.right, titles, object)?;
 
     match expr.operator {
-        ComparisonOperator::Greater => lhs.perform_gt_op(&rhs),
-        ComparisonOperator::GreaterEqual => lhs.perform_gte_op(&rhs),
-        ComparisonOperator::Less => lhs.perform_lt_op(&rhs),
-        ComparisonOperator::LessEqual => lhs.perform_lte_op(&rhs),
-        ComparisonOperator::Equal => lhs.perform_eq_op(&rhs),
-        ComparisonOperator::NotEqual => lhs.perform_bang_eq_op(&rhs),
-        ComparisonOperator::NullSafeEqual => lhs.perform_null_safe_eq_op(&rhs),
+        ComparisonOperator::Greater => lhs.gt_op(&rhs),
+        ComparisonOperator::GreaterEqual => lhs.gte_op(&rhs),
+        ComparisonOperator::Less => lhs.lt_op(&rhs),
+        ComparisonOperator::LessEqual => lhs.lte_op(&rhs),
+        ComparisonOperator::Equal => lhs.eq_op(&rhs),
+        ComparisonOperator::NotEqual => lhs.bang_eq_op(&rhs),
+        ComparisonOperator::NullSafeEqual => lhs.null_safe_eq_op(&rhs),
     }
 }
 
@@ -348,7 +348,7 @@ fn evaluate_contains(
 ) -> Result<Box<dyn Value>, String> {
     let lhs = evaluate_expression(env, &expr.left, titles, object)?;
     let rhs = evaluate_expression(env, &expr.right, titles, object)?;
-    lhs.perform_contains_op(&rhs)
+    lhs.contains_op(&rhs)
 }
 
 fn evaluate_contained_by(
@@ -359,7 +359,7 @@ fn evaluate_contained_by(
 ) -> Result<Box<dyn Value>, String> {
     let lhs = evaluate_expression(env, &expr.left, titles, object)?;
     let rhs = evaluate_expression(env, &expr.right, titles, object)?;
-    lhs.perform_contained_by_op(&rhs)
+    lhs.contained_by_op(&rhs)
 }
 
 fn evaluate_like(
@@ -474,9 +474,9 @@ fn evaluate_logical(
     let lhs = evaluate_expression(env, &expr.left, titles, object)?;
     let rhs = evaluate_expression(env, &expr.right, titles, object)?;
     match expr.operator {
-        BinaryLogicalOperator::And => lhs.perform_logical_and_op(&rhs),
-        BinaryLogicalOperator::Or => lhs.perform_logical_or_op(&rhs),
-        BinaryLogicalOperator::Xor => lhs.perform_logical_xor_op(&rhs),
+        BinaryLogicalOperator::And => lhs.logical_and_op(&rhs),
+        BinaryLogicalOperator::Or => lhs.logical_or_op(&rhs),
+        BinaryLogicalOperator::Xor => lhs.logical_xor_op(&rhs),
     }
 }
 
@@ -490,11 +490,11 @@ fn evaluate_bitwise(
     let rhs = evaluate_expression(env, &expr.right, titles, object)?;
 
     match expr.operator {
-        BinaryBitwiseOperator::Or => lhs.perform_or_op(&rhs),
-        BinaryBitwiseOperator::And => lhs.perform_and_op(&rhs),
-        BinaryBitwiseOperator::Xor => lhs.perform_xor_op(&rhs),
-        BinaryBitwiseOperator::RightShift => lhs.perform_shr_op(&rhs),
-        BinaryBitwiseOperator::LeftShift => lhs.perform_shl_op(&rhs),
+        BinaryBitwiseOperator::Or => lhs.or_op(&rhs),
+        BinaryBitwiseOperator::And => lhs.and_op(&rhs),
+        BinaryBitwiseOperator::Xor => lhs.xor_op(&rhs),
+        BinaryBitwiseOperator::RightShift => lhs.shr_op(&rhs),
+        BinaryBitwiseOperator::LeftShift => lhs.shl_op(&rhs),
     }
 }
 
@@ -610,5 +610,5 @@ fn evaluate_cast(
     object: &Vec<Box<dyn Value>>,
 ) -> Result<Box<dyn Value>, String> {
     let value = evaluate_expression(env, &expr.value, titles, object)?;
-    value.perform_cast_op(&expr.result_type)
+    value.cast_op(&expr.result_type)
 }

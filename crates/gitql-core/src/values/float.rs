@@ -38,7 +38,7 @@ impl Value for FloatValue {
         self
     }
 
-    fn perform_add_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    fn add_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_int) = other.as_any().downcast_ref::<FloatValue>() {
             let value = self.value + other_int.value;
             return Ok(Box::new(FloatValue { value }));
@@ -46,7 +46,7 @@ impl Value for FloatValue {
         Err("Unexpected value to perform `+` with".to_string())
     }
 
-    fn perform_sub_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    fn sub_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_int) = other.as_any().downcast_ref::<FloatValue>() {
             let value = self.value - other_int.value;
             return Ok(Box::new(FloatValue { value }));
@@ -54,7 +54,7 @@ impl Value for FloatValue {
         Err("Unexpected value to perform `-` with".to_string())
     }
 
-    fn perform_mul_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    fn mul_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_int) = other.as_any().downcast_ref::<FloatValue>() {
             let value = self.value * other_int.value;
             return Ok(Box::new(FloatValue { value }));
@@ -62,7 +62,7 @@ impl Value for FloatValue {
         Err("Unexpected value to perform `*` with".to_string())
     }
 
-    fn perform_div_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    fn div_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_int) = other.as_any().downcast_ref::<FloatValue>() {
             let value = self.value / other_int.value;
             return Ok(Box::new(FloatValue { value }));
@@ -70,7 +70,7 @@ impl Value for FloatValue {
         Err("Unexpected value to perform `/` with".to_string())
     }
 
-    fn perform_neg_op(&self) -> Result<Box<dyn Value>, String> {
+    fn neg_op(&self) -> Result<Box<dyn Value>, String> {
         Ok(Box::new(FloatValue { value: -self.value }))
     }
 }

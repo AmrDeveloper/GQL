@@ -42,7 +42,7 @@ impl Value for RangeValue {
         self
     }
 
-    fn perform_logical_or_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    fn logical_or_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_range) = other.as_any().downcast_ref::<RangeValue>() {
             if !self.equals(other) {
                 return Err("Overlap operator expect both Ranges to have same type".to_string());
@@ -66,7 +66,7 @@ impl Value for RangeValue {
         Err("Unexpected type to perform `Range Overlap &&` with".to_string())
     }
 
-    fn perform_contains_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    fn contains_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_range) = other.as_any().downcast_ref::<RangeValue>() {
             let is_in_range = other_range.start.compare(&self.start).unwrap().is_ge()
                 && other_range.end.compare(&self.end).unwrap().is_le();

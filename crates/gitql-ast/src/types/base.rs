@@ -22,15 +22,19 @@ use super::variant::VariantType;
 
 dyn_clone::clone_trait_object!(DataType);
 
+/// The in memory representation of the Data type in the GitQL query engine
 pub trait DataType: DynClone {
+    /// Return the literal representation for this [`DataType`]
     fn literal(&self) -> String;
 
+    /// Return if other [`DataType`] is equal or not to current Type
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn equals(&self, other: &Box<dyn DataType>) -> bool {
         false
     }
 
+    /// Return the current value as dynamic [`Any`]
     fn as_any(&self) -> &dyn Any;
 
     /// Return a list of types that it's possible to perform `+` operator with
@@ -200,13 +204,13 @@ pub trait DataType: DynClone {
         Box::new(NullType)
     }
 
-    /// Return a list of types that it's possible to perform `||`, 'OR' operator with
+    /// Return a list of types that it's possible to perform `||` or  `OR` operator with
     /// between current DataType and any one of them
     fn can_perform_logical_or_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
-    /// Return the expected type after perform `||`, 'OR' operator between current type and argument type
+    /// Return the expected type after perform `||` or `OR` operator between current type and argument type
     ///
     /// Note that you don't need to check again that the argument type is possible to perform operator with
     #[allow(unused_variables)]
@@ -215,13 +219,13 @@ pub trait DataType: DynClone {
         Box::new(NullType)
     }
 
-    /// Return a list of types that it's possible to perform `&&`, 'AND' operator with
+    /// Return a list of types that it's possible to perform `&&` or `AND` operator with
     /// between current DataType and any one of them
     fn can_perform_logical_and_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
-    /// Return the expected type after perform `&&`, 'AND' operator between current type and argument type
+    /// Return the expected type after perform `&&` or `AND` operator between current type and argument type
     ///
     /// Note that you don't need to check again that the argument type is possible to perform operator with
     #[allow(unused_variables)]
@@ -245,7 +249,7 @@ pub trait DataType: DynClone {
         Box::new(NullType)
     }
 
-    /// Return a list of types that it's possible to perform `[T]' operator with
+    /// Return a list of types that it's possible to perform `[I]' operator with
     /// between current DataType and any one of them
     fn can_perform_index_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
@@ -267,7 +271,7 @@ pub trait DataType: DynClone {
         false
     }
 
-    /// Return a list of types that it's possible to perform `[T : T]' operator with
+    /// Return a list of types that it's possible to perform `[S : E]' operator with
     /// between current DataType and any one of them
     fn can_perform_slice_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
@@ -281,7 +285,7 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    /// Return a list of types that it's possible to perform `!=' operator with
+    /// Return a list of types that it's possible to perform `!=' or `<>` operator with
     /// between current DataType and any one of them
     ///
     /// No need to define the result type, it always BoolType
@@ -406,67 +410,67 @@ pub trait DataType: DynClone {
 }
 
 impl dyn DataType {
-    /// Return tue if this type is [`AnyType`]
+    /// Return true if this type is [`AnyType`]
     pub fn is_any(&self) -> bool {
         self.as_any().downcast_ref::<AnyType>().is_some()
     }
 
-    /// Return tue if this type is [`TextType`]
+    /// Return true if this type is [`TextType`]
     pub fn is_text(&self) -> bool {
         self.as_any().downcast_ref::<TextType>().is_some()
     }
 
-    /// Return tue if this type is [`IntType`]
+    /// Return true if this type is [`IntType`]
     pub fn is_int(&self) -> bool {
         self.as_any().downcast_ref::<IntType>().is_some()
     }
 
-    /// Return tue if this type is [`FloatType`]
+    /// Return true if this type is [`FloatType`]
     pub fn is_float(&self) -> bool {
         self.as_any().downcast_ref::<FloatType>().is_some()
     }
 
-    /// Return tue if this type is [`IntType`] or [`FloatType`]
+    /// Return true if this type is [`IntType`] or [`FloatType`]
     pub fn is_number(&self) -> bool {
         self.is_int() || self.is_float()
     }
 
-    /// Return tue if this type is [`BoolType`]
+    /// Return true if this type is [`BoolType`]
     pub fn is_bool(&self) -> bool {
         self.as_any().downcast_ref::<BoolType>().is_some()
     }
 
-    /// Return tue if this type is [`DateType`]
+    /// Return true if this type is [`DateType`]
     pub fn is_date(&self) -> bool {
         self.as_any().downcast_ref::<DateType>().is_some()
     }
 
-    /// Return tue if this type is [`TimeType`]
+    /// Return true if this type is [`TimeType`]
     pub fn is_time(&self) -> bool {
         self.as_any().downcast_ref::<TimeType>().is_some()
     }
 
-    /// Return tue if this type is [`DateTimeType`]
+    /// Return true if this type is [`DateTimeType`]
     pub fn is_date_time(&self) -> bool {
         self.as_any().downcast_ref::<DateTimeType>().is_some()
     }
 
-    /// Return tue if this type is [`ArrayType`]
+    /// Return true if this type is [`ArrayType`]
     pub fn is_array(&self) -> bool {
         self.as_any().downcast_ref::<ArrayType>().is_some()
     }
 
-    /// Return tue if this type is [`RangeType`]
+    /// Return true if this type is [`RangeType`]
     pub fn is_range(&self) -> bool {
         self.as_any().downcast_ref::<RangeType>().is_some()
     }
 
-    /// Return tue if this type is [`VariantType`]
+    /// Return true if this type is [`VariantType`]
     pub fn is_variant(&self) -> bool {
         self.as_any().downcast_ref::<VariantType>().is_some()
     }
 
-    /// Return tue if this type is [`VariantType`]
+    /// Return true if this type is [`VariantType`]
     /// and applying the matcher function is return true on one of the variants
     pub fn is_variant_with(&self, matcher: fn(&Box<dyn DataType>) -> bool) -> bool {
         if let Some(variant_type) = self.as_any().downcast_ref::<VariantType>() {
@@ -479,7 +483,7 @@ impl dyn DataType {
         false
     }
 
-    /// Return tue if this type is [`VariantType`] and contain specific type as one of it variants
+    /// Return true if this type is [`VariantType`] and contain specific type as one of it variants
     #[allow(clippy::borrowed_box)]
     pub fn is_variant_contains(&self, other: &Box<dyn DataType>) -> bool {
         if let Some(variant_type) = self.as_any().downcast_ref::<VariantType>() {
@@ -488,22 +492,22 @@ impl dyn DataType {
         false
     }
 
-    /// Return tue if this type is [`OptionType`]
+    /// Return true if this type is [`OptionType`]
     pub fn is_optional(&self) -> bool {
         self.as_any().downcast_ref::<OptionType>().is_some()
     }
 
-    /// Return tue if this type is [`VariantType`]
+    /// Return true if this type is [`VariantType`]
     pub fn is_varargs(&self) -> bool {
         self.as_any().downcast_ref::<VariantType>().is_some()
     }
 
-    /// Return tue if this type is [`UndefType`]
+    /// Return true if this type is [`UndefType`]
     pub fn is_undefined(&self) -> bool {
         self.as_any().downcast_ref::<UndefType>().is_some()
     }
 
-    /// Return tue if this type is [`NullType`]
+    /// Return true if this type is [`NullType`]
     pub fn is_null(&self) -> bool {
         self.as_any().downcast_ref::<NullType>().is_some()
     }

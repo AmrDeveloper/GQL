@@ -42,7 +42,7 @@ impl Value for IntPairValue {
 
     /// As we allowed `+` between IntPair types in `can_perform_add_op_with` 
     /// We need also to define how this operator will work
-    fn perform_add_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+    fn add_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_int) = other.as_any().downcast_ref::<IntPairValue>() {
             let first = self.first + other_int.first;
             let second = self.second + other_int.second;
