@@ -1,7 +1,7 @@
-<h1 align="center">GQL - Git Query Language</h1></br>
+<h1 align="center">GitQL - Git Query Language</h1></br>
 
 <p align="center">
-<img src="media/gql_logo.svg" width="20%" height="20%"/>
+<img src="media/gitql_logo.svg" width="20%" height="20%"/>
 </p>
 
 <p align="center">
@@ -16,18 +16,22 @@
 </p>
 
 <p align="center">
-GQL is a query language with a syntax very similar to SQL with a tiny engine to perform queries on .git files instead of database files. The engine executes the query on the fly without the need to create database files or convert .git files into any other format. 
+GitQL is a tool that built using the GitQL SDk to perform SQL like query on your local .git files
 </p>
 
 <p align="center">
-  <img src="media/gql_demo.gif" alt="animated" width="100%"/>
+GitQL SDK is an in memory query engine implemented from scratch as a set of libraries that allow you to perform high customization in types, schema, data provider, operators and functions, so you can build your own tool to run SQL like query on any kind of data. 
+</p>
+
+<p align="center">
+  <img src="media/gitql_demo.gif" alt="animated" width="100%"/>
 </p>
 
 ---
 
 ### Samples
 
-Note that all Keywords in GQL are case-insensitive, similar to SQL.
+Note that all Keywords in GitQL are case-insensitive, similar to SQL.
 
 ```sql
 SELECT 1
@@ -86,6 +90,17 @@ SELECT * FROM tags OFFSET 1 LIMIT 1
 - [Customize the Type system](https://amrdeveloper.github.io/GQL/sdk/types.md).
 - [Customize the Value system](https://amrdeveloper.github.io/GQL/sdk/values.md).
 - [Connect Components together](https://amrdeveloper.github.io/GQL/sdk/assemble.md).
+
+---
+
+## Tools built using GitQL SDK
+
+- [LLQL](https://github.com/amrdeveloper/llql):
+  Tool to run SQL query on LLVM IR/BC and perform Pattern matching on instructions.
+- [ClangQL](https://github.com/amrdeveloper/clangql):
+  Tool to run SQL query on C/C++ Source code files.
+- [FileQL](https://github.com/amrdeveloper/fileql)
+  Tool to run SQL query on file systems and extract metadata.
 
 ---
 
