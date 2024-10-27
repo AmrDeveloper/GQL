@@ -130,9 +130,14 @@ fn evaluate_select_query(
     }
 
     // Remove Hidden Selection from the rows after executing the query plan
+    remove_hidden_selected_from_groups(
+        &mut gitql_object.titles,
+        &mut gitql_object.groups,
+        &hidden_selections,
+    );
+
     let number_of_groups = gitql_object.groups.len();
-    let group: &mut Group = &mut gitql_object.groups[0];
-    remove_hidden_selected(&mut gitql_object.titles, group, &hidden_selections);
+    let main_group: &mut Group = &mut gitql_object.groups[0];
 
     // If there are many groups that mean group by is executed before.
     // must merge each group into only one element
@@ -142,15 +147,16 @@ fn evaluate_select_query(
                 group.rows.drain(1..);
             }
         }
+        gitql_object.flat();
     }
     // If it a single group but it select only aggregations function,
     // should return only first element in the group
     else if number_of_groups == 1
         && !query.has_group_by_statement
         && query.has_aggregation_function
-        && group.len() > 1
+        && main_group.len() > 1
     {
-        group.rows.drain(1..);
+        main_group.rows.drain(1..);
     }
 
     // Into statement must be executed last after flatted and remove hidden selections
@@ -231,19 +237,24 @@ fn evaluate_show_tables_query(env: &mut Environment) -> Result<EvaluationResult,
     Ok(EvaluationResult::SelectedGroups(gitql_object))
 }
 
-fn remove_hidden_selected(
+fn remove_hidden_selected_from_groups(
     titles: &mut Vec<String>,
-    group: &mut Group,
+    groups: &mut [Group],
     hidden_selections: &[String],
 ) {
     let titles_count = titles.len();
+    let mut index_list: Vec<usize> = vec![];
     for i in (0..titles_count).rev() {
         if hidden_selections.contains(&titles[i]) {
             titles.remove(i);
+            index_list.push(i);
+        }
+    }
+
+    for group in groups.iter_mut() {
+        for index_to_delete in index_list.iter() {
             for row in group.rows.iter_mut() {
-                if row.values.len() > i {
-                    row.values.remove(i);
-                }
+                row.values.remove(*index_to_delete);
             }
         }
     }

@@ -168,7 +168,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
                 let token = Token {
                     location,
                     kind: TokenKind::AtRightArrow,
-                    literal: "@".to_owned(),
+                    literal: "@>".to_owned(),
                 };
 
                 tokens.push(token);
