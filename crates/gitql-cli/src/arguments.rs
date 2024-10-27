@@ -17,6 +17,7 @@ pub struct Arguments {
     pub analysis: bool,
     pub pagination: bool,
     pub page_size: usize,
+    pub enable_line_editor: bool,
     pub output_format: OutputFormat,
 }
 
@@ -28,6 +29,7 @@ impl Arguments {
             analysis: false,
             pagination: false,
             page_size: 10,
+            enable_line_editor: false,
             output_format: OutputFormat::Render,
         }
     }
@@ -125,6 +127,10 @@ pub fn parse_arguments(args: &[String]) -> Command {
                 arguments.page_size = page_size;
                 arg_index += 1;
             }
+            "--editor" | "-e" => {
+                arguments.enable_line_editor = true;
+                arg_index += 1;
+            }
             "--output" | "-o" => {
                 arg_index += 1;
                 if arg_index >= args_len {
@@ -186,6 +192,7 @@ pub fn print_help_list() {
     println!("-ps, --pagesize             Set pagination page size [default: 10]");
     println!("-o,  --output               Set output format [render, json, csv]");
     println!("-a,  --analysis             Print Query analysis");
+    println!("-e,  --editor               Enable GitQL Rich Line Editor");
     println!("-h,  --help                 Print GitQL help");
     println!("-v,  --version              Print GitQL Current Version");
 }

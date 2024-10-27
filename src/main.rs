@@ -23,9 +23,11 @@ use gitql_parser::parser;
 use gitql_parser::tokenizer;
 use gitql_std::aggregation::aggregation_function_signatures;
 use gitql_std::aggregation::aggregation_functions;
+use lineeditor::LineEditorResult;
 
 mod git_data_provider;
 mod git_functions;
+mod git_line_editor;
 mod git_schema;
 
 fn main() {
@@ -110,8 +112,37 @@ fn launch_gitql_repl(arguments: Arguments) {
 
     let git_repositories = git_repos_result.ok().unwrap();
 
-    let mut input = String::new();
+    // Launch the right line editor if the flag is enabled
+    // Later this line editor will be the default editor
+    if arguments.enable_line_editor {
+        let mut line_editor = git_line_editor::create_new_line_editor();
+        loop {
+            if let Ok(LineEditorResult::Success(input)) = line_editor.read_line() {
+                println!();
 
+                if input.is_empty() || input == "\n" {
+                    continue;
+                }
+
+                if input == "exit" {
+                    break;
+                }
+
+                execute_gitql_query(
+                    input.to_owned(),
+                    &arguments,
+                    &git_repositories,
+                    &mut global_env,
+                    &mut reporter,
+                );
+
+                global_env.clear_session();
+            }
+        }
+        return;
+    }
+
+    let mut input = String::new();
     loop {
         // Render Prompt only if input is received from terminal
         if atty::is(Stream::Stdin) {
@@ -151,6 +182,7 @@ fn launch_gitql_repl(arguments: Arguments) {
         input.clear();
         global_env.clear_session();
     }
+
 }
 
 fn execute_gitql_query(

@@ -415,7 +415,7 @@ fn select_diffs(repo: &gix::Repository, selected_columns: &[String]) -> Result<V
                         &current,
                         &mut rewrite_cache,
                         |change| -> Result<_, gix::object::blob::diff::init::Error> {
-                            files_changed += usize::from(change.event.entry_mode().is_no_tree());
+                            files_changed += usize::from(change.entry_mode().is_no_tree());
                             if select_insertions_or_deletions {
                                 if let Ok(mut platform) = change.diff(&mut diff_cache) {
                                     if let Ok(Some(counts)) = platform.line_counts() {

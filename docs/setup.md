@@ -66,6 +66,7 @@ Options:
 -ps, --pagesize             Set pagination page size [default: 10]
 -o,  --output               Set output format [render, json, csv]
 -a,  --analysis             Print Query analysis
+-e,  --editor               Enable GitQL LineEditor
 -h,  --help                 Print GitQL help
 -v,  --version              Print GitQL Current Version
 ```
