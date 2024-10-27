@@ -21,7 +21,7 @@ impl DataType for ArrayType {
         }
 
         if let Some(other_array) = other.as_any().downcast_ref::<ArrayType>() {
-            return self.equals(&other_array.base);
+            return self.base.equals(&other_array.base);
         }
         false
     }
