@@ -1,5 +1,21 @@
 # Change Log
 
+## Version 0.29.0 _(2024-10-30)_
+
+- Implement Dynamic type system.
+- Implement new Dynamic values system.
+- Improve the output printer implementation.
+- Change the analysis format to be similar to popular engines.
+- Implement `benchmark` function.
+- Implement Bitwise XOR operator for integers.
+- Implement Contained By expression using `<@` operator.
+- Speedup order by statement by using pre eval map.
+- Support multi lines and unicode in `LIKE` and `REGEX` expressions.
+- Improve error message for invalid column name.
+- Improve safety check for std or aggregation signature.
+- Migrate to Gix `0.67.0`.
+- Integrate with LineEditor.
+
 ## Version 0.28.0 _(2024-09-27)_
 
 - Enable LTO (Link time optimization).
