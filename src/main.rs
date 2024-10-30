@@ -182,7 +182,6 @@ fn launch_gitql_repl(arguments: Arguments) {
         input.clear();
         global_env.clear_session();
     }
-
 }
 
 fn execute_gitql_query(

@@ -1464,6 +1464,8 @@ dependencies = [
 [[package]]
 name = "lineeditor"
 version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "234964aa055c8afc0a63cc199708e774fd551eac824b67dcdd5db01ee5faa397"
 dependencies = [
  "clipboard",
  "crossterm 0.28.1",
