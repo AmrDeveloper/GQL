@@ -122,6 +122,9 @@ jobs:
           toolchain: ${{ matrix.rust }}
           target: ${{ matrix.target }}
 
+      - name: Get CMake
+        uses: lukka/get-cmake@latest
+
       - name: Use Cross
         shell: bash
         run: |
