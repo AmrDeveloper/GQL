@@ -186,7 +186,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Upload Release Meta
         if: ${{ needs.create-release.outputs.gql_dry_run }} != 'yes'
