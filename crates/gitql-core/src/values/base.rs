@@ -7,6 +7,7 @@ use gitql_ast::types::base::DataType;
 
 use super::array::ArrayValue;
 use super::boolean::BoolValue;
+use super::composite::CompositeValue;
 use super::date::DateValue;
 use super::datetime::DateTimeValue;
 use super::float::FloatValue;
@@ -404,6 +405,11 @@ impl dyn Value {
     /// Return true if this value is [`NullValue`]
     pub fn is_null(&self) -> bool {
         self.as_any().downcast_ref::<NullValue>().is_some()
+    }
+
+    /// Return true if this value is [`CompositeValue`]
+    pub fn is_composite(&self) -> bool {
+        self.as_any().downcast_ref::<CompositeValue>().is_some()
     }
 }
 

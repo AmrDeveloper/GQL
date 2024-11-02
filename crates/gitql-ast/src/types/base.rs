@@ -8,6 +8,7 @@ use crate::expression::Expr;
 use super::any::AnyType;
 use super::array::ArrayType;
 use super::boolean::BoolType;
+use super::composite::CompositeType;
 use super::date::DateType;
 use super::datetime::DateTimeType;
 use super::float::FloatType;
@@ -500,6 +501,11 @@ impl dyn DataType {
     /// Return true if this type is [`VariantType`]
     pub fn is_varargs(&self) -> bool {
         self.as_any().downcast_ref::<VariantType>().is_some()
+    }
+
+    /// Return true if this type is [`CompositeType`]
+    pub fn is_composite(&self) -> bool {
+        self.as_any().downcast_ref::<CompositeType>().is_some()
     }
 
     /// Return true if this type is [`UndefType`]

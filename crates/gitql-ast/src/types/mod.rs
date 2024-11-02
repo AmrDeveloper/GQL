@@ -2,6 +2,7 @@ pub mod any;
 pub mod array;
 pub mod base;
 pub mod boolean;
+pub mod composite;
 pub mod date;
 pub mod datetime;
 pub mod dynamic;

@@ -15,11 +15,13 @@ use gitql_ast::expression::Expr;
 use gitql_ast::expression::ExprKind::*;
 use gitql_ast::expression::GlobExpr;
 use gitql_ast::expression::GlobalVariableExpr;
+use gitql_ast::expression::GroupExpr;
 use gitql_ast::expression::InExpr;
 use gitql_ast::expression::IndexExpr;
 use gitql_ast::expression::IsNullExpr;
 use gitql_ast::expression::LikeExpr;
 use gitql_ast::expression::LogicalExpr;
+use gitql_ast::expression::MemberAccessExpr;
 use gitql_ast::expression::Number;
 use gitql_ast::expression::NumberExpr;
 use gitql_ast::expression::RegexExpr;
@@ -36,6 +38,7 @@ use gitql_core::environment::Environment;
 use gitql_core::values::array::ArrayValue;
 use gitql_core::values::base::Value;
 use gitql_core::values::boolean::BoolValue;
+use gitql_core::values::composite::CompositeValue;
 use gitql_core::values::float::FloatValue;
 use gitql_core::values::integer::IntValue;
 use gitql_core::values::null::NullValue;
@@ -174,6 +177,17 @@ pub fn evaluate_expression(
         Cast => {
             let expr = expression.as_any().downcast_ref::<CastExpr>().unwrap();
             evaluate_cast(env, expr, titles, object)
+        }
+        Grouping => {
+            let expr = expression.as_any().downcast_ref::<GroupExpr>().unwrap();
+            evaluate_grouping(env, expr, titles, object)
+        }
+        MemberAccess => {
+            let expr = expression
+                .as_any()
+                .downcast_ref::<MemberAccessExpr>()
+                .unwrap();
+            evaluate_member_access(env, expr, titles, object)
         }
         Null => Ok(Box::new(NullValue)),
     }
@@ -611,4 +625,28 @@ fn evaluate_cast(
 ) -> Result<Box<dyn Value>, String> {
     let value = evaluate_expression(env, &expr.value, titles, object)?;
     value.cast_op(&expr.result_type)
+}
+
+fn evaluate_grouping(
+    env: &mut Environment,
+    expr: &GroupExpr,
+    titles: &[String],
+    object: &Vec<Box<dyn Value>>,
+) -> Result<Box<dyn Value>, String> {
+    let value = evaluate_expression(env, &expr.expr, titles, object)?;
+    Ok(value)
+}
+
+fn evaluate_member_access(
+    env: &mut Environment,
+    expr: &MemberAccessExpr,
+    titles: &[String],
+    object: &Vec<Box<dyn Value>>,
+) -> Result<Box<dyn Value>, String> {
+    let value = evaluate_expression(env, &expr.composite, titles, object)?;
+    if let Some(composite_value) = value.as_any().downcast_ref::<CompositeValue>() {
+        let member_name = &expr.member_name;
+        return Ok(composite_value.members.get(member_name).unwrap().clone());
+    }
+    Err("Invalid value for Member access expression".to_owned())
 }

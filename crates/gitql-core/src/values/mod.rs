@@ -1,6 +1,7 @@
 pub mod array;
 pub mod base;
 pub mod boolean;
+pub mod composite;
 pub mod converters;
 pub mod date;
 pub mod datetime;

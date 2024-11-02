@@ -45,6 +45,8 @@ pub enum ExprKind {
     IsNull,
     Null,
     Cast,
+    Grouping,
+    MemberAccess,
 }
 
 dyn_clone::clone_trait_object!(Expr);
@@ -623,6 +625,46 @@ impl Expr for CastExpr {
 
     fn expr_type(&self) -> Box<dyn DataType> {
         self.result_type.clone()
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+#[derive(Clone)]
+pub struct GroupExpr {
+    pub expr: Box<dyn Expr>,
+}
+
+impl Expr for GroupExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::Grouping
+    }
+
+    fn expr_type(&self) -> Box<dyn DataType> {
+        self.expr.expr_type().clone()
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+#[derive(Clone)]
+pub struct MemberAccessExpr {
+    pub composite: Box<dyn Expr>,
+    pub member_name: String,
+    pub member_type: Box<dyn DataType>,
+}
+
+impl Expr for MemberAccessExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::MemberAccess
+    }
+
+    fn expr_type(&self) -> Box<dyn DataType> {
+        self.member_type.clone()
     }
 
     fn as_any(&self) -> &dyn Any {

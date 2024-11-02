@@ -19,6 +19,7 @@ use gitql_ast::types::any::AnyType;
 use gitql_ast::types::array::ArrayType;
 use gitql_ast::types::base::DataType;
 use gitql_ast::types::boolean::BoolType;
+use gitql_ast::types::composite::CompositeType;
 use gitql_ast::types::undefined::UndefType;
 use gitql_core::environment::Environment;
 use gitql_core::name_generator::generate_column_name;
@@ -3446,7 +3447,7 @@ fn parse_function_call_expression(
         }
     }
 
-    parse_primary_expression(context, env, tokens, position)
+    parse_member_access_expression(context, env, tokens, position)
 }
 
 fn parse_arguments_expressions(
@@ -3486,6 +3487,79 @@ fn parse_arguments_expressions(
         *position += 1;
     }
     Ok(arguments)
+}
+
+fn parse_member_access_expression(
+    context: &mut ParserContext,
+    env: &mut Environment,
+    tokens: &[Token],
+    position: &mut usize,
+) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
+    let expr = parse_primary_expression(context, env, tokens, position)?;
+
+    if *position < tokens.len() && tokens[*position].kind == TokenKind::Dot {
+        let dot_token = &tokens[*position];
+
+        // The syntax for member access is (composite).member
+        // The composite expr must be in group, that make it different from table access table.name
+        if expr.kind() != ExprKind::Grouping {
+            return Err(
+                Diagnostic::error("Dot token expect composite value between `(` and `)`")
+                    .add_note("The syntax for accessing composite element is (composite).member")
+                    .with_location(dot_token.location)
+                    .as_boxed(),
+            );
+        }
+
+        // Consume `.` token
+        *position += 1;
+
+        // select (user).name from users
+        if let Some(composite_type) = expr.expr_type().as_any().downcast_ref::<CompositeType>() {
+            if *position < tokens.len() && tokens[*position].kind == TokenKind::Symbol {
+                let member_token = &tokens[*position];
+
+                // Consume `Symbol` token
+                *position += 1;
+
+                let member_name = member_token.literal.to_string();
+
+                // Make sure the member name is valid for this composite type
+                if !composite_type.members.contains_key(&member_name) {
+                    return Err(Diagnostic::error(&format!(
+                        "Compose type {} has no member with name {}",
+                        composite_type.name, member_name
+                    ))
+                    .add_help("Check the Composite type to see what are his members")
+                    .with_location(member_token.location)
+                    .as_boxed());
+                }
+
+                let member_type = composite_type.members.get(&member_name).unwrap().clone();
+                return Ok(Box::new(MemberAccessExpr {
+                    composite: expr,
+                    member_name,
+                    member_type,
+                }));
+            }
+
+            // Member Access expect symbol as member name
+            return Err(Diagnostic::error("Member access expect symbol after `.`")
+                .add_note("The syntax for accessing composite element is (composite).member")
+                .with_location(dot_token.location)
+                .as_boxed());
+        }
+
+        // Make sure the expression type in group expression is Composite type
+        return Err(Diagnostic::error(&format!(
+            "Member access expect Composite type between `(` and `)` but got {}",
+            expr.expr_type().literal()
+        ))
+        .with_location(dot_token.location)
+        .as_boxed());
+    }
+
+    Ok(expr)
 }
 
 fn parse_primary_expression(
@@ -3603,6 +3677,14 @@ fn parse_symbol_expression(
     if !context.has_select_statement {
         context.projection_names.push(value.to_string());
         context.projection_locations.push(location);
+
+        // If user perform member access with Composite type, composite type name should be in hidden selection
+        // For example `SELECT (commit).author_name`, commit should be in hidden selection
+        if let Some(symbol_type) = env.schema.tables_fields_types.get(&value.as_str()) {
+            if symbol_type.is_composite() && !context.hidden_selections.contains(&value) {
+                context.hidden_selections.push(value.to_string());
+            }
+        }
     }
 
     if context.has_select_statement {
@@ -3716,7 +3798,7 @@ fn parse_group_expression(
             .as_boxed());
     }
     *position += 1;
-    Ok(expression)
+    Ok(Box::new(GroupExpr { expr: expression }))
 }
 
 fn parse_case_expression(
@@ -3955,7 +4037,7 @@ fn un_expected_expression_error(tokens: &[Token], position: &usize) -> Box<Diagn
             .as_boxed();
     }
 
-    // `> =` the user may mean to write `>=`
+    // `> =` the user may want to write `>=`
     if previous.kind == TokenKind::Greater && current.kind == TokenKind::Equal {
         return Diagnostic::error("Unexpected `> =`, do you mean `>=`?")
             .add_help("Try to remove space between `> =`")
@@ -3963,7 +4045,7 @@ fn un_expected_expression_error(tokens: &[Token], position: &usize) -> Box<Diagn
             .as_boxed();
     }
 
-    // `< =` the user may mean to write `<=`
+    // `< =` the user may want to write `<=`
     if previous.kind == TokenKind::Less && current.kind == TokenKind::Equal {
         return Diagnostic::error("Unexpected `< =`, do you mean `<=`?")
             .add_help("Try to remove space between `< =`")
@@ -3971,7 +4053,7 @@ fn un_expected_expression_error(tokens: &[Token], position: &usize) -> Box<Diagn
             .as_boxed();
     }
 
-    // `> >` the user may mean to write '>>'
+    // `> >` the user may want to write '>>'
     if previous.kind == TokenKind::Greater && current.kind == TokenKind::Greater {
         return Diagnostic::error("Unexpected `> >`, do you mean `>>`?")
             .add_help("Try to remove space between `> >`")
@@ -3979,7 +4061,7 @@ fn un_expected_expression_error(tokens: &[Token], position: &usize) -> Box<Diagn
             .as_boxed();
     }
 
-    // `< <` the user may mean to write `<<`
+    // `< <` the user may want to write `<<`
     if previous.kind == TokenKind::Less && current.kind == TokenKind::Less {
         return Diagnostic::error("Unexpected `< <`, do you mean `<<`?")
             .add_help("Try to remove space between `< <`")
@@ -3987,7 +4069,7 @@ fn un_expected_expression_error(tokens: &[Token], position: &usize) -> Box<Diagn
             .as_boxed();
     }
 
-    // `< >` the user may mean to write `<>`
+    // `< >` the user may want to write `<>`
     if previous.kind == TokenKind::Less && current.kind == TokenKind::Greater {
         return Diagnostic::error("Unexpected `< >`, do you mean `<>`?")
             .add_help("Try to remove space between `< >`")
@@ -3995,10 +4077,18 @@ fn un_expected_expression_error(tokens: &[Token], position: &usize) -> Box<Diagn
             .as_boxed();
     }
 
-    // `<= >` the user may mean to write `<=>`
+    // `<= >` the user may want to write `<=>`
     if previous.kind == TokenKind::LessEqual && current.kind == TokenKind::Greater {
         return Diagnostic::error("Unexpected `<= >`, do you mean `<=>`?")
             .add_help("Try to remove space between `<= >`")
+            .with_location(location)
+            .as_boxed();
+    }
+
+    // `. .` the user may want to write `..`
+    if previous.kind == TokenKind::Dot && current.kind == TokenKind::Dot {
+        return Diagnostic::error("Unexpected `. .`, do you mean `..`?")
+            .add_help("Try to remove space between `. .`")
             .with_location(location)
             .as_boxed();
     }
