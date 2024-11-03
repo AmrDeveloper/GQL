@@ -1,7 +1,9 @@
+use std::io;
+use std::io::IsTerminal;
+
 use crate::git_schema::tables_fields_names;
 use crate::git_schema::tables_fields_types;
 
-use atty::Stream;
 use git_data_provider::GitDataProvider;
 use gitql_cli::arguments;
 use gitql_cli::arguments::Arguments;
@@ -144,13 +146,15 @@ fn launch_gitql_repl(arguments: Arguments) {
 
     let mut input = String::new();
     loop {
+        let stdin = io::stdin();
+
         // Render Prompt only if input is received from terminal
-        if atty::is(Stream::Stdin) {
-            print!("gql > ");
+        if stdin.is_terminal() {
+            print!("gitql > ");
         }
 
         std::io::Write::flush(&mut std::io::stdout()).expect("flush failed!");
-        match std::io::stdin().read_line(&mut input) {
+        match stdin.read_line(&mut input) {
             Ok(buffer_length) => {
                 if buffer_length == 0 {
                     break;

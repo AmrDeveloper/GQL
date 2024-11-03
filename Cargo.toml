@@ -37,7 +37,6 @@ gitql-engine = { path = "./crates/gitql-engine", version = "0.29.0" }
 gitql-cli = { path = "./crates/gitql-cli", version = "0.29.0" }
 lineeditor = "0.4.1"
 gix = { workspace = true, features = ["blob-diff", "max-performance"] }
-atty = "0.2.14"
 
 [dev-dependencies]
 criterion = "0.5.1"
