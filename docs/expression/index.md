@@ -4,3 +4,4 @@ GitQL Expressions
 - [Unary expressions](unary.md).
 - [Case expression](case.md).
 - [Array expression](array.md).
+- [Access Member](access.md).
