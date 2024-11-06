@@ -3210,10 +3210,11 @@ fn parse_index_or_slice_expression(
         let rhs_expected_types = lhs_type.can_perform_index_op_with();
         if !rhs_expected_types.contains(&index_type) {
             return Err(Diagnostic::error(&format!(
-                "Operator Index `[]` can't be performed between on {} with index `{}`",
+                "Operator Index `[ ]` can't be performed on type `{}` with index type `{}`",
                 lhs_type.literal(),
                 index_type.literal(),
             ))
+            .add_help("Check the Type documentation to know the available Index types")
             .with_location(operator.location)
             .as_boxed());
         }
