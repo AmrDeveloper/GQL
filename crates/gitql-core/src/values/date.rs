@@ -2,6 +2,7 @@ use std::any::Any;
 use std::cmp::Ordering;
 
 use super::base::Value;
+use super::boolean::BoolValue;
 
 use chrono::DateTime;
 use gitql_ast::types::base::DataType;
@@ -40,5 +41,53 @@ impl Value for DateValue {
 
     fn as_any(&self) -> &dyn Any {
         self
+    }
+
+    fn eq_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+        if let Some(other_text) = other.as_any().downcast_ref::<DateValue>() {
+            let are_equals = self.value == other_text.value;
+            return Ok(Box::new(BoolValue { value: are_equals }));
+        }
+        Err("Unexpected type to perform `=` with".to_string())
+    }
+
+    fn bang_eq_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+        if let Some(other_text) = other.as_any().downcast_ref::<DateValue>() {
+            let are_equals = self.value != other_text.value;
+            return Ok(Box::new(BoolValue { value: are_equals }));
+        }
+        Err("Unexpected type to perform `!=` with".to_string())
+    }
+
+    fn gt_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+        if let Some(other_text) = other.as_any().downcast_ref::<DateValue>() {
+            let are_equals = self.value > other_text.value;
+            return Ok(Box::new(BoolValue { value: are_equals }));
+        }
+        Err("Unexpected type to perform `>` with".to_string())
+    }
+
+    fn gte_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+        if let Some(other_text) = other.as_any().downcast_ref::<DateValue>() {
+            let are_equals = self.value >= other_text.value;
+            return Ok(Box::new(BoolValue { value: are_equals }));
+        }
+        Err("Unexpected type to perform `>=` with".to_string())
+    }
+
+    fn lt_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+        if let Some(other_text) = other.as_any().downcast_ref::<DateValue>() {
+            let are_equals = self.value < other_text.value;
+            return Ok(Box::new(BoolValue { value: are_equals }));
+        }
+        Err("Unexpected type to perform `<` with".to_string())
+    }
+
+    fn lte_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+        if let Some(other_text) = other.as_any().downcast_ref::<DateValue>() {
+            let are_equals = self.value <= other_text.value;
+            return Ok(Box::new(BoolValue { value: are_equals }));
+        }
+        Err("Unexpected type to perform `<=` with".to_string())
     }
 }
