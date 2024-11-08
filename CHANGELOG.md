@@ -1,5 +1,12 @@
 # Change Log
 
+## Version 0.30.0 _(2024-11-08)_
+
+- Implement Composite type.
+- Implement Member access expression for Composite type.
+- Replace `atty` with std is_terminal.
+- Improve order of iterating over composite type members.
+
 ## Version 0.29.0 _(2024-10-30)_
 
 - Implement Dynamic type system.
