@@ -5,12 +5,14 @@ use std::collections::HashMap;
 use gitql_ast::types::base::DataType;
 use gitql_ast::types::composite::CompositeType;
 
+use indexmap::IndexMap;
+
 use super::base::Value;
 
 #[derive(Clone)]
 pub struct CompositeValue {
     pub name: String,
-    pub members: HashMap<String, Box<dyn Value>>,
+    pub members: IndexMap<String, Box<dyn Value>>,
 }
 
 impl Value for CompositeValue {

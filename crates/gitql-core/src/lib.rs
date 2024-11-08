@@ -6,3 +6,4 @@ pub mod object;
 pub mod schema;
 pub mod signature;
 pub mod values;
+pub use indexmap;

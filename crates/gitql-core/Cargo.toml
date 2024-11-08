@@ -13,3 +13,4 @@ categories = ["command-line-utilities"]
 gitql-ast = { path = "../gitql-ast", version = "0.26.0" }
 chrono = "0.4.38"
 dyn-clone = "1.0.17"
+indexmap = "2.6.0"
