@@ -6,6 +6,7 @@ use crate::schema::Schema;
 use crate::signature::Aggregation;
 use crate::signature::Function;
 use crate::signature::Signature;
+use crate::types_table::TypesTable;
 use crate::values::base::Value;
 
 /// Environment that track schema, functions, scopes and types
@@ -34,6 +35,9 @@ pub struct Environment {
 
     /// Local variables types in the current scope, later will be multi layer scopes
     pub scopes: HashMap<String, Box<dyn DataType>>,
+
+    /// A Table of DataTypes mapped to their original names or aliases
+    pub types_table: TypesTable,
 }
 
 impl Environment {
@@ -48,6 +52,7 @@ impl Environment {
             globals: HashMap::default(),
             globals_types: HashMap::default(),
             scopes: HashMap::default(),
+            types_table: TypesTable::new(),
         }
     }
 
@@ -69,6 +74,11 @@ impl Environment {
     ) {
         self.aggregation_signatures.extend(signatures.to_owned());
         self.aggregation_functions.extend(aggregation.to_owned());
+    }
+
+    /// Register new Modified Types table
+    pub fn with_types_table(&mut self, types_table: TypesTable) {
+        self.types_table = types_table
     }
 
     /// Return true if this name is a valid standard function

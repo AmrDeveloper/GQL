@@ -1,19 +1,12 @@
-use std::collections::HashMap;
-
 use gitql_ast::types::array::ArrayType;
 use gitql_ast::types::base::DataType;
-use gitql_ast::types::boolean::BoolType;
-use gitql_ast::types::date::DateType;
-use gitql_ast::types::datetime::DateTimeType;
-use gitql_ast::types::float::FloatType;
-use gitql_ast::types::integer::IntType;
-use gitql_ast::types::text::TextType;
-use gitql_ast::types::time::TimeType;
 use gitql_core::environment::Environment;
 
 use crate::diagnostic::Diagnostic;
-use crate::parser::{consume_token_or_error, get_safe_location};
-use crate::tokenizer::{Token, TokenKind};
+use crate::parser::calculate_safe_location;
+use crate::parser::consume_token_or_error;
+use crate::tokenizer::Token;
+use crate::tokenizer::TokenKind;
 
 pub(crate) fn parse_type(
     env: &mut Environment,
@@ -40,7 +33,7 @@ fn parse_array_type(
     // Make sure there is '[' After the base DataType
     if *position >= tokens.len() || tokens[*position].kind != TokenKind::LeftBracket {
         return Err(Diagnostic::error("Expect [ After Base DataType")
-            .with_location(get_safe_location(tokens, *position - 1))
+            .with_location(calculate_safe_location(tokens, *position - 1))
             .as_boxed());
     }
 
@@ -50,7 +43,7 @@ fn parse_array_type(
     // Make sure there is ']' After the base DataType
     if *position >= tokens.len() || tokens[*position].kind != TokenKind::RightBracket {
         return Err(Diagnostic::error("Expect ']' After '[' in Array DataType")
-            .with_location(get_safe_location(tokens, *position - 1))
+            .with_location(calculate_safe_location(tokens, *position - 1))
             .as_boxed());
     }
 
@@ -61,7 +54,7 @@ fn parse_array_type(
 }
 
 fn parse_primitive_type(
-    _env: &mut Environment, // Access type table from env :D
+    env: &mut Environment,
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn DataType>, Box<Diagnostic>> {
@@ -73,21 +66,9 @@ fn parse_primitive_type(
         "Expect Symbol to represent Type name",
     )?;
 
-    let mut type_table: HashMap<String, Box<dyn DataType>> = HashMap::new();
-    type_table.insert("integer".to_string(), Box::new(IntType));
-    type_table.insert("int".to_string(), Box::new(IntType));
-    type_table.insert("real".to_string(), Box::new(FloatType));
-    type_table.insert("float".to_string(), Box::new(FloatType));
-    type_table.insert("boolean".to_string(), Box::new(BoolType));
-    type_table.insert("bool".to_string(), Box::new(BoolType));
-    type_table.insert("text".to_string(), Box::new(TextType));
-    type_table.insert("date".to_string(), Box::new(DateType));
-    type_table.insert("time".to_string(), Box::new(TimeType));
-    type_table.insert("datetime".to_string(), Box::new(DateTimeType));
-
-    let type_literal = &type_name_token.literal;
-    if type_table.contains_key(type_literal) {
-        return Ok(type_table.get(type_literal).unwrap().clone());
+    let type_literal = type_name_token.literal.to_string();
+    if let Some(data_type) = env.types_table.lookup(type_literal.as_str()) {
+        return Ok(data_type);
     }
 
     Err(Diagnostic::error(&format!(

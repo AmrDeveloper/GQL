@@ -78,7 +78,7 @@ fn parse_do_query(
     if *position >= tokens.len() {
         return Err(
             Diagnostic::error("Expect expression after Do Statement keyword")
-                .with_location(get_safe_location(tokens, *position - 1))
+                .with_location(calculate_safe_location(tokens, *position - 1))
                 .as_boxed(),
         );
     }
@@ -103,7 +103,7 @@ fn parse_set_query(
         return Err(Diagnostic::error(
             "Expect Global variable name start with `@` after `SET` keyword",
         )
-        .with_location(get_safe_location(tokens, *position - 1))
+        .with_location(calculate_safe_location(tokens, *position - 1))
         .as_boxed());
     }
 
@@ -115,7 +115,7 @@ fn parse_set_query(
     if *position >= len || !is_assignment_operator(&tokens[*position]) {
         return Err(
             Diagnostic::error("Expect `=` or `:=` and Value after Variable name")
-                .with_location(get_safe_location(tokens, *position - 1))
+                .with_location(calculate_safe_location(tokens, *position - 1))
                 .as_boxed(),
         );
     }
@@ -131,7 +131,7 @@ fn parse_set_query(
     if has_aggregations {
         return Err(
             Diagnostic::error("Aggregation value can't be assigned to global variable")
-                .with_location(get_safe_location(tokens, *position - 1))
+                .with_location(calculate_safe_location(tokens, *position - 1))
                 .as_boxed(),
         );
     }
@@ -155,7 +155,7 @@ fn parse_describe_query(
     if *position >= tokens.len() || tokens[*position].kind != TokenKind::Symbol {
         return Err(
             Diagnostic::error("Expect table name after DESCRIBE Statement")
-                .with_location(get_safe_location(tokens, *position))
+                .with_location(calculate_safe_location(tokens, *position))
                 .as_boxed(),
         );
     }
@@ -170,7 +170,7 @@ fn parse_describe_query(
         return Err(
             Diagnostic::error(&format!("Unresolved table name `{}`", table_name))
                 .add_help("You can use the command `SHOW TABLES` to get list of current tables")
-                .with_location(get_safe_location(tokens, *position))
+                .with_location(calculate_safe_location(tokens, *position))
                 .as_boxed(),
         );
     }
@@ -189,7 +189,7 @@ fn parse_show_query(tokens: &[Token], position: &mut usize) -> Result<Query, Box
         return Err(
             Diagnostic::error("Show can not be followed by names other than tables")
                 .add_help("A correct statement will be `SHOW TABLES`")
-                .with_location(get_safe_location(tokens, *position - 1))
+                .with_location(calculate_safe_location(tokens, *position - 1))
                 .as_boxed(),
         );
     }
@@ -375,7 +375,7 @@ fn parse_select_query(
                 .add_help("Try to use `REGEXP` or `IN` expression after NOT keyword")
                 .add_help("Try to remove `NOT` keyword")
                 .add_note("Expect to see `NOT` then `IN` keyword with a list of values")
-                .with_location(get_safe_location(tokens, *position))
+                .with_location(calculate_safe_location(tokens, *position))
                 .as_boxed())
             }
             _ => break,
@@ -468,7 +468,7 @@ fn parse_select_statement(
         return Err(Diagnostic::error("Incomplete input for select statement")
             .add_help("Try select one or more values in the `SELECT` statement")
             .add_note("Select statements requires at least selecting one value")
-            .with_location(get_safe_location(tokens, *position - 1))
+            .with_location(calculate_safe_location(tokens, *position - 1))
             .as_boxed());
     }
 
@@ -508,7 +508,7 @@ fn parse_select_statement(
         return Err(
             Diagnostic::error("Aggregations functions should be used only with tables")
                 .add_note("Try to select from one of the available tables in current schema")
-                .with_location(get_safe_location(tokens, *position))
+                .with_location(calculate_safe_location(tokens, *position))
                 .as_boxed(),
         );
     }
@@ -518,7 +518,7 @@ fn parse_select_statement(
         return Err(
             Diagnostic::error("Expect `FROM` and table name after `SELECT *`")
                 .add_help("Select all must be used with valid table name")
-                .with_location(get_safe_location(tokens, *position))
+                .with_location(calculate_safe_location(tokens, *position))
                 .as_boxed(),
         );
     }
@@ -528,7 +528,7 @@ fn parse_select_statement(
         return Err(Diagnostic::error("Incomplete input for select statement")
             .add_help("Try select one or more values in the `SELECT` statement")
             .add_note("Select statements requires at least selecting one value")
-            .with_location(get_safe_location(tokens, *position - 1))
+            .with_location(calculate_safe_location(tokens, *position - 1))
             .as_boxed());
     }
 
@@ -547,7 +547,7 @@ fn parse_select_statement(
         env,
         &tables_to_select_from,
         &fields_names,
-        get_safe_location(tokens, *position),
+        calculate_safe_location(tokens, *position),
     )?;
 
     Ok(Box::new(SelectStatement {
@@ -575,7 +575,7 @@ fn parse_select_distinct_option(
             if *position >= tokens.len() || tokens[*position].kind != TokenKind::LeftParen {
                 return Err(Diagnostic::error("Expect `(` after `DISTINCT ON`")
                     .add_help("Try to add `(` after ON and before fields")
-                    .with_location(get_safe_location(tokens, *position))
+                    .with_location(calculate_safe_location(tokens, *position))
                     .as_boxed());
             }
 
@@ -618,7 +618,7 @@ fn parse_select_distinct_option(
                     "DISTINCT ON(...) must be used with one of more column",
                 )
                 .add_help("Try to add one or more columns from current table")
-                .with_location(get_safe_location(tokens, *position))
+                .with_location(calculate_safe_location(tokens, *position))
                 .as_boxed());
             }
 
@@ -627,7 +627,7 @@ fn parse_select_distinct_option(
                 return Err(
                     Diagnostic::error("No need to add Comma `,` after DISTINCT ON")
                         .add_help("Try to remove `,` after DISTINCT ON fields")
-                        .with_location(get_safe_location(tokens, *position))
+                        .with_location(calculate_safe_location(tokens, *position))
                         .as_boxed(),
                 );
             }
@@ -668,7 +668,7 @@ fn parse_select_all_or_expressions(
         // Assert that each selected field is unique
         if fields_names.contains(&field_name) {
             return Err(Diagnostic::error("Can't select the same field twice")
-                .with_location(get_safe_location(tokens, *position - 1))
+                .with_location(calculate_safe_location(tokens, *position - 1))
                 .as_boxed());
         }
 
@@ -800,7 +800,7 @@ fn parse_from_option(
                         return Err(Diagnostic::error(
                             "`OUTER` keyword used with LEFT or RIGHT JOIN only",
                         )
-                        .with_location(get_safe_location(tokens, *position))
+                        .with_location(calculate_safe_location(tokens, *position))
                         .as_boxed());
                     }
 
@@ -812,7 +812,7 @@ fn parse_from_option(
                     return Err(Diagnostic::error(
                         "Expect `JOIN` keyword after Cross, Left, Right, Inner",
                     )
-                    .with_location(get_safe_location(tokens, *position))
+                    .with_location(calculate_safe_location(tokens, *position))
                     .as_boxed());
                 }
             }
@@ -823,7 +823,7 @@ fn parse_from_option(
 
             if *position >= tokens.len() || tokens[*position].kind != TokenKind::Symbol {
                 return Err(Diagnostic::error("Expect table name after `JOIN` keyword")
-                    .with_location(get_safe_location(tokens, *position))
+                    .with_location(calculate_safe_location(tokens, *position))
                     .as_boxed());
             }
 
@@ -835,7 +835,7 @@ fn parse_from_option(
                 return Err(Diagnostic::error(
                     "The two tables of join must be unique or have different alias",
                 )
-                .with_location(get_safe_location(tokens, *position))
+                .with_location(calculate_safe_location(tokens, *position))
                 .as_boxed());
             }
 
@@ -892,7 +892,7 @@ fn parse_where_statement(
         return Err(Diagnostic::error("Expect expression after `WHERE` keyword")
             .add_help("Try to add boolean expression after `WHERE` keyword")
             .add_note("`WHERE` statement expects expression as condition")
-            .with_location(get_safe_location(tokens, *position - 1))
+            .with_location(calculate_safe_location(tokens, *position - 1))
             .as_boxed());
     }
 
@@ -1003,7 +1003,7 @@ fn parse_having_statement(
             Diagnostic::error("Expect expression after `HAVING` keyword")
                 .add_help("Try to add boolean expression after `HAVING` keyword")
                 .add_note("`HAVING` statement expects expression as condition")
-                .with_location(get_safe_location(tokens, *position - 1))
+                .with_location(calculate_safe_location(tokens, *position - 1))
                 .as_boxed(),
         );
     }
@@ -1043,7 +1043,7 @@ fn parse_limit_statement(
     *position += 1;
     if *position >= tokens.len() || tokens[*position].kind != TokenKind::Integer {
         return Err(Diagnostic::error("Expect number after `LIMIT` keyword")
-            .with_location(get_safe_location(tokens, *position - 1))
+            .with_location(calculate_safe_location(tokens, *position - 1))
             .as_boxed());
     }
 
@@ -1058,7 +1058,7 @@ fn parse_limit_statement(
                     "`LIMIT` value must be between 0 and {}",
                     usize::MAX
                 ))
-                .with_location(get_safe_location(tokens, *position))
+                .with_location(calculate_safe_location(tokens, *position))
                 .as_boxed());
         }
 
@@ -1067,7 +1067,7 @@ fn parse_limit_statement(
                 "`LIMIT` value must be between 0 and {}",
                 usize::MAX
             ))
-            .with_location(get_safe_location(tokens, *position))
+            .with_location(calculate_safe_location(tokens, *position))
             .as_boxed());
     }
 
@@ -1085,7 +1085,7 @@ fn parse_offset_statement(
     *position += 1;
     if *position >= tokens.len() || tokens[*position].kind != TokenKind::Integer {
         return Err(Diagnostic::error("Expect number after `OFFSET` keyword")
-            .with_location(get_safe_location(tokens, *position - 1))
+            .with_location(calculate_safe_location(tokens, *position - 1))
             .as_boxed());
     }
 
@@ -1100,7 +1100,7 @@ fn parse_offset_statement(
                     "`OFFSET` value must be between 0 and {}",
                     usize::MAX
                 ))
-                .with_location(get_safe_location(tokens, *position))
+                .with_location(calculate_safe_location(tokens, *position))
                 .as_boxed());
         }
 
@@ -1109,7 +1109,7 @@ fn parse_offset_statement(
                 "`OFFSET` value must be between 0 and {}",
                 usize::MAX
             ))
-            .with_location(get_safe_location(tokens, *position))
+            .with_location(calculate_safe_location(tokens, *position))
             .as_boxed());
     }
 
@@ -1216,7 +1216,7 @@ fn parse_into_statement(
         return Err(Diagnostic::error(
             "Expect Keyword `OUTFILE` or `DUMPFILE` after keyword `INTO`",
         )
-        .with_location(get_safe_location(tokens, *position))
+        .with_location(calculate_safe_location(tokens, *position))
         .as_boxed());
     }
 
@@ -1229,7 +1229,7 @@ fn parse_into_statement(
         return Err(Diagnostic::error(
             "Expect String literal as file path after OUTFILE or DUMPFILE keyword",
         )
-        .with_location(get_safe_location(tokens, *position))
+        .with_location(calculate_safe_location(tokens, *position))
         .as_boxed());
     }
 
@@ -1276,7 +1276,7 @@ fn parse_into_statement(
             if *position >= tokens.len() || tokens[*position].kind != TokenKind::Terminated {
                 return Err(
                     Diagnostic::error("Expect `TERMINATED` keyword after `LINES` keyword")
-                        .with_location(get_safe_location(tokens, *position))
+                        .with_location(calculate_safe_location(tokens, *position))
                         .as_boxed(),
                 );
             }
@@ -1286,7 +1286,7 @@ fn parse_into_statement(
 
             if *position >= tokens.len() || tokens[*position].kind != TokenKind::By {
                 return Err(Diagnostic::error("Expect `BY` after `TERMINATED` keyword")
-                    .with_location(get_safe_location(tokens, *position))
+                    .with_location(calculate_safe_location(tokens, *position))
                     .as_boxed());
             }
 
@@ -1297,7 +1297,7 @@ fn parse_into_statement(
                 return Err(Diagnostic::error(
                     "Expect String literal as lines terminated value after BY keyword",
                 )
-                .with_location(get_safe_location(tokens, *position))
+                .with_location(calculate_safe_location(tokens, *position))
                 .as_boxed());
             }
 
@@ -1333,7 +1333,7 @@ fn parse_into_statement(
                 return Err(Diagnostic::error(
                     "Expect `TERMINATED` keyword after `FIELDS` keyword",
                 )
-                .with_location(get_safe_location(tokens, *position))
+                .with_location(calculate_safe_location(tokens, *position))
                 .as_boxed());
             }
 
@@ -1342,7 +1342,7 @@ fn parse_into_statement(
 
             if *position >= tokens.len() || tokens[*position].kind != TokenKind::By {
                 return Err(Diagnostic::error("Expect `BY` after `TERMINATED` keyword")
-                    .with_location(get_safe_location(tokens, *position))
+                    .with_location(calculate_safe_location(tokens, *position))
                     .as_boxed());
             }
 
@@ -1353,7 +1353,7 @@ fn parse_into_statement(
                 return Err(Diagnostic::error(
                     "Expect String literal as Field terminated value after BY keyword",
                 )
-                .with_location(get_safe_location(tokens, *position))
+                .with_location(calculate_safe_location(tokens, *position))
                 .as_boxed());
             }
 
@@ -1387,7 +1387,7 @@ fn parse_into_statement(
                 return Err(Diagnostic::error(
                     "Expect String literal as enclosed value after ENCLOSED keyword",
                 )
-                .with_location(get_safe_location(tokens, *position))
+                .with_location(calculate_safe_location(tokens, *position))
                 .as_boxed());
             }
 
@@ -3081,7 +3081,7 @@ fn parse_index_or_slice_expression(
                     "Operator `[:]` can't be performed on type `{}`",
                     lhs_type.literal()
                 ))
-                .with_location(get_safe_location(tokens, *position))
+                .with_location(calculate_safe_location(tokens, *position))
                 .as_boxed());
             }
 
@@ -3092,7 +3092,7 @@ fn parse_index_or_slice_expression(
                     "Operator `[:]` can't be performed with type of index `{}`",
                     end_type.literal()
                 ))
-                .with_location(get_safe_location(tokens, *position))
+                .with_location(calculate_safe_location(tokens, *position))
                 .as_boxed());
             }
 
@@ -3101,7 +3101,7 @@ fn parse_index_or_slice_expression(
                 *position += 1;
             } else {
                 return Err(Diagnostic::error("Expect `]` After Slice expression")
-                    .with_location(get_safe_location(tokens, *position))
+                    .with_location(calculate_safe_location(tokens, *position))
                     .as_boxed());
             }
 
@@ -3179,7 +3179,7 @@ fn parse_index_or_slice_expression(
                 *position += 1;
             } else {
                 return Err(Diagnostic::error("Expect `]` After Slice expression")
-                    .with_location(get_safe_location(tokens, *position))
+                    .with_location(calculate_safe_location(tokens, *position))
                     .as_boxed());
             }
 
@@ -3211,7 +3211,7 @@ fn parse_index_or_slice_expression(
             *position += 1;
         } else {
             return Err(Diagnostic::error("Expect `]` after index expression")
-                .with_location(get_safe_location(tokens, *position))
+                .with_location(calculate_safe_location(tokens, *position))
                 .as_boxed());
         }
 
@@ -3726,7 +3726,7 @@ fn parse_array_value_expression(
         // Make sure Array keyword followed by [
         if *position >= tokens.len() || tokens[*position].kind != TokenKind::LeftBracket {
             return Err(Diagnostic::error("Expect `[` after `ARRAY` keyword")
-                .with_location(get_safe_location(tokens, *position))
+                .with_location(calculate_safe_location(tokens, *position))
                 .add_help("Try to add '[' after `ARRAY` keyword")
                 .as_boxed());
         }
@@ -3743,7 +3743,7 @@ fn parse_array_value_expression(
         let value_type = value.expr_type();
         if !value_type.equals(&array_data_type) {
             return Err(Diagnostic::error("Expect Array values to have same types")
-                .with_location(get_safe_location(tokens, *position))
+                .with_location(calculate_safe_location(tokens, *position))
                 .as_boxed());
         }
 
@@ -3760,7 +3760,7 @@ fn parse_array_value_expression(
     // Make sure Array values end with by ]
     if *position >= tokens.len() || tokens[*position].kind != TokenKind::RightBracket {
         return Err(Diagnostic::error("Expect `]` at the end of array values")
-            .with_location(get_safe_location(tokens, *position))
+            .with_location(calculate_safe_location(tokens, *position))
             .add_help("Try to add ']' at the end of array values")
             .as_boxed());
     }
@@ -3786,7 +3786,7 @@ fn parse_group_expression(
     let expression = parse_expression(context, env, tokens, position)?;
     if tokens[*position].kind != TokenKind::RightParen {
         return Err(Diagnostic::error("Expect `)` to end group expression")
-            .with_location(get_safe_location(tokens, *position))
+            .with_location(calculate_safe_location(tokens, *position))
             .add_help("Try to add ')' at the end of group expression")
             .as_boxed());
     }
@@ -3820,7 +3820,7 @@ fn parse_case_expression(
                 return Err(
                     Diagnostic::error("This `CASE` expression already has else branch")
                         .add_note("`CASE` expression can has only one `ELSE` branch")
-                        .with_location(get_safe_location(tokens, *position))
+                        .with_location(calculate_safe_location(tokens, *position))
                         .as_boxed(),
                 );
             }
@@ -3845,7 +3845,7 @@ fn parse_case_expression(
         let condition = parse_expression(context, env, tokens, position)?;
         if !condition.expr_type().is_bool() {
             return Err(Diagnostic::error("Case condition must be a boolean type")
-                .with_location(get_safe_location(tokens, *position))
+                .with_location(calculate_safe_location(tokens, *position))
                 .as_boxed());
         }
 
@@ -3867,7 +3867,7 @@ fn parse_case_expression(
     if conditions.is_empty() && !has_else_branch {
         return Err(
             Diagnostic::error("Case expression must has at least else branch")
-                .with_location(get_safe_location(tokens, *position))
+                .with_location(calculate_safe_location(tokens, *position))
                 .as_boxed(),
         );
     }
@@ -3875,7 +3875,7 @@ fn parse_case_expression(
     // Make sure case expression end with END keyword
     if *position >= tokens.len() || tokens[*position].kind != TokenKind::End {
         return Err(Diagnostic::error("Expect `END` after case branches")
-            .with_location(get_safe_location(tokens, *position))
+            .with_location(calculate_safe_location(tokens, *position))
             .as_boxed());
     }
 
@@ -3885,7 +3885,7 @@ fn parse_case_expression(
     // Make sure this case expression has else branch
     if !has_else_branch {
         return Err(Diagnostic::error("Case expression must has else branch")
-            .with_location(get_safe_location(tokens, *position))
+            .with_location(calculate_safe_location(tokens, *position))
             .as_boxed());
     }
 
@@ -3922,7 +3922,7 @@ fn parse_benchmark_call_expression(
 
     if *position >= tokens.len() || tokens[*position].kind != TokenKind::LeftParen {
         return Err(Diagnostic::error("Expect `(` after `Benchmark` keyword")
-            .with_location(get_safe_location(tokens, *position))
+            .with_location(calculate_safe_location(tokens, *position))
             .add_help("Try to add '(' right after `Benchmark` keyword")
             .as_boxed());
     }
@@ -3934,7 +3934,7 @@ fn parse_benchmark_call_expression(
     if !count.expr_type().is_int() {
         return Err(
             Diagnostic::error("Benchmark expect first argument to be integer")
-                .with_location(get_safe_location(tokens, *position))
+                .with_location(calculate_safe_location(tokens, *position))
                 .add_help("Try to integer value as first argument, eg: `Benchmark(10, 1 + 1)`")
                 .as_boxed(),
         );
@@ -3943,7 +3943,7 @@ fn parse_benchmark_call_expression(
     if *position >= tokens.len() || tokens[*position].kind != TokenKind::Comma {
         return Err(
             Diagnostic::error("Expect `,` after Benchmark first argument value")
-                .with_location(get_safe_location(tokens, *position))
+                .with_location(calculate_safe_location(tokens, *position))
                 .add_help("Make sure you passed two arguments to the Benchmark function")
                 .as_boxed(),
         );
@@ -3956,7 +3956,7 @@ fn parse_benchmark_call_expression(
 
     if *position >= tokens.len() || tokens[*position].kind != TokenKind::RightParen {
         return Err(Diagnostic::error("Expect `)` after `Benchmark` arguments")
-            .with_location(get_safe_location(tokens, *position))
+            .with_location(calculate_safe_location(tokens, *position))
             .add_help("Try to add ')` after `Benchmark` arguments")
             .as_boxed());
     }
@@ -4001,7 +4001,7 @@ fn un_expected_statement_error(tokens: &[Token], position: &mut usize) -> Box<Di
 }
 
 fn un_expected_expression_error(tokens: &[Token], position: &usize) -> Box<Diagnostic> {
-    let location = get_safe_location(tokens, *position);
+    let location = calculate_safe_location(tokens, *position);
 
     if *position == 0 || *position >= tokens.len() {
         return Diagnostic::error("Can't complete parsing this expression")
@@ -4185,12 +4185,12 @@ pub(crate) fn consume_token_or_error<'a>(
     }
 
     Err(Diagnostic::error(message)
-        .with_location(get_safe_location(tokens, *position))
+        .with_location(calculate_safe_location(tokens, *position))
         .as_boxed())
 }
 
 #[inline(always)]
-pub(crate) fn get_safe_location(tokens: &[Token], position: usize) -> Location {
+pub(crate) fn calculate_safe_location(tokens: &[Token], position: usize) -> Location {
     if position < tokens.len() {
         return tokens[position].location;
     }
