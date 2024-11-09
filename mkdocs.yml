@@ -104,6 +104,7 @@ nav:
       - Unary: expression/unary.md
       - Binary: expression/binary.md
       - Case: expression/case.md
+      - Cast: expression/cast.md
       - Access Member: expression/access.md
     - STD Functions and Operators:
       - "functions/index.md"

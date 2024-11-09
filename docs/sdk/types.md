@@ -66,3 +66,21 @@ impl DataType for IntPairType {
 ```
 
 Now if we create a new Function with Signature that accept IntPair and we pass Int, it will report an error, but now we created a Type but to create a Value with this type we need to create a Custom Value too ([Creating the IntPairValue as Custom value](values.md)).
+
+### Register your type in TypesTable
+
+If you want to support using your type in explicit casting feature, for example
+
+```SQL
+SELECT CAST(value AS IntPairType)
+```
+
+You must register your type to the TypesTable component and pass it to the `Environment` for example
+
+```rust
+let types_table = TypesTable::new();
+types_table.register("intpair", Box::new(IntPairType));
+
+let env = Environment::new();
+env.register_types_table(types_table);
+```

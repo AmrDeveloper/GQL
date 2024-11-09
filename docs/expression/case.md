@@ -1,3 +1,5 @@
+### Case expression
+
 Case expression is similar to Switch Expression in many languages, it's return the value of the first branch that has condition evaluated to true, if not branch found it will return the default value
 
 ```sql
