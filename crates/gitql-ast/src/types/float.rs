@@ -1,5 +1,7 @@
 use std::any::Any;
 
+use crate::types::integer::IntType;
+
 use super::base::DataType;
 
 #[derive(Clone)]
@@ -80,5 +82,9 @@ impl DataType for FloatType {
 
     fn neg_op_result_type(&self) -> Box<dyn DataType> {
         Box::new(self.clone())
+    }
+
+    fn can_perform_explicit_cast_op_to(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(IntType)]
     }
 }

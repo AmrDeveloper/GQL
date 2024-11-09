@@ -5,6 +5,7 @@ use gitql_ast::types::base::DataType;
 use gitql_ast::types::float::FloatType;
 
 use super::base::Value;
+use super::integer::IntValue;
 
 #[derive(Clone)]
 pub struct FloatValue {
@@ -72,5 +73,15 @@ impl Value for FloatValue {
 
     fn neg_op(&self) -> Result<Box<dyn Value>, String> {
         Ok(Box::new(FloatValue { value: -self.value }))
+    }
+
+    fn cast_op(&self, target_type: &Box<dyn DataType>) -> Result<Box<dyn Value>, String> {
+        // Cast Integer
+        if target_type.is_int() {
+            let value = self.value as i64;
+            return Ok(Box::new(IntValue { value }));
+        }
+
+        Err("Unexpected value to perform `CAST` with".to_string())
     }
 }

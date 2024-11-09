@@ -6,6 +6,7 @@ use gitql_ast::types::integer::IntType;
 
 use super::base::Value;
 use super::boolean::BoolValue;
+use super::float::FloatValue;
 
 #[derive(Clone)]
 pub struct IntValue {
@@ -183,5 +184,21 @@ impl Value for IntValue {
 
     fn neg_op(&self) -> Result<Box<dyn Value>, String> {
         Ok(Box::new(IntValue { value: -self.value }))
+    }
+
+    fn cast_op(&self, target_type: &Box<dyn DataType>) -> Result<Box<dyn Value>, String> {
+        // Cast to Boolean
+        if target_type.is_bool() {
+            let value = self.value != 0;
+            return Ok(Box::new(BoolValue { value }));
+        }
+
+        // Cast to Float
+        if target_type.is_float() {
+            let value = self.value as f64;
+            return Ok(Box::new(FloatValue { value }));
+        }
+
+        Err("Unexpected value to perform `CAST` with".to_string())
     }
 }

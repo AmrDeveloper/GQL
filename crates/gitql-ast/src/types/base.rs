@@ -400,12 +400,12 @@ pub trait DataType: DynClone {
         false
     }
 
-    /// Return a list of types that it's possible to perform `Cast' operator with
+    /// Return a list of types that it's possible to perform `Cast' operator to
     ///
     /// For example casting column with float value to integer or verse versa
     ///
     /// The result type is equal to the current type
-    fn can_perform_explicit_cast_op_with(&self) -> Vec<Box<dyn DataType>> {
+    fn can_perform_explicit_cast_op_to(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 }

@@ -26,6 +26,7 @@ use gitql_core::name_generator::generate_column_name;
 
 use crate::context::ParserContext;
 use crate::diagnostic::Diagnostic;
+use crate::parse_cast::parse_cast_call_expression;
 use crate::tokenizer::Location;
 use crate::tokenizer::Token;
 use crate::tokenizer::TokenKind;
@@ -603,15 +604,13 @@ fn parse_select_distinct_option(
                 }
             }
 
-            if *position >= tokens.len() || tokens[*position].kind != TokenKind::RightParen {
-                return Err(Diagnostic::error("Expect `)` after `DISTINCT ON fields`")
-                    .add_help("Try to add `)` after fields")
-                    .with_location(get_safe_location(tokens, *position))
-                    .as_boxed());
-            }
-
             // Consume `)` Right Parenthesis
-            *position += 1;
+            consume_token_or_error(
+                tokens,
+                position,
+                TokenKind::RightParen,
+                "Expect `)` after `DISTINCT ON fields`",
+            )?;
 
             // Prevent passing empty fields
             if distinct_fields.is_empty() {
@@ -677,18 +676,16 @@ fn parse_select_all_or_expressions(
         if *position < tokens.len() && tokens[*position].kind == TokenKind::As {
             // Consume `as` keyword
             *position += 1;
-            let alias_name_token = consume_kind(tokens, *position, TokenKind::Symbol);
-            if alias_name_token.is_err() {
-                return Err(Diagnostic::error("Expect `identifier` as field alias name")
-                    .with_location(get_safe_location(tokens, *position))
-                    .as_boxed());
-            }
 
-            // Register alias name
-            let alias_name = alias_name_token.ok().unwrap().literal.to_string();
-
-            // Consume alias name
-            *position += 1;
+            // Parse and consume Symbol as Elias name
+            let alias_name = consume_token_or_error(
+                tokens,
+                position,
+                TokenKind::Symbol,
+                "Expect `Symbol` as field alias name",
+            )?
+            .literal
+            .to_string();
 
             // No need to do checks or add alias
             // `SELECT C AS C` is equal to `SELECT C`
@@ -749,15 +746,16 @@ fn parse_from_option(
         // Consume `From` keyword
         *position += 1;
 
-        let table_name_token = consume_kind(tokens, *position, TokenKind::Symbol);
-        if table_name_token.is_err() {
-            return Err(Diagnostic::error("Expect `identifier` as a table name")
-                .add_note("Table name must be an identifier")
-                .with_location(get_safe_location(tokens, *position))
-                .as_boxed());
-        }
+        // Parse and consume Symbol as Table name
+        let table_name = consume_token_or_error(
+            tokens,
+            position,
+            TokenKind::Symbol,
+            "Expect `Symbol` as a table name",
+        )?
+        .literal
+        .to_string();
 
-        let table_name = &table_name_token.ok().unwrap().literal;
         if !env
             .schema
             .tables_fields_names
@@ -765,14 +763,14 @@ fn parse_from_option(
         {
             return Err(Diagnostic::error("Unresolved table name")
                 .add_help("Check the documentations to see available tables")
-                .with_location(get_safe_location(tokens, *position))
+                .with_location(tokens[*position - 1].location)
                 .as_boxed());
         }
 
         // Register the table
         tables_to_select_from.push(table_name.to_string());
         context.selected_tables.push(table_name.to_string());
-        register_current_table_fields_types(env, table_name)?;
+        register_current_table_fields_types(env, &table_name)?;
 
         // Consume table name
         *position += 1;
@@ -800,7 +798,7 @@ fn parse_from_option(
                 if *position < tokens.len() && tokens[*position].kind == TokenKind::Outer {
                     if !matches!(join_kind, JoinKind::Left | JoinKind::Right) {
                         return Err(Diagnostic::error(
-                            "`OUTER` keyword used with LEFT or RGIHT JOIN only",
+                            "`OUTER` keyword used with LEFT or RIGHT JOIN only",
                         )
                         .with_location(get_safe_location(tokens, *position))
                         .as_boxed());
@@ -833,7 +831,7 @@ fn parse_from_option(
             let other_table_name = &other_table.literal;
 
             // Make sure the RIGHT and LEFT tables names are not the same
-            if number_previous_of_joines == 0 && table_name == other_table_name {
+            if number_previous_of_joines == 0 && table_name.eq(other_table_name) {
                 return Err(Diagnostic::error(
                     "The two tables of join must be unique or have different alias",
                 )
@@ -948,17 +946,13 @@ fn parse_group_by_statement(
     // Consume `Group` keyword
     *position += 1;
 
-    if *position >= tokens.len() || tokens[*position].kind != TokenKind::By {
-        return Err(
-            Diagnostic::error("Expect keyword `by` after keyword `group`")
-                .add_help("Try to use `BY` keyword after `GROUP")
-                .with_location(get_safe_location(tokens, *position - 1))
-                .as_boxed(),
-        );
-    }
-
     // Consume `By` keyword
-    *position += 1;
+    consume_token_or_error(
+        tokens,
+        position,
+        TokenKind::By,
+        "Expect keyword `by` after keyword `group`",
+    )?;
 
     // Parse one or more expression
     let mut values: Vec<Box<dyn Expr>> = vec![];
@@ -979,17 +973,14 @@ fn parse_group_by_statement(
         // Consume Comma `WITH``
         *position += 1;
 
-        if *position < tokens.len() && tokens[*position].kind != TokenKind::Rollup {
-            return Err(
-                Diagnostic::error("Expect keyword `ROLLUP` after keyword `with`")
-                    .add_help("Try to use `ROLLUP` keyword after `WITH")
-                    .with_location(tokens[*position].location)
-                    .as_boxed(),
-            );
-        }
+        // Consume `Rollup` keyword
+        consume_token_or_error(
+            tokens,
+            position,
+            TokenKind::Rollup,
+            "Expect keyword `ROLLUP` after keyword `with`",
+        )?;
 
-        // Consume Comma `ROLLUP``
-        *position += 1;
         has_with_rollup = true;
     }
 
@@ -1137,17 +1128,13 @@ fn parse_order_by_statement(
     // Consume `ORDER` keyword
     *position += 1;
 
-    if *position >= tokens.len() || tokens[*position].kind != TokenKind::By {
-        return Err(
-            Diagnostic::error("Expect keyword `BY` after keyword `ORDER")
-                .add_help("Try to use `BY` keyword after `ORDER")
-                .with_location(get_safe_location(tokens, *position - 1))
-                .as_boxed(),
-        );
-    }
-
     // Consume `BY` keyword
-    *position += 1;
+    consume_token_or_error(
+        tokens,
+        position,
+        TokenKind::By,
+        "Expect keyword `BY` after keyword `ORDER",
+    )?;
 
     let mut arguments: Vec<Box<dyn Expr>> = vec![];
     let mut sorting_orders: Vec<SortingOrder> = vec![];
@@ -1422,7 +1409,7 @@ fn parse_into_statement(
     }))
 }
 
-fn parse_expression(
+pub(crate) fn parse_expression(
     context: &mut ParserContext,
     env: &mut Environment,
     tokens: &[Token],
@@ -1616,7 +1603,7 @@ fn parse_in_expression(
         // Consume `IN` keyword
         *position += 1;
 
-        if consume_kind(tokens, *position, TokenKind::LeftParen).is_err() {
+        if *position < tokens.len() && tokens[*position].kind == TokenKind::LeftParen {
             return Err(
                 Diagnostic::error("Expects values between `(` and `)` after `IN` keyword")
                     .with_location(in_location)
@@ -3457,36 +3444,38 @@ fn parse_arguments_expressions(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Vec<Box<dyn Expr>>, Box<Diagnostic>> {
+    // Consume `(` token after function call name
+    consume_token_or_error(
+        tokens,
+        position,
+        TokenKind::LeftParen,
+        "Expect `(` after function call name",
+    )?;
+
     let mut arguments: Vec<Box<dyn Expr>> = vec![];
-    if consume_kind(tokens, *position, TokenKind::LeftParen).is_ok() {
-        *position += 1;
-
-        while *position < tokens.len() && tokens[*position].kind != TokenKind::RightParen {
-            let argument = parse_expression(context, env, tokens, position)?;
-            if let Some(argument_literal) = expression_literal(&argument) {
-                context.hidden_selections.push(argument_literal);
-            }
-
-            arguments.push(argument);
-
-            if *position < tokens.len() && tokens[*position].kind == TokenKind::Comma {
-                *position += 1;
-            } else {
-                break;
-            }
+    while *position < tokens.len() && tokens[*position].kind != TokenKind::RightParen {
+        let argument = parse_expression(context, env, tokens, position)?;
+        if let Some(argument_literal) = expression_literal(&argument) {
+            context.hidden_selections.push(argument_literal);
         }
 
-        if consume_kind(tokens, *position, TokenKind::RightParen).is_err() {
-            return Err(
-                Diagnostic::error("Expect `)` after function call arguments")
-                    .add_help("Try to add ')' at the end of function call, after arguments")
-                    .with_location(get_safe_location(tokens, *position))
-                    .as_boxed(),
-            );
-        }
+        arguments.push(argument);
 
-        *position += 1;
+        if *position < tokens.len() && tokens[*position].kind == TokenKind::Comma {
+            *position += 1;
+        } else {
+            break;
+        }
     }
+
+    // Consume `)` token at the end of call expression
+    consume_token_or_error(
+        tokens,
+        position,
+        TokenKind::RightParen,
+        "Expect `)` after function call arguments",
+    )?;
+
     Ok(arguments)
 }
 
@@ -3583,6 +3572,7 @@ fn parse_primary_expression(
         TokenKind::LeftBracket => parse_array_value_expression(context, env, tokens, position),
         TokenKind::LeftParen => parse_group_expression(context, env, tokens, position),
         TokenKind::Case => parse_case_expression(context, env, tokens, position),
+        TokenKind::Cast => parse_cast_call_expression(context, env, tokens, position),
         TokenKind::Benchmark => parse_benchmark_call_expression(context, env, tokens, position),
         TokenKind::GlobalVariable => parse_global_variable_expression(env, tokens, position),
         TokenKind::String => {
@@ -3790,7 +3780,9 @@ fn parse_group_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
+    // Consume '(' token
     *position += 1;
+
     let expression = parse_expression(context, env, tokens, position)?;
     if tokens[*position].kind != TokenKind::RightParen {
         return Err(Diagnostic::error("Expect `)` to end group expression")
@@ -3798,7 +3790,10 @@ fn parse_group_expression(
             .add_help("Try to add ')' at the end of group expression")
             .as_boxed());
     }
+
+    // Consume ')' token
     *position += 1;
+
     Ok(Box::new(GroupExpr { expr: expression }))
 }
 
@@ -3839,17 +3834,13 @@ fn parse_case_expression(
             continue;
         }
 
-        // Check if current token kind is `WHEN` keyword
-        let when_result = consume_kind(tokens, *position, TokenKind::When);
-        if when_result.is_err() {
-            return Err(Diagnostic::error("Expect `when` before case condition")
-                .add_help("Try to add `WHEN` keyword before any condition")
-                .with_location(get_safe_location(tokens, *position))
-                .as_boxed());
-        }
-
         // Consume `WHEN` keyword
-        *position += 1;
+        consume_token_or_error(
+            tokens,
+            position,
+            TokenKind::When,
+            "Expect `when` before case condition",
+        )?;
 
         let condition = parse_expression(context, env, tokens, position)?;
         if !condition.expr_type().is_bool() {
@@ -3860,15 +3851,13 @@ fn parse_case_expression(
 
         conditions.push(condition);
 
-        let then_result = consume_kind(tokens, *position, TokenKind::Then);
-        if then_result.is_err() {
-            return Err(Diagnostic::error("Expect `THEN` after case condition")
-                .with_location(get_safe_location(tokens, *position))
-                .as_boxed());
-        }
-
-        // Consume then keyword
-        *position += 1;
+        // Consume `THEN` keyword
+        consume_token_or_error(
+            tokens,
+            position,
+            TokenKind::Then,
+            "Expect `THEN` after case condition",
+        )?;
 
         let expression = parse_expression(context, env, tokens, position)?;
         values.push(expression);
@@ -4183,15 +4172,25 @@ fn select_all_table_fields(
 }
 
 #[inline(always)]
-fn consume_kind(tokens: &[Token], position: usize, kind: TokenKind) -> Result<&Token, ()> {
-    if position < tokens.len() && tokens[position].kind == kind {
-        return Ok(&tokens[position]);
+pub(crate) fn consume_token_or_error<'a>(
+    tokens: &'a [Token],
+    position: &'a mut usize,
+    expected_kind: TokenKind,
+    message: &'a str,
+) -> Result<&'a Token, Box<Diagnostic>> {
+    if *position < tokens.len() && tokens[*position].kind == expected_kind {
+        *position += 1;
+        let index = *position - 1;
+        return Ok(&tokens[index]);
     }
-    Err(())
+
+    Err(Diagnostic::error(message)
+        .with_location(get_safe_location(tokens, *position))
+        .as_boxed())
 }
 
 #[inline(always)]
-fn get_safe_location(tokens: &[Token], position: usize) -> Location {
+pub(crate) fn get_safe_location(tokens: &[Token], position: usize) -> Location {
     if position < tokens.len() {
         return tokens[position].location;
     }

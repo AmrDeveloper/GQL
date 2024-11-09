@@ -2,6 +2,7 @@ use std::any::Any;
 
 use crate::expression::Expr;
 use crate::expression::StringExpr;
+use crate::types::integer::IntType;
 
 use super::base::DataType;
 
@@ -80,5 +81,9 @@ impl DataType for BoolType {
             return BOOLEANS_VALUES_LITERAL.contains(&string_expr.value.as_str());
         }
         false
+    }
+
+    fn can_perform_explicit_cast_op_to(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(IntType)]
     }
 }

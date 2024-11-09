@@ -1,3 +1,5 @@
+use crate::diagnostic::Diagnostic;
+
 #[derive(PartialEq)]
 pub enum TokenKind {
     Do,
@@ -23,6 +25,7 @@ pub enum TokenKind {
     Show,
     RegExp,
 
+    Cast,
     Benchmark,
 
     Join,
@@ -128,8 +131,6 @@ pub struct Token {
     pub kind: TokenKind,
     pub literal: String,
 }
-
-use crate::diagnostic::Diagnostic;
 
 pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
     let mut tokens: Vec<Token> = Vec::new();
@@ -1169,6 +1170,7 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "show" => TokenKind::Show,
         "regexp" => TokenKind::RegExp,
 
+        "cast" => TokenKind::Cast,
         "benchmark" => TokenKind::Benchmark,
 
         // Select into

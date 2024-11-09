@@ -5,6 +5,7 @@ use gitql_ast::types::base::DataType;
 use gitql_ast::types::boolean::BoolType;
 
 use super::base::Value;
+use super::integer::IntValue;
 
 #[derive(Clone)]
 pub struct BoolValue {
@@ -112,5 +113,15 @@ impl Value for BoolValue {
 
     fn not_op(&self) -> Result<Box<dyn Value>, String> {
         Ok(Box::new(BoolValue { value: !self.value }))
+    }
+
+    fn cast_op(&self, target_type: &Box<dyn DataType>) -> Result<Box<dyn Value>, String> {
+        // Cast to Int Type
+        if target_type.is_int() {
+            let value = if self.value { 1 } else { 0 };
+            return Ok(Box::new(IntValue { value }));
+        }
+
+        Err("Unexpected value to perform `CAST` with".to_string())
     }
 }
