@@ -15,8 +15,6 @@ use gitql_ast::types::text::TextType;
 use gitql_ast::types::time::TimeType;
 use gitql_ast::types::varargs::VarargsType;
 use gitql_ast::types::variant::VariantType;
-use gitql_core::dynamic_types::array_of_type;
-use gitql_core::dynamic_types::first_element_type;
 use gitql_core::signature::Aggregation;
 use gitql_core::signature::Signature;
 use gitql_core::values::array::ArrayValue;
@@ -25,6 +23,9 @@ use gitql_core::values::boolean::BoolValue;
 use gitql_core::values::integer::IntValue;
 use gitql_core::values::null::NullValue;
 use gitql_core::values::text::TextValue;
+
+use crate::meta_types::array_of_type;
+use crate::meta_types::first_element_type;
 
 pub fn aggregation_functions() -> &'static HashMap<&'static str, Aggregation> {
     static HASHMAP: OnceLock<HashMap<&'static str, Aggregation>> = OnceLock::new();

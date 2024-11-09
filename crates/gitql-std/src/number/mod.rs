@@ -1,9 +1,11 @@
+use std::collections::HashMap;
+use std::ops::Rem;
+
 use gitql_ast::types::dynamic::DynamicType;
 use gitql_ast::types::float::FloatType;
 use gitql_ast::types::integer::IntType;
 use gitql_ast::types::optional::OptionType;
 use gitql_ast::types::variant::VariantType;
-use gitql_core::dynamic_types::first_element_type;
 use gitql_core::signature::Function;
 use gitql_core::signature::Signature;
 use gitql_core::values::base::Value;
@@ -11,8 +13,7 @@ use gitql_core::values::float::FloatValue;
 use gitql_core::values::integer::IntValue;
 use gitql_core::values::null::NullValue;
 
-use std::collections::HashMap;
-use std::ops::Rem;
+use crate::meta_types::first_element_type;
 
 use rand::distributions::Uniform;
 use rand::rngs::StdRng;

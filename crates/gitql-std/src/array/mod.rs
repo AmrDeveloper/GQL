@@ -1,12 +1,10 @@
+use std::collections::HashMap;
+
 use gitql_ast::types::any::AnyType;
 use gitql_ast::types::array::ArrayType;
 use gitql_ast::types::dynamic::DynamicType;
 use gitql_ast::types::integer::IntType;
 use gitql_ast::types::text::TextType;
-use gitql_core::dynamic_types::array_element_type;
-use gitql_core::dynamic_types::array_of_type;
-use gitql_core::dynamic_types::first_element_type;
-use gitql_core::dynamic_types::second_element_type;
 use gitql_core::signature::Function;
 use gitql_core::signature::Signature;
 use gitql_core::values::array::ArrayValue;
@@ -15,9 +13,12 @@ use gitql_core::values::integer::IntValue;
 use gitql_core::values::null::NullValue;
 use gitql_core::values::text::TextValue;
 
-use rand::seq::SliceRandom;
+use crate::meta_types::array_element_type;
+use crate::meta_types::array_of_type;
+use crate::meta_types::first_element_type;
+use crate::meta_types::second_element_type;
 
-use std::collections::HashMap;
+use rand::seq::SliceRandom;
 
 #[inline(always)]
 pub fn register_std_array_functions(map: &mut HashMap<&'static str, Function>) {
