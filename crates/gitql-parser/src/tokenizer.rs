@@ -103,6 +103,7 @@ pub enum TokenKind {
     NaN,
 
     Colon,
+    ColonColon,
     ColonEqual,
 
     Plus,
@@ -612,18 +613,32 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
             continue;
         }
 
-        // Colon or Colon Equal
+        // Colon , ColonColon or Colon Equal
         if char == ':' {
             let location = Location {
                 start: column_start,
                 end: position,
             };
 
+            // :=
             if position + 1 < len && characters[position + 1] == '=' {
                 let token = Token {
                     location,
                     kind: TokenKind::ColonEqual,
                     literal: ":=".to_owned(),
+                };
+
+                tokens.push(token);
+                position += 2;
+                continue;
+            }
+
+            // ::
+            if position + 1 < len && characters[position + 1] == ':' {
+                let token = Token {
+                    location,
+                    kind: TokenKind::ColonColon,
+                    literal: "::".to_owned(),
                 };
 
                 tokens.push(token);

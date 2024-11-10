@@ -27,6 +27,7 @@ use gitql_core::name_generator::generate_column_name;
 use crate::context::ParserContext;
 use crate::diagnostic::Diagnostic;
 use crate::parse_cast::parse_cast_call_expression;
+use crate::parse_cast::parse_cast_operator_expression;
 use crate::tokenizer::Location;
 use crate::tokenizer::Token;
 use crate::tokenizer::TokenKind;
@@ -3004,7 +3005,7 @@ fn parse_glob_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
-    let expression = parse_index_or_slice_expression(context, env, tokens, position);
+    let expression = parse_cast_operator_expression(context, env, tokens, position);
     if expression.is_err() || *position >= tokens.len() {
         return expression;
     }
@@ -3042,7 +3043,7 @@ fn parse_glob_expression(
     Ok(lhs)
 }
 
-fn parse_index_or_slice_expression(
+pub(crate) fn parse_index_or_slice_expression(
     context: &mut ParserContext,
     env: &mut Environment,
     tokens: &[Token],

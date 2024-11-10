@@ -27,3 +27,9 @@ to case this value to another type, for example
 ```SQL
 SELECT CAST(commits_count AS Real);
 ```
+
+Instead of using the above syntax, we can also use the following condensed syntax:
+
+```SQL
+SELECT commits_count::Real;
+```
