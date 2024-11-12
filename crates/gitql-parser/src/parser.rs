@@ -773,9 +773,6 @@ fn parse_from_option(
         context.selected_tables.push(table_name.to_string());
         register_current_table_fields_types(env, &table_name)?;
 
-        // Consume table name
-        *position += 1;
-
         // Parse Joins
         let mut number_previous_of_joines = 0;
         while *position < tokens.len() && is_join_token(&tokens[*position]) {
