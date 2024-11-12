@@ -1,5 +1,13 @@
 # Change Log
 
+## Version 0.31.0 _(2024-11-12)_
+
+- Implement Cast function call expression `CAST(expr AS <Type>)`.
+- Implement Cast operator `expr::<type>`.
+- Created the TypesTable component to register types and aliases.
+- Fix schema datetime and updated types from Date to DateTime.
+- Fix consuming table name twice.
+
 ## Version 0.30.0 _(2024-11-08)_
 
 - Implement Composite type.
