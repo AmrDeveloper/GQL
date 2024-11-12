@@ -3,7 +3,7 @@ use std::sync::OnceLock;
 
 use gitql_ast::types::base::DataType;
 use gitql_ast::types::boolean::BoolType;
-use gitql_ast::types::date::DateType;
+use gitql_ast::types::datetime::DateTimeType;
 use gitql_ast::types::integer::IntType;
 use gitql_ast::types::text::TextType;
 
@@ -23,12 +23,12 @@ pub fn tables_fields_types() -> HashMap<&'static str, Box<dyn DataType>> {
     map.insert("files_changed", Box::new(IntType));
     map.insert("email", Box::new(TextType));
     map.insert("type", Box::new(TextType));
-    map.insert("datetime", Box::new(DateType));
+    map.insert("datetime", Box::new(DateTimeType));
     map.insert("is_head", Box::new(BoolType));
     map.insert("is_remote", Box::new(BoolType));
     map.insert("commit_count", Box::new(IntType));
     map.insert("parents_count", Box::new(IntType));
-    map.insert("updated", Box::new(DateType));
+    map.insert("updated", Box::new(DateTimeType));
     map.insert("repo", Box::new(TextType));
     map
 }

@@ -2242,7 +2242,7 @@ fn parse_comparison_expression(
 
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
-                "Operator `<` can't be performed between types `{}` and `{}`",
+                "Operator `>` can't be performed between types `{}` and `{}`",
                 lhs_type.literal(),
                 rhs_type.literal()
             ))
@@ -2281,7 +2281,7 @@ fn parse_comparison_expression(
 
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
-                "Operator `<=` can't be performed between types `{}` and `{}`",
+                "Operator `>=` can't be performed between types `{}` and `{}`",
                 lhs_type.literal(),
                 rhs_type.literal()
             ))
@@ -2320,7 +2320,7 @@ fn parse_comparison_expression(
 
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
-                "Operator `>` can't be performed between types `{}` and `{}`",
+                "Operator `<` can't be performed between types `{}` and `{}`",
                 lhs_type.literal(),
                 rhs_type.literal()
             ))
@@ -2359,7 +2359,7 @@ fn parse_comparison_expression(
 
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
-                "Operator `>=` can't be performed between types `{}` and `{}`",
+                "Operator `<=` can't be performed between types `{}` and `{}`",
                 lhs_type.literal(),
                 rhs_type.literal()
             ))
