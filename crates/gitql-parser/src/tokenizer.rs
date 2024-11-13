@@ -50,7 +50,6 @@ pub enum TokenKind {
     Terminated,
 
     Between,
-    DotDot,
 
     Greater,
     GreaterEqual,
@@ -79,7 +78,10 @@ pub enum TokenKind {
 
     OrOr,
     AndAnd,
-    LogicalXor,
+
+    OrKeyword,
+    AndKeyword,
+    XorKeyword,
 
     BitwiseNot,
     BitwiseXor,
@@ -489,7 +491,7 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
             continue;
         }
 
-        // Dot or Range (DotDot)
+        // Dot
         if char == '.' {
             let location = Location {
                 start: column_start,
@@ -498,14 +500,8 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
 
             position += 1;
 
-            let mut kind = TokenKind::Dot;
-            let literal = if position < len && characters[position] == '.' {
-                position += 1;
-                kind = TokenKind::DotDot;
-                ".."
-            } else {
-                "."
-            };
+            let kind = TokenKind::Dot;
+            let literal = ".";
 
             let token = Token {
                 location,
@@ -1217,9 +1213,9 @@ fn resolve_symbol_kind(literal: String) -> TokenKind {
         "mod" => TokenKind::Percentage,
 
         // Logical Operators
-        "or" => TokenKind::OrOr,
-        "and" => TokenKind::AndAnd,
-        "xor" => TokenKind::LogicalXor,
+        "or" => TokenKind::OrKeyword,
+        "and" => TokenKind::AndKeyword,
+        "xor" => TokenKind::XorKeyword,
 
         // True, False and Null
         "true" => TokenKind::True,

@@ -26,13 +26,11 @@ Used to perform arithmetic operators on number types.
 ### Contains Expression
 
 - `@>` Check if Range or Array contains other value.
-- `@>` Check if Range or Array contains other value.
 
 ---
 
 ### Contained by Expression
 
-- `<@` Check if Range or Array contained by other value.
 - `<@` Check if Range or Array contained by other value.
 
 ---
@@ -79,7 +77,7 @@ SELECT "Git Query Language" GLOB "Git*"
 Used to check if value is between range start and end included
 
 ```SQL
-SELECT commit_count FROM branches WHERE commit_count BETWEEN 2 .. 30000
+SELECT commit_count FROM branches WHERE commit_count BETWEEN 2 AND 30000
 ```
 
 ---

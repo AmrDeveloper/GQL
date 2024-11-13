@@ -1644,7 +1644,7 @@ fn parse_logical_or_expression(
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
     let mut lhs = parse_logical_and_expression(context, env, tokens, position)?;
 
-    'parse_expr: while is_current_token(tokens, position, TokenKind::OrOr) {
+    'parse_expr: while is_logical_or_operator(tokens, position) {
         let operator = &tokens[*position];
 
         // Consume`OR` operator
@@ -1707,7 +1707,7 @@ fn parse_logical_and_expression(
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
     let mut lhs = parse_bitwise_or_expression(context, env, tokens, position)?;
 
-    'parse_expr: while is_current_token(tokens, position, TokenKind::AndAnd) {
+    'parse_expr: while is_logical_and_operator(tokens, position) {
         let operator = &tokens[*position];
 
         // Consume`AND` operator
@@ -1900,7 +1900,7 @@ fn parse_logical_xor_expression(
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
     let mut lhs = parse_bitwise_and_expression(context, env, tokens, position)?;
 
-    'parse_expr: while is_current_token(tokens, position, TokenKind::LogicalXor) {
+    'parse_expr: while is_current_token(tokens, position, TokenKind::XorKeyword) {
         let operator = &tokens[*position];
 
         // Consume`XOR` operator
@@ -2347,7 +2347,7 @@ fn parse_contains_expression(
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
     let lhs = parse_contained_by_expression(context, env, tokens, position)?;
 
-    if *position < tokens.len() && tokens[*position].kind == TokenKind::AtRightArrow {
+    if is_current_token(tokens, position, TokenKind::AtRightArrow) {
         let operator = &tokens[*position];
 
         // Consume `@>` token
@@ -2404,7 +2404,7 @@ fn parse_contained_by_expression(
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
     let lhs = parse_bitwise_shift_expression(context, env, tokens, position)?;
 
-    if *position < tokens.len() && tokens[*position].kind == TokenKind::ArrowRightAt {
+    if is_current_token(tokens, position, TokenKind::ArrowRightAt) {
         let operator = &tokens[*position];
 
         // Consume `<@` token
@@ -2931,13 +2931,9 @@ fn parse_glob_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
-    let expression = parse_cast_operator_expression(context, env, tokens, position);
-    if expression.is_err() || *position >= tokens.len() {
-        return expression;
-    }
+    let lhs = parse_cast_operator_expression(context, env, tokens, position)?;
 
-    let lhs = expression.ok().unwrap();
-    if tokens[*position].kind == TokenKind::Glob {
+    if is_current_token(tokens, position, TokenKind::Glob) {
         let location = tokens[*position].location;
         *position += 1;
 
@@ -2987,13 +2983,13 @@ pub(crate) fn parse_index_or_slice_expression(
         let lhs_type = lhs.expr_type();
 
         // Slice with end only range [:end]
-        if *position < tokens.len() && tokens[*position].kind == TokenKind::Colon {
+        if is_current_token(tokens, position, TokenKind::Colon) {
             // Consume Colon `:`
             *position += 1;
 
             // In case the user use default slice start and end, we can ignore the slice expression
             // and return array or any kind of expression value directly
-            if *position < tokens.len() && tokens[*position].kind == TokenKind::RightBracket {
+            if is_current_token(tokens, position, TokenKind::RightBracket) {
                 // Consume right bracket `]`
                 *position += 1;
                 return Ok(lhs);
@@ -3023,14 +3019,13 @@ pub(crate) fn parse_index_or_slice_expression(
                 .as_boxed());
             }
 
-            if *position < tokens.len() && tokens[*position].kind == TokenKind::RightBracket {
-                // Consume Right Bracket `]`
-                *position += 1;
-            } else {
-                return Err(Diagnostic::error("Expect `]` After Slice expression")
-                    .with_location(calculate_safe_location(tokens, *position))
-                    .as_boxed());
-            }
+            // Consume Right Bracket `]`
+            consume_token_or_error(
+                tokens,
+                position,
+                TokenKind::RightBracket,
+                "Expect `]` After Slice expression",
+            )?;
 
             lhs = Box::new(SliceExpr {
                 collection: lhs,
@@ -3046,12 +3041,12 @@ pub(crate) fn parse_index_or_slice_expression(
         let index_type = index.expr_type();
 
         // Slice Expression with Start and End range [start:end]
-        if *position < tokens.len() && tokens[*position].kind == TokenKind::Colon {
+        if is_current_token(tokens, position, TokenKind::Colon) {
             // Consume Colon `:`
             *position += 1;
 
             // Slice with start only range [start:]
-            if *position < tokens.len() && tokens[*position].kind == TokenKind::RightBracket {
+            if is_current_token(tokens, position, TokenKind::RightBracket) {
                 // Consume Right Bracket `]`
                 *position += 1;
 
@@ -3101,14 +3096,13 @@ pub(crate) fn parse_index_or_slice_expression(
                 .as_boxed());
             }
 
-            if *position < tokens.len() && tokens[*position].kind == TokenKind::RightBracket {
-                // Consume Right Bracket `]`
-                *position += 1;
-            } else {
-                return Err(Diagnostic::error("Expect `]` After Slice expression")
-                    .with_location(calculate_safe_location(tokens, *position))
-                    .as_boxed());
-            }
+            // Consume Right Bracket `]`
+            consume_token_or_error(
+                tokens,
+                position,
+                TokenKind::RightBracket,
+                "Expect `]` After Slice expression",
+            )?;
 
             lhs = Box::new(SliceExpr {
                 collection: lhs,
@@ -3133,14 +3127,13 @@ pub(crate) fn parse_index_or_slice_expression(
             .as_boxed());
         }
 
-        if *position < tokens.len() && tokens[*position].kind == TokenKind::RightBracket {
-            // Consume Left Right `]`
-            *position += 1;
-        } else {
-            return Err(Diagnostic::error("Expect `]` after index expression")
-                .with_location(calculate_safe_location(tokens, *position))
-                .as_boxed());
-        }
+        // Consume Right Bracket `]`
+        consume_token_or_error(
+            tokens,
+            position,
+            TokenKind::RightBracket,
+            "Expect `]` After Index expression",
+        )?;
 
         let array_element_type =
             if let Some(array_type) = lhs_type.as_any().downcast_ref::<ArrayType>() {
@@ -3256,14 +3249,6 @@ fn parse_between_expression(
         // Consume `BETWEEN` keyword
         *position += 1;
 
-        if *position >= tokens.len() {
-            return Err(
-                Diagnostic::error("`BETWEEN` keyword expects two range after it")
-                    .with_location(between_location)
-                    .as_boxed(),
-            );
-        }
-
         let argument_type = expression.expr_type();
         let range_start = parse_function_call_expression(context, env, tokens, position)?;
 
@@ -3271,7 +3256,7 @@ fn parse_between_expression(
         consume_token_or_error(
             tokens,
             position,
-            TokenKind::DotDot,
+            TokenKind::AndKeyword,
             "Expect `..` after `BETWEEN` range start",
         )?;
 
@@ -4206,25 +4191,47 @@ pub(crate) fn calculate_safe_location(tokens: &[Token], position: usize) -> Loca
 }
 
 #[inline(always)]
+pub(crate) fn is_logical_or_operator(tokens: &[Token], position: &usize) -> bool {
+    *position < tokens.len()
+        && matches!(
+            tokens[*position].kind,
+            TokenKind::OrOr | TokenKind::OrKeyword
+        )
+}
+
+#[inline(always)]
+pub(crate) fn is_logical_and_operator(tokens: &[Token], position: &usize) -> bool {
+    *position < tokens.len()
+        && matches!(
+            tokens[*position].kind,
+            TokenKind::AndAnd | TokenKind::AndKeyword
+        )
+}
+
+#[inline(always)]
 fn is_assignment_operator(token: &Token) -> bool {
-    token.kind == TokenKind::Equal || token.kind == TokenKind::ColonEqual
+    matches!(token.kind, TokenKind::Equal | TokenKind::ColonEqual)
 }
 
 #[inline(always)]
 fn is_term_operator(token: &Token) -> bool {
-    token.kind == TokenKind::Plus || token.kind == TokenKind::Minus
+    matches!(token.kind, TokenKind::Plus | TokenKind::Minus)
 }
 
 #[inline(always)]
 fn is_bitwise_shift_operator(token: &Token) -> bool {
-    token.kind == TokenKind::BitwiseLeftShift || token.kind == TokenKind::BitwiseRightShift
+    matches!(
+        token.kind,
+        TokenKind::BitwiseLeftShift | TokenKind::BitwiseRightShift
+    )
 }
 
 #[inline(always)]
 fn is_prefix_unary_operator(token: &Token) -> bool {
-    token.kind == TokenKind::Bang
-        || token.kind == TokenKind::Minus
-        || token.kind == TokenKind::BitwiseNot
+    matches!(
+        token.kind,
+        TokenKind::Bang | TokenKind::Minus | TokenKind::BitwiseNot
+    )
 }
 
 #[inline(always)]
@@ -4251,15 +4258,15 @@ fn is_comparison_operator(tokens: &[Token], position: &usize) -> bool {
 
 #[inline(always)]
 fn is_factor_operator(token: &Token) -> bool {
-    token.kind == TokenKind::Star
-        || token.kind == TokenKind::Slash
-        || token.kind == TokenKind::Percentage
-        || token.kind == TokenKind::Caret
+    matches!(
+        token.kind,
+        TokenKind::Star | TokenKind::Slash | TokenKind::Percentage | TokenKind::Caret
+    )
 }
 
 #[inline(always)]
 fn is_order_by_using_operator(token: &Token) -> bool {
-    token.kind == TokenKind::Greater || token.kind == TokenKind::Less
+    matches!(token.kind, TokenKind::Greater | TokenKind::Less)
 }
 
 #[inline(always)]
@@ -4272,5 +4279,5 @@ fn is_join_or_join_type_token(tokens: &[Token], position: &usize) -> bool {
 
 #[inline(always)]
 fn is_asc_or_desc(token: &Token) -> bool {
-    token.kind == TokenKind::Ascending || token.kind == TokenKind::Descending
+    matches!(token.kind, TokenKind::Ascending | TokenKind::Descending)
 }
