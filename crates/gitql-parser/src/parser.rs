@@ -100,7 +100,7 @@ fn parse_set_query(
     // Consume Set keyword
     *position += 1;
 
-    if *position >= len || tokens[*position].kind != TokenKind::GlobalVariable {
+    if is_current_token(tokens, position, TokenKind::GlobalVariable) {
         return Err(Diagnostic::error(
             "Expect Global variable name start with `@` after `SET` keyword",
         )
@@ -281,7 +281,7 @@ fn parse_select_query(
                 statements.insert("limit", statement);
 
                 // Check for Limit and Offset shortcut
-                if *position < len && tokens[*position].kind == TokenKind::Comma {
+                if is_current_token(tokens, position, TokenKind::Comma) {
                     // Prevent user from using offset statement more than one time
                     if statements.contains_key("offset") {
                         return Err(Diagnostic::error("You already used `OFFSET` statement")
@@ -565,15 +565,15 @@ fn parse_select_distinct_option(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Distinct, Box<Diagnostic>> {
-    if tokens[*position].kind == TokenKind::Distinct {
+    if is_current_token(tokens, position, TokenKind::Distinct) {
         // Consume `DISTINCT` keyword
         *position += 1;
 
-        if *position < tokens.len() && tokens[*position].kind == TokenKind::On {
+        if is_current_token(tokens, position, TokenKind::On) {
             // Consume `ON` keyword
             *position += 1;
 
-            if *position >= tokens.len() || tokens[*position].kind != TokenKind::LeftParen {
+            if !is_current_token(tokens, position, TokenKind::LeftParen) {
                 return Err(Diagnostic::error("Expect `(` after `DISTINCT ON`")
                     .add_help("Try to add `(` after ON and before fields")
                     .with_location(calculate_safe_location(tokens, *position))
@@ -584,7 +584,7 @@ fn parse_select_distinct_option(
             *position += 1;
 
             let mut distinct_fields: Vec<String> = vec![];
-            while *position < tokens.len() && tokens[*position].kind != TokenKind::RightParen {
+            while !is_current_token(tokens, position, TokenKind::RightParen) {
                 let field_token = &tokens[*position];
                 let literal = &field_token.literal;
                 let location = field_token.location;
@@ -598,7 +598,8 @@ fn parse_select_distinct_option(
                 // Consume field name
                 *position += 1;
 
-                if *position < tokens.len() && tokens[*position].kind == TokenKind::Comma {
+                if is_current_token(tokens, position, TokenKind::Comma) {
+                    // Consume `,`
                     *position += 1;
                 } else {
                     break;
@@ -624,7 +625,7 @@ fn parse_select_distinct_option(
             }
 
             // Prevent user from writing comma after DISTINCT ON
-            if *position < tokens.len() && tokens[*position].kind == TokenKind::Comma {
+            if is_current_token(tokens, position, TokenKind::Comma) {
                 return Err(
                     Diagnostic::error("No need to add Comma `,` after DISTINCT ON")
                         .add_help("Try to remove `,` after DISTINCT ON fields")
@@ -653,7 +654,7 @@ fn parse_select_all_or_expressions(
     is_select_all: &mut bool,
 ) -> Result<(), Box<Diagnostic>> {
     // Check if it `SELECT *`
-    if *position < tokens.len() && tokens[*position].kind == TokenKind::Star {
+    if is_current_token(tokens, position, TokenKind::Star) {
         // Consume `*`
         *position += 1;
         *is_select_all = true;
@@ -661,7 +662,7 @@ fn parse_select_all_or_expressions(
     }
 
     // Parse list of expression separated by `,` or until end of file
-    while *position < tokens.len() && tokens[*position].kind != TokenKind::From {
+    while !is_current_token(tokens, position, TokenKind::From) {
         let expression = parse_expression(context, env, tokens, position)?;
         let expr_type = expression.expr_type().clone();
         let field_name = expression_literal(&expression).unwrap_or(generate_column_name());
@@ -674,7 +675,7 @@ fn parse_select_all_or_expressions(
         }
 
         // Check for Field name alias
-        if *position < tokens.len() && tokens[*position].kind == TokenKind::As {
+        if is_current_token(tokens, position, TokenKind::As) {
             // Consume `as` keyword
             *position += 1;
 
@@ -725,7 +726,7 @@ fn parse_select_all_or_expressions(
         selected_expr.push(expression);
 
         // Consume `,` or break
-        if *position < tokens.len() && tokens[*position].kind == TokenKind::Comma {
+        if is_current_token(tokens, position, TokenKind::Comma) {
             *position += 1;
         } else {
             break;
@@ -743,7 +744,7 @@ fn parse_from_option(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<(), Box<Diagnostic>> {
-    if *position < tokens.len() && tokens[*position].kind == TokenKind::From {
+    if is_current_token(tokens, position, TokenKind::From) {
         // Consume `From` keyword
         *position += 1;
 
@@ -775,7 +776,7 @@ fn parse_from_option(
 
         // Parse Joins
         let mut number_previous_of_joines = 0;
-        while *position < tokens.len() && is_join_token(&tokens[*position]) {
+        while is_join_or_join_type_token(tokens, position) {
             let join_token = &tokens[*position];
 
             // The default join type now is cross join because we don't support `ON` Condition
@@ -793,7 +794,7 @@ fn parse_from_option(
                 *position += 1;
 
                 // Parse optional `OUTER` token after `LEFT` or `RIGHT` only
-                if *position < tokens.len() && tokens[*position].kind == TokenKind::Outer {
+                if is_current_token(tokens, position, TokenKind::Outer) {
                     if !matches!(join_kind, JoinKind::Left | JoinKind::Right) {
                         return Err(Diagnostic::error(
                             "`OUTER` keyword used with LEFT or RIGHT JOIN only",
@@ -846,7 +847,7 @@ fn parse_from_option(
 
             // Parse the `ON` predicate
             let mut predicate: Option<Box<dyn Expr>> = None;
-            if *position < tokens.len() && tokens[*position].kind == TokenKind::On {
+            if is_current_token(tokens, position, TokenKind::On) {
                 // Consume `ON` keyword
                 *position += 1;
                 predicate = Some(parse_expression(context, env, tokens, position)?);
@@ -956,18 +957,16 @@ fn parse_group_by_statement(
     let mut values: Vec<Box<dyn Expr>> = vec![];
     while *position < tokens.len() {
         values.push(parse_expression(context, env, tokens, position)?);
-
-        if *position < tokens.len() && tokens[*position].kind == TokenKind::Comma {
+        if is_current_token(tokens, position, TokenKind::Comma) {
             // Consume Comma `,`
             *position += 1;
             continue;
         }
-
         break;
     }
 
     let mut has_with_rollup = false;
-    if *position < tokens.len() && tokens[*position].kind == TokenKind::With {
+    if is_current_token(tokens, position, TokenKind::With) {
         // Consume Comma `WITH``
         *position += 1;
 
@@ -1141,7 +1140,7 @@ fn parse_order_by_statement(
         arguments.push(parse_expression(context, env, tokens, position)?);
         sorting_orders.push(parse_sorting_order(tokens, position)?);
 
-        if *position < tokens.len() && tokens[*position].kind == TokenKind::Comma {
+        if is_current_token(tokens, position, TokenKind::Comma) {
             // Consume `,` keyword
             *position += 1;
         } else {
@@ -1271,25 +1270,21 @@ fn parse_into_statement(
             // Consume `LINES` keyword
             *position += 1;
 
-            if *position >= tokens.len() || tokens[*position].kind != TokenKind::Terminated {
-                return Err(
-                    Diagnostic::error("Expect `TERMINATED` keyword after `LINES` keyword")
-                        .with_location(calculate_safe_location(tokens, *position))
-                        .as_boxed(),
-                );
-            }
+            // Consume `TERMINATED` KEYWORD, or Error
+            consume_token_or_error(
+                tokens,
+                position,
+                TokenKind::Terminated,
+                "Expect `TERMINATED` keyword after `LINES` keyword",
+            )?;
 
-            // Consume `TERMINATED` KEYWORD
-            *position += 1;
-
-            if *position >= tokens.len() || tokens[*position].kind != TokenKind::By {
-                return Err(Diagnostic::error("Expect `BY` after `TERMINATED` keyword")
-                    .with_location(calculate_safe_location(tokens, *position))
-                    .as_boxed());
-            }
-
-            // Consume `BY` keyword
-            *position += 1;
+            // Consume `By` KEYWORD, or Error
+            consume_token_or_error(
+                tokens,
+                position,
+                TokenKind::By,
+                "Expect `BY` after `TERMINATED` keyword",
+            )?;
 
             if *position >= tokens.len() || tokens[*position].kind != TokenKind::String {
                 return Err(Diagnostic::error(
@@ -1327,25 +1322,21 @@ fn parse_into_statement(
             // Consume `FIELDS` keyword
             *position += 1;
 
-            if *position >= tokens.len() || tokens[*position].kind != TokenKind::Terminated {
-                return Err(Diagnostic::error(
-                    "Expect `TERMINATED` keyword after `FIELDS` keyword",
-                )
-                .with_location(calculate_safe_location(tokens, *position))
-                .as_boxed());
-            }
+            // Consume `TERMINATED` KEYWORD, or Error
+            consume_token_or_error(
+                tokens,
+                position,
+                TokenKind::Terminated,
+                "Expect `TERMINATED` keyword after `LINES` keyword",
+            )?;
 
-            // Consume `TERMINATED` KEYWORD
-            *position += 1;
-
-            if *position >= tokens.len() || tokens[*position].kind != TokenKind::By {
-                return Err(Diagnostic::error("Expect `BY` after `TERMINATED` keyword")
-                    .with_location(calculate_safe_location(tokens, *position))
-                    .as_boxed());
-            }
-
-            // Consume `BY` keyword
-            *position += 1;
+            // Consume `By` KEYWORD, or Error
+            consume_token_or_error(
+                tokens,
+                position,
+                TokenKind::By,
+                "Expect `BY` after `TERMINATED` keyword",
+            )?;
 
             if *position >= tokens.len() || tokens[*position].kind != TokenKind::String {
                 return Err(Diagnostic::error(
@@ -1447,7 +1438,7 @@ fn parse_assignment_expression(
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
     let expression = parse_regex_expression(context, env, tokens, position)?;
-    if *position < tokens.len() && tokens[*position].kind == TokenKind::ColonEqual {
+    if is_current_token(tokens, position, TokenKind::ColonEqual) {
         if expression.kind() != ExprKind::GlobalVariable {
             return Err(Diagnostic::error(
                 "Assignment expressions expect global variable name before `:=`",
@@ -1496,7 +1487,7 @@ fn parse_regex_expression(
         false
     };
 
-    if *position < tokens.len() && tokens[*position].kind == TokenKind::RegExp {
+    if is_current_token(tokens, position, TokenKind::RegExp) {
         if !expression.expr_type().is_text() {
             return Err(
                 Diagnostic::error("`REGEXP` left hand side must be `Text` Type")
@@ -1542,22 +1533,21 @@ fn parse_is_null_expression(
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
     let expression = parse_in_expression(context, env, tokens, position)?;
-    if *position < tokens.len() && tokens[*position].kind == TokenKind::Is {
+    if is_current_token(tokens, position, TokenKind::Is) {
         let is_location = tokens[*position].location;
 
         // Consume `IS` keyword
         *position += 1;
 
-        let has_not_keyword =
-            if *position < tokens.len() && tokens[*position].kind == TokenKind::Not {
-                // Consume `NOT` keyword
-                *position += 1;
-                true
-            } else {
-                false
-            };
+        let has_not_keyword = if is_current_token(tokens, position, TokenKind::Not) {
+            // Consume `NOT` keyword
+            *position += 1;
+            true
+        } else {
+            false
+        };
 
-        if *position < tokens.len() && tokens[*position].kind == TokenKind::Null {
+        if is_current_token(tokens, position, TokenKind::Null) {
             // Consume `Null` keyword
             *position += 1;
 
@@ -1582,7 +1572,7 @@ fn parse_in_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
-    let expression = parse_between_expression(context, env, tokens, position)?;
+    let expression = parse_logical_or_expression(context, env, tokens, position)?;
 
     // Consume NOT if current token is `NOT` and next one is `IN`
     let has_not_keyword = if *position < tokens.len() - 1
@@ -1595,27 +1585,25 @@ fn parse_in_expression(
         false
     };
 
-    if *position < tokens.len() && tokens[*position].kind == TokenKind::In {
+    if is_current_token(tokens, position, TokenKind::In) {
         let in_location = tokens[*position].location;
 
         // Consume `IN` keyword
         *position += 1;
 
-        if *position < tokens.len() && tokens[*position].kind == TokenKind::LeftParen {
-            return Err(
-                Diagnostic::error("Expects values between `(` and `)` after `IN` keyword")
-                    .with_location(in_location)
-                    .as_boxed(),
-            );
+        if !is_current_token(tokens, position, TokenKind::LeftParen) {
+            return Err(Diagnostic::error("Expects `(` After `IN` Keyword")
+                .with_location(in_location)
+                .as_boxed());
         }
 
-        let values = parse_arguments_expressions(context, env, tokens, position)?;
+        let values =
+            parse_zero_or_more_values_with_comma_between(context, env, tokens, position, "IN")?;
 
         // Optimize the Expression if the number of values in the list is 0
         if values.is_empty() {
-            return Ok(Box::new(BooleanExpr {
-                is_true: has_not_keyword,
-            }));
+            let is_true = has_not_keyword;
+            return Ok(Box::new(BooleanExpr { is_true }));
         }
 
         let values_type_result = check_all_values_are_same_type(&values);
@@ -1648,65 +1636,6 @@ fn parse_in_expression(
     Ok(expression)
 }
 
-fn parse_between_expression(
-    context: &mut ParserContext,
-    env: &mut Environment,
-    tokens: &[Token],
-    position: &mut usize,
-) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
-    let expression = parse_logical_or_expression(context, env, tokens, position)?;
-    if *position < tokens.len() && tokens[*position].kind == TokenKind::Between {
-        let between_location = tokens[*position].location;
-
-        // Consume `BETWEEN` keyword
-        *position += 1;
-
-        if *position >= tokens.len() {
-            return Err(
-                Diagnostic::error("`BETWEEN` keyword expects two range after it")
-                    .with_location(between_location)
-                    .as_boxed(),
-            );
-        }
-
-        let argument_type = expression.expr_type();
-        let range_start = parse_logical_or_expression(context, env, tokens, position)?;
-
-        if *position >= tokens.len() || tokens[*position].kind != TokenKind::DotDot {
-            return Err(Diagnostic::error("Expect `..` after `BETWEEN` range start")
-                .with_location(between_location)
-                .as_boxed());
-        }
-
-        // Consume `..` token
-        *position += 1;
-
-        let range_end = parse_logical_or_expression(context, env, tokens, position)?;
-
-        if !argument_type.equals(&range_start.expr_type())
-            || !argument_type.equals(&range_end.expr_type())
-        {
-            return Err(Diagnostic::error(&format!(
-                "Expect `BETWEEN` argument, range start and end to has same type but got {}, {} and {}",
-                argument_type.literal(),
-                range_start. expr_type().literal(),
-                range_end. expr_type().literal()
-            ))
-            .add_help("Try to make sure all of them has same type")
-            .with_location(between_location)
-            .as_boxed());
-        }
-
-        return Ok(Box::new(BetweenExpr {
-            value: expression,
-            range_start,
-            range_end,
-        }));
-    }
-
-    Ok(expression)
-}
-
 fn parse_logical_or_expression(
     context: &mut ParserContext,
     env: &mut Environment,
@@ -1715,7 +1644,7 @@ fn parse_logical_or_expression(
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
     let mut lhs = parse_logical_and_expression(context, env, tokens, position)?;
 
-    'parse_expr: while *position < tokens.len() && tokens[*position].kind == TokenKind::OrOr {
+    'parse_expr: while is_current_token(tokens, position, TokenKind::OrOr) {
         let operator = &tokens[*position];
 
         // Consume`OR` operator
@@ -1739,7 +1668,7 @@ fn parse_logical_or_expression(
             continue 'parse_expr;
         }
 
-        // Check if can perform the operator with additonal implicit casting
+        // Check if can perform the operator with additional implicit casting
         for expected_type in rhs_expected_types {
             if expected_type.has_implicit_cast_from(&rhs) {
                 let casting = Box::new(CastExpr {
@@ -1778,7 +1707,7 @@ fn parse_logical_and_expression(
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
     let mut lhs = parse_bitwise_or_expression(context, env, tokens, position)?;
 
-    'parse_expr: while *position < tokens.len() && tokens[*position].kind == TokenKind::AndAnd {
+    'parse_expr: while is_current_token(tokens, position, TokenKind::AndAnd) {
         let operator = &tokens[*position];
 
         // Consume`AND` operator
@@ -1802,7 +1731,7 @@ fn parse_logical_and_expression(
             continue 'parse_expr;
         }
 
-        // Check if can perform the operator with additonal implicit casting
+        // Check if can perform the operator with additional implicit casting
         for expected_type in rhs_expected_types {
             if expected_type.has_implicit_cast_from(&rhs) {
                 let casting = Box::new(CastExpr {
@@ -1841,7 +1770,7 @@ fn parse_bitwise_or_expression(
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
     let mut lhs = parse_bitwise_xor_expression(context, env, tokens, position)?;
 
-    'parse_expr: while *position < tokens.len() && tokens[*position].kind == TokenKind::BitwiseOr {
+    'parse_expr: while is_current_token(tokens, position, TokenKind::BitwiseOr) {
         let operator = &tokens[*position];
 
         // Consume `|` token
@@ -1866,7 +1795,7 @@ fn parse_bitwise_or_expression(
             continue 'parse_expr;
         }
 
-        // Check if can perform the operator with additonal implicit casting
+        // Check if can perform the operator with additional implicit casting
         for expected_type in rhs_expected_types {
             if expected_type.has_implicit_cast_from(&rhs) {
                 let casting = Box::new(CastExpr {
@@ -1906,7 +1835,7 @@ fn parse_bitwise_xor_expression(
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
     let mut lhs = parse_logical_xor_expression(context, env, tokens, position)?;
 
-    'parse_expr: while *position < tokens.len() && tokens[*position].kind == TokenKind::BitwiseXor {
+    'parse_expr: while is_current_token(tokens, position, TokenKind::BitwiseXor) {
         let operator = &tokens[*position];
 
         // Consume`#` operator
@@ -1931,7 +1860,7 @@ fn parse_bitwise_xor_expression(
             continue 'parse_expr;
         }
 
-        // Check if can perform the operator with additonal implicit casting
+        // Check if can perform the operator with additional implicit casting
         for expected_type in rhs_expected_types {
             if expected_type.has_implicit_cast_from(&rhs) {
                 let casting = Box::new(CastExpr {
@@ -1971,7 +1900,7 @@ fn parse_logical_xor_expression(
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
     let mut lhs = parse_bitwise_and_expression(context, env, tokens, position)?;
 
-    'parse_expr: while *position < tokens.len() && tokens[*position].kind == TokenKind::LogicalXor {
+    'parse_expr: while is_current_token(tokens, position, TokenKind::LogicalXor) {
         let operator = &tokens[*position];
 
         // Consume`XOR` operator
@@ -1995,7 +1924,7 @@ fn parse_logical_xor_expression(
             continue 'parse_expr;
         }
 
-        // Check if can perform the operator with additonal implicit casting
+        // Check if can perform the operator with additional implicit casting
         for expected_type in rhs_expected_types {
             if expected_type.has_implicit_cast_from(&rhs) {
                 let casting = Box::new(CastExpr {
@@ -2034,7 +1963,7 @@ fn parse_bitwise_and_expression(
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
     let mut lhs = parse_equality_expression(context, env, tokens, position)?;
 
-    'parse_expr: while *position < tokens.len() && tokens[*position].kind == TokenKind::BitwiseAnd {
+    'parse_expr: while is_current_token(tokens, position, TokenKind::BitwiseAnd) {
         let operator = &tokens[*position];
 
         // Consume `&&` token
@@ -2059,7 +1988,7 @@ fn parse_bitwise_and_expression(
             continue 'parse_expr;
         }
 
-        // Check if can perform the operator with additonal implicit casting
+        // Check if can perform the operator with additional implicit casting
         for expected_type in rhs_expected_types {
             if expected_type.has_implicit_cast_from(&rhs) {
                 let casting = Box::new(CastExpr {
@@ -2099,7 +2028,7 @@ fn parse_equality_expression(
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
     let lhs = parse_comparison_expression(context, env, tokens, position)?;
 
-    if *position < tokens.len() && is_equality_operator(&tokens[*position]) {
+    if is_equality_operator(tokens, position) {
         let operator = &tokens[*position];
 
         // Consume `=` or `!=` operator
@@ -2123,7 +2052,7 @@ fn parse_equality_expression(
                 }));
             }
 
-            // Check if can perform the operator with additonal implicit casting
+            // Check if can perform the operator with additional implicit casting
             for expected_type in rhs_expected_types {
                 if expected_type.has_implicit_cast_from(&rhs) {
                     let casting = Box::new(CastExpr {
@@ -2162,7 +2091,7 @@ fn parse_equality_expression(
                 }));
             }
 
-            // Check if can perform the operator with additonal implicit casting
+            // Check if can perform the operator with additional implicit casting
             for expected_type in rhs_expected_types {
                 if expected_type.has_implicit_cast_from(&rhs) {
                     let casting = Box::new(CastExpr {
@@ -2200,7 +2129,7 @@ fn parse_comparison_expression(
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
     let lhs = parse_contains_expression(context, env, tokens, position)?;
 
-    if *position < tokens.len() && is_comparison_operator(&tokens[*position]) {
+    if is_comparison_operator(tokens, position) {
         let operator = &tokens[*position];
 
         // Consume `>`, `<`, `>=`, `<=` or `<>` operator
@@ -2224,7 +2153,7 @@ fn parse_comparison_expression(
                 }));
             }
 
-            // Check if can perform the operator with additonal implicit casting
+            // Check if can perform the operator with additional implicit casting
             for expected_type in rhs_expected_types {
                 if expected_type.has_implicit_cast_from(&rhs) {
                     let casting = Box::new(CastExpr {
@@ -2263,7 +2192,7 @@ fn parse_comparison_expression(
                 }));
             }
 
-            // Check if can perform the operator with additonal implicit casting
+            // Check if can perform the operator with additional implicit casting
             for expected_type in rhs_expected_types {
                 if expected_type.has_implicit_cast_from(&rhs) {
                     let casting = Box::new(CastExpr {
@@ -2302,7 +2231,7 @@ fn parse_comparison_expression(
                 }));
             }
 
-            // Check if can perform the operator with additonal implicit casting
+            // Check if can perform the operator with additional implicit casting
             for expected_type in rhs_expected_types {
                 if expected_type.has_implicit_cast_from(&rhs) {
                     let casting = Box::new(CastExpr {
@@ -2341,7 +2270,7 @@ fn parse_comparison_expression(
                 }));
             }
 
-            // Check if can perform the operator with additonal implicit casting
+            // Check if can perform the operator with additional implicit casting
             for expected_type in rhs_expected_types {
                 if expected_type.has_implicit_cast_from(&rhs) {
                     let casting = Box::new(CastExpr {
@@ -2380,7 +2309,7 @@ fn parse_comparison_expression(
                 }));
             }
 
-            // Check if can perform the operator with additonal implicit casting
+            // Check if can perform the operator with additional implicit casting
             for expected_type in rhs_expected_types {
                 if expected_type.has_implicit_cast_from(&rhs) {
                     let casting = Box::new(CastExpr {
@@ -2439,7 +2368,7 @@ fn parse_contains_expression(
             }));
         }
 
-        // Check if can perform the operator with additonal implicit casting
+        // Check if can perform the operator with additional implicit casting
         for expected_type in rhs_expected_types {
             if expected_type.has_implicit_cast_from(&rhs) {
                 let casting = Box::new(CastExpr {
@@ -2486,27 +2415,27 @@ fn parse_contained_by_expression(
         let lhs_type = lhs.expr_type();
         let rhs_type = rhs.expr_type();
 
-        let rhs_expected_types = lhs_type.can_perform_contained_by_op_with();
+        let lhs_expected_types = rhs_type.can_perform_contains_op_with();
 
         // Can perform this operator between LHS and RHS
-        if rhs_expected_types.contains(&rhs_type) {
+        if lhs_expected_types.contains(&lhs_type) {
             return Ok(Box::new(ContainedByExpr {
                 left: lhs,
                 right: rhs,
             }));
         }
 
-        // Check if can perform the operator with additonal implicit casting
-        for expected_type in rhs_expected_types {
-            if expected_type.has_implicit_cast_from(&rhs) {
+        // Check if can perform the operator with additional implicit casting
+        for expected_type in lhs_expected_types {
+            if expected_type.has_implicit_cast_from(&lhs) {
                 let casting = Box::new(CastExpr {
-                    value: rhs,
+                    value: lhs,
                     result_type: expected_type.clone(),
                 });
 
                 return Ok(Box::new(ContainedByExpr {
-                    left: lhs,
-                    right: casting,
+                    left: casting,
+                    right: rhs,
                 }));
             }
         }
@@ -2558,7 +2487,7 @@ fn parse_bitwise_shift_expression(
                 continue 'parse_expr;
             }
 
-            // Check if can perform the operator with additonal implicit casting
+            // Check if can perform the operator with additional implicit casting
             for expected_type in rhs_expected_types {
                 if expected_type.has_implicit_cast_from(&rhs) {
                     let casting = Box::new(CastExpr {
@@ -2603,7 +2532,7 @@ fn parse_bitwise_shift_expression(
                 continue 'parse_expr;
             }
 
-            // Check if can perform the operator with additonal implicit casting
+            // Check if can perform the operator with additional implicit casting
             for expected_type in rhs_expected_types {
                 if expected_type.has_implicit_cast_from(&rhs) {
                     let casting = Box::new(CastExpr {
@@ -2671,7 +2600,7 @@ fn parse_term_expression(
                 continue 'parse_expr;
             }
 
-            // Check if can perform the operator with additonal implicit casting
+            // Check if can perform the operator with additional implicit casting
             for expected_type in rhs_expected_types {
                 if expected_type.has_implicit_cast_from(&rhs) {
                     let casting = Box::new(CastExpr {
@@ -2717,7 +2646,7 @@ fn parse_term_expression(
                 continue 'parse_expr;
             }
 
-            // Check if can perform the operator with additonal implicit casting
+            // Check if can perform the operator with additional implicit casting
             for expected_type in rhs_expected_types {
                 if expected_type.has_implicit_cast_from(&rhs) {
                     let casting = Box::new(CastExpr {
@@ -2785,7 +2714,7 @@ fn parse_factor_expression(
                 continue 'parse_expr;
             }
 
-            // Check if can perform the operator with additonal implicit casting
+            // Check if can perform the operator with additional implicit casting
             for expected_type in rhs_expected_types {
                 if expected_type.has_implicit_cast_from(&rhs) {
                     let casting = Box::new(CastExpr {
@@ -2830,7 +2759,7 @@ fn parse_factor_expression(
                 continue 'parse_expr;
             }
 
-            // Check if can perform the operator with additonal implicit casting
+            // Check if can perform the operator with additional implicit casting
             for expected_type in rhs_expected_types {
                 if expected_type.has_implicit_cast_from(&rhs) {
                     let casting = Box::new(CastExpr {
@@ -2875,7 +2804,7 @@ fn parse_factor_expression(
                 continue 'parse_expr;
             }
 
-            // Check if can perform the operator with additonal implicit casting
+            // Check if can perform the operator with additional implicit casting
             for expected_type in rhs_expected_types {
                 if expected_type.has_implicit_cast_from(&rhs) {
                     let casting = Box::new(CastExpr {
@@ -2919,7 +2848,7 @@ fn parse_factor_expression(
                 continue 'parse_expr;
             }
 
-            // Check if can perform the operator with additonal implicit casting
+            // Check if can perform the operator with additional implicit casting
             for expected_type in rhs_expected_types {
                 if expected_type.has_implicit_cast_from(&rhs) {
                     let casting = Box::new(CastExpr {
@@ -3311,7 +3240,65 @@ fn parse_prefix_unary_expression(
         }
     }
 
-    parse_function_call_expression(context, env, tokens, position)
+    parse_between_expression(context, env, tokens, position)
+}
+
+fn parse_between_expression(
+    context: &mut ParserContext,
+    env: &mut Environment,
+    tokens: &[Token],
+    position: &mut usize,
+) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
+    let expression = parse_function_call_expression(context, env, tokens, position)?;
+    if is_current_token(tokens, position, TokenKind::Between) {
+        let between_location = tokens[*position].location;
+
+        // Consume `BETWEEN` keyword
+        *position += 1;
+
+        if *position >= tokens.len() {
+            return Err(
+                Diagnostic::error("`BETWEEN` keyword expects two range after it")
+                    .with_location(between_location)
+                    .as_boxed(),
+            );
+        }
+
+        let argument_type = expression.expr_type();
+        let range_start = parse_function_call_expression(context, env, tokens, position)?;
+
+        // Consume `..` token
+        consume_token_or_error(
+            tokens,
+            position,
+            TokenKind::DotDot,
+            "Expect `..` after `BETWEEN` range start",
+        )?;
+
+        let range_end = parse_function_call_expression(context, env, tokens, position)?;
+
+        if !argument_type.equals(&range_start.expr_type())
+            || !argument_type.equals(&range_end.expr_type())
+        {
+            return Err(Diagnostic::error(&format!(
+                "Expect `BETWEEN` argument, range start and end to has same type but got {}, {} and {}",
+                argument_type.literal(),
+                range_start. expr_type().literal(),
+                range_end. expr_type().literal()
+            ))
+            .add_help("Try to make sure all of them has same type")
+            .with_location(between_location)
+            .as_boxed());
+        }
+
+        return Ok(Box::new(BetweenExpr {
+            value: expression,
+            range_start,
+            range_end,
+        }));
+    }
+
+    Ok(expression)
 }
 
 fn parse_function_call_expression(
@@ -3331,7 +3318,14 @@ fn parse_function_call_expression(
 
             // Check if this function is a Standard library functions
             if env.is_std_function(function_name.as_str()) {
-                let mut arguments = parse_arguments_expressions(context, env, tokens, position)?;
+                let mut arguments = parse_zero_or_more_values_with_comma_between(
+                    context,
+                    env,
+                    tokens,
+                    position,
+                    "Std function",
+                )?;
+
                 if let Some(signature) = env.std_signature(function_name.as_str()) {
                     check_function_call_arguments(
                         &mut arguments,
@@ -3368,7 +3362,13 @@ fn parse_function_call_expression(
             // Check if this function is an Aggregation functions
             if env.is_aggregation_function(function_name.as_str()) {
                 let aggregations_count_before = context.aggregations.len();
-                let mut arguments = parse_arguments_expressions(context, env, tokens, position)?;
+                let mut arguments = parse_zero_or_more_values_with_comma_between(
+                    context,
+                    env,
+                    tokens,
+                    position,
+                    "Aggregation function",
+                )?;
                 let has_aggregations = context.aggregations.len() != aggregations_count_before;
 
                 // Prevent calling aggregation function with aggregation values as argument
@@ -3436,18 +3436,19 @@ fn parse_function_call_expression(
     parse_member_access_expression(context, env, tokens, position)
 }
 
-fn parse_arguments_expressions(
+fn parse_zero_or_more_values_with_comma_between(
     context: &mut ParserContext,
     env: &mut Environment,
     tokens: &[Token],
     position: &mut usize,
+    expression_name: &str,
 ) -> Result<Vec<Box<dyn Expr>>, Box<Diagnostic>> {
-    // Consume `(` token after function call name
+    // Consume `(` token at the start of list of values
     consume_token_or_error(
         tokens,
         position,
         TokenKind::LeftParen,
-        "Expect `(` after function call name",
+        &format!("Expect `(` after {}", expression_name),
     )?;
 
     let mut arguments: Vec<Box<dyn Expr>> = vec![];
@@ -3466,12 +3467,12 @@ fn parse_arguments_expressions(
         }
     }
 
-    // Consume `)` token at the end of call expression
+    // Consume `)` token at the end of values with comma betweens
     consume_token_or_error(
         tokens,
         position,
         TokenKind::RightParen,
-        "Expect `)` after function call arguments",
+        "Expect `)` at the end of zero or more values",
     )?;
 
     Ok(arguments)
@@ -3485,7 +3486,7 @@ fn parse_member_access_expression(
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
     let expr = parse_primary_expression(context, env, tokens, position)?;
 
-    if *position < tokens.len() && tokens[*position].kind == TokenKind::Dot {
+    if is_current_token(tokens, position, TokenKind::Dot) {
         let dot_token = &tokens[*position];
 
         // The syntax for member access is (composite).member
@@ -4170,6 +4171,15 @@ fn select_all_table_fields(
 }
 
 #[inline(always)]
+pub(crate) fn is_current_token(
+    tokens: &[Token],
+    position: &usize,
+    expected_kind: TokenKind,
+) -> bool {
+    *position < tokens.len() && tokens[*position].kind == expected_kind
+}
+
+#[inline(always)]
 pub(crate) fn consume_token_or_error<'a>(
     tokens: &'a [Token],
     position: &'a mut usize,
@@ -4218,17 +4228,25 @@ fn is_prefix_unary_operator(token: &Token) -> bool {
 }
 
 #[inline(always)]
-fn is_equality_operator(token: &Token) -> bool {
-    token.kind == TokenKind::Equal || token.kind == TokenKind::BangEqual
+fn is_equality_operator(tokens: &[Token], position: &usize) -> bool {
+    *position < tokens.len()
+        && matches!(
+            tokens[*position].kind,
+            TokenKind::Equal | TokenKind::BangEqual
+        )
 }
 
 #[inline(always)]
-fn is_comparison_operator(token: &Token) -> bool {
-    token.kind == TokenKind::Greater
-        || token.kind == TokenKind::GreaterEqual
-        || token.kind == TokenKind::Less
-        || token.kind == TokenKind::LessEqual
-        || token.kind == TokenKind::NullSafeEqual
+fn is_comparison_operator(tokens: &[Token], position: &usize) -> bool {
+    *position < tokens.len()
+        && matches!(
+            tokens[*position].kind,
+            TokenKind::Greater
+                | TokenKind::GreaterEqual
+                | TokenKind::Less
+                | TokenKind::LessEqual
+                | TokenKind::NullSafeEqual
+        )
 }
 
 #[inline(always)]
@@ -4245,12 +4263,11 @@ fn is_order_by_using_operator(token: &Token) -> bool {
 }
 
 #[inline(always)]
-fn is_join_token(token: &Token) -> bool {
-    token.kind == TokenKind::Join
-        || token.kind == TokenKind::Left
-        || token.kind == TokenKind::Right
-        || token.kind == TokenKind::Cross
-        || token.kind == TokenKind::Inner
+fn is_join_or_join_type_token(tokens: &[Token], position: &usize) -> bool {
+    matches!(
+        tokens[*position].kind,
+        TokenKind::Join | TokenKind::Left | TokenKind::Right | TokenKind::Cross | TokenKind::Inner
+    )
 }
 
 #[inline(always)]

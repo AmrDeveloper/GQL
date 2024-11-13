@@ -373,7 +373,7 @@ fn evaluate_contained_by(
 ) -> Result<Box<dyn Value>, String> {
     let lhs = evaluate_expression(env, &expr.left, titles, object)?;
     let rhs = evaluate_expression(env, &expr.right, titles, object)?;
-    lhs.contained_by_op(&rhs)
+    rhs.contains_op(&lhs)
 }
 
 fn evaluate_like(
@@ -554,7 +554,7 @@ fn evaluate_between(
     let range_start = evaluate_expression(env, &expr.range_start, titles, object)?;
     let range_end = evaluate_expression(env, &expr.range_end, titles, object)?;
     let result =
-        value.compare(&range_start).unwrap().is_le() && value.compare(&range_end).unwrap().is_ge();
+        value.compare(&range_start).unwrap().is_ge() && value.compare(&range_end).unwrap().is_le();
     Ok(Box::new(BoolValue { value: result }))
 }
 

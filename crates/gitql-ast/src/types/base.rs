@@ -381,14 +381,6 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    /// Return a list of types that it's possible to perform unary `<@' operator with
-    /// between current DataType and any one of them
-    ///
-    /// No need to define the result type, it always BoolType
-    fn can_perform_contained_by_op_with(&self) -> Vec<Box<dyn DataType>> {
-        vec![]
-    }
-
     /// Return true if this Expression can be casted to the current type without any evaluation
     ///
     /// For example casting Text with specific format to Date or Time
