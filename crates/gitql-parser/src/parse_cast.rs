@@ -106,7 +106,8 @@ fn cast_expression_or_error(
     }
 
     Err(Diagnostic::error(&format!(
-        "Unsupported `CAST` operator to type {}",
+        "Unsupported `CAST` operator from type `{}` to type `{}`",
+        value_type.literal(),
         target_type.literal(),
     ))
     .with_location(location)

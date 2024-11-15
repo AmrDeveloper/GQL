@@ -3,6 +3,7 @@ use std::any::Any;
 use crate::expression::Expr;
 use crate::expression::StringExpr;
 use crate::format_checker::is_valid_datetime_format;
+use crate::types::date::DateType;
 
 use super::base::DataType;
 
@@ -51,5 +52,9 @@ impl DataType for DateTimeType {
             return is_valid_datetime_format(&string_expr.value);
         }
         false
+    }
+
+    fn can_perform_explicit_cast_op_to(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(DateType)]
     }
 }

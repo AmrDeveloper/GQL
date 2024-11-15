@@ -3,6 +3,7 @@ use std::cmp::Ordering;
 
 use super::base::Value;
 use super::boolean::BoolValue;
+use super::date::DateValue;
 
 use chrono::DateTime;
 use gitql_ast::types::base::DataType;
@@ -89,5 +90,12 @@ impl Value for DateTimeValue {
             return Ok(Box::new(BoolValue { value: are_equals }));
         }
         Err("Unexpected type to perform `<=` with".to_string())
+    }
+
+    fn cast_op(&self, target_type: &Box<dyn DataType>) -> Result<Box<dyn Value>, String> {
+        if target_type.is_date() {
+            return Ok(Box::new(DateValue { value: self.value }));
+        }
+        Err("Unexpected type to perform `Cast` with".to_string())
     }
 }
