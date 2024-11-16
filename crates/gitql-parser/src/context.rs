@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use gitql_ast::statement::AggregateValue;
 
+use crate::name_generator::NameGenerator;
 use crate::tokenizer::Location;
 
 #[derive(Default)]
@@ -16,6 +17,7 @@ pub struct ParserContext {
     pub projection_locations: Vec<Location>,
 
     pub name_alias_table: HashMap<String, String>,
+    pub name_generator: NameGenerator,
 
     pub has_select_statement: bool,
     pub is_single_value_query: bool,

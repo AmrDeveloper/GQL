@@ -22,7 +22,6 @@ use gitql_ast::types::boolean::BoolType;
 use gitql_ast::types::composite::CompositeType;
 use gitql_ast::types::undefined::UndefType;
 use gitql_core::environment::Environment;
-use gitql_core::name_generator::generate_column_name;
 
 use crate::context::ParserContext;
 use crate::diagnostic::Diagnostic;
@@ -665,7 +664,8 @@ fn parse_select_all_or_expressions(
     while !is_current_token(tokens, position, TokenKind::From) {
         let expression = parse_expression(context, env, tokens, position)?;
         let expr_type = expression.expr_type().clone();
-        let field_name = expression_literal(&expression).unwrap_or(generate_column_name());
+        let field_name = expression_literal(&expression)
+            .unwrap_or_else(|| context.name_generator.generate_column_name());
 
         // Assert that each selected field is unique
         if fields_names.contains(&field_name) {
@@ -1409,7 +1409,7 @@ pub(crate) fn parse_expression(
     let has_aggregations = context.aggregations.len() != aggregations_count_before;
 
     if has_aggregations {
-        let column_name = generate_column_name();
+        let column_name = context.name_generator.generate_column_name();
         let expr_type = expression.expr_type();
         env.define(column_name.to_string(), expr_type.clone());
 
@@ -2461,7 +2461,7 @@ fn parse_bitwise_shift_expression(
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
     let mut lhs = parse_term_expression(context, env, tokens, position)?;
 
-    'parse_expr: while *position < tokens.len() && is_bitwise_shift_operator(&tokens[*position]) {
+    'parse_expr: while is_bitwise_shift_operator(tokens, position) {
         let operator = &tokens[*position];
 
         // Consume `<<` or `>>` operator
@@ -2687,7 +2687,7 @@ fn parse_factor_expression(
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
     let mut lhs = parse_like_expression(context, env, tokens, position)?;
 
-    'parse_expr: while *position < tokens.len() && is_factor_operator(&tokens[*position]) {
+    'parse_expr: while is_factor_operator(tokens, position) {
         let operator = &tokens[*position];
 
         // Consume `*`, '/`, '%' or '^` operator
@@ -3374,7 +3374,7 @@ fn parse_function_call_expression(
                         function_name_location,
                     )?;
 
-                    let column_name = generate_column_name();
+                    let column_name = context.name_generator.generate_temp_name();
                     context.hidden_selections.push(column_name.to_string());
 
                     let return_type = resolve_dynamic_data_type(
@@ -4219,11 +4219,12 @@ fn is_term_operator(token: &Token) -> bool {
 }
 
 #[inline(always)]
-fn is_bitwise_shift_operator(token: &Token) -> bool {
-    matches!(
-        token.kind,
-        TokenKind::BitwiseLeftShift | TokenKind::BitwiseRightShift
-    )
+fn is_bitwise_shift_operator(tokens: &[Token], position: &usize) -> bool {
+    *position < tokens.len()
+        && matches!(
+            tokens[*position].kind,
+            TokenKind::BitwiseLeftShift | TokenKind::BitwiseRightShift
+        )
 }
 
 #[inline(always)]
@@ -4257,11 +4258,12 @@ fn is_comparison_operator(tokens: &[Token], position: &usize) -> bool {
 }
 
 #[inline(always)]
-fn is_factor_operator(token: &Token) -> bool {
-    matches!(
-        token.kind,
-        TokenKind::Star | TokenKind::Slash | TokenKind::Percentage | TokenKind::Caret
-    )
+fn is_factor_operator(tokens: &[Token], position: &usize) -> bool {
+    *position < tokens.len()
+        && matches!(
+            tokens[*position].kind,
+            TokenKind::Star | TokenKind::Slash | TokenKind::Percentage | TokenKind::Caret
+        )
 }
 
 #[inline(always)]
@@ -4271,10 +4273,15 @@ fn is_order_by_using_operator(token: &Token) -> bool {
 
 #[inline(always)]
 fn is_join_or_join_type_token(tokens: &[Token], position: &usize) -> bool {
-    matches!(
-        tokens[*position].kind,
-        TokenKind::Join | TokenKind::Left | TokenKind::Right | TokenKind::Cross | TokenKind::Inner
-    )
+    *position < tokens.len()
+        && matches!(
+            tokens[*position].kind,
+            TokenKind::Join
+                | TokenKind::Left
+                | TokenKind::Right
+                | TokenKind::Cross
+                | TokenKind::Inner
+        )
 }
 
 #[inline(always)]
