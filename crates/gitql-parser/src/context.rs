@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use gitql_ast::statement::AggregateValue;
 
 use crate::name_generator::NameGenerator;
-use crate::tokenizer::Location;
+use crate::token::Location;
 
 #[derive(Default)]
 pub struct ParserContext {

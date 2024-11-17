@@ -9,7 +9,7 @@ use gitql_ast::types::dynamic::DynamicType;
 use gitql_core::environment::Environment;
 
 use crate::diagnostic::Diagnostic;
-use crate::tokenizer::Location;
+use crate::token::Location;
 
 /// Checks if all values has the same type
 /// If they have the same type, return it or return None

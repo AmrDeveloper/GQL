@@ -1,4 +1,4 @@
-use crate::tokenizer::Location;
+use crate::token::Location;
 
 /// In Memory representation for the Diagnostic element
 pub struct Diagnostic {

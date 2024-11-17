@@ -9,9 +9,9 @@ use crate::parse_type::parse_type;
 use crate::parser::consume_token_or_error;
 use crate::parser::parse_expression;
 use crate::parser::parse_index_or_slice_expression;
-use crate::tokenizer::Location;
-use crate::tokenizer::Token;
-use crate::tokenizer::TokenKind;
+use crate::token::Location;
+use crate::token::Token;
+use crate::token::TokenKind;
 
 pub(crate) fn parse_cast_operator_expression(
     context: &mut ParserContext,

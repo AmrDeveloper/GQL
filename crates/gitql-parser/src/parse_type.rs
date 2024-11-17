@@ -4,9 +4,9 @@ use gitql_core::environment::Environment;
 
 use crate::diagnostic::Diagnostic;
 use crate::parser::calculate_safe_location;
-use crate::parser::consume_token_or_error;
-use crate::tokenizer::Token;
-use crate::tokenizer::TokenKind;
+use crate::parser::consume_conditional_token_or_errors;
+use crate::token::Token;
+use crate::token::TokenKind;
 
 pub(crate) fn parse_type(
     env: &mut Environment,
@@ -59,14 +59,14 @@ fn parse_primitive_type(
     position: &mut usize,
 ) -> Result<Box<dyn DataType>, Box<Diagnostic>> {
     // Parse `Symbol` token that represent DataType name
-    let type_name_token = consume_token_or_error(
+    let type_name_token = consume_conditional_token_or_errors(
         tokens,
         position,
-        TokenKind::Symbol,
+        |token| matches!(token.kind, TokenKind::Symbol(_)),
         "Expect Symbol to represent Type name",
     )?;
 
-    let type_literal = type_name_token.literal.to_string();
+    let type_literal = type_name_token.to_string();
     if let Some(data_type) = env.types_table.lookup(type_literal.as_str()) {
         return Ok(data_type);
     }

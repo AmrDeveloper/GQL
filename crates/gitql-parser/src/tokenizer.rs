@@ -1,139 +1,5 @@
 use crate::diagnostic::Diagnostic;
-
-#[derive(PartialEq)]
-pub enum TokenKind {
-    Do,
-    Set,
-    Select,
-    Distinct,
-    From,
-    Group,
-    Where,
-    Having,
-    Limit,
-    Offset,
-    Order,
-    Using,
-    By,
-    In,
-    Is,
-    On,
-    Not,
-    Like,
-    Glob,
-    Describe,
-    Show,
-    RegExp,
-
-    Cast,
-    Benchmark,
-
-    Join,
-    Left,
-    Right,
-    Cross,
-    Inner,
-    Outer,
-
-    Case,
-    When,
-    Then,
-    Else,
-    End,
-
-    Into,
-    Outfile,
-    Dumpfile,
-    Lines,
-    Fields,
-    Enclosed,
-    Terminated,
-
-    Between,
-
-    Greater,
-    GreaterEqual,
-    Less,
-    LessEqual,
-    Equal,
-    Bang,
-    BangEqual,
-    NullSafeEqual,
-
-    /// @>
-    AtRightArrow,
-
-    /// <@
-    ArrowRightAt,
-
-    As,
-
-    With,
-    Rollup,
-
-    LeftParen,
-    RightParen,
-    LeftBracket,
-    RightBracket,
-
-    OrOr,
-    AndAnd,
-
-    OrKeyword,
-    AndKeyword,
-    XorKeyword,
-
-    BitwiseNot,
-    BitwiseXor,
-    BitwiseOr,
-    BitwiseAnd,
-    BitwiseRightShift,
-    BitwiseLeftShift,
-
-    Symbol,
-    GlobalVariable,
-    Integer,
-    Float,
-    String,
-    Array,
-
-    True,
-    False,
-    Null,
-
-    Infinity,
-    NaN,
-
-    Colon,
-    ColonColon,
-    ColonEqual,
-
-    Plus,
-    Minus,
-    Star,
-    Slash,
-    Percentage,
-    Caret,
-
-    Comma,
-    Dot,
-    Semicolon,
-
-    Ascending,
-    Descending,
-}
-
-#[derive(Copy, Clone)]
-pub struct Location {
-    pub start: usize,
-    pub end: usize,
-}
-
-pub struct Token {
-    pub location: Location,
-    pub kind: TokenKind,
-    pub literal: String,
-}
+use crate::token::{Location, Token, TokenKind};
 
 pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
     let mut tokens: Vec<Token> = Vec::new();
@@ -161,21 +27,11 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
 
         // @> or Global Variable Symbol
         if char == '@' {
+            // @>
             if position + 1 < len && characters[position + 1] == '>' {
                 position += 2;
-
-                let location = Location {
-                    start: column_start,
-                    end: position,
-                };
-
-                let token = Token {
-                    location,
-                    kind: TokenKind::AtRightArrow,
-                    literal: "@>".to_owned(),
-                };
-
-                tokens.push(token);
+                let location = Location::new(column_start, position);
+                tokens.push(Token::new(TokenKind::AtRightArrow, location));
                 continue;
             }
 
@@ -264,18 +120,8 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
 
         // Plus
         if char == '+' {
-            let location = Location {
-                start: column_start,
-                end: position,
-            };
-
-            let token = Token {
-                location,
-                kind: TokenKind::Plus,
-                literal: "+".to_owned(),
-            };
-
-            tokens.push(token);
+            let location = Location::new(column_start, position);
+            tokens.push(Token::new(TokenKind::Plus, location));
             position += 1;
             continue;
         }
@@ -288,36 +134,16 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
                 continue;
             }
 
-            let location = Location {
-                start: column_start,
-                end: position,
-            };
-
-            let token = Token {
-                location,
-                kind: TokenKind::Minus,
-                literal: "-".to_owned(),
-            };
-
-            tokens.push(token);
+            let location = Location::new(column_start, position);
+            tokens.push(Token::new(TokenKind::Minus, location));
             position += 1;
             continue;
         }
 
         // Star
         if char == '*' {
-            let location = Location {
-                start: column_start,
-                end: position,
-            };
-
-            let token = Token {
-                location,
-                kind: TokenKind::Star,
-                literal: "*".to_owned(),
-            };
-
-            tokens.push(token);
+            let location = Location::new(column_start, position);
+            tokens.push(Token::new(TokenKind::Star, location));
             position += 1;
             continue;
         }
@@ -330,443 +156,223 @@ pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
                 continue;
             }
 
-            let location = Location {
-                start: column_start,
-                end: position,
-            };
-
-            let token = Token {
-                location,
-                kind: TokenKind::Slash,
-                literal: "/".to_owned(),
-            };
-
-            tokens.push(token);
+            let location = Location::new(column_start, position);
+            tokens.push(Token::new(TokenKind::Slash, location));
             position += 1;
             continue;
         }
 
         // Percentage
         if char == '%' {
-            let location = Location {
-                start: column_start,
-                end: position,
-            };
-
-            let token = Token {
-                location,
-                kind: TokenKind::Percentage,
-                literal: "%".to_owned(),
-            };
-
-            tokens.push(token);
+            let location = Location::new(column_start, position);
+            tokens.push(Token::new(TokenKind::Percentage, location));
             position += 1;
             continue;
         }
 
         // Caret
         if char == '^' {
-            let location = Location {
-                start: column_start,
-                end: position,
-            };
-
-            let token = Token {
-                location,
-                kind: TokenKind::Caret,
-                literal: "^".to_owned(),
-            };
-
-            tokens.push(token);
+            let location = Location::new(column_start, position);
+            tokens.push(Token::new(TokenKind::Caret, location));
             position += 1;
             continue;
         }
 
         // Bitwise NOT
         if char == '~' {
-            let location = Location {
-                start: column_start,
-                end: position,
-            };
-
-            let token = Token {
-                location,
-                kind: TokenKind::BitwiseNot,
-                literal: "~".to_owned(),
-            };
-
-            tokens.push(token);
+            let location = Location::new(column_start, position);
+            tokens.push(Token::new(TokenKind::BitwiseNot, location));
             position += 1;
             continue;
         }
 
         // Or
         if char == '|' {
-            let location = Location {
-                start: column_start,
-                end: position,
-            };
+            let location = Location::new(column_start, position);
 
             position += 1;
-
-            let mut kind = TokenKind::BitwiseOr;
-            let literal = if position < len && characters[position] == '|' {
+            let kind = if position < len && characters[position] == '|' {
                 position += 1;
-                kind = TokenKind::OrOr;
-                "||"
+                TokenKind::OrOr
             } else {
-                "|"
+                TokenKind::BitwiseOr
             };
 
-            let token = Token {
-                location,
-                kind,
-                literal: literal.to_string(),
-            };
-
-            tokens.push(token);
+            tokens.push(Token::new(kind, location));
             continue;
         }
 
         // And
         if char == '&' {
-            let location = Location {
-                start: column_start,
-                end: position,
-            };
+            let location = Location::new(column_start, position);
 
             position += 1;
-            let mut kind = TokenKind::BitwiseAnd;
-            let literal = if position < len && characters[position] == '&' {
+            let kind = if position < len && characters[position] == '&' {
                 position += 1;
-                kind = TokenKind::AndAnd;
-                "&&"
+                TokenKind::AndAnd
             } else {
-                "&"
+                TokenKind::BitwiseAnd
             };
 
-            let token = Token {
-                location,
-                kind,
-                literal: literal.to_string(),
-            };
-
-            tokens.push(token);
+            tokens.push(Token::new(kind, location));
             continue;
         }
 
         // xor
         if char == '#' {
-            let location = Location {
-                start: column_start,
-                end: position,
-            };
-
-            let token = Token {
-                location,
-                kind: TokenKind::BitwiseXor,
-                literal: "#".to_owned(),
-            };
-
-            tokens.push(token);
+            let location = Location::new(column_start, position);
+            tokens.push(Token::new(TokenKind::BitwiseXor, location));
             position += 1;
             continue;
         }
 
         // Comma
         if char == ',' {
-            let location = Location {
-                start: column_start,
-                end: position,
-            };
-
-            let token = Token {
-                location,
-                kind: TokenKind::Comma,
-                literal: ",".to_owned(),
-            };
-
-            tokens.push(token);
+            let location = Location::new(column_start, position);
+            tokens.push(Token::new(TokenKind::Comma, location));
             position += 1;
             continue;
         }
 
         // Dot
         if char == '.' {
-            let location = Location {
-                start: column_start,
-                end: position,
-            };
-
+            let location = Location::new(column_start, position);
+            tokens.push(Token::new(TokenKind::Dot, location));
             position += 1;
-
-            let kind = TokenKind::Dot;
-            let literal = ".";
-
-            let token = Token {
-                location,
-                kind,
-                literal: literal.to_string(),
-            };
-
-            tokens.push(token);
             continue;
         }
 
         // Greater or GreaterEqual
         if char == '>' {
-            let location = Location {
-                start: column_start,
-                end: position,
-            };
+            let location = Location::new(column_start, position);
 
             position += 1;
-
-            let mut kind = TokenKind::Greater;
-            let literal = if position < len && characters[position] == '=' {
+            let kind = if position < len && characters[position] == '=' {
                 position += 1;
-                kind = TokenKind::GreaterEqual;
-                ">="
+                TokenKind::GreaterEqual
             } else if position < len && characters[position] == '>' {
                 position += 1;
-                kind = TokenKind::BitwiseRightShift;
-                ">>"
+                TokenKind::BitwiseRightShift
             } else {
-                ">"
+                TokenKind::Greater
             };
 
-            let token = Token {
-                location,
-                kind,
-                literal: literal.to_string(),
-            };
-
-            tokens.push(token);
+            tokens.push(Token::new(kind, location));
             continue;
         }
 
         // Less, LessEqual or NULL-safe equal
         if char == '<' {
-            let location = Location {
-                start: column_start,
-                end: position,
-            };
+            let location = Location::new(column_start, position);
 
             position += 1;
-
-            let mut kind = TokenKind::Less;
-            let literal = if position < len && characters[position] == '=' {
+            let kind = if position < len && characters[position] == '=' {
                 position += 1;
                 if position < len && characters[position] == '>' {
                     position += 1;
-                    kind = TokenKind::NullSafeEqual;
-                    "<=>"
+                    TokenKind::NullSafeEqual
                 } else {
-                    kind = TokenKind::LessEqual;
-                    "<="
+                    TokenKind::LessEqual
                 }
             } else if position < len && characters[position] == '<' {
                 position += 1;
-                kind = TokenKind::BitwiseLeftShift;
-                "<<"
+                TokenKind::BitwiseLeftShift
             } else if position < len && characters[position] == '>' {
                 position += 1;
-                kind = TokenKind::BangEqual;
-                "<>"
+                TokenKind::BangEqual
             } else if position < len && characters[position] == '@' {
                 position += 1;
-                kind = TokenKind::ArrowRightAt;
-                "<@"
+                TokenKind::ArrowRightAt
             } else {
-                "<"
+                TokenKind::Less
             };
 
-            let token = Token {
-                location,
-                kind,
-                literal: literal.to_owned(),
-            };
-
-            tokens.push(token);
+            tokens.push(Token::new(kind, location));
             continue;
         }
 
         // Equal
         if char == '=' {
-            let location = Location {
-                start: column_start,
-                end: position,
-            };
-
-            let token = Token {
-                location,
-                kind: TokenKind::Equal,
-                literal: "=".to_owned(),
-            };
-
-            tokens.push(token);
+            let location = Location::new(column_start, position);
+            tokens.push(Token::new(TokenKind::Equal, location));
             position += 1;
             continue;
         }
 
         // Colon , ColonColon or Colon Equal
         if char == ':' {
-            let location = Location {
-                start: column_start,
-                end: position,
-            };
+            let location = Location::new(column_start, position);
 
             // :=
             if position + 1 < len && characters[position + 1] == '=' {
-                let token = Token {
-                    location,
-                    kind: TokenKind::ColonEqual,
-                    literal: ":=".to_owned(),
-                };
-
-                tokens.push(token);
+                tokens.push(Token::new(TokenKind::ColonEqual, location));
                 position += 2;
                 continue;
             }
 
             // ::
             if position + 1 < len && characters[position + 1] == ':' {
-                let token = Token {
-                    location,
-                    kind: TokenKind::ColonColon,
-                    literal: "::".to_owned(),
-                };
-
-                tokens.push(token);
+                tokens.push(Token::new(TokenKind::ColonColon, location));
                 position += 2;
                 continue;
             }
 
-            let token = Token {
-                location,
-                kind: TokenKind::Colon,
-                literal: ":".to_owned(),
-            };
-
-            tokens.push(token);
+            tokens.push(Token::new(TokenKind::Colon, location));
             position += 1;
             continue;
         }
 
         // Bang or Bang Equal
         if char == '!' {
-            let location = Location {
-                start: column_start,
-                end: position,
-            };
+            let location = Location::new(column_start, position);
 
             position += 1;
-
-            let mut kind = TokenKind::Bang;
-            let literal = if position < len && characters[position] == '=' {
-                position += 1;
-                kind = TokenKind::BangEqual;
-                "!="
+            let kind = if position < len && characters[position] == '=' {
+                TokenKind::BangEqual
             } else {
-                "!"
+                TokenKind::Bang
             };
 
-            let token = Token {
-                location,
-                kind,
-                literal: literal.to_owned(),
-            };
-
-            tokens.push(token);
+            tokens.push(Token::new(kind, location));
             continue;
         }
 
         // Left Paren
         if char == '(' {
-            let location = Location {
-                start: column_start,
-                end: position,
-            };
-
-            let token = Token {
-                location,
-                kind: TokenKind::LeftParen,
-                literal: "(".to_owned(),
-            };
-
-            tokens.push(token);
+            let location = Location::new(column_start, position);
+            tokens.push(Token::new(TokenKind::LeftParen, location));
             position += 1;
             continue;
         }
 
         // Right Paren
         if char == ')' {
-            let location = Location {
-                start: column_start,
-                end: position,
-            };
-
-            let token = Token {
-                location,
-                kind: TokenKind::RightParen,
-                literal: ")".to_owned(),
-            };
-
-            tokens.push(token);
+            let location = Location::new(column_start, position);
+            tokens.push(Token::new(TokenKind::RightParen, location));
             position += 1;
             continue;
         }
 
         // Left Bracket
         if char == '[' {
-            let location = Location {
-                start: column_start,
-                end: position,
-            };
-
-            let token = Token {
-                location,
-                kind: TokenKind::LeftBracket,
-                literal: "[".to_owned(),
-            };
-
-            tokens.push(token);
+            let location = Location::new(column_start, position);
+            tokens.push(Token::new(TokenKind::LeftBracket, location));
             position += 1;
             continue;
         }
 
         // Right Bracket
         if char == ']' {
-            let location = Location {
-                start: column_start,
-                end: position,
-            };
-
-            let token = Token {
-                location,
-                kind: TokenKind::RightBracket,
-                literal: "]".to_owned(),
-            };
-
-            tokens.push(token);
+            let location = Location::new(column_start, position);
+            tokens.push(Token::new(TokenKind::RightBracket, location));
             position += 1;
             continue;
         }
 
         // Semicolon
         if char == ';' {
-            let location = Location {
-                start: column_start,
-                end: position,
-            };
-
-            let token = Token {
-                location,
-                kind: TokenKind::Semicolon,
-                literal: ";".to_owned(),
-            };
-
-            tokens.push(token);
+            let location = Location::new(column_start, position);
+            tokens.push(Token::new(TokenKind::Semicolon, location));
             position += 1;
             continue;
         }
@@ -809,18 +415,11 @@ fn consume_global_variable_name(
 
     // Identifier is being case-insensitive by default, convert to lowercase to be easy to compare and lookup
     let literal = &chars[*start..*pos];
-    let string: String = literal.iter().collect();
+    let mut string: String = literal.iter().collect();
+    string = string.to_lowercase();
 
-    let location = Location {
-        start: *start,
-        end: *pos,
-    };
-
-    Ok(Token {
-        location,
-        kind: TokenKind::GlobalVariable,
-        literal: string.to_lowercase(),
-    })
+    let location = Location::new(*start, *pos);
+    Ok(Token::new(TokenKind::GlobalVariable(string), location))
 }
 
 fn consume_identifier(chars: &[char], pos: &mut usize, start: &mut usize) -> Token {
@@ -833,52 +432,8 @@ fn consume_identifier(chars: &[char], pos: &mut usize, start: &mut usize) -> Tok
     let mut string: String = literal.iter().collect();
     string = string.to_lowercase();
 
-    let location = Location {
-        start: *start,
-        end: *pos,
-    };
-
-    Token {
-        location,
-        kind: resolve_symbol_kind(string.to_string()),
-        literal: string,
-    }
-}
-
-fn consume_number(
-    chars: &[char],
-    pos: &mut usize,
-    start: &mut usize,
-) -> Result<Token, Box<Diagnostic>> {
-    let mut kind = TokenKind::Integer;
-
-    while *pos < chars.len() && (chars[*pos].is_numeric() || chars[*pos] == '_') {
-        *pos += 1;
-    }
-
-    if *pos < chars.len() && chars[*pos] == '.' {
-        *pos += 1;
-
-        kind = TokenKind::Float;
-        while *pos < chars.len() && (chars[*pos].is_numeric() || chars[*pos] == '_') {
-            *pos += 1;
-        }
-    }
-
-    let literal = &chars[*start..*pos];
-    let string: String = literal.iter().collect();
-    let literal_num = string.replace('_', "");
-
-    let location = Location {
-        start: *start,
-        end: *pos,
-    };
-
-    Ok(Token {
-        location,
-        kind,
-        literal: literal_num,
-    })
+    let location = Location::new(*start, *pos);
+    Token::new_symbol(string, location)
 }
 
 fn consume_backticks_identifier(
@@ -903,19 +458,59 @@ fn consume_backticks_identifier(
 
     let literal = &chars[*start + 1..*pos - 1];
     let identifier: String = literal.iter().collect();
+    let location = Location::new(*start, *pos);
+    Ok(Token::new(TokenKind::Symbol(identifier), location))
+}
 
-    let location = Location {
-        start: *start,
-        end: *pos,
-    };
+fn consume_number(
+    chars: &[char],
+    pos: &mut usize,
+    start: &mut usize,
+) -> Result<Token, Box<Diagnostic>> {
+    while *pos < chars.len() && (chars[*pos].is_numeric() || chars[*pos] == '_') {
+        *pos += 1;
+    }
 
-    let string_literal = Token {
-        location,
-        kind: TokenKind::Symbol,
-        literal: identifier,
-    };
+    let mut is_float_value = false;
+    if *pos < chars.len() && chars[*pos] == '.' {
+        *pos += 1;
 
-    Ok(string_literal)
+        is_float_value = true;
+        while *pos < chars.len() && (chars[*pos].is_numeric() || chars[*pos] == '_') {
+            *pos += 1;
+        }
+    }
+
+    let literal = &chars[*start..*pos];
+    let string: String = literal.iter().collect();
+    let literal_num = string.replace('_', "");
+    let location = Location::new(*start, *pos);
+
+    if is_float_value {
+        return match literal_num.parse::<f64>() {
+            Ok(float) => Ok(Token::new(TokenKind::Float(float), location)),
+            Err(parse_float_error) => Err(Diagnostic::error(&parse_float_error.to_string())
+                .add_note(&format!(
+                    "Value must be between {} and {}",
+                    f64::MIN,
+                    f64::MAX
+                ))
+                .with_location_span(*start, *pos)
+                .as_boxed()),
+        };
+    }
+
+    match literal_num.parse::<i64>() {
+        Ok(integer) => Ok(Token::new(TokenKind::Integer(integer), location)),
+        Err(parse_int_error) => Err(Diagnostic::error(&parse_int_error.to_string())
+            .add_note(&format!(
+                "Value must be between {} and {}",
+                i64::MIN,
+                i64::MAX
+            ))
+            .with_location_span(*start, *pos)
+            .as_boxed()),
+    }
 }
 
 fn consume_binary_number(
@@ -942,24 +537,20 @@ fn consume_binary_number(
     let literal = &chars[*start..*pos];
     let string: String = literal.iter().collect();
     let literal_num = string.replace('_', "");
-    let convert_result = i64::from_str_radix(&literal_num, 2);
-
-    if convert_result.is_err() {
-        return Err(Diagnostic::error("Invalid binary number")
+    match i64::from_str_radix(&literal_num, 2) {
+        Ok(integer) => {
+            let location = Location::new(*start, *pos);
+            Ok(Token::new(TokenKind::Integer(integer), location))
+        }
+        Err(parse_int_error) => Err(Diagnostic::error(&parse_int_error.to_string())
+            .add_note(&format!(
+                "Value must be between {} and {}",
+                i64::MIN,
+                i64::MAX
+            ))
             .with_location_span(*start, *pos)
-            .as_boxed());
+            .as_boxed()),
     }
-
-    let location = Location {
-        start: *start,
-        end: *pos,
-    };
-
-    Ok(Token {
-        location,
-        kind: TokenKind::Integer,
-        literal: convert_result.ok().unwrap().to_string(),
-    })
 }
 
 fn consume_octal_number(
@@ -986,24 +577,20 @@ fn consume_octal_number(
     let literal = &chars[*start..*pos];
     let string: String = literal.iter().collect();
     let literal_num = string.replace('_', "");
-    let convert_result = i64::from_str_radix(&literal_num, 8);
-
-    if convert_result.is_err() {
-        return Err(Diagnostic::error("Invalid octal number")
+    match i64::from_str_radix(&literal_num, 8) {
+        Ok(integer) => {
+            let location = Location::new(*start, *pos);
+            Ok(Token::new(TokenKind::Integer(integer), location))
+        }
+        Err(parse_int_error) => Err(Diagnostic::error(&parse_int_error.to_string())
+            .add_note(&format!(
+                "Value must be between {} and {}",
+                i64::MIN,
+                i64::MAX
+            ))
             .with_location_span(*start, *pos)
-            .as_boxed());
+            .as_boxed()),
     }
-
-    let location = Location {
-        start: *start,
-        end: *pos,
-    };
-
-    Ok(Token {
-        location,
-        kind: TokenKind::Integer,
-        literal: convert_result.ok().unwrap().to_string(),
-    })
 }
 
 fn consume_hex_number(
@@ -1030,24 +617,21 @@ fn consume_hex_number(
     let literal = &chars[*start..*pos];
     let string: String = literal.iter().collect();
     let literal_num = string.replace('_', "");
-    let convert_result = i64::from_str_radix(&literal_num, 16);
 
-    if convert_result.is_err() {
-        return Err(Diagnostic::error("Invalid hex decimal number")
+    match i64::from_str_radix(&literal_num, 16) {
+        Ok(integer) => {
+            let location = Location::new(*start, *pos);
+            Ok(Token::new(TokenKind::Integer(integer), location))
+        }
+        Err(parse_int_error) => Err(Diagnostic::error(&parse_int_error.to_string())
+            .add_note(&format!(
+                "Value must be between {} and {}",
+                i64::MIN,
+                i64::MAX
+            ))
             .with_location_span(*start, *pos)
-            .as_boxed());
+            .as_boxed()),
     }
-
-    let location = Location {
-        start: *start,
-        end: *pos,
-    };
-
-    Ok(Token {
-        location,
-        kind: TokenKind::Integer,
-        literal: convert_result.ok().unwrap().to_string(),
-    })
 }
 
 fn consume_string_in_single_quotes(
@@ -1072,19 +656,8 @@ fn consume_string_in_single_quotes(
 
     let literal = &chars[*start + 1..*pos - 1];
     let string: String = literal.iter().collect();
-
-    let location = Location {
-        start: *start,
-        end: *pos,
-    };
-
-    let string_literal = Token {
-        location,
-        kind: TokenKind::String,
-        literal: string,
-    };
-
-    Ok(string_literal)
+    let location = Location::new(*start, *pos);
+    Ok(Token::new(TokenKind::String(string), location))
 }
 
 fn consume_string_in_double_quotes(
@@ -1110,18 +683,8 @@ fn consume_string_in_double_quotes(
     let literal = &chars[*start + 1..*pos - 1];
     let string: String = literal.iter().collect();
 
-    let location = Location {
-        start: *start,
-        end: *pos,
-    };
-
-    let string_literal = Token {
-        location,
-        kind: TokenKind::String,
-        literal: string,
-    };
-
-    Ok(string_literal)
+    let location = Location::new(*start, *pos);
+    Ok(Token::new(TokenKind::String(string), location))
 }
 
 fn ignore_single_line_comment(chars: &[char], pos: &mut usize) {
@@ -1150,92 +713,4 @@ fn ignore_c_style_comment(chars: &[char], pos: &mut usize) -> Result<(), Box<Dia
 
     *pos += 2;
     Ok(())
-}
-
-fn resolve_symbol_kind(literal: String) -> TokenKind {
-    match literal.to_lowercase().as_str() {
-        // Reserved keywords
-        "do" => TokenKind::Do,
-        "set" => TokenKind::Set,
-        "select" => TokenKind::Select,
-        "distinct" => TokenKind::Distinct,
-        "from" => TokenKind::From,
-        "where" => TokenKind::Where,
-        "limit" => TokenKind::Limit,
-        "offset" => TokenKind::Offset,
-        "order" => TokenKind::Order,
-        "using" => TokenKind::Using,
-        "case" => TokenKind::Case,
-        "when" => TokenKind::When,
-        "then" => TokenKind::Then,
-        "else" => TokenKind::Else,
-        "end" => TokenKind::End,
-        "between" => TokenKind::Between,
-        "in" => TokenKind::In,
-        "is" => TokenKind::Is,
-        "on" => TokenKind::On,
-        "not" => TokenKind::Not,
-        "like" => TokenKind::Like,
-        "glob" => TokenKind::Glob,
-        "describe" => TokenKind::Describe,
-        "show" => TokenKind::Show,
-        "regexp" => TokenKind::RegExp,
-
-        "cast" => TokenKind::Cast,
-        "benchmark" => TokenKind::Benchmark,
-
-        // Select into
-        "into" => TokenKind::Into,
-        "outfile" => TokenKind::Outfile,
-        "dumpfile" => TokenKind::Dumpfile,
-        "lines" => TokenKind::Lines,
-        "fields" => TokenKind::Fields,
-        "enclosed" => TokenKind::Enclosed,
-        "terminated" => TokenKind::Terminated,
-
-        // Joins
-        "join" => TokenKind::Join,
-        "left" => TokenKind::Left,
-        "right" => TokenKind::Right,
-        "cross" => TokenKind::Cross,
-        "inner" => TokenKind::Inner,
-        "outer" => TokenKind::Outer,
-
-        // Grouping
-        "group" => TokenKind::Group,
-        "by" => TokenKind::By,
-        "having" => TokenKind::Having,
-        "with" => TokenKind::With,
-        "rollup" => TokenKind::Rollup,
-
-        // Integer division and Modulo operator
-        "div" => TokenKind::Slash,
-        "mod" => TokenKind::Percentage,
-
-        // Logical Operators
-        "or" => TokenKind::OrKeyword,
-        "and" => TokenKind::AndKeyword,
-        "xor" => TokenKind::XorKeyword,
-
-        // True, False and Null
-        "true" => TokenKind::True,
-        "false" => TokenKind::False,
-        "null" => TokenKind::Null,
-
-        "infinity" => TokenKind::Infinity,
-        "nan" => TokenKind::NaN,
-
-        // As for alias
-        "as" => TokenKind::As,
-
-        // Order by DES and ASC
-        "asc" => TokenKind::Ascending,
-        "desc" => TokenKind::Descending,
-
-        // Array data type
-        "array" => TokenKind::Array,
-
-        // Identifier
-        _ => TokenKind::Symbol,
-    }
 }

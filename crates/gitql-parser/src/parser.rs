@@ -1,6 +1,4 @@
 use std::collections::HashMap;
-use std::num::IntErrorKind;
-use std::num::ParseIntError;
 use std::vec;
 
 use gitql_ast::expression::ArithmeticExpr;
@@ -27,9 +25,9 @@ use crate::context::ParserContext;
 use crate::diagnostic::Diagnostic;
 use crate::parse_cast::parse_cast_call_expression;
 use crate::parse_cast::parse_cast_operator_expression;
-use crate::tokenizer::Location;
-use crate::tokenizer::Token;
-use crate::tokenizer::TokenKind;
+use crate::token::Location;
+use crate::token::Token;
+use crate::token::TokenKind;
 use crate::type_checker::check_all_values_are_same_type;
 use crate::type_checker::check_function_call_arguments;
 use crate::type_checker::resolve_dynamic_data_type;
@@ -58,7 +56,7 @@ pub fn parse_gql(tokens: Vec<Token>, env: &mut Environment) -> Result<Query, Box
     // Check for unexpected content after valid statement
     if query_result.is_ok() && position < tokens.len() {
         return Err(un_expected_content_after_correct_statement(
-            &first_token.literal,
+            &first_token.to_string(),
             &tokens,
             &mut position,
         ));
@@ -99,7 +97,9 @@ fn parse_set_query(
     // Consume Set keyword
     *position += 1;
 
-    if is_current_token(tokens, position, TokenKind::GlobalVariable) {
+    if !is_current_token_with_condition(tokens, position, |token| {
+        matches!(token.kind, TokenKind::GlobalVariable(_))
+    }) {
         return Err(Diagnostic::error(
             "Expect Global variable name start with `@` after `SET` keyword",
         )
@@ -107,7 +107,7 @@ fn parse_set_query(
         .as_boxed());
     }
 
-    let name = &tokens[*position].literal;
+    let name = &tokens[*position].to_string();
 
     // Consume variable name
     *position += 1;
@@ -152,7 +152,7 @@ fn parse_describe_query(
     // Consume `DESCRIBE` keyword
     *position += 1;
 
-    if *position >= tokens.len() || tokens[*position].kind != TokenKind::Symbol {
+    if *position >= tokens.len() || !matches!(tokens[*position].kind, TokenKind::Symbol(_)) {
         return Err(
             Diagnostic::error("Expect table name after DESCRIBE Statement")
                 .with_location(calculate_safe_location(tokens, *position))
@@ -161,7 +161,7 @@ fn parse_describe_query(
     }
 
     // Make sure table name is valid
-    let table_name = tokens[*position].literal.to_string();
+    let table_name = tokens[*position].to_string();
     if !env
         .schema
         .tables_fields_names
@@ -185,7 +185,7 @@ fn parse_show_query(tokens: &[Token], position: &mut usize) -> Result<Query, Box
     // Consume SHOW keyword
     *position += 1;
 
-    if *position >= tokens.len() || tokens[*position].literal != "tables" {
+    if *position >= tokens.len() || tokens[*position].to_string() != "tables" {
         return Err(
             Diagnostic::error("Show can not be followed by names other than tables")
                 .add_help("A correct statement will be `SHOW TABLES`")
@@ -294,7 +294,8 @@ fn parse_select_query(
                     // Consume Comma
                     *position += 1;
 
-                    if *position >= len || tokens[*position].kind != TokenKind::Integer {
+                    if *position >= len || !matches!(tokens[*position].kind, TokenKind::Integer(_))
+                    {
                         return Err(Diagnostic::error(
                             "Expects `OFFSET` amount as Integer value after `,`",
                         )
@@ -304,36 +305,32 @@ fn parse_select_query(
                         .as_boxed());
                     }
 
-                    let count_result: Result<usize, ParseIntError> =
-                        tokens[*position].literal.parse();
+                    match tokens[*position].kind {
+                        TokenKind::Integer(integer) => {
+                            // Consume Offset value
+                            *position += 1;
 
-                    // Report clear error for Integer parsing
-                    if let Err(error) = &count_result {
-                        if error.kind().eq(&IntErrorKind::PosOverflow) {
-                            return Err(Diagnostic::error("`OFFSET` integer value is too large")
-                                .add_help("Try to use smaller value")
-                                .add_note(&format!(
+                            if integer < 0 {
+                                return Err(Diagnostic::error(
+                                    "Expect positive number after `OFFSET` keyword",
+                                )
+                                .with_location(calculate_safe_location(tokens, *position - 1))
+                                .as_boxed());
+                            }
+
+                            let count = integer as usize;
+                            statements.insert("offset", Box::new(OffsetStatement { count }));
+                        }
+                        _ => {
+                            return Err(Diagnostic::error("`OFFSET` integer value is invalid")
+                                .add_help(&format!(
                                     "`OFFSET` value must be between 0 and {}",
                                     usize::MAX
                                 ))
                                 .with_location(token.location)
-                                .as_boxed());
+                                .as_boxed())
                         }
-
-                        return Err(Diagnostic::error("`OFFSET` integer value is invalid")
-                            .add_help(&format!(
-                                "`OFFSET` value must be between 0 and {}",
-                                usize::MAX
-                            ))
-                            .with_location(token.location)
-                            .as_boxed());
                     }
-
-                    // Consume Offset value
-                    *position += 1;
-
-                    let count = count_result.unwrap();
-                    statements.insert("offset", Box::new(OffsetStatement { count }));
                 }
             }
             TokenKind::Offset => {
@@ -585,7 +582,7 @@ fn parse_select_distinct_option(
             let mut distinct_fields: Vec<String> = vec![];
             while !is_current_token(tokens, position, TokenKind::RightParen) {
                 let field_token = &tokens[*position];
-                let literal = &field_token.literal;
+                let literal = &field_token.to_string();
                 let location = field_token.location;
 
                 distinct_fields.push(literal.to_string());
@@ -680,13 +677,12 @@ fn parse_select_all_or_expressions(
             *position += 1;
 
             // Parse and consume Symbol as Elias name
-            let alias_name = consume_token_or_error(
+            let alias_name = consume_conditional_token_or_errors(
                 tokens,
                 position,
-                TokenKind::Symbol,
+                |token| matches!(token.kind, TokenKind::Symbol(_)),
                 "Expect `Symbol` as field alias name",
             )?
-            .literal
             .to_string();
 
             // No need to do checks or add alias
@@ -749,13 +745,12 @@ fn parse_from_option(
         *position += 1;
 
         // Parse and consume Symbol as Table name
-        let table_name = consume_token_or_error(
+        let table_name = consume_conditional_token_or_errors(
             tokens,
             position,
-            TokenKind::Symbol,
+            |token| matches!(token.kind, TokenKind::Symbol(_)),
             "Expect `Symbol` as a table name",
         )?
-        .literal
         .to_string();
 
         if !env
@@ -820,14 +815,15 @@ fn parse_from_option(
             let join_location = tokens[*position].location;
             *position += 1;
 
-            if *position >= tokens.len() || tokens[*position].kind != TokenKind::Symbol {
+            if *position >= tokens.len() || !matches!(tokens[*position].kind, TokenKind::Symbol(_))
+            {
                 return Err(Diagnostic::error("Expect table name after `JOIN` keyword")
                     .with_location(calculate_safe_location(tokens, *position))
                     .as_boxed());
             }
 
             let other_table = &tokens[*position];
-            let other_table_name = &other_table.literal;
+            let other_table_name = &other_table.to_string();
 
             // Make sure the RIGHT and LEFT tables names are not the same
             if number_previous_of_joines == 0 && table_name.eq(other_table_name) {
@@ -1037,83 +1033,72 @@ fn parse_limit_statement(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Statement>, Box<Diagnostic>> {
+    // Consume `LIMIT` keyword
     *position += 1;
-    if *position >= tokens.len() || tokens[*position].kind != TokenKind::Integer {
+
+    if *position >= tokens.len() {
         return Err(Diagnostic::error("Expect number after `LIMIT` keyword")
             .with_location(calculate_safe_location(tokens, *position - 1))
             .as_boxed());
     }
 
-    let count_result: Result<usize, ParseIntError> = tokens[*position].literal.parse();
+    match tokens[*position].kind {
+        TokenKind::Integer(integer) => {
+            // Consume Integer value
+            *position += 1;
 
-    // Report clear error for Integer parsing
-    if let Err(error) = &count_result {
-        if error.kind().eq(&IntErrorKind::PosOverflow) {
-            return Err(Diagnostic::error("`LIMIT` integer value is too large")
-                .add_help("Try to use smaller value")
-                .add_note(&format!(
-                    "`LIMIT` value must be between 0 and {}",
-                    usize::MAX
-                ))
-                .with_location(calculate_safe_location(tokens, *position))
-                .as_boxed());
+            // Make sure limit value is always positive
+            if integer < 0 {
+                return Err(
+                    Diagnostic::error("Expect positive number after `LIMIT` keyword")
+                        .with_location(calculate_safe_location(tokens, *position - 1))
+                        .as_boxed(),
+                );
+            }
+
+            let count = integer as usize;
+            Ok(Box::new(LimitStatement { count }))
         }
-
-        return Err(Diagnostic::error("`LIMIT` integer value is invalid")
-            .add_help(&format!(
-                "`LIMIT` value must be between 0 and {}",
-                usize::MAX
-            ))
-            .with_location(calculate_safe_location(tokens, *position))
-            .as_boxed());
+        _ => Err(Diagnostic::error("Expect number after `LIMIT` keyword")
+            .with_location(calculate_safe_location(tokens, *position - 1))
+            .as_boxed()),
     }
-
-    // Consume Integer value
-    *position += 1;
-
-    let count = count_result.unwrap();
-    Ok(Box::new(LimitStatement { count }))
 }
 
 fn parse_offset_statement(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Statement>, Box<Diagnostic>> {
+    // Consume `OFFSET` keyword
     *position += 1;
-    if *position >= tokens.len() || tokens[*position].kind != TokenKind::Integer {
+
+    if *position >= tokens.len() {
         return Err(Diagnostic::error("Expect number after `OFFSET` keyword")
             .with_location(calculate_safe_location(tokens, *position - 1))
             .as_boxed());
     }
 
-    let count_result: Result<usize, ParseIntError> = tokens[*position].literal.parse();
+    match tokens[*position].kind {
+        TokenKind::Integer(integer) => {
+            // Consume Integer value
+            *position += 1;
 
-    // Report clear error for Integer parsing
-    if let Err(error) = &count_result {
-        if error.kind().eq(&IntErrorKind::PosOverflow) {
-            return Err(Diagnostic::error("`OFFSET` integer value is too large")
-                .add_help("Try to use smaller value")
-                .add_note(&format!(
-                    "`OFFSET` value must be between 0 and {}",
-                    usize::MAX
-                ))
-                .with_location(calculate_safe_location(tokens, *position))
-                .as_boxed());
+            // Make sure offset value is always positive
+            if integer < 0 {
+                return Err(
+                    Diagnostic::error("Expect positive number after `OFFSET` keyword")
+                        .with_location(calculate_safe_location(tokens, *position - 1))
+                        .as_boxed(),
+                );
+            }
+
+            let count = integer as usize;
+            Ok(Box::new(OffsetStatement { count }))
         }
-
-        return Err(Diagnostic::error("`OFFSET` integer value is invalid")
-            .add_help(&format!(
-                "`OFFSET` value must be between 0 and {}",
-                usize::MAX
-            ))
-            .with_location(calculate_safe_location(tokens, *position))
-            .as_boxed());
+        _ => Err(Diagnostic::error("Expect number after `OFFSET` keyword")
+            .with_location(calculate_safe_location(tokens, *position - 1))
+            .as_boxed()),
     }
-
-    *position += 1;
-
-    let count = count_result.unwrap();
-    Ok(Box::new(OffsetStatement { count }))
 }
 
 fn parse_order_by_statement(
@@ -1222,7 +1207,7 @@ fn parse_into_statement(
     *position += 1;
 
     // Make sure user defined a file path as string literal
-    if *position >= tokens.len() || tokens[*position].kind != TokenKind::String {
+    if *position >= tokens.len() || !matches!(tokens[*position].kind, TokenKind::String(_)) {
         return Err(Diagnostic::error(
             "Expect String literal as file path after OUTFILE or DUMPFILE keyword",
         )
@@ -1230,20 +1215,20 @@ fn parse_into_statement(
         .as_boxed());
     }
 
-    let file_path = &tokens[*position].literal;
+    let file_path = &tokens[*position].to_string();
 
     // Consume File path token
     *position += 1;
 
     let is_dump_file = *file_format_kind == TokenKind::Dumpfile;
 
-    let mut lines_terminated = if is_dump_file { "" } else { "\n" };
+    let mut lines_terminated = if is_dump_file { "" } else { "\n" }.to_string();
     let mut lines_terminated_used = false;
 
-    let mut fields_termianted = if is_dump_file { "" } else { "," };
-    let mut fields_termianted_used = false;
+    let mut fields_terminated = if is_dump_file { "" } else { "," }.to_string();
+    let mut fields_terminated_used = false;
 
-    let mut enclosed = "";
+    let mut enclosed = String::new();
     let mut enclosed_used = false;
 
     while *position < tokens.len() {
@@ -1286,7 +1271,8 @@ fn parse_into_statement(
                 "Expect `BY` after `TERMINATED` keyword",
             )?;
 
-            if *position >= tokens.len() || tokens[*position].kind != TokenKind::String {
+            if *position >= tokens.len() || !matches!(tokens[*position].kind, TokenKind::String(_))
+            {
                 return Err(Diagnostic::error(
                     "Expect String literal as lines terminated value after BY keyword",
                 )
@@ -1295,7 +1281,7 @@ fn parse_into_statement(
             }
 
             // Consume `LINES TERMINATED BY` Value
-            lines_terminated = &tokens[*position].literal;
+            lines_terminated = tokens[*position].to_string();
             lines_terminated_used = true;
             *position += 1;
             continue;
@@ -1311,7 +1297,7 @@ fn parse_into_statement(
                 .as_boxed());
             }
 
-            if fields_termianted_used {
+            if fields_terminated_used {
                 return Err(
                     Diagnostic::error("You already used `FIELDS TERMINATED` option")
                         .with_location(tokens[*position].location)
@@ -1338,7 +1324,8 @@ fn parse_into_statement(
                 "Expect `BY` after `TERMINATED` keyword",
             )?;
 
-            if *position >= tokens.len() || tokens[*position].kind != TokenKind::String {
+            if *position >= tokens.len() || !matches!(tokens[*position].kind, TokenKind::String(_))
+            {
                 return Err(Diagnostic::error(
                     "Expect String literal as Field terminated value after BY keyword",
                 )
@@ -1347,8 +1334,8 @@ fn parse_into_statement(
             }
 
             // Consume `FIELD TERMINATED BY` Value
-            fields_termianted = &tokens[*position].literal;
-            fields_termianted_used = true;
+            fields_terminated = tokens[*position].to_string();
+            fields_terminated_used = true;
             *position += 1;
             continue;
         }
@@ -1372,7 +1359,8 @@ fn parse_into_statement(
             // Consume `ENCLOSED` token
             *position += 1;
 
-            if *position >= tokens.len() || tokens[*position].kind != TokenKind::String {
+            if *position >= tokens.len() || !matches!(tokens[*position].kind, TokenKind::String(_))
+            {
                 return Err(Diagnostic::error(
                     "Expect String literal as enclosed value after ENCLOSED keyword",
                 )
@@ -1381,7 +1369,7 @@ fn parse_into_statement(
             }
 
             // Consume `ENCLOSED` Value
-            enclosed = &tokens[*position].literal;
+            enclosed = tokens[*position].to_string();
             enclosed_used = true;
             *position += 1;
             continue;
@@ -1392,9 +1380,9 @@ fn parse_into_statement(
 
     Ok(Box::new(IntoStatement {
         file_path: file_path.to_string(),
-        lines_terminated: lines_terminated.to_string(),
-        fields_terminated: fields_termianted.to_string(),
-        enclosed: enclosed.to_string(),
+        lines_terminated,
+        fields_terminated,
+        enclosed,
     }))
 }
 
@@ -3292,10 +3280,10 @@ fn parse_function_call_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
-    if *position < tokens.len() && tokens[*position].kind == TokenKind::Symbol {
+    if *position < tokens.len() && matches!(tokens[*position].kind, TokenKind::Symbol(_)) {
         let symbol_token = &tokens[*position];
         if *position + 1 < tokens.len() && tokens[*position + 1].kind == TokenKind::LeftParen {
-            let function_name = &symbol_token.literal;
+            let function_name = &symbol_token.to_string();
             let function_name_location = symbol_token.location;
 
             // Consume function name
@@ -3490,13 +3478,13 @@ fn parse_member_access_expression(
 
         // select (user).name from users
         if let Some(composite_type) = expr.expr_type().as_any().downcast_ref::<CompositeType>() {
-            if *position < tokens.len() && tokens[*position].kind == TokenKind::Symbol {
+            if *position < tokens.len() && matches!(tokens[*position].kind, TokenKind::Symbol(_)) {
                 let member_token = &tokens[*position];
 
                 // Consume `Symbol` token
                 *position += 1;
 
-                let member_name = member_token.literal.to_string();
+                let member_name = member_token.to_string();
 
                 // Make sure the member name is valid for this composite type
                 if !composite_type.members.contains_key(&member_name) {
@@ -3546,24 +3534,23 @@ fn parse_primary_expression(
         return Err(un_expected_expression_error(tokens, position));
     }
 
-    match tokens[*position].kind {
-        TokenKind::Integer => parse_const_integer_expression(tokens, position),
-        TokenKind::Float => parse_const_float_expression(tokens, position),
+    match &tokens[*position].kind {
+        TokenKind::Integer(_) => parse_const_integer_expression(tokens, position),
+        TokenKind::Float(_) => parse_const_float_expression(tokens, position),
         TokenKind::Infinity => parse_float_infinity_or_nan_expression(tokens, position),
         TokenKind::NaN => parse_float_infinity_or_nan_expression(tokens, position),
-        TokenKind::Symbol => parse_symbol_expression(context, env, tokens, position),
+        TokenKind::Symbol(_) => parse_symbol_expression(context, env, tokens, position),
         TokenKind::Array => parse_array_value_expression(context, env, tokens, position),
         TokenKind::LeftBracket => parse_array_value_expression(context, env, tokens, position),
         TokenKind::LeftParen => parse_group_expression(context, env, tokens, position),
         TokenKind::Case => parse_case_expression(context, env, tokens, position),
         TokenKind::Cast => parse_cast_call_expression(context, env, tokens, position),
         TokenKind::Benchmark => parse_benchmark_call_expression(context, env, tokens, position),
-        TokenKind::GlobalVariable => parse_global_variable_expression(env, tokens, position),
-        TokenKind::String => {
+        TokenKind::GlobalVariable(_) => parse_global_variable_expression(env, tokens, position),
+        TokenKind::String(str) => {
             *position += 1;
-            Ok(Box::new(StringExpr {
-                value: tokens[*position - 1].literal.to_string(),
-            }))
+            let value = str.to_string();
+            Ok(Box::new(StringExpr { value }))
         }
         TokenKind::True => {
             *position += 1;
@@ -3585,42 +3572,44 @@ fn parse_const_integer_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
-    if let Ok(integer) = tokens[*position].literal.parse::<i64>() {
-        *position += 1;
-        let value = Number::Int(integer);
-        return Ok(Box::new(NumberExpr { value }));
+    match tokens[*position].kind {
+        TokenKind::Integer(integer) => {
+            *position += 1;
+            let value = Number::Int(integer);
+            Ok(Box::new(NumberExpr { value }))
+        }
+        _ => Err(Diagnostic::error("Too big Integer value")
+            .add_help("Try to use smaller value")
+            .add_note(&format!(
+                "Integer value must be between {} and {}",
+                i64::MIN,
+                i64::MAX
+            ))
+            .with_location(tokens[*position].location)
+            .as_boxed()),
     }
-
-    Err(Diagnostic::error("Too big Integer value")
-        .add_help("Try to use smaller value")
-        .add_note(&format!(
-            "Integer value must be between {} and {}",
-            i64::MIN,
-            i64::MAX
-        ))
-        .with_location(tokens[*position].location)
-        .as_boxed())
 }
 
 fn parse_const_float_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
-    if let Ok(float) = tokens[*position].literal.parse::<f64>() {
-        *position += 1;
-        let value = Number::Float(float);
-        return Ok(Box::new(NumberExpr { value }));
+    match tokens[*position].kind {
+        TokenKind::Float(float) => {
+            *position += 1;
+            let value = Number::Float(float);
+            Ok(Box::new(NumberExpr { value }))
+        }
+        _ => Err(Diagnostic::error("Too big Float value")
+            .add_help("Try to use smaller value")
+            .add_note(&format!(
+                "Float value must be between {} and {}",
+                f64::MIN,
+                f64::MAX
+            ))
+            .with_location(tokens[*position].location)
+            .as_boxed()),
     }
-
-    Err(Diagnostic::error("Too big Float value")
-        .add_help("Try to use smaller value")
-        .add_note(&format!(
-            "Float value must be between {} and {}",
-            f64::MIN,
-            f64::MAX
-        ))
-        .with_location(tokens[*position].location)
-        .as_boxed())
 }
 
 fn parse_float_infinity_or_nan_expression(
@@ -3645,7 +3634,7 @@ fn parse_symbol_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
-    let mut value = tokens[*position].literal.to_string();
+    let mut value = tokens[*position].to_string();
     let location = tokens[*position].location;
 
     // Collect projections only inside select statement
@@ -3956,7 +3945,7 @@ fn parse_global_variable_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
-    let name = tokens[*position].literal.to_string();
+    let name = tokens[*position].to_string();
     *position += 1;
     let result_type = if env.globals_types.contains_key(&name) {
         env.globals_types[name.as_str()].clone()
@@ -4165,6 +4154,15 @@ pub(crate) fn is_current_token(
 }
 
 #[inline(always)]
+pub(crate) fn is_current_token_with_condition(
+    tokens: &[Token],
+    position: &usize,
+    condition: fn(&Token) -> bool,
+) -> bool {
+    *position < tokens.len() && condition(&tokens[*position])
+}
+
+#[inline(always)]
 pub(crate) fn consume_token_or_error<'a>(
     tokens: &'a [Token],
     position: &'a mut usize,
@@ -4172,6 +4170,24 @@ pub(crate) fn consume_token_or_error<'a>(
     message: &'a str,
 ) -> Result<&'a Token, Box<Diagnostic>> {
     if *position < tokens.len() && tokens[*position].kind == expected_kind {
+        *position += 1;
+        let index = *position - 1;
+        return Ok(&tokens[index]);
+    }
+
+    Err(Diagnostic::error(message)
+        .with_location(calculate_safe_location(tokens, *position))
+        .as_boxed())
+}
+
+#[inline(always)]
+pub(crate) fn consume_conditional_token_or_errors<'a>(
+    tokens: &'a [Token],
+    position: &'a mut usize,
+    condition: fn(&Token) -> bool,
+    message: &'a str,
+) -> Result<&'a Token, Box<Diagnostic>> {
+    if *position < tokens.len() && condition(&tokens[*position]) {
         *position += 1;
         let index = *position - 1;
         return Ok(&tokens[index]);
