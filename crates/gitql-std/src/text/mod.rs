@@ -43,6 +43,7 @@ pub fn register_std_text_functions(map: &mut HashMap<&'static str, Function>) {
     map.insert("strcmp", text_strcmp);
     map.insert("quotename", text_quotename);
     map.insert("str", text_str);
+    map.insert("to_hex", text_to_hex);
 }
 
 #[inline(always)]
@@ -273,6 +274,13 @@ pub fn register_std_text_function_signatures(map: &mut HashMap<&'static str, Sig
                     base: Some(Box::new(IntType)),
                 }),
             ],
+            return_type: Box::new(TextType),
+        },
+    );
+    map.insert(
+        "text_to_hex",
+        Signature {
+            parameters: vec![Box::new(IntType)],
             return_type: Box::new(TextType),
         },
     );
@@ -657,4 +665,10 @@ pub fn text_str(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
     Box::new(TextValue {
         value: number_string.clone(),
     })
+}
+
+pub fn text_to_hex(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let number = inputs[0].as_int().unwrap();
+    let value = format!("0x{}", number);
+    Box::new(TextValue { value })
 }

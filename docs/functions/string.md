@@ -30,3 +30,4 @@
 | STRCMP     | Text , Text                  | Integer | Return 0 If string1 = string2, -1 if string1 < string2, this function returns -1, and 1 if string1 > string2                                                         |
 | QUOTENAME  | Text , Text                  | Text    | Returns the string (first argument) with specified delimiters (second argument), defaulting to []                                                                    |
 | STR        | Text, Integer?, Integer?     | Text    | Returns a number as a string with optionals length and decimals.                                                                                                     |
+| TO_HEX     | Integer                      | Text    | Returns a number as a string with hex decimal format.                                                                                                                |
