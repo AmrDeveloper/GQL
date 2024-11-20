@@ -770,7 +770,7 @@ fn parse_from_option(
         register_current_table_fields_types(env, &table_name)?;
 
         // Parse Joins
-        let mut number_previous_of_joines = 0;
+        let mut number_previous_of_joins = 0;
         while is_join_or_join_type_token(tokens, position) {
             let join_token = &tokens[*position];
 
@@ -826,7 +826,7 @@ fn parse_from_option(
             let other_table_name = &other_table.to_string();
 
             // Make sure the RIGHT and LEFT tables names are not the same
-            if number_previous_of_joines == 0 && table_name.eq(other_table_name) {
+            if number_previous_of_joins == 0 && table_name.eq(other_table_name) {
                 return Err(Diagnostic::error(
                     "The two tables of join must be unique or have different alias",
                 )
@@ -858,7 +858,7 @@ fn parse_from_option(
                 .as_boxed());
             }
 
-            let join_operand = if number_previous_of_joines == 0 {
+            let join_operand = if number_previous_of_joins == 0 {
                 JoinOperand::OuterAndInner(table_name.to_string(), other_table_name.to_string())
             } else {
                 JoinOperand::Inner(other_table_name.to_string())
@@ -870,7 +870,7 @@ fn parse_from_option(
                 predicate,
             });
 
-            number_previous_of_joines += 1;
+            number_previous_of_joins += 1;
         }
     }
     Ok(())
@@ -4044,14 +4044,6 @@ fn un_expected_expression_error(tokens: &[Token], position: &usize) -> Box<Diagn
     if previous.kind == TokenKind::LessEqual && current.kind == TokenKind::Greater {
         return Diagnostic::error("Unexpected `<= >`, do you mean `<=>`?")
             .add_help("Try to remove space between `<= >`")
-            .with_location(location)
-            .as_boxed();
-    }
-
-    // `. .` the user may want to write `..`
-    if previous.kind == TokenKind::Dot && current.kind == TokenKind::Dot {
-        return Diagnostic::error("Unexpected `. .`, do you mean `..`?")
-            .add_help("Try to remove space between `. .`")
             .with_location(location)
             .as_boxed();
     }
