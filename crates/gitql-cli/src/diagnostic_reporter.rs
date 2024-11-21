@@ -15,7 +15,11 @@ impl DiagnosticReporter {
         println!("[{}]: {}", diagnostic.label(), diagnostic.message());
 
         if let Some(location) = diagnostic.location() {
-            println!("=> Column {} to {},", location.0, location.1);
+            if location.0 == location.1 {
+                println!("=> Column {}", location.0);
+            } else {
+                println!("=> Column {} to {},", location.0, location.1);
+            }
         }
 
         if !query.is_empty() {
