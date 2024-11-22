@@ -160,8 +160,7 @@ fn evaluate_select_query(
     }
 
     // Into statement must be executed last after flatted and remove hidden selections
-    if statements_map.contains_key("into") {
-        let into_statement = statements_map.get_mut("into").unwrap();
+    if let Some(into_statement) = statements_map.get_mut("into") {
         execute_statement(
             env,
             into_statement,

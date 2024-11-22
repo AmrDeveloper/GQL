@@ -639,11 +639,7 @@ fn consume_string_in_single_quotes(
     pos: &mut usize,
     start: &mut usize,
 ) -> Result<Token, Box<Diagnostic>> {
-    *pos += 1;
-
-    while *pos < chars.len() && chars[*pos] != '\'' {
-        *pos += 1;
-    }
+    let buffer = consume_string_with_around(chars, pos, '\'')?;
 
     if *pos >= chars.len() {
         return Err(Diagnostic::error("Unterminated single quote string")
@@ -652,12 +648,11 @@ fn consume_string_in_single_quotes(
             .as_boxed());
     }
 
+    // Consume `'`
     *pos += 1;
 
-    let literal = &chars[*start + 1..*pos - 1];
-    let string: String = literal.iter().collect();
     let location = Location::new(*start, *pos);
-    Ok(Token::new(TokenKind::String(string), location))
+    Ok(Token::new(TokenKind::String(buffer), location))
 }
 
 fn consume_string_in_double_quotes(
@@ -665,11 +660,7 @@ fn consume_string_in_double_quotes(
     pos: &mut usize,
     start: &mut usize,
 ) -> Result<Token, Box<Diagnostic>> {
-    *pos += 1;
-
-    while *pos < chars.len() && chars[*pos] != '"' {
-        *pos += 1;
-    }
+    let buffer = consume_string_with_around(chars, pos, '"')?;
 
     if *pos >= chars.len() {
         return Err(Diagnostic::error("Unterminated double quote string")
@@ -678,13 +669,78 @@ fn consume_string_in_double_quotes(
             .as_boxed());
     }
 
+    // Consume `"`
+    *pos += 1;
+    let location = Location::new(*start, *pos);
+    Ok(Token::new(TokenKind::String(buffer), location))
+}
+
+fn consume_string_with_around(
+    chars: &[char],
+    pos: &mut usize,
+    around: char,
+) -> Result<String, Box<Diagnostic>> {
+    // Consume Around start
     *pos += 1;
 
-    let literal = &chars[*start + 1..*pos - 1];
-    let string: String = literal.iter().collect();
+    let mut buffer = String::new();
+    while *pos < chars.len() && chars[*pos] != around {
+        if chars[*pos] != '\\' {
+            buffer.push(chars[*pos]);
+            *pos += 1;
+            continue;
+        }
 
-    let location = Location::new(*start, *pos);
-    Ok(Token::new(TokenKind::String(string), location))
+        // If '\\' is the last character, we don't need to escape it
+        if *pos == chars.len() - 1 {
+            buffer.push(chars[*pos]);
+            *pos += 1;
+            continue;
+        }
+
+        // Consume '\\'
+        *pos += 1;
+
+        // Check possible escape depending on the next character
+        let next_char = chars[*pos];
+        let character_with_escape_handled = match next_char {
+            // Single quote
+            '\'' => {
+                *pos += 1;
+                '\''
+            }
+            // Double quote
+            '\"' => {
+                *pos += 1;
+                '\"'
+            }
+            // Backslash
+            '\\' => {
+                *pos += 1;
+                '\\'
+            }
+            // New line
+            'n' => {
+                *pos += 1;
+                '\n'
+            }
+            // Carriage return
+            'r' => {
+                *pos += 1;
+                '\r'
+            }
+            // Tab
+            't' => {
+                *pos += 1;
+                '\t'
+            }
+            _ => chars[*pos - 1],
+        };
+
+        buffer.push(character_with_escape_handled);
+    }
+
+    Ok(buffer)
 }
 
 fn ignore_single_line_comment(chars: &[char], pos: &mut usize) {
