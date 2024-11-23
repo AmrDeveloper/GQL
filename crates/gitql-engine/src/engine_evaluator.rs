@@ -3,6 +3,7 @@ use gitql_ast::expression::ArrayExpr;
 use gitql_ast::expression::AssignmentExpr;
 use gitql_ast::expression::BenchmarkCallExpr;
 use gitql_ast::expression::BetweenExpr;
+use gitql_ast::expression::BetweenKind;
 use gitql_ast::expression::BitwiseExpr;
 use gitql_ast::expression::BooleanExpr;
 use gitql_ast::expression::CallExpr;
@@ -46,6 +47,7 @@ use gitql_core::values::text::TextValue;
 
 use regex::Regex;
 use regex::RegexBuilder;
+use std::cmp::Ordering;
 use std::string::String;
 
 #[allow(clippy::borrowed_box)]
@@ -553,9 +555,27 @@ fn evaluate_between(
     let value = evaluate_expression(env, &expr.value, titles, object)?;
     let range_start = evaluate_expression(env, &expr.range_start, titles, object)?;
     let range_end = evaluate_expression(env, &expr.range_end, titles, object)?;
-    let result =
-        value.compare(&range_start).unwrap().is_ge() && value.compare(&range_end).unwrap().is_le();
-    Ok(Box::new(BoolValue { value: result }))
+    let comparing_result = match expr.kind {
+        BetweenKind::Symmetric => {
+            let (start, end) = if let Some(order) = range_start.compare(&range_end) {
+                if Ordering::is_gt(order) {
+                    (range_end, range_start)
+                } else {
+                    (range_start, range_end)
+                }
+            } else {
+                (range_start, range_end)
+            };
+            value.compare(&start).unwrap().is_ge() && value.compare(&end).unwrap().is_le()
+        }
+        BetweenKind::Asymmetric => {
+            value.compare(&range_start).unwrap().is_ge()
+                && value.compare(&range_end).unwrap().is_le()
+        }
+    };
+    Ok(Box::new(BoolValue {
+        value: comparing_result,
+    }))
 }
 
 fn evaluate_case(

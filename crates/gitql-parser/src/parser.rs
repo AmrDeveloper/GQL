@@ -3237,29 +3237,53 @@ fn parse_between_expression(
         // Consume `BETWEEN` keyword
         *position += 1;
 
-        let argument_type = expression.expr_type();
+        let kind = parse_between_expr_kind(tokens, position);
+
         let range_start = parse_function_call_expression(context, env, tokens, position)?;
 
-        // Consume `..` token
+        // Consume `AND` token
         consume_token_or_error(
             tokens,
             position,
             TokenKind::AndKeyword,
-            "Expect `..` after `BETWEEN` range start",
+            "Expect `AND` after `BETWEEN` range start",
         )?;
 
         let range_end = parse_function_call_expression(context, env, tokens, position)?;
 
-        if !argument_type.equals(&range_start.expr_type())
-            || !argument_type.equals(&range_end.expr_type())
-        {
+        let lhs_type = expression.expr_type();
+        let range_start_type = &range_start.expr_type();
+        let range_end_type = &range_end.expr_type();
+
+        // Make sure LHS and Range start and end types all are equals
+        if !lhs_type.equals(range_start_type) || !lhs_type.equals(range_end_type) {
             return Err(Diagnostic::error(&format!(
-                "Expect `BETWEEN` argument, range start and end to has same type but got {}, {} and {}",
-                argument_type.literal(),
-                range_start. expr_type().literal(),
-                range_end. expr_type().literal()
+                "Expect `BETWEEN` Left hand side type, range start and end to has same type but got {}, {} and {}",
+                lhs_type.literal(),
+                range_start_type.literal(),
+                range_end_type.literal()
             ))
             .add_help("Try to make sure all of them has same type")
+            .with_location(between_location)
+            .as_boxed());
+        }
+
+        // Make sure that type is supporting >= operator
+        if !lhs_type.can_perform_gte_op_with().contains(&lhs_type) {
+            return Err(Diagnostic::error(&format!(
+                "Type `{}` used in Between expression can't support `>=` operator",
+                lhs_type.literal()
+            ))
+            .with_location(between_location)
+            .as_boxed());
+        }
+
+        // Make sure that type is supporting <= operator
+        if !lhs_type.can_perform_lte_op_with().contains(&lhs_type) {
+            return Err(Diagnostic::error(&format!(
+                "Type `{}` used in Between expression can't support `<=` operator",
+                lhs_type.literal()
+            ))
             .with_location(between_location)
             .as_boxed());
         }
@@ -3268,10 +3292,26 @@ fn parse_between_expression(
             value: expression,
             range_start,
             range_end,
+            kind,
         }));
     }
 
     Ok(expression)
+}
+
+fn parse_between_expr_kind(tokens: &[Token], position: &mut usize) -> BetweenKind {
+    if *position < tokens.len() {
+        let token_kind = &tokens[*position].kind;
+        if matches!(token_kind, TokenKind::Asymmetric | TokenKind::Symmetric) {
+            *position += 1;
+            return if token_kind == &TokenKind::Asymmetric {
+                BetweenKind::Asymmetric
+            } else {
+                BetweenKind::Symmetric
+            };
+        }
+    }
+    BetweenKind::Asymmetric
 }
 
 fn parse_function_call_expression(

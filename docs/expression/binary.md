@@ -80,6 +80,14 @@ Used to check if value is between range start and end included
 SELECT commit_count FROM branches WHERE commit_count BETWEEN 2 AND 30000
 ```
 
+If you are not sure that the range start is greater than the range end, you can use the keyword `Symmetric`
+
+```SQL
+SELECT 1 BETWEEN 1 AND 3             -- True
+SELECT 1 BETWEEN 3 AND 1             -- False
+SELECT 1 BETWEEN SYMMETRIC 1 AND 3   -- True
+```
+
 ---
 
 ### Is Null Expression

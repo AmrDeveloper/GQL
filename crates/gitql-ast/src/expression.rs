@@ -510,11 +510,21 @@ impl Expr for BenchmarkCallExpr {
     }
 }
 
+/// ASYMMETRIC is default. ASYMMETRIC is noise, it's current behavior.
+/// If b <= c, then SYMMETRIC and ASYMMETRIC work the same way.
+/// If b > c, then SYMMETRIC in effect reverses the operands.
+#[derive(PartialEq, Clone)]
+pub enum BetweenKind {
+    Symmetric,
+    Asymmetric,
+}
+
 #[derive(Clone)]
 pub struct BetweenExpr {
     pub value: Box<dyn Expr>,
     pub range_start: Box<dyn Expr>,
     pub range_end: Box<dyn Expr>,
+    pub kind: BetweenKind,
 }
 
 impl Expr for BetweenExpr {
