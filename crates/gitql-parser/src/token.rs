@@ -219,34 +219,54 @@ impl Display for TokenKind {
 }
 
 #[derive(Copy, Clone)]
-pub struct Location {
-    pub start: usize,
-    pub end: usize,
+pub struct SourceLocation {
+    pub line_start: u32,
+    pub line_end: u32,
+    pub column_start: u32,
+    pub column_end: u32,
 }
 
-impl Location {
-    pub fn new(start: usize, end: usize) -> Location {
-        Location { start, end }
+impl SourceLocation {
+    pub fn new(
+        line_start: u32,
+        line_end: u32,
+        column_start: u32,
+        column_end: u32,
+    ) -> SourceLocation {
+        SourceLocation {
+            line_start,
+            line_end,
+            column_start,
+            column_end,
+        }
+    }
+
+    pub fn expand_until(&mut self, location: SourceLocation) {
+        self.column_end = location.column_end;
+        self.line_end = location.line_end;
     }
 }
 
-impl Display for Location {
+impl Display for SourceLocation {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        f.write_fmt(format_args!("({}, {})", self.start, self.end))
+        f.write_fmt(format_args!(
+            "Loc(L {}:{}, C {}:{})",
+            self.line_start, self.line_end, self.column_start, self.column_end
+        ))
     }
 }
 
 pub struct Token {
     pub kind: TokenKind,
-    pub location: Location,
+    pub location: SourceLocation,
 }
 
 impl Token {
-    pub fn new(kind: TokenKind, location: Location) -> Token {
+    pub fn new(kind: TokenKind, location: SourceLocation) -> Token {
         Token { kind, location }
     }
 
-    pub fn new_symbol(symbol: String, location: Location) -> Token {
+    pub fn new_symbol(symbol: String, location: SourceLocation) -> Token {
         Token {
             kind: resolve_symbol_kind(symbol),
             location,

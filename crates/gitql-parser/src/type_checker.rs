@@ -9,7 +9,7 @@ use gitql_ast::types::dynamic::DynamicType;
 use gitql_core::environment::Environment;
 
 use crate::diagnostic::Diagnostic;
-use crate::token::Location;
+use crate::token::SourceLocation;
 
 /// Checks if all values has the same type
 /// If they have the same type, return it or return None
@@ -36,7 +36,7 @@ pub fn check_function_call_arguments(
     arguments: &mut [Box<dyn Expr>],
     parameters: &[Box<dyn DataType>],
     function_name: String,
-    location: Location,
+    location: SourceLocation,
 ) -> Result<(), Box<Diagnostic>> {
     let parameters_count = parameters.len();
     let arguments_count = arguments.len();
@@ -229,7 +229,7 @@ pub fn type_check_and_classify_selected_fields(
     env: &mut Environment,
     selected_tables: &Vec<String>,
     selected_columns: &Vec<String>,
-    location: Location,
+    location: SourceLocation,
 ) -> Result<Vec<TableSelection>, Box<Diagnostic>> {
     let mut table_selections: Vec<TableSelection> = vec![];
     let mut table_index: HashMap<String, usize> = HashMap::new();
@@ -296,7 +296,7 @@ pub fn type_check_projection_symbols(
     env: &mut Environment,
     selected_tables: &[String],
     projection_names: &[String],
-    projection_locations: &[Location],
+    projection_locations: &[SourceLocation],
 ) -> Result<(), Box<Diagnostic>> {
     for (index, selected_column) in projection_names.iter().enumerate() {
         let mut is_column_resolved = false;

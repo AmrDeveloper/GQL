@@ -1,10 +1,10 @@
-use crate::token::Location;
+use crate::token::SourceLocation;
 
 /// In Memory representation for the Diagnostic element
 pub struct Diagnostic {
     label: String,
     message: String,
-    location: Option<(usize, usize)>,
+    location: Option<SourceLocation>,
     notes: Vec<String>,
     helps: Vec<String>,
     docs: Option<String>,
@@ -51,14 +51,19 @@ impl Diagnostic {
     }
 
     /// Set location start and end from Location type
-    pub fn with_location(mut self, location: Location) -> Self {
-        self.location = Some((location.start, location.end));
+    pub fn with_location(mut self, location: SourceLocation) -> Self {
+        self.location = Some(location);
         self
     }
 
     /// Set location start and end
-    pub fn with_location_span(mut self, start: usize, end: usize) -> Self {
-        self.location = Some((start, end));
+    pub fn with_location_span(mut self, start: u32, end: u32) -> Self {
+        self.location = Some(SourceLocation {
+            line_start: 1,
+            line_end: 1,
+            column_start: start,
+            column_end: end,
+        });
         self
     }
 
@@ -90,8 +95,8 @@ impl Diagnostic {
         &self.message
     }
 
-    /// Return the diagnostic location span (column start and end)
-    pub fn location(&self) -> Option<(usize, usize)> {
+    /// Return the diagnostic source location span
+    pub fn location(&self) -> Option<SourceLocation> {
         self.location
     }
 

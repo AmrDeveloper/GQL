@@ -39,6 +39,7 @@ impl Arguments {
 pub enum Command {
     ReplMode(Arguments),
     QueryMode(String, Arguments),
+    ScriptMode(String, Arguments),
     Help,
     Version,
     Error(String),
@@ -56,6 +57,7 @@ pub fn parse_arguments(args: &[String]) -> Command {
     }
 
     let mut optional_query: Option<String> = None;
+    let mut optional_script_file: Option<String> = None;
     let mut arguments = Arguments::new();
 
     let mut arg_index = 1;
@@ -65,7 +67,6 @@ pub fn parse_arguments(args: &[String]) -> Command {
         }
 
         let arg = &args[arg_index];
-
         if !arg.starts_with('-') {
             return Command::Error(format!("Unknown argument {}", arg));
         }
@@ -101,6 +102,16 @@ pub fn parse_arguments(args: &[String]) -> Command {
                 }
 
                 optional_query = Some(args[arg_index].to_string());
+                arg_index += 1;
+            }
+            "--script" | "-s" => {
+                arg_index += 1;
+                if arg_index >= args_len {
+                    let message = format!("Argument {} must be followed by the file", arg);
+                    return Command::Error(message);
+                }
+
+                optional_script_file = Some(args[arg_index].to_string());
                 arg_index += 1;
             }
             "--analysis" | "-a" => {
@@ -173,7 +184,9 @@ pub fn parse_arguments(args: &[String]) -> Command {
         }
     }
 
-    if let Some(query) = optional_query {
+    if let Some(script_file) = optional_script_file {
+        Command::ScriptMode(script_file, arguments)
+    } else if let Some(query) = optional_query {
         Command::QueryMode(query, arguments)
     } else {
         Command::ReplMode(arguments)
@@ -187,7 +200,8 @@ pub fn print_help_list() {
     println!();
     println!("Options:");
     println!("-r,  --repos <REPOS>        Path for local repositories to run query on");
-    println!("-q,  --query <GQL Query>    GitQL query to run on selected repositories");
+    println!("-s,  --script <file>        Script file contains one or more query");
+    println!("-q,  --query <GitQL Query>  GitQL query to run on selected repositories");
     println!("-p,  --pagination           Enable print result with pagination");
     println!("-ps, --pagesize             Set pagination page size [default: 10]");
     println!("-o,  --output               Set output format [render, json, csv]");

@@ -15,24 +15,32 @@ impl DiagnosticReporter {
         println!("[{}]: {}", diagnostic.label(), diagnostic.message());
 
         if let Some(location) = diagnostic.location() {
-            if location.0 == location.1 {
-                println!("=> Column {}", location.0);
-            } else {
-                println!("=> Column {} to {},", location.0, location.1);
-            }
+            println!(
+                "  --> Location {}:{}",
+                location.line_start, location.column_start
+            );
         }
 
         if !query.is_empty() {
             println!("  |");
-            println!("1 | {}", query);
             if let Some(location) = diagnostic.location() {
-                print!("  | ");
-                print!("{}", &"-".repeat(location.0));
+                let lines: Vec<&str> = query.split('\n').collect();
+                let end = u32::min(location.line_end, lines.len() as u32);
+                for line_number in location.line_start - 1..end {
+                    println!("{} | {}", line_number, lines[line_number as usize]);
+                }
+                println!("  | ");
+                let column_s = location.column_start.saturating_sub(1) as usize;
+                print!("{}", &"-".repeat(column_s));
+
+                let diagnostic_length =
+                    u32::max(1, location.column_end.saturating_sub(location.column_start)) as usize;
+
                 self.stdout.set_color(Some(Color::Yellow));
-                println!("{}", &"^".repeat(usize::max(1, location.1 - location.0)));
+                println!("{}", &"^".repeat(diagnostic_length));
+
                 self.stdout.set_color(Some(Color::Red));
             }
-
             println!("  |");
         }
 

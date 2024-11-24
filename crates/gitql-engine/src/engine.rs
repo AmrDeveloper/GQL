@@ -43,15 +43,22 @@ pub enum EvaluationResult {
 pub fn evaluate(
     env: &mut Environment,
     data_provider: &Box<dyn DataProvider>,
-    query: Query,
-) -> Result<EvaluationResult, String> {
-    match query {
-        Query::Do(do_statement) => evaluate_do_query(env, &do_statement),
-        Query::Select(gql_query) => evaluate_select_query(env, data_provider, gql_query),
-        Query::GlobalVariableDeclaration(global) => evaluate_global_declaration_query(env, &global),
-        Query::Describe(describe_statement) => evaluate_describe_query(env, describe_statement),
-        Query::ShowTables => evaluate_show_tables_query(env),
+    queries: Vec<Query>,
+) -> Result<Vec<EvaluationResult>, String> {
+    let mut evaluations_results: Vec<EvaluationResult> = vec![];
+    for query in queries {
+        let evaluation_result = match query {
+            Query::Do(do_statement) => evaluate_do_query(env, &do_statement),
+            Query::Select(gql_query) => evaluate_select_query(env, data_provider, gql_query),
+            Query::GlobalVariableDeclaration(global) => {
+                evaluate_global_declaration_query(env, &global)
+            }
+            Query::Describe(describe_statement) => evaluate_describe_query(env, describe_statement),
+            Query::ShowTables => evaluate_show_tables_query(env),
+        }?;
+        evaluations_results.push(evaluation_result);
     }
+    Ok(evaluations_results)
 }
 
 fn evaluate_do_query(

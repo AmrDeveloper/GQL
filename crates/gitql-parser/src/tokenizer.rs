@@ -1,772 +1,803 @@
 use crate::diagnostic::Diagnostic;
-use crate::token::{Location, Token, TokenKind};
+use crate::token::SourceLocation;
+use crate::token::Token;
+use crate::token::TokenKind;
 
-pub fn tokenize(script: String) -> Result<Vec<Token>, Box<Diagnostic>> {
-    let mut tokens: Vec<Token> = Vec::new();
+pub struct Tokenizer {
+    pub(crate) content: Vec<char>,
+    pub(crate) content_len: usize,
+    pub(crate) index: usize,
 
-    let mut position = 0;
-    let mut column_start;
+    pub(crate) line_start: u32,
+    pub(crate) line_end: u32,
+    pub(crate) column_start: u32,
+    pub(crate) column_end: u32,
+}
 
-    let characters: Vec<char> = script.chars().collect();
-    let len = characters.len();
+impl Tokenizer {
+    pub(crate) fn new(chars: Vec<char>) -> Tokenizer {
+        let content_len = chars.len();
+        Tokenizer {
+            content: chars,
+            content_len,
+            index: 0,
 
-    while position < len {
-        column_start = position;
-
-        let char = characters[position];
-
-        // Symbol
-        if char.is_alphabetic() {
-            tokens.push(consume_identifier(
-                &characters,
-                &mut position,
-                &mut column_start,
-            ));
-            continue;
+            line_start: 1,
+            line_end: 1,
+            column_start: 0,
+            column_end: 0,
         }
+    }
 
-        // @> or Global Variable Symbol
-        if char == '@' {
-            // @>
-            if position + 1 < len && characters[position + 1] == '>' {
-                position += 2;
-                let location = Location::new(column_start, position);
-                tokens.push(Token::new(TokenKind::AtRightArrow, location));
+    pub fn tokenize(content: String) -> Result<Vec<Token>, Box<Diagnostic>> {
+        let mut tokenizer = Tokenizer::new(content.chars().collect());
+        tokenizer.tokenize_characters()
+    }
+
+    fn current_source_location(&self) -> SourceLocation {
+        SourceLocation {
+            line_start: self.line_start,
+            line_end: self.line_end,
+            column_start: self.column_start,
+            column_end: self.column_end,
+        }
+    }
+
+    fn tokenize_characters(&mut self) -> Result<Vec<Token>, Box<Diagnostic>> {
+        let mut tokens: Vec<Token> = Vec::new();
+        let len = self.content_len;
+
+        while self.has_next() {
+            self.column_start = self.index as u32;
+            self.column_end = self.column_start;
+            self.line_start = self.line_end;
+
+            let char = self.content[self.index];
+
+            // Symbol
+            if char.is_alphabetic() {
+                tokens.push(self.consume_identifier());
                 continue;
             }
 
-            tokens.push(consume_global_variable_name(
-                &characters,
-                &mut position,
-                &mut column_start,
-            )?);
-            continue;
-        }
-
-        // Number
-        if char.is_numeric() {
-            if char == '0' && position + 1 < len {
-                if characters[position + 1] == 'x' {
-                    position += 2;
-                    column_start += 2;
-                    tokens.push(consume_hex_number(
-                        &characters,
-                        &mut position,
-                        &mut column_start,
-                    )?);
+            // @> or Global Variable Symbol
+            if char == '@' {
+                // @>
+                if self.index + 1 < len && self.content[self.index + 1] == '>' {
+                    self.index += 2;
+                    let location = self.current_source_location();
+                    tokens.push(Token::new(TokenKind::AtRightArrow, location));
                     continue;
                 }
 
-                if characters[position + 1] == 'b' {
-                    position += 2;
-                    column_start += 2;
-                    tokens.push(consume_binary_number(
-                        &characters,
-                        &mut position,
-                        &mut column_start,
-                    )?);
-                    continue;
-                }
-
-                if characters[position + 1] == 'o' {
-                    position += 2;
-                    column_start += 2;
-                    tokens.push(consume_octal_number(
-                        &characters,
-                        &mut position,
-                        &mut column_start,
-                    )?);
-                    continue;
-                }
-            }
-
-            tokens.push(consume_number(
-                &characters,
-                &mut position,
-                &mut column_start,
-            )?);
-            continue;
-        }
-
-        // String literal between single quotes '...'
-        if char == '\'' {
-            tokens.push(consume_string_in_single_quotes(
-                &characters,
-                &mut position,
-                &mut column_start,
-            )?);
-            continue;
-        }
-
-        // String literal between double quotes "..."
-        if char == '"' {
-            tokens.push(consume_string_in_double_quotes(
-                &characters,
-                &mut position,
-                &mut column_start,
-            )?);
-            continue;
-        }
-
-        // All chars between two backticks should be consumed as identifier
-        if char == '`' {
-            tokens.push(consume_backticks_identifier(
-                &characters,
-                &mut position,
-                &mut column_start,
-            )?);
-            continue;
-        }
-
-        // Plus
-        if char == '+' {
-            let location = Location::new(column_start, position);
-            tokens.push(Token::new(TokenKind::Plus, location));
-            position += 1;
-            continue;
-        }
-
-        // Minus
-        if char == '-' {
-            // Ignore single line comment which from -- until the end of the current line
-            if position + 1 < characters.len() && characters[position + 1] == '-' {
-                ignore_single_line_comment(&characters, &mut position);
+                tokens.push(self.consume_global_variable_name()?);
                 continue;
             }
 
-            let location = Location::new(column_start, position);
-            tokens.push(Token::new(TokenKind::Minus, location));
-            position += 1;
-            continue;
-        }
+            // Number
+            if char.is_numeric() {
+                if char == '0' && self.index + 1 < len {
+                    if self.content[self.index + 1] == 'x' {
+                        self.index += 2;
+                        self.column_start += 2;
+                        tokens.push(self.consume_hex_number()?);
+                        continue;
+                    }
 
-        // Star
-        if char == '*' {
-            let location = Location::new(column_start, position);
-            tokens.push(Token::new(TokenKind::Star, location));
-            position += 1;
-            continue;
-        }
+                    if self.content[self.index + 1] == 'b' {
+                        self.index += 2;
+                        self.column_start += 2;
+                        tokens.push(self.consume_binary_number()?);
+                        continue;
+                    }
 
-        // Slash
-        if char == '/' {
-            // Ignore C style comment which from /* comment */
-            if position + 1 < characters.len() && characters[position + 1] == '*' {
-                ignore_c_style_comment(&characters, &mut position)?;
+                    if self.content[self.index + 1] == 'o' {
+                        self.index += 2;
+                        self.column_start += 2;
+                        tokens.push(self.consume_octal_number()?);
+                        continue;
+                    }
+                }
+
+                tokens.push(self.consume_number()?);
                 continue;
             }
 
-            let location = Location::new(column_start, position);
-            tokens.push(Token::new(TokenKind::Slash, location));
-            position += 1;
-            continue;
-        }
+            // String literal between single quotes '...'
+            if char == '\'' {
+                tokens.push(self.consume_string_in_single_quotes()?);
+                continue;
+            }
 
-        // Percentage
-        if char == '%' {
-            let location = Location::new(column_start, position);
-            tokens.push(Token::new(TokenKind::Percentage, location));
-            position += 1;
-            continue;
-        }
+            // String literal between double quotes "..."
+            if char == '"' {
+                tokens.push(self.consume_string_in_double_quotes()?);
+                continue;
+            }
 
-        // Caret
-        if char == '^' {
-            let location = Location::new(column_start, position);
-            tokens.push(Token::new(TokenKind::Caret, location));
-            position += 1;
-            continue;
-        }
+            // All chars between two backticks should be consumed as identifier
+            if char == '`' {
+                tokens.push(self.consume_backticks_identifier()?);
+                continue;
+            }
 
-        // Bitwise NOT
-        if char == '~' {
-            let location = Location::new(column_start, position);
-            tokens.push(Token::new(TokenKind::BitwiseNot, location));
-            position += 1;
-            continue;
-        }
+            // Plus
+            if char == '+' {
+                let location = self.current_source_location();
+                tokens.push(Token::new(TokenKind::Plus, location));
+                self.advance();
+                continue;
+            }
 
-        // Or
-        if char == '|' {
-            let location = Location::new(column_start, position);
+            // Minus
+            if char == '-' {
+                // Ignore single line comment which from -- until the end of the current line
+                if self.index + 1 < self.content_len && self.content[self.index + 1] == '-' {
+                    self.ignore_single_line_comment();
+                    continue;
+                }
 
-            position += 1;
-            let kind = if position < len && characters[position] == '|' {
-                position += 1;
-                TokenKind::OrOr
-            } else {
-                TokenKind::BitwiseOr
-            };
+                let location = self.current_source_location();
+                tokens.push(Token::new(TokenKind::Minus, location));
+                self.advance();
+                continue;
+            }
 
-            tokens.push(Token::new(kind, location));
-            continue;
-        }
+            // Star
+            if char == '*' {
+                let location = self.current_source_location();
+                tokens.push(Token::new(TokenKind::Star, location));
+                self.advance();
+                continue;
+            }
 
-        // And
-        if char == '&' {
-            let location = Location::new(column_start, position);
+            // Slash
+            if char == '/' {
+                // Ignore C style comment which from /* comment */
+                if self.index + 1 < self.content_len && self.content[self.index + 1] == '*' {
+                    self.ignore_c_style_comment()?;
+                    continue;
+                }
 
-            position += 1;
-            let kind = if position < len && characters[position] == '&' {
-                position += 1;
-                TokenKind::AndAnd
-            } else {
-                TokenKind::BitwiseAnd
-            };
+                let location = self.current_source_location();
+                tokens.push(Token::new(TokenKind::Slash, location));
+                self.advance();
+                continue;
+            }
 
-            tokens.push(Token::new(kind, location));
-            continue;
-        }
+            // Percentage
+            if char == '%' {
+                let location = self.current_source_location();
+                tokens.push(Token::new(TokenKind::Percentage, location));
+                self.advance();
+                continue;
+            }
 
-        // xor
-        if char == '#' {
-            let location = Location::new(column_start, position);
-            tokens.push(Token::new(TokenKind::BitwiseXor, location));
-            position += 1;
-            continue;
-        }
+            // Caret
+            if char == '^' {
+                let location = self.current_source_location();
+                tokens.push(Token::new(TokenKind::Caret, location));
+                self.advance();
+                continue;
+            }
 
-        // Comma
-        if char == ',' {
-            let location = Location::new(column_start, position);
-            tokens.push(Token::new(TokenKind::Comma, location));
-            position += 1;
-            continue;
-        }
+            // Bitwise NOT
+            if char == '~' {
+                let location = self.current_source_location();
+                tokens.push(Token::new(TokenKind::BitwiseNot, location));
+                self.advance();
+                continue;
+            }
 
-        // Dot
-        if char == '.' {
-            let location = Location::new(column_start, position);
-            tokens.push(Token::new(TokenKind::Dot, location));
-            position += 1;
-            continue;
-        }
+            // Or
+            if char == '|' {
+                let location = self.current_source_location();
 
-        // Greater or GreaterEqual
-        if char == '>' {
-            let location = Location::new(column_start, position);
-
-            position += 1;
-            let kind = if position < len && characters[position] == '=' {
-                position += 1;
-                TokenKind::GreaterEqual
-            } else if position < len && characters[position] == '>' {
-                position += 1;
-                TokenKind::BitwiseRightShift
-            } else {
-                TokenKind::Greater
-            };
-
-            tokens.push(Token::new(kind, location));
-            continue;
-        }
-
-        // Less, LessEqual or NULL-safe equal
-        if char == '<' {
-            let location = Location::new(column_start, position);
-
-            position += 1;
-            let kind = if position < len && characters[position] == '=' {
-                position += 1;
-                if position < len && characters[position] == '>' {
-                    position += 1;
-                    TokenKind::NullSafeEqual
+                self.advance();
+                let kind = if self.index < len && self.content[self.index] == '|' {
+                    self.advance();
+                    TokenKind::OrOr
                 } else {
-                    TokenKind::LessEqual
+                    TokenKind::BitwiseOr
+                };
+
+                tokens.push(Token::new(kind, location));
+                continue;
+            }
+
+            // And
+            if char == '&' {
+                let location = self.current_source_location();
+
+                self.advance();
+                let kind = if self.index < len && self.content[self.index] == '&' {
+                    self.advance();
+                    TokenKind::AndAnd
+                } else {
+                    TokenKind::BitwiseAnd
+                };
+
+                tokens.push(Token::new(kind, location));
+                continue;
+            }
+
+            // xor
+            if char == '#' {
+                let location = self.current_source_location();
+                tokens.push(Token::new(TokenKind::BitwiseXor, location));
+                self.advance();
+                continue;
+            }
+
+            // Comma
+            if char == ',' {
+                let location = self.current_source_location();
+                tokens.push(Token::new(TokenKind::Comma, location));
+                self.advance();
+                continue;
+            }
+
+            // Dot
+            if char == '.' {
+                let location = self.current_source_location();
+                tokens.push(Token::new(TokenKind::Dot, location));
+                self.advance();
+                continue;
+            }
+
+            // Greater or GreaterEqual
+            if char == '>' {
+                let location = self.current_source_location();
+
+                self.advance();
+                let kind = if self.index < len && self.content[self.index] == '=' {
+                    self.advance();
+                    TokenKind::GreaterEqual
+                } else if self.index < len && self.content[self.index] == '>' {
+                    self.advance();
+                    TokenKind::BitwiseRightShift
+                } else {
+                    TokenKind::Greater
+                };
+
+                tokens.push(Token::new(kind, location));
+                continue;
+            }
+
+            // Less, LessEqual or NULL-safe equal
+            if char == '<' {
+                let location = self.current_source_location();
+
+                self.advance();
+                let kind = if self.index < len && self.content[self.index] == '=' {
+                    self.advance();
+                    if self.index < len && self.content[self.index] == '>' {
+                        self.advance();
+                        TokenKind::NullSafeEqual
+                    } else {
+                        TokenKind::LessEqual
+                    }
+                } else if self.index < len && self.content[self.index] == '<' {
+                    self.advance();
+                    TokenKind::BitwiseLeftShift
+                } else if self.index < len && self.content[self.index] == '>' {
+                    self.advance();
+                    TokenKind::BangEqual
+                } else if self.index < len && self.content[self.index] == '@' {
+                    self.advance();
+                    TokenKind::ArrowRightAt
+                } else {
+                    TokenKind::Less
+                };
+
+                tokens.push(Token::new(kind, location));
+                continue;
+            }
+
+            // Equal
+            if char == '=' {
+                let location = self.current_source_location();
+                tokens.push(Token::new(TokenKind::Equal, location));
+                self.advance();
+                continue;
+            }
+
+            // Colon , ColonColon or Colon Equal
+            if char == ':' {
+                let location = self.current_source_location();
+
+                // :=
+                if self.index + 1 < len && self.content[self.index + 1] == '=' {
+                    tokens.push(Token::new(TokenKind::ColonEqual, location));
+                    // Advance `:=`
+                    self.advance_n(2);
+                    continue;
                 }
-            } else if position < len && characters[position] == '<' {
-                position += 1;
-                TokenKind::BitwiseLeftShift
-            } else if position < len && characters[position] == '>' {
-                position += 1;
-                TokenKind::BangEqual
-            } else if position < len && characters[position] == '@' {
-                position += 1;
-                TokenKind::ArrowRightAt
-            } else {
-                TokenKind::Less
-            };
 
-            tokens.push(Token::new(kind, location));
-            continue;
-        }
+                // ::
+                if self.index + 1 < len && self.content[self.index + 1] == ':' {
+                    tokens.push(Token::new(TokenKind::ColonColon, location));
+                    // Advance `::`
+                    self.advance_n(2);
+                    continue;
+                }
 
-        // Equal
-        if char == '=' {
-            let location = Location::new(column_start, position);
-            tokens.push(Token::new(TokenKind::Equal, location));
-            position += 1;
-            continue;
-        }
-
-        // Colon , ColonColon or Colon Equal
-        if char == ':' {
-            let location = Location::new(column_start, position);
-
-            // :=
-            if position + 1 < len && characters[position + 1] == '=' {
-                tokens.push(Token::new(TokenKind::ColonEqual, location));
-                position += 2;
+                tokens.push(Token::new(TokenKind::Colon, location));
+                self.advance();
                 continue;
             }
 
-            // ::
-            if position + 1 < len && characters[position + 1] == ':' {
-                tokens.push(Token::new(TokenKind::ColonColon, location));
-                position += 2;
+            // Bang or Bang Equal
+            if char == '!' {
+                let location = self.current_source_location();
+
+                self.advance();
+                let kind = if self.index < len && self.content[self.index] == '=' {
+                    TokenKind::BangEqual
+                } else {
+                    TokenKind::Bang
+                };
+
+                tokens.push(Token::new(kind, location));
                 continue;
             }
 
-            tokens.push(Token::new(TokenKind::Colon, location));
-            position += 1;
-            continue;
+            // Left Paren
+            if char == '(' {
+                let location = self.current_source_location();
+                tokens.push(Token::new(TokenKind::LeftParen, location));
+                self.advance();
+                continue;
+            }
+
+            // Right Paren
+            if char == ')' {
+                let location = self.current_source_location();
+                tokens.push(Token::new(TokenKind::RightParen, location));
+                self.advance();
+                continue;
+            }
+
+            // Left Bracket
+            if char == '[' {
+                let location = self.current_source_location();
+                tokens.push(Token::new(TokenKind::LeftBracket, location));
+                self.advance();
+                continue;
+            }
+
+            // Right Bracket
+            if char == ']' {
+                let location = self.current_source_location();
+                tokens.push(Token::new(TokenKind::RightBracket, location));
+                self.advance();
+                continue;
+            }
+
+            // Semicolon
+            if char == ';' {
+                let location = self.current_source_location();
+                tokens.push(Token::new(TokenKind::Semicolon, location));
+                self.advance();
+                continue;
+            }
+
+            // Characters to ignoring
+            if char == ' ' || char == '\t' {
+                self.advance();
+                continue;
+            }
+
+            if char == '\n' {
+                self.advance();
+                self.column_end = 0;
+                self.line_end += 1;
+                continue;
+            }
+
+            return Err(Diagnostic::error("Unexpected character")
+                .with_location(self.current_source_location())
+                .as_boxed());
         }
 
-        // Bang or Bang Equal
-        if char == '!' {
-            let location = Location::new(column_start, position);
+        Ok(tokens)
+    }
 
-            position += 1;
-            let kind = if position < len && characters[position] == '=' {
-                TokenKind::BangEqual
-            } else {
-                TokenKind::Bang
+    fn consume_global_variable_name(&mut self) -> Result<Token, Box<Diagnostic>> {
+        let start_index = self.index;
+
+        // Advance `@`
+        self.advance();
+
+        // Make sure first character is  alphabetic
+        if self.has_next() && !self.content[self.index].is_alphabetic() {
+            return Err(Diagnostic::error(
+                "Global variable name must start with alphabetic character",
+            )
+            .add_help("Add at least one alphabetic character after @")
+            .with_location(self.current_source_location())
+            .as_boxed());
+        }
+
+        while self.has_next() && self.is_current_char_func(|c| c == '_' || c.is_alphanumeric()) {
+            self.advance();
+        }
+
+        // Identifier is being case-insensitive by default, convert to lowercase to be easy to compare and lookup
+        let literal = &self.content[start_index..self.index];
+        let mut string: String = literal.iter().collect();
+        string = string.to_lowercase();
+
+        let location = self.current_source_location();
+        Ok(Token::new(TokenKind::GlobalVariable(string), location))
+    }
+
+    fn consume_identifier(&mut self) -> Token {
+        let start_index = self.index;
+
+        while self.has_next() && self.is_current_char_func(|c| c == '_' || c.is_alphanumeric()) {
+            self.advance();
+        }
+
+        // Identifier is being case-insensitive by default, convert to lowercase to be easy to compare and lookup
+        let literal = &self.content[start_index..self.index];
+        let mut string: String = literal.iter().collect();
+        string = string.to_lowercase();
+
+        let location = self.current_source_location();
+        Token::new_symbol(string, location)
+    }
+
+    fn consume_backticks_identifier(&mut self) -> Result<Token, Box<Diagnostic>> {
+        let start_index = self.index;
+
+        // Advance '`'
+        self.advance();
+
+        while self.has_next() && !self.is_current_char('`') {
+            self.advance();
+        }
+
+        if self.index >= self.content_len {
+            return Err(Diagnostic::error("Unterminated backticks")
+                .add_help("Add ` at the end of the identifier")
+                .with_location(self.current_source_location())
+                .as_boxed());
+        }
+
+        // Advance '`'
+        self.advance();
+
+        let literal = &self.content[start_index + 1..self.index - 1];
+        let identifier: String = literal.iter().collect();
+        let location = self.current_source_location();
+        Ok(Token::new(TokenKind::Symbol(identifier), location))
+    }
+
+    fn consume_number(&mut self) -> Result<Token, Box<Diagnostic>> {
+        let start_index = self.index;
+
+        while self.has_next() && self.is_current_char_func(|c| c == '_' || c.is_numeric()) {
+            self.advance();
+        }
+
+        let mut is_float_value = false;
+        if self.has_next() && self.is_current_char('.') {
+            self.advance();
+
+            is_float_value = true;
+            while self.has_next() && self.is_current_char_func(|c| c == '_' || c.is_numeric()) {
+                self.advance();
+            }
+        }
+
+        let literal = &self.content[start_index..self.index];
+        let string: String = literal.iter().collect();
+        let literal_num = string.replace('_', "");
+        let location = self.current_source_location();
+
+        if is_float_value {
+            return match literal_num.parse::<f64>() {
+                Ok(float) => Ok(Token::new(TokenKind::Float(float), location)),
+                Err(parse_float_error) => Err(Diagnostic::error(&parse_float_error.to_string())
+                    .add_note(&format!(
+                        "Value must be between {} and {}",
+                        f64::MIN,
+                        f64::MAX
+                    ))
+                    .with_location(self.current_source_location())
+                    .as_boxed()),
             };
-
-            tokens.push(Token::new(kind, location));
-            continue;
         }
 
-        // Left Paren
-        if char == '(' {
-            let location = Location::new(column_start, position);
-            tokens.push(Token::new(TokenKind::LeftParen, location));
-            position += 1;
-            continue;
-        }
-
-        // Right Paren
-        if char == ')' {
-            let location = Location::new(column_start, position);
-            tokens.push(Token::new(TokenKind::RightParen, location));
-            position += 1;
-            continue;
-        }
-
-        // Left Bracket
-        if char == '[' {
-            let location = Location::new(column_start, position);
-            tokens.push(Token::new(TokenKind::LeftBracket, location));
-            position += 1;
-            continue;
-        }
-
-        // Right Bracket
-        if char == ']' {
-            let location = Location::new(column_start, position);
-            tokens.push(Token::new(TokenKind::RightBracket, location));
-            position += 1;
-            continue;
-        }
-
-        // Semicolon
-        if char == ';' {
-            let location = Location::new(column_start, position);
-            tokens.push(Token::new(TokenKind::Semicolon, location));
-            position += 1;
-            continue;
-        }
-
-        // Characters to ignoring
-        if char == ' ' || char == '\n' || char == '\t' {
-            position += 1;
-            continue;
-        }
-
-        return Err(Diagnostic::error("Unexpected character")
-            .with_location_span(column_start, position)
-            .as_boxed());
-    }
-
-    Ok(tokens)
-}
-
-fn consume_global_variable_name(
-    chars: &[char],
-    pos: &mut usize,
-    start: &mut usize,
-) -> Result<Token, Box<Diagnostic>> {
-    // Consume `@`
-    *pos += 1;
-
-    // Make sure first character is  alphabetic
-    if *pos < chars.len() && !chars[*pos].is_alphabetic() {
-        return Err(
-            Diagnostic::error("Global variable name must start with alphabetic character")
-                .add_help("Add at least one alphabetic character after @")
-                .with_location_span(*start, *pos)
-                .as_boxed(),
-        );
-    }
-
-    while *pos < chars.len() && (chars[*pos] == '_' || chars[*pos].is_alphanumeric()) {
-        *pos += 1;
-    }
-
-    // Identifier is being case-insensitive by default, convert to lowercase to be easy to compare and lookup
-    let literal = &chars[*start..*pos];
-    let mut string: String = literal.iter().collect();
-    string = string.to_lowercase();
-
-    let location = Location::new(*start, *pos);
-    Ok(Token::new(TokenKind::GlobalVariable(string), location))
-}
-
-fn consume_identifier(chars: &[char], pos: &mut usize, start: &mut usize) -> Token {
-    while *pos < chars.len() && (chars[*pos] == '_' || chars[*pos].is_alphanumeric()) {
-        *pos += 1;
-    }
-
-    // Identifier is being case-insensitive by default, convert to lowercase to be easy to compare and lookup
-    let literal = &chars[*start..*pos];
-    let mut string: String = literal.iter().collect();
-    string = string.to_lowercase();
-
-    let location = Location::new(*start, *pos);
-    Token::new_symbol(string, location)
-}
-
-fn consume_backticks_identifier(
-    chars: &[char],
-    pos: &mut usize,
-    start: &mut usize,
-) -> Result<Token, Box<Diagnostic>> {
-    *pos += 1;
-
-    while *pos < chars.len() && chars[*pos] != '`' {
-        *pos += 1;
-    }
-
-    if *pos >= chars.len() {
-        return Err(Diagnostic::error("Unterminated backticks")
-            .add_help("Add ` at the end of the identifier")
-            .with_location_span(*start, *pos)
-            .as_boxed());
-    }
-
-    *pos += 1;
-
-    let literal = &chars[*start + 1..*pos - 1];
-    let identifier: String = literal.iter().collect();
-    let location = Location::new(*start, *pos);
-    Ok(Token::new(TokenKind::Symbol(identifier), location))
-}
-
-fn consume_number(
-    chars: &[char],
-    pos: &mut usize,
-    start: &mut usize,
-) -> Result<Token, Box<Diagnostic>> {
-    while *pos < chars.len() && (chars[*pos].is_numeric() || chars[*pos] == '_') {
-        *pos += 1;
-    }
-
-    let mut is_float_value = false;
-    if *pos < chars.len() && chars[*pos] == '.' {
-        *pos += 1;
-
-        is_float_value = true;
-        while *pos < chars.len() && (chars[*pos].is_numeric() || chars[*pos] == '_') {
-            *pos += 1;
-        }
-    }
-
-    let literal = &chars[*start..*pos];
-    let string: String = literal.iter().collect();
-    let literal_num = string.replace('_', "");
-    let location = Location::new(*start, *pos);
-
-    if is_float_value {
-        return match literal_num.parse::<f64>() {
-            Ok(float) => Ok(Token::new(TokenKind::Float(float), location)),
-            Err(parse_float_error) => Err(Diagnostic::error(&parse_float_error.to_string())
+        match literal_num.parse::<i64>() {
+            Ok(integer) => Ok(Token::new(TokenKind::Integer(integer), location)),
+            Err(parse_int_error) => Err(Diagnostic::error(&parse_int_error.to_string())
                 .add_note(&format!(
                     "Value must be between {} and {}",
-                    f64::MIN,
-                    f64::MAX
+                    i64::MIN,
+                    i64::MAX
                 ))
-                .with_location_span(*start, *pos)
+                .with_location(self.current_source_location())
                 .as_boxed()),
-        };
-    }
-
-    match literal_num.parse::<i64>() {
-        Ok(integer) => Ok(Token::new(TokenKind::Integer(integer), location)),
-        Err(parse_int_error) => Err(Diagnostic::error(&parse_int_error.to_string())
-            .add_note(&format!(
-                "Value must be between {} and {}",
-                i64::MIN,
-                i64::MAX
-            ))
-            .with_location_span(*start, *pos)
-            .as_boxed()),
-    }
-}
-
-fn consume_binary_number(
-    chars: &[char],
-    pos: &mut usize,
-    start: &mut usize,
-) -> Result<Token, Box<Diagnostic>> {
-    let mut has_digit = false;
-    while *pos < chars.len() && ((chars[*pos] == '0' || chars[*pos] == '1') || chars[*pos] == '_') {
-        *pos += 1;
-        has_digit = true;
-    }
-
-    if !has_digit {
-        return Err(
-            Diagnostic::error("Missing digits after the integer base prefix")
-                .add_help("Expect at least one binary digits after the prefix 0b")
-                .add_help("Binary digit mean 0 or 1")
-                .with_location_span(*start, *pos)
-                .as_boxed(),
-        );
-    }
-
-    let literal = &chars[*start..*pos];
-    let string: String = literal.iter().collect();
-    let literal_num = string.replace('_', "");
-    match i64::from_str_radix(&literal_num, 2) {
-        Ok(integer) => {
-            let location = Location::new(*start, *pos);
-            Ok(Token::new(TokenKind::Integer(integer), location))
         }
-        Err(parse_int_error) => Err(Diagnostic::error(&parse_int_error.to_string())
-            .add_note(&format!(
-                "Value must be between {} and {}",
-                i64::MIN,
-                i64::MAX
-            ))
-            .with_location_span(*start, *pos)
-            .as_boxed()),
-    }
-}
-
-fn consume_octal_number(
-    chars: &[char],
-    pos: &mut usize,
-    start: &mut usize,
-) -> Result<Token, Box<Diagnostic>> {
-    let mut has_digit = false;
-    while *pos < chars.len() && ((chars[*pos] >= '0' && chars[*pos] < '8') || chars[*pos] == '_') {
-        *pos += 1;
-        has_digit = true;
     }
 
-    if !has_digit {
-        return Err(
-            Diagnostic::error("Missing digits after the integer base prefix")
-                .add_help("Expect at least one octal digits after the prefix 0o")
-                .add_help("Octal digit mean 0 to 8 number")
-                .with_location_span(*start, *pos)
-                .as_boxed(),
-        );
-    }
+    fn consume_binary_number(&mut self) -> Result<Token, Box<Diagnostic>> {
+        let start_index = self.index;
+        let mut has_digit = false;
 
-    let literal = &chars[*start..*pos];
-    let string: String = literal.iter().collect();
-    let literal_num = string.replace('_', "");
-    match i64::from_str_radix(&literal_num, 8) {
-        Ok(integer) => {
-            let location = Location::new(*start, *pos);
-            Ok(Token::new(TokenKind::Integer(integer), location))
-        }
-        Err(parse_int_error) => Err(Diagnostic::error(&parse_int_error.to_string())
-            .add_note(&format!(
-                "Value must be between {} and {}",
-                i64::MIN,
-                i64::MAX
-            ))
-            .with_location_span(*start, *pos)
-            .as_boxed()),
-    }
-}
-
-fn consume_hex_number(
-    chars: &[char],
-    pos: &mut usize,
-    start: &mut usize,
-) -> Result<Token, Box<Diagnostic>> {
-    let mut has_digit = false;
-    while *pos < chars.len() && (chars[*pos].is_ascii_hexdigit() || chars[*pos] == '_') {
-        *pos += 1;
-        has_digit = true;
-    }
-
-    if !has_digit {
-        return Err(
-            Diagnostic::error("Missing digits after the integer base prefix")
-                .add_help("Expect at least one hex digits after the prefix 0x")
-                .add_help("Hex digit mean 0 to 9 and a to f")
-                .with_location_span(*start, *pos)
-                .as_boxed(),
-        );
-    }
-
-    let literal = &chars[*start..*pos];
-    let string: String = literal.iter().collect();
-    let literal_num = string.replace('_', "");
-
-    match i64::from_str_radix(&literal_num, 16) {
-        Ok(integer) => {
-            let location = Location::new(*start, *pos);
-            Ok(Token::new(TokenKind::Integer(integer), location))
-        }
-        Err(parse_int_error) => Err(Diagnostic::error(&parse_int_error.to_string())
-            .add_note(&format!(
-                "Value must be between {} and {}",
-                i64::MIN,
-                i64::MAX
-            ))
-            .with_location_span(*start, *pos)
-            .as_boxed()),
-    }
-}
-
-fn consume_string_in_single_quotes(
-    chars: &[char],
-    pos: &mut usize,
-    start: &mut usize,
-) -> Result<Token, Box<Diagnostic>> {
-    let buffer = consume_string_with_around(chars, pos, '\'')?;
-
-    if *pos >= chars.len() {
-        return Err(Diagnostic::error("Unterminated single quote string")
-            .add_help("Add \' at the end of the String literal")
-            .with_location_span(*start, *pos)
-            .as_boxed());
-    }
-
-    // Consume `'`
-    *pos += 1;
-
-    let location = Location::new(*start, *pos);
-    Ok(Token::new(TokenKind::String(buffer), location))
-}
-
-fn consume_string_in_double_quotes(
-    chars: &[char],
-    pos: &mut usize,
-    start: &mut usize,
-) -> Result<Token, Box<Diagnostic>> {
-    let buffer = consume_string_with_around(chars, pos, '"')?;
-
-    if *pos >= chars.len() {
-        return Err(Diagnostic::error("Unterminated double quote string")
-            .add_help("Add \" at the end of the String literal")
-            .with_location_span(*start, *pos)
-            .as_boxed());
-    }
-
-    // Consume `"`
-    *pos += 1;
-    let location = Location::new(*start, *pos);
-    Ok(Token::new(TokenKind::String(buffer), location))
-}
-
-fn consume_string_with_around(
-    chars: &[char],
-    pos: &mut usize,
-    around: char,
-) -> Result<String, Box<Diagnostic>> {
-    // Consume Around start
-    *pos += 1;
-
-    let mut buffer = String::new();
-    while *pos < chars.len() && chars[*pos] != around {
-        if chars[*pos] != '\\' {
-            buffer.push(chars[*pos]);
-            *pos += 1;
-            continue;
+        while self.has_next() && self.is_current_char_func(|c| c == '_' || c == '0' || c >= '1') {
+            self.advance();
+            has_digit = true;
         }
 
-        // If '\\' is the last character, we don't need to escape it
-        if *pos == chars.len() - 1 {
-            buffer.push(chars[*pos]);
-            *pos += 1;
-            continue;
+        if !has_digit {
+            return Err(
+                Diagnostic::error("Missing digits after the integer base prefix")
+                    .add_help("Expect at least one binary digits after the prefix 0b")
+                    .add_help("Binary digit mean 0 or 1")
+                    .with_location(self.current_source_location())
+                    .as_boxed(),
+            );
         }
 
-        // Consume '\\'
-        *pos += 1;
+        let literal = &self.content[start_index..self.index];
+        let string: String = literal.iter().collect();
+        let literal_num = string.replace('_', "");
 
-        // Check possible escape depending on the next character
-        let next_char = chars[*pos];
-        let character_with_escape_handled = match next_char {
-            // Single quote
-            '\'' => {
-                *pos += 1;
-                '\''
+        const BINARY_RADIX: u32 = 2;
+        match i64::from_str_radix(&literal_num, BINARY_RADIX) {
+            Ok(integer) => {
+                let location = self.current_source_location();
+                Ok(Token::new(TokenKind::Integer(integer), location))
             }
-            // Double quote
-            '\"' => {
-                *pos += 1;
-                '\"'
-            }
-            // Backslash
-            '\\' => {
-                *pos += 1;
-                '\\'
-            }
-            // New line
-            'n' => {
-                *pos += 1;
-                '\n'
-            }
-            // Carriage return
-            'r' => {
-                *pos += 1;
-                '\r'
-            }
-            // Tab
-            't' => {
-                *pos += 1;
-                '\t'
-            }
-            _ => chars[*pos - 1],
-        };
-
-        buffer.push(character_with_escape_handled);
+            Err(parse_int_error) => Err(Diagnostic::error(&parse_int_error.to_string())
+                .add_note(&format!(
+                    "Value must be between {} and {}",
+                    i64::MIN,
+                    i64::MAX
+                ))
+                .with_location(self.current_source_location())
+                .as_boxed()),
+        }
     }
 
-    Ok(buffer)
-}
+    fn consume_octal_number(&mut self) -> Result<Token, Box<Diagnostic>> {
+        let start_index = self.index;
+        let mut has_digit = false;
 
-fn ignore_single_line_comment(chars: &[char], pos: &mut usize) {
-    *pos += 2;
+        while self.has_next() && self.is_current_char_func(|c| c == '_' || ('0'..='8').contains(&c))
+        {
+            self.advance();
+            has_digit = true;
+        }
 
-    while *pos < chars.len() && chars[*pos] != '\n' {
-        *pos += 1;
+        if !has_digit {
+            return Err(
+                Diagnostic::error("Missing digits after the integer base prefix")
+                    .add_help("Expect at least one octal digits after the prefix 0o")
+                    .add_help("Octal digit mean 0 to 8 number")
+                    .with_location(self.current_source_location())
+                    .as_boxed(),
+            );
+        }
+
+        let literal = &self.content[start_index..self.index];
+        let string: String = literal.iter().collect();
+        let literal_num = string.replace('_', "");
+
+        const OCTAL_RADIX: u32 = 2;
+        match i64::from_str_radix(&literal_num, OCTAL_RADIX) {
+            Ok(integer) => {
+                let location = self.current_source_location();
+                Ok(Token::new(TokenKind::Integer(integer), location))
+            }
+            Err(parse_int_error) => Err(Diagnostic::error(&parse_int_error.to_string())
+                .add_note(&format!(
+                    "Value must be between {} and {}",
+                    i64::MIN,
+                    i64::MAX
+                ))
+                .with_location(self.current_source_location())
+                .as_boxed()),
+        }
     }
 
-    *pos += 1;
-}
+    fn consume_hex_number(&mut self) -> Result<Token, Box<Diagnostic>> {
+        let start_index = self.index;
+        let mut has_digit = false;
 
-fn ignore_c_style_comment(chars: &[char], pos: &mut usize) -> Result<(), Box<Diagnostic>> {
-    *pos += 2;
+        while self.has_next() && self.is_current_char_func(|c| c == '_' || c.is_ascii_hexdigit()) {
+            self.advance();
+            has_digit = true;
+        }
 
-    while *pos + 1 < chars.len() && (chars[*pos] != '*' && chars[*pos + 1] != '/') {
-        *pos += 1;
+        if !has_digit {
+            return Err(
+                Diagnostic::error("Missing digits after the integer base prefix")
+                    .add_help("Expect at least one hex digits after the prefix 0x")
+                    .add_help("Hex digit mean 0 to 9 and a to f")
+                    .with_location(self.current_source_location())
+                    .as_boxed(),
+            );
+        }
+
+        let literal = &self.content[start_index..self.index];
+        let string: String = literal.iter().collect();
+        let literal_num = string.replace('_', "");
+
+        const HEX_RADIX: u32 = 16;
+        match i64::from_str_radix(&literal_num, HEX_RADIX) {
+            Ok(integer) => {
+                let location = self.current_source_location();
+                Ok(Token::new(TokenKind::Integer(integer), location))
+            }
+            Err(parse_int_error) => Err(Diagnostic::error(&parse_int_error.to_string())
+                .add_note(&format!(
+                    "Value must be between {} and {}",
+                    i64::MIN,
+                    i64::MAX
+                ))
+                .with_location(self.current_source_location())
+                .as_boxed()),
+        }
     }
 
-    if *pos + 2 > chars.len() {
-        return Err(Diagnostic::error("C Style comment must end with */")
-            .add_help("Add */ at the end of C Style comments")
-            .with_location_span(*pos, *pos)
-            .as_boxed());
+    fn consume_string_in_single_quotes(&mut self) -> Result<Token, Box<Diagnostic>> {
+        let buffer = self.consume_string_with_around('\'')?;
+
+        if self.index >= self.content_len {
+            return Err(Diagnostic::error("Unterminated single quote string")
+                .add_help("Add \' at the end of the String literal")
+                .with_location(self.current_source_location())
+                .as_boxed());
+        }
+
+        // Consume `'`
+        self.advance();
+        let location = self.current_source_location();
+        Ok(Token::new(TokenKind::String(buffer), location))
     }
 
-    *pos += 2;
-    Ok(())
+    fn consume_string_in_double_quotes(&mut self) -> Result<Token, Box<Diagnostic>> {
+        let buffer = self.consume_string_with_around('"')?;
+
+        if self.index >= self.content_len {
+            return Err(Diagnostic::error("Unterminated double quote string")
+                .add_help("Add \" at the end of the String literal")
+                .with_location(self.current_source_location())
+                .as_boxed());
+        }
+
+        // Consume `"`
+        self.advance();
+        let location = self.current_source_location();
+        Ok(Token::new(TokenKind::String(buffer), location))
+    }
+
+    fn consume_string_with_around(&mut self, around: char) -> Result<String, Box<Diagnostic>> {
+        // Consume Around start
+        self.advance();
+
+        let mut buffer = String::new();
+        while self.has_next() && self.content[self.index] != around {
+            if !self.is_current_char('\\') {
+                buffer.push(self.content[self.index]);
+                self.advance();
+                continue;
+            }
+
+            // If '\\' is the last character, we don't need to escape it
+            if self.is_last() {
+                buffer.push(self.content[self.index]);
+                self.advance();
+                continue;
+            }
+
+            // Consume '\\'
+            self.advance();
+
+            // Check possible escape depending on the next character
+            let next_char = self.content[self.index];
+            let character_with_escape_handled = match next_char {
+                // Single quote
+                '\'' => {
+                    self.advance();
+                    '\''
+                }
+                // Double quote
+                '\"' => {
+                    self.advance();
+                    '\"'
+                }
+                // Backslash
+                '\\' => {
+                    self.advance();
+                    '\\'
+                }
+                // New line
+                'n' => {
+                    self.advance();
+                    '\n'
+                }
+                // Carriage return
+                'r' => {
+                    self.advance();
+                    '\r'
+                }
+                // Tab
+                't' => {
+                    self.advance();
+                    '\t'
+                }
+                _ => self.content[self.index - 1],
+            };
+
+            buffer.push(character_with_escape_handled);
+        }
+
+        Ok(buffer)
+    }
+
+    fn ignore_single_line_comment(&mut self) {
+        // Advance `--`
+        self.advance_n(2);
+
+        while self.has_next() && !self.is_current_char('\n') {
+            self.advance();
+        }
+
+        // Advance `\n`
+        self.advance();
+    }
+
+    fn ignore_c_style_comment(&mut self) -> Result<(), Box<Diagnostic>> {
+        // Advance `/*`
+        self.advance_n(2);
+
+        while self.index + 1 < self.content_len
+            && (!self.is_current_char('*') && self.content[self.index + 1] != '/')
+        {
+            // Advance char
+            self.advance();
+        }
+
+        if self.index + 2 > self.content_len {
+            return Err(Diagnostic::error("C Style comment must end with */")
+                .add_help("Add */ at the end of C Style comments")
+                .with_location(self.current_source_location())
+                .as_boxed());
+        }
+
+        // Advance `*/`
+        self.advance_n(2);
+        Ok(())
+    }
+
+    fn advance(&mut self) {
+        self.index += 1;
+        self.column_end += 1;
+    }
+
+    fn advance_n(&mut self, n: usize) {
+        self.index += n;
+        self.column_end += n as u32;
+    }
+
+    fn is_current_char(&self, ch: char) -> bool {
+        self.content[self.index] == ch
+    }
+
+    fn is_current_char_func(&self, func: fn(char) -> bool) -> bool {
+        func(self.content[self.index])
+    }
+
+    fn has_next(&self) -> bool {
+        self.index < self.content_len
+    }
+
+    fn is_last(&self) -> bool {
+        self.index == self.content_len - 1
+    }
 }

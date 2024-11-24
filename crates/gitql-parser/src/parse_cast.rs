@@ -9,7 +9,7 @@ use crate::parse_type::parse_type;
 use crate::parser::consume_token_or_error;
 use crate::parser::parse_expression;
 use crate::parser::parse_index_or_slice_expression;
-use crate::token::Location;
+use crate::token::SourceLocation;
 use crate::token::Token;
 use crate::token::TokenKind;
 
@@ -74,7 +74,7 @@ pub(crate) fn parse_cast_call_expression(
 fn cast_expression_or_error(
     expr: Box<dyn Expr>,
     target_type: Box<dyn DataType>,
-    location: Location,
+    location: SourceLocation,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
     let value_type = expr.expr_type();
     let value_expected_types = value_type.can_perform_explicit_cast_op_to();

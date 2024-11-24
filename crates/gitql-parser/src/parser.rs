@@ -25,7 +25,7 @@ use crate::context::ParserContext;
 use crate::diagnostic::Diagnostic;
 use crate::parse_cast::parse_cast_call_expression;
 use crate::parse_cast::parse_cast_operator_expression;
-use crate::token::Location;
+use crate::token::SourceLocation;
 use crate::token::Token;
 use crate::token::TokenKind;
 use crate::type_checker::check_all_values_are_same_type;
@@ -34,35 +34,42 @@ use crate::type_checker::resolve_dynamic_data_type;
 use crate::type_checker::type_check_and_classify_selected_fields;
 use crate::type_checker::type_check_projection_symbols;
 
-pub fn parse_gql(tokens: Vec<Token>, env: &mut Environment) -> Result<Query, Box<Diagnostic>> {
+pub fn parse_gql(tokens: Vec<Token>, env: &mut Environment) -> Result<Vec<Query>, Box<Diagnostic>> {
+    let mut queries: Vec<Query> = vec![];
     let mut position = 0;
-    let first_token = &tokens[position];
-    let query_result = match &first_token.kind {
-        TokenKind::Do => parse_do_query(env, &tokens, &mut position),
-        TokenKind::Set => parse_set_query(env, &tokens, &mut position),
-        TokenKind::Select => parse_select_query(env, &tokens, &mut position),
-        TokenKind::Describe => parse_describe_query(env, &tokens, &mut position),
-        TokenKind::Show => parse_show_query(&tokens, &mut position),
-        _ => Err(un_expected_statement_error(&tokens, &mut position)),
-    };
 
-    // Consume optional `;` at the end of valid statement
-    if let Some(last_token) = tokens.get(position) {
-        if last_token.kind == TokenKind::Semicolon {
-            position += 1;
+    while position < tokens.len() {
+        env.clear_session();
+
+        let query = match &tokens[position].kind {
+            TokenKind::Do => parse_do_query(env, &tokens, &mut position),
+            TokenKind::Set => parse_set_query(env, &tokens, &mut position),
+            TokenKind::Select => parse_select_query(env, &tokens, &mut position),
+            TokenKind::Describe => parse_describe_query(env, &tokens, &mut position),
+            TokenKind::Show => parse_show_query(&tokens, &mut position),
+            _ => Err(un_expected_statement_error(&tokens, &mut position)),
+        }?;
+
+        // Consume optional `;` at the end of valid statement
+        if let Some(last_token) = tokens.get(position) {
+            if last_token.kind == TokenKind::Semicolon {
+                position += 1;
+            }
         }
+
+        queries.push(query);
     }
 
     // Check for unexpected content after valid statement
-    if query_result.is_ok() && position < tokens.len() {
+    if position < tokens.len() {
         return Err(un_expected_content_after_correct_statement(
-            &first_token.to_string(),
+            &tokens[0].to_string(),
             &tokens,
             &mut position,
         ));
     }
 
-    query_result
+    Ok(queries)
 }
 
 fn parse_do_query(
@@ -749,7 +756,7 @@ fn parse_from_option(
             tokens,
             position,
             |token| matches!(token.kind, TokenKind::Symbol(_)),
-            "Expect `Symbol` as a table name",
+            "Expect `Table` value after `FROM` keyword",
         )?
         .to_string();
 
@@ -4000,7 +4007,7 @@ fn un_expected_statement_error(tokens: &[Token], position: &mut usize) -> Box<Di
     let location = token.location;
 
     // Query starts with invalid statement
-    if location.start == 0 {
+    if *position == 0 {
         return Diagnostic::error("Unexpected statement")
             .add_help("Expect query to start with `SELECT` or `SET` keyword")
             .with_location(location)
@@ -4106,10 +4113,9 @@ fn un_expected_content_after_correct_statement(
     );
 
     // The range of extra content
-    let location_of_extra_content = Location {
-        start: tokens[*position].location.start,
-        end: tokens[tokens.len() - 1].location.end,
-    };
+    let last_token_location = tokens[tokens.len() - 1].location;
+    let mut location_of_extra_content = tokens[*position].location;
+    location_of_extra_content.expand_until(last_token_location);
 
     Diagnostic::error(error_message)
         .add_help("Try to check if statement keyword is missing")
@@ -4231,7 +4237,7 @@ pub(crate) fn consume_conditional_token_or_errors<'a>(
 }
 
 #[inline(always)]
-pub(crate) fn calculate_safe_location(tokens: &[Token], position: usize) -> Location {
+pub(crate) fn calculate_safe_location(tokens: &[Token], position: usize) -> SourceLocation {
     if position < tokens.len() {
         return tokens[position].location;
     }
