@@ -1462,33 +1462,40 @@ fn parse_regex_expression(
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
     let expression = parse_is_null_expression(context, env, tokens, position)?;
 
-    // Consume NOT if current token is `RegExp` and next one is `IN`
-    let has_not_keyword = if *position < tokens.len() - 1
-        && tokens[*position].kind == TokenKind::Not
-        && tokens[*position + 1].kind == TokenKind::RegExp
+    // Check for `REGEXP` or `NOT REGEXP`
+    // <expr> REGEXP <expr> AND <expr>
+    // <expr> NOT REGEXP <expr> AND <expr>
+    if is_current_token(tokens, position, TokenKind::RegExp)
+        || (is_current_token(tokens, position, TokenKind::Not)
+            && is_next_token(tokens, position, TokenKind::RegExp))
     {
-        *position += 1;
-        true
-    } else {
-        false
-    };
+        let has_not_keyword = is_current_token(tokens, position, TokenKind::Not);
+        let operator_location = if has_not_keyword {
+            // Consume `NOT` and `REGEXP` keyword
+            *position += 2;
+            let mut not_location = tokens[*position - 2].location;
+            let between_location = tokens[*position - 1].location;
+            not_location.expand_until(between_location);
+            not_location
+        } else {
+            // Consume `REGEXP` keyword
+            *position += 1;
+            tokens[*position - 1].location
+        };
 
-    if is_current_token(tokens, position, TokenKind::RegExp) {
         if !expression.expr_type().is_text() {
             return Err(
                 Diagnostic::error("`REGEXP` left hand side must be `Text` Type")
-                    .with_location(tokens[*position].location)
+                    .with_location(operator_location)
                     .as_boxed(),
             );
         }
-
-        *position += 1;
 
         let pattern = parse_is_null_expression(context, env, tokens, position)?;
         if !pattern.expr_type().is_text() {
             return Err(
                 Diagnostic::error("`REGEXP` right hand side must be `Text` Type")
-                    .with_location(tokens[*position].location)
+                    .with_location(operator_location)
                     .as_boxed(),
             );
         }
@@ -1498,15 +1505,7 @@ fn parse_regex_expression(
             pattern,
         });
 
-        return Ok(if has_not_keyword {
-            Box::new(UnaryExpr {
-                right: regex_expr,
-                operator: PrefixUnaryOperator::Bang,
-                result_type: Box::new(BoolType),
-            })
-        } else {
-            regex_expr
-        });
+        return Ok(apply_not_keyword_if_exists(regex_expr, has_not_keyword));
     }
 
     Ok(expression)
@@ -3236,14 +3235,29 @@ fn parse_between_expression(
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
     let expression = parse_function_call_expression(context, env, tokens, position)?;
-    if is_current_token(tokens, position, TokenKind::Between) {
-        let between_location = tokens[*position].location;
 
-        // Consume `BETWEEN` keyword
-        *position += 1;
+    // Check for `BETWEEN` or `NOT BETWEEN`
+    // <expr> BETWEEN <expr> AND <expr>
+    // <expr> NOT BETWEEN <expr> AND <expr>
+    if is_current_token(tokens, position, TokenKind::Between)
+        || (is_current_token(tokens, position, TokenKind::Not)
+            && is_next_token(tokens, position, TokenKind::Between))
+    {
+        let has_not_keyword = is_current_token(tokens, position, TokenKind::Not);
+        let operator_location = if has_not_keyword {
+            // Consume `NOT` and `BETWEEN` keyword
+            *position += 2;
+            let mut not_location = tokens[*position - 2].location;
+            let between_location = tokens[*position - 1].location;
+            not_location.expand_until(between_location);
+            not_location
+        } else {
+            // Consume `BETWEEN` keyword
+            *position += 1;
+            tokens[*position - 1].location
+        };
 
         let kind = parse_between_expr_kind(tokens, position);
-
         let range_start = parse_function_call_expression(context, env, tokens, position)?;
 
         // Consume `AND` token
@@ -3269,7 +3283,7 @@ fn parse_between_expression(
                 range_end_type.literal()
             ))
             .add_help("Try to make sure all of them has same type")
-            .with_location(between_location)
+            .with_location(operator_location)
             .as_boxed());
         }
 
@@ -3279,7 +3293,7 @@ fn parse_between_expression(
                 "Type `{}` used in Between expression can't support `>=` operator",
                 lhs_type.literal()
             ))
-            .with_location(between_location)
+            .with_location(operator_location)
             .as_boxed());
         }
 
@@ -3289,16 +3303,18 @@ fn parse_between_expression(
                 "Type `{}` used in Between expression can't support `<=` operator",
                 lhs_type.literal()
             ))
-            .with_location(between_location)
+            .with_location(operator_location)
             .as_boxed());
         }
 
-        return Ok(Box::new(BetweenExpr {
+        let between_expr = Box::new(BetweenExpr {
             value: expression,
             range_start,
             range_end,
             kind,
-        }));
+        });
+
+        return Ok(apply_not_keyword_if_exists(between_expr, has_not_keyword));
     }
 
     Ok(expression)
@@ -4181,12 +4197,30 @@ fn select_all_table_fields(
 }
 
 #[inline(always)]
+fn apply_not_keyword_if_exists(expr: Box<dyn Expr>, is_not_exists: bool) -> Box<dyn Expr> {
+    if is_not_exists {
+        Box::new(UnaryExpr {
+            right: expr,
+            operator: PrefixUnaryOperator::Bang,
+            result_type: Box::new(BoolType),
+        })
+    } else {
+        expr
+    }
+}
+
+#[inline(always)]
 pub(crate) fn is_current_token(
     tokens: &[Token],
     position: &usize,
     expected_kind: TokenKind,
 ) -> bool {
     *position < tokens.len() && tokens[*position].kind == expected_kind
+}
+
+#[inline(always)]
+pub(crate) fn is_next_token(tokens: &[Token], position: &usize, expected_kind: TokenKind) -> bool {
+    *position + 1 < tokens.len() && tokens[*position + 1].kind == expected_kind
 }
 
 #[inline(always)]

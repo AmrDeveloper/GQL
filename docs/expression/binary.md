@@ -88,6 +88,14 @@ SELECT 1 BETWEEN 3 AND 1             -- False
 SELECT 1 BETWEEN SYMMETRIC 1 AND 3   -- True
 ```
 
+Between expression can also be used with `NOT` keyword for example
+
+```sql
+SELECT 1 NOT BETWEEN 1 AND 3             -- False
+SELECT 1 NOT BETWEEN 3 AND 1             -- True
+SELECT 1 NOT BETWEEN SYMMETRIC 1 AND 3   -- False
+```
+
 ---
 
 ### Is Null Expression
