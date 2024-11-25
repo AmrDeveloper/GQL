@@ -22,16 +22,17 @@ impl DiagnosticReporter {
         }
 
         if !query.is_empty() {
-            println!("  |");
+            println!("   |");
             if let Some(location) = diagnostic.location() {
                 let lines: Vec<&str> = query.split('\n').collect();
                 let end = u32::min(location.line_end, lines.len() as u32);
-                for line_number in location.line_start - 1..end {
-                    println!("{} | {}", line_number, lines[line_number as usize]);
+                for zero_based_line_number in location.line_start - 1..end {
+                    println!("-> | {}", lines[zero_based_line_number as usize]);
                 }
-                println!("  | ");
+
+                println!("   | ");
                 let column_s = location.column_start.saturating_sub(1) as usize;
-                print!("{}", &"-".repeat(column_s));
+                print!("   | {}", &"-".repeat(column_s));
 
                 let diagnostic_length =
                     u32::max(1, location.column_end.saturating_sub(location.column_start)) as usize;
@@ -41,7 +42,7 @@ impl DiagnosticReporter {
 
                 self.stdout.set_color(Some(Color::Red));
             }
-            println!("  |");
+            println!("   |");
         }
 
         self.stdout.set_color(Some(Color::Yellow));

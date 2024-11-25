@@ -48,8 +48,7 @@ impl Tokenizer {
         let len = self.content_len;
 
         while self.has_next() {
-            self.column_start = self.index as u32;
-            self.column_end = self.column_start;
+            self.column_start = self.column_end;
             self.line_start = self.line_end;
 
             let char = self.content[self.index];
