@@ -3209,7 +3209,7 @@ fn parse_prefix_unary_expression(
         }
 
         // Parse and Check side for unary `~` operator
-        if operator.kind == TokenKind::Not {
+        if operator.kind == TokenKind::BitwiseNot {
             // Can perform this operator between RHS
             if rhs_type.can_perform_not_op() {
                 return Ok(Box::new(UnaryExpr {
