@@ -223,6 +223,7 @@ fn parse_select_query(
                 if statements.contains_key("select") {
                     return Err(Diagnostic::error("You already used `SELECT` statement")
                         .add_note("Can't use more than one `SELECT` statement in the same query")
+                        .add_help("If you have more than one query, end each one with `;`")
                         .with_location(token.location)
                         .as_boxed());
                 }
