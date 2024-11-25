@@ -22,6 +22,14 @@ impl DataType for BoolType {
         self
     }
 
+    fn can_perform_bang_op(&self) -> bool {
+        true
+    }
+
+    fn bang_op_result_type(&self) -> Box<dyn DataType> {
+        Box::new(BoolType)
+    }
+
     fn can_perform_logical_or_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(BoolType)]
     }

@@ -373,16 +373,6 @@ fn parse_select_query(
                 let statement = parse_into_statement(tokens, position)?;
                 statements.insert("into", statement);
             }
-            TokenKind::Not => {
-                return Err(Diagnostic::error(
-                    "Expects `REGEXP` or `IN` expression after this `NOT` keyword",
-                )
-                .add_help("Try to use `REGEXP` or `IN` expression after NOT keyword")
-                .add_help("Try to remove `NOT` keyword")
-                .add_note("Expect to see `NOT` then `IN` keyword with a list of values")
-                .with_location(calculate_safe_location(tokens, *position))
-                .as_boxed())
-            }
             _ => break,
         }
     }
@@ -3168,8 +3158,8 @@ fn parse_prefix_unary_expression(
         let rhs = parse_prefix_unary_expression(context, env, tokens, position)?;
         let rhs_type = rhs.expr_type();
 
-        // Parse and Check side for unary `!` operator
-        if operator.kind == TokenKind::Bang {
+        // Parse and Check side for unary `!`or `NOT` operator
+        if operator.kind == TokenKind::Bang || operator.kind == TokenKind::Not {
             // Can perform this operator between RHS
             if rhs_type.can_perform_bang_op() {
                 return Ok(Box::new(UnaryExpr {
@@ -3180,8 +3170,15 @@ fn parse_prefix_unary_expression(
             }
 
             // Return error if this operator can't be performed even with implicit cast
+            let op_name = if operator.kind == TokenKind::Bang {
+                "!"
+            } else {
+                "NOT"
+            };
+
             return Err(Diagnostic::error(&format!(
-                "Operator unary `!` can't be performed on type `{}`",
+                "Operator unary `{}` can't be performed on type `{}`",
+                op_name,
                 rhs_type.literal()
             ))
             .with_location(operator.location)
@@ -4286,7 +4283,7 @@ fn is_bitwise_shift_operator(tokens: &[Token], position: &usize) -> bool {
 fn is_prefix_unary_operator(token: &Token) -> bool {
     matches!(
         token.kind,
-        TokenKind::Bang | TokenKind::Minus | TokenKind::BitwiseNot
+        TokenKind::Bang | TokenKind::Not | TokenKind::Minus | TokenKind::BitwiseNot
     )
 }
 

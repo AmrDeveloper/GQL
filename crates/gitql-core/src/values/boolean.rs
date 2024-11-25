@@ -39,6 +39,10 @@ impl Value for BoolValue {
         self
     }
 
+    fn bang_op(&self) -> Result<Box<dyn Value>, String> {
+        Ok(Box::new(BoolValue { value: !self.value }))
+    }
+
     fn logical_or_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_bool) = other.as_any().downcast_ref::<BoolValue>() {
             let value = self.value || other_bool.value;
