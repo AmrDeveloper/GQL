@@ -2872,22 +2872,35 @@ fn parse_like_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
-    let expression = parse_glob_expression(context, env, tokens, position);
-    if expression.is_err() || *position >= tokens.len() {
-        return expression;
-    }
+    let lhs = parse_glob_expression(context, env, tokens, position)?;
 
-    let lhs = expression.ok().unwrap();
-    if tokens[*position].kind == TokenKind::Like {
-        let location = tokens[*position].location;
-        *position += 1;
+    // Check for `LIKE` or `NOT LIKE`
+    // <expr> LIKE <expr> AND <expr>
+    // <expr> NOT LIKE <expr> AND <expr>
+    if is_current_token(tokens, position, TokenKind::Like)
+        || (is_current_token(tokens, position, TokenKind::Not)
+            && is_next_token(tokens, position, TokenKind::Like))
+    {
+        let has_not_keyword = is_current_token(tokens, position, TokenKind::Not);
+        let operator_location: SourceLocation = if has_not_keyword {
+            // Consume `NOT` and `LIKE` keyword
+            *position += 2;
+            let mut not_location = tokens[*position - 2].location;
+            let between_location = tokens[*position - 1].location;
+            not_location.expand_until(between_location);
+            not_location
+        } else {
+            // Consume `LIKE` keyword
+            *position += 1;
+            tokens[*position - 1].location
+        };
 
         if !lhs.expr_type().is_text() {
             return Err(Diagnostic::error(&format!(
                 "Expect `LIKE` left hand side to be `TEXT` but got {}",
                 lhs.expr_type().literal()
             ))
-            .with_location(location)
+            .with_location(operator_location)
             .as_boxed());
         }
 
@@ -2897,14 +2910,16 @@ fn parse_like_expression(
                 "Expect `LIKE` right hand side to be `TEXT` but got {}",
                 pattern.expr_type().literal()
             ))
-            .with_location(location)
+            .with_location(operator_location)
             .as_boxed());
         }
 
-        return Ok(Box::new(LikeExpr {
+        let expr = Box::new(LikeExpr {
             input: lhs,
             pattern,
-        }));
+        });
+
+        return Ok(apply_not_keyword_if_exists(expr, has_not_keyword));
     }
 
     Ok(lhs)

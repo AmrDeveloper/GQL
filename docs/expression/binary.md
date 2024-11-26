@@ -45,6 +45,15 @@ SELECT "Git Query Language" LIKE "%Query%"
 SELECT "10 usd" LIKE "[0-9]* usd"
 ```
 
+Between expression can also be used with `NOT` keyword for example
+
+```sql
+SELECT "Git Query Language" NOT LIKE "G%"
+SELECT "Git Query Language" NOT LIKE "%e"
+SELECT "Git Query Language" NOT LIKE "%Query%"
+SELECT "10 usd" NOT LIKE "[0-9]* usd"
+```
+
 ---
 
 ### Glob Expression
