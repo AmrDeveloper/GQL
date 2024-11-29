@@ -1,7 +1,7 @@
 [package]
 name = "gitql-core"
 authors = ["AmrDeveloper"]
-version = "0.8.0"
+version = "0.9.0"
 edition = "2021"
 description = "GitQL Core components"
 repository = "https://github.com/amrdeveloper/gql/tree/main/crates/gitql-cli"
@@ -10,7 +10,7 @@ keywords = ["cli", "gql", "language", "git", "sql"]
 categories = ["command-line-utilities"]
 
 [dependencies]
-gitql-ast = { path = "../gitql-ast", version = "0.28.0" }
+gitql-ast = { path = "../gitql-ast", version = "0.29.0" }
 chrono = "0.4.38"
 dyn-clone = "1.0.17"
 indexmap = "2.6.0"

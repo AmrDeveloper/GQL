@@ -132,7 +132,7 @@ impl Environment {
         if str.starts_with('@') {
             return self.globals_types.get(str);
         }
-        return self.scopes.get(str);
+        self.scopes.get(str)
     }
 
     /// Clear all locals scopes and only save globals
