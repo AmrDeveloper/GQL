@@ -1,5 +1,22 @@
 # Change Log
 
+## Version 0.32.0 _(2024-11-30)_
+
+- Support Contained By expression using `@>` operator for Array, Range.
+- Support Contained By expression using `<@` operator Array, Range.
+- Change Between Expr syntax to be `BETWEEN X AND Y`.
+- Supports `Between [Symmetric | Asymmetric] X AND Y` kinds.
+- Supports `NOT BETWEEN` expression.
+- Support `NOT LIKE` expression.
+- Support Explicit cast from `Date` to `DateTime`.
+- Generate different name for column and hidden selections.
+- Improve the structure of the Tokenizer.
+- Implement `TO_HEX` Text Function.
+- Support Escape characters in the Tokenizer.
+- Implement Scripting mode from external file.
+- Support NOT as prefix unary operator.
+- Prefix unary expression Bitwise not.
+
 ## Version 0.31.0 _(2024-11-12)_
 
 - Implement Cast function call expression `CAST(expr AS <Type>)`.
