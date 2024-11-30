@@ -61,6 +61,7 @@ Usage: gitql [OPTIONS]
 
 Options:
 -r,  --repos <REPOS>        Path for local repositories to run query on
+-s,  --script <file>        Script file contains one or more query"
 -q,  --query <GQL Query>    GitQL query to run on selected repositories
 -p,  --pagination           Enable print result with pagination
 -ps, --pagesize             Set pagination page size [default: 10]
