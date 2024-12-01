@@ -226,19 +226,20 @@ fn evaluate_describe_query(
 }
 
 fn evaluate_show_tables_query(env: &mut Environment) -> Result<EvaluationResult, String> {
-    let mut gitql_object = GitQLObject::default();
+    let tables = env.schema.tables_fields_names.keys();
 
-    gitql_object.titles.push("Tables".to_owned());
-
+    let mut rows: Vec<Row> = Vec::with_capacity(tables.len());
     for table in env.schema.tables_fields_names.keys() {
-        gitql_object.groups.push(Group {
-            rows: vec![Row {
-                values: vec![Box::new(TextValue {
-                    value: table.to_owned().to_owned(),
-                })],
-            }],
-        })
+        let values: Vec<Box<dyn Value>> = vec![Box::new(TextValue {
+            value: table.to_owned().to_owned(),
+        })];
+
+        rows.push(Row { values });
     }
+
+    let mut gitql_object = GitQLObject::default();
+    gitql_object.titles.push("Tables".to_owned());
+    gitql_object.groups.push(Group { rows });
 
     Ok(EvaluationResult::SelectedGroups(gitql_object))
 }
