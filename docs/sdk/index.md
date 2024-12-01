@@ -47,4 +47,10 @@ To run SQL query on C/C++ Code.
 - [FileQL](https://github.com/AmrDeveloper/FileQL):
 To run SQL query on the file system.
 
+- [LLQL](https://github.com/amrdeveloper/llql):
+  Tool to run SQL query on LLVM IR/BC and perform Pattern matching on instructions.
+
+- [PyQL](https://github.com/AmrDeveloper/PyQL):
+To run SQL query on Python Code.
+
 Feel free to add your product too, everyone is welcome to join.

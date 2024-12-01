@@ -101,6 +101,8 @@ SELECT * FROM tags OFFSET 1 LIMIT 1
   Tool to run SQL query on C/C++ Source code files.
 - [FileQL](https://github.com/amrdeveloper/fileql)
   Tool to run SQL query on file systems and extract metadata.
+- [PyQL](https://github.com/AmrDeveloper/PyQL)
+  Tool to run SQL query on Python Source code files.
 
 ---
 
