@@ -683,6 +683,18 @@ fn parse_select_all_or_expressions(
             )?
             .to_string();
 
+            // TODO [#120, #121]: Remove this check
+            if env
+                .schema
+                .tables_fields_types
+                .contains_key(alias_name.as_str())
+            {
+                return Err(Diagnostic::error("Can't use column name as Alias")
+                    .add_note("Until supporting `table.column` you should use different alias name")
+                    .with_location(tokens[*position - 1].location)
+                    .as_boxed());
+            }
+
             // No need to do checks or add alias
             // `SELECT C AS C` is equal to `SELECT C`
             if field_name != alias_name {

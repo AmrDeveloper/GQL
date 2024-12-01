@@ -44,11 +44,18 @@ fn main() {
 
     match command {
         Command::ReplMode(arguments) => {
-            launch_gitql_repl(arguments);
+            launch_gitql_repl(&arguments);
         }
         Command::ScriptMode(script_file, arguments) => {
             let mut reporter = diagnostic_reporter::DiagnosticReporter::default();
             let git_repos_result = validate_git_repositories(&arguments.repos);
+            if git_repos_result.is_err() {
+                reporter.report_diagnostic(
+                    "",
+                    Diagnostic::error(git_repos_result.err().unwrap().as_str()),
+                );
+                return;
+            }
 
             let repos = git_repos_result.ok().unwrap();
             let schema = Schema {
@@ -111,7 +118,7 @@ fn main() {
     }
 }
 
-fn launch_gitql_repl(arguments: Arguments) {
+fn launch_gitql_repl(arguments: &Arguments) {
     let mut reporter = diagnostic_reporter::DiagnosticReporter::default();
     let git_repos_result = validate_git_repositories(&arguments.repos);
     if git_repos_result.is_err() {
@@ -157,7 +164,7 @@ fn launch_gitql_repl(arguments: Arguments) {
 
                 execute_gitql_query(
                     input.to_owned(),
-                    &arguments,
+                    arguments,
                     &git_repositories,
                     &mut global_env,
                     &mut reporter,
@@ -202,7 +209,7 @@ fn launch_gitql_repl(arguments: Arguments) {
 
         execute_gitql_query(
             stdin_input.to_owned(),
-            &arguments,
+            arguments,
             &git_repositories,
             &mut global_env,
             &mut reporter,
