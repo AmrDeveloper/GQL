@@ -47,4 +47,7 @@ To run SQL query on C/C++ Code.
 - [FileQL](https://github.com/AmrDeveloper/FileQL):
 To run SQL query on the file system.
 
+- [PyQL](https://github.com/AmrDeveloper/PyQL):
+To run SQL query on Python Code.
+
 Feel free to add your product too, everyone is welcome to join.
