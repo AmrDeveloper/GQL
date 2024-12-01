@@ -20,10 +20,11 @@ You can use Aggregation function in the select statement to perform function on 
 SELECT count(author_name) FROM commits
 ```
 
-You can alias the column name only in this query by using `as` keyword for example
+You can alias the column name only in this query by using `AS` keyword for example
 
 ```sql
-SELECT title as tt FROM commits
+SELECT title as commit_title FROM commits
+SELECT title as "Commit Title" FROM commits
 SELECT name, commit_count, max(commit_count) AS max_count message FROM branches
 ```
 

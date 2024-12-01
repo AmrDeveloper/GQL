@@ -678,8 +678,8 @@ fn parse_select_all_or_expressions(
             let alias_name = consume_conditional_token_or_errors(
                 tokens,
                 position,
-                |token| matches!(token.kind, TokenKind::Symbol(_)),
-                "Expect `Symbol` as field alias name",
+                |token| matches!(token.kind, TokenKind::Symbol(_) | TokenKind::String(_)),
+                "Expect `Symbol` or `Text` as field alias name",
             )?
             .to_string();
 
