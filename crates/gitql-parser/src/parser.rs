@@ -1652,10 +1652,10 @@ fn parse_logical_or_expression(
         let lhs_type = lhs.expr_type();
         let rhs_type = rhs.expr_type();
 
-        let rhs_expected_types = lhs_type.can_perform_logical_or_op_with();
+        let expected_rhs_types = lhs_type.can_perform_logical_or_op_with();
 
         // Can perform this operator between LHS and RHS
-        if rhs_expected_types.contains(&rhs_type) {
+        if expected_rhs_types.contains(&rhs_type) {
             lhs = Box::new(LogicalExpr {
                 left: lhs,
                 operator: BinaryLogicalOperator::Or,
@@ -1665,22 +1665,47 @@ fn parse_logical_or_expression(
             continue 'parse_expr;
         }
 
-        // Check if can perform the operator with additional implicit casting
-        for expected_type in rhs_expected_types {
-            if expected_type.has_implicit_cast_from(&rhs) {
-                let casting = Box::new(CastExpr {
-                    value: rhs,
-                    result_type: expected_type.clone(),
-                });
-
-                lhs = Box::new(LogicalExpr {
-                    left: lhs,
-                    operator: BinaryLogicalOperator::Or,
-                    right: casting,
-                });
-
-                continue 'parse_expr;
+        // Check if RHS expr can be implicit casted to Expected LHS type to make this
+        // Expression valid
+        for expected_type in expected_rhs_types {
+            if !expected_type.has_implicit_cast_from(&lhs) {
+                continue;
             }
+
+            let casting = Box::new(CastExpr {
+                value: rhs,
+                result_type: expected_type.clone(),
+            });
+
+            lhs = Box::new(LogicalExpr {
+                left: lhs,
+                operator: BinaryLogicalOperator::Or,
+                right: casting,
+            });
+
+            continue 'parse_expr;
+        }
+
+        // Check if LHS expr can be implicit casted to Expected RHS type to make this
+        // Expression valid
+        let expected_lhs_types = rhs_type.can_perform_logical_or_op_with();
+        for expected_type in expected_lhs_types.iter() {
+            if !expected_type.has_implicit_cast_from(&lhs) {
+                continue;
+            }
+
+            let casting = Box::new(CastExpr {
+                value: lhs,
+                result_type: expected_type.clone(),
+            });
+
+            lhs = Box::new(LogicalExpr {
+                left: casting,
+                operator: BinaryLogicalOperator::Or,
+                right: rhs,
+            });
+
+            continue 'parse_expr;
         }
 
         // Return error if this operator can't be performed even with implicit cast
@@ -1715,10 +1740,10 @@ fn parse_logical_and_expression(
         let lhs_type = lhs.expr_type();
         let rhs_type = rhs.expr_type();
 
-        let rhs_expected_types = lhs_type.can_perform_logical_and_op_with();
+        let expected_rhs_types = lhs_type.can_perform_logical_and_op_with();
 
         // Can perform this operator between LHS and RHS
-        if rhs_expected_types.contains(&rhs_type) {
+        if expected_rhs_types.contains(&rhs_type) {
             lhs = Box::new(LogicalExpr {
                 left: lhs,
                 operator: BinaryLogicalOperator::And,
@@ -1728,22 +1753,47 @@ fn parse_logical_and_expression(
             continue 'parse_expr;
         }
 
-        // Check if can perform the operator with additional implicit casting
-        for expected_type in rhs_expected_types {
-            if expected_type.has_implicit_cast_from(&rhs) {
-                let casting = Box::new(CastExpr {
-                    value: rhs,
-                    result_type: expected_type.clone(),
-                });
-
-                lhs = Box::new(LogicalExpr {
-                    left: lhs,
-                    operator: BinaryLogicalOperator::And,
-                    right: casting,
-                });
-
-                continue 'parse_expr;
+        // Check if RHS expr can be implicit casted to Expected LHS type to make this
+        // Expression valid
+        for expected_type in expected_rhs_types.iter() {
+            if !expected_type.has_implicit_cast_from(&lhs) {
+                continue;
             }
+
+            let casting = Box::new(CastExpr {
+                value: rhs,
+                result_type: expected_type.clone(),
+            });
+
+            lhs = Box::new(LogicalExpr {
+                left: lhs,
+                operator: BinaryLogicalOperator::And,
+                right: casting,
+            });
+
+            continue 'parse_expr;
+        }
+
+        // Check if LHS expr can be implicit casted to Expected RHS type to make this
+        // Expression valid
+        let expected_lhs_types = rhs_type.can_perform_logical_and_op_with();
+        for expected_type in expected_lhs_types.iter() {
+            if !expected_type.has_implicit_cast_from(&lhs) {
+                continue;
+            }
+
+            let casting = Box::new(CastExpr {
+                value: lhs,
+                result_type: expected_type.clone(),
+            });
+
+            lhs = Box::new(LogicalExpr {
+                left: casting,
+                operator: BinaryLogicalOperator::And,
+                right: rhs,
+            });
+
+            continue 'parse_expr;
         }
 
         // Return error if this operator can't be performed even with implicit cast
@@ -1778,10 +1828,10 @@ fn parse_bitwise_or_expression(
         let lhs_type = lhs.expr_type();
         let rhs_type = rhs.expr_type();
 
-        let rhs_expected_types = lhs_type.can_perform_or_op_with();
+        let expected_rhs_types = lhs_type.can_perform_or_op_with();
 
         // Can perform this operator between LHS and RHS
-        if rhs_expected_types.contains(&rhs_type) {
+        if expected_rhs_types.contains(&rhs_type) {
             lhs = Box::new(BitwiseExpr {
                 left: lhs,
                 operator: BinaryBitwiseOperator::Or,
@@ -1792,23 +1842,49 @@ fn parse_bitwise_or_expression(
             continue 'parse_expr;
         }
 
-        // Check if can perform the operator with additional implicit casting
-        for expected_type in rhs_expected_types {
-            if expected_type.has_implicit_cast_from(&rhs) {
-                let casting = Box::new(CastExpr {
-                    value: rhs,
-                    result_type: expected_type.clone(),
-                });
-
-                lhs = Box::new(BitwiseExpr {
-                    left: lhs,
-                    operator: BinaryBitwiseOperator::Or,
-                    right: casting,
-                    result_type: lhs_type.or_op_result_type(&expected_type),
-                });
-
-                continue 'parse_expr;
+        // Check if RHS expr can be implicit casted to Expected LHS type to make this
+        // Expression valid
+        for expected_type in expected_rhs_types.iter() {
+            if !expected_type.has_implicit_cast_from(&lhs) {
+                continue;
             }
+
+            let casting = Box::new(CastExpr {
+                value: rhs,
+                result_type: expected_type.clone(),
+            });
+
+            lhs = Box::new(BitwiseExpr {
+                left: lhs,
+                operator: BinaryBitwiseOperator::Or,
+                right: casting,
+                result_type: lhs_type.or_op_result_type(expected_type),
+            });
+
+            continue 'parse_expr;
+        }
+
+        // Check if LHS expr can be implicit casted to Expected RHS type to make this
+        // Expression valid
+        let expected_lhs_types = rhs_type.can_perform_or_op_with();
+        for expected_type in expected_lhs_types.iter() {
+            if !expected_type.has_implicit_cast_from(&lhs) {
+                continue;
+            }
+
+            let casting = Box::new(CastExpr {
+                value: lhs,
+                result_type: expected_type.clone(),
+            });
+
+            lhs = Box::new(BitwiseExpr {
+                left: casting,
+                operator: BinaryBitwiseOperator::Or,
+                right: rhs,
+                result_type: rhs_type.or_op_result_type(expected_type),
+            });
+
+            continue 'parse_expr;
         }
 
         // Return error if this operator can't be performed even with implicit cast
@@ -1843,10 +1919,10 @@ fn parse_bitwise_xor_expression(
         let lhs_type = lhs.expr_type();
         let rhs_type = rhs.expr_type();
 
-        let rhs_expected_types = lhs_type.can_perform_xor_op_with();
+        let expected_rhs_types = lhs_type.can_perform_xor_op_with();
 
         // Can perform this operator between LHS and RHS
-        if rhs_expected_types.contains(&rhs_type) {
+        if expected_rhs_types.contains(&rhs_type) {
             lhs = Box::new(BitwiseExpr {
                 left: lhs,
                 operator: BinaryBitwiseOperator::Xor,
@@ -1857,23 +1933,49 @@ fn parse_bitwise_xor_expression(
             continue 'parse_expr;
         }
 
-        // Check if can perform the operator with additional implicit casting
-        for expected_type in rhs_expected_types {
-            if expected_type.has_implicit_cast_from(&rhs) {
-                let casting = Box::new(CastExpr {
-                    value: rhs,
-                    result_type: expected_type.clone(),
-                });
-
-                lhs = Box::new(BitwiseExpr {
-                    left: lhs,
-                    operator: BinaryBitwiseOperator::Xor,
-                    right: casting,
-                    result_type: lhs_type.or_op_result_type(&expected_type),
-                });
-
-                continue 'parse_expr;
+        // Check if RHS expr can be implicit casted to Expected LHS type to make this
+        // Expression valid
+        for expected_type in expected_rhs_types.iter() {
+            if !expected_type.has_implicit_cast_from(&lhs) {
+                continue;
             }
+
+            let casting = Box::new(CastExpr {
+                value: rhs,
+                result_type: expected_type.clone(),
+            });
+
+            lhs = Box::new(BitwiseExpr {
+                left: lhs,
+                operator: BinaryBitwiseOperator::Xor,
+                right: casting,
+                result_type: lhs_type.or_op_result_type(expected_type),
+            });
+
+            continue 'parse_expr;
+        }
+
+        // Check if LHS expr can be implicit casted to Expected RHS type to make this
+        // Expression valid
+        let expected_lhs_types = rhs_type.can_perform_xor_op_with();
+        for expected_type in expected_lhs_types.iter() {
+            if !expected_type.has_implicit_cast_from(&lhs) {
+                continue;
+            }
+
+            let casting = Box::new(CastExpr {
+                value: lhs,
+                result_type: expected_type.clone(),
+            });
+
+            lhs = Box::new(BitwiseExpr {
+                left: casting,
+                operator: BinaryBitwiseOperator::Xor,
+                right: rhs,
+                result_type: rhs_type.or_op_result_type(expected_type),
+            });
+
+            continue 'parse_expr;
         }
 
         // Return error if this operator can't be performed even with implicit cast
@@ -1908,10 +2010,10 @@ fn parse_logical_xor_expression(
         let lhs_type = lhs.expr_type();
         let rhs_type = rhs.expr_type();
 
-        let rhs_expected_types = lhs_type.can_perform_logical_xor_op_with();
+        let expected_rhs_types = lhs_type.can_perform_logical_xor_op_with();
 
         // Can perform this operator between LHS and RHS
-        if rhs_expected_types.contains(&rhs_type) {
+        if expected_rhs_types.contains(&rhs_type) {
             lhs = Box::new(LogicalExpr {
                 left: lhs,
                 operator: BinaryLogicalOperator::Xor,
@@ -1921,22 +2023,47 @@ fn parse_logical_xor_expression(
             continue 'parse_expr;
         }
 
-        // Check if can perform the operator with additional implicit casting
-        for expected_type in rhs_expected_types {
-            if expected_type.has_implicit_cast_from(&rhs) {
-                let casting = Box::new(CastExpr {
-                    value: rhs,
-                    result_type: expected_type.clone(),
-                });
-
-                lhs = Box::new(LogicalExpr {
-                    left: lhs,
-                    operator: BinaryLogicalOperator::Xor,
-                    right: casting,
-                });
-
-                continue 'parse_expr;
+        // Check if RHS expr can be implicit casted to Expected LHS type to make this
+        // Expression valid
+        for expected_type in expected_rhs_types.iter() {
+            if !expected_type.has_implicit_cast_from(&lhs) {
+                continue;
             }
+
+            let casting = Box::new(CastExpr {
+                value: rhs,
+                result_type: expected_type.clone(),
+            });
+
+            lhs = Box::new(LogicalExpr {
+                left: lhs,
+                operator: BinaryLogicalOperator::Xor,
+                right: casting,
+            });
+
+            continue 'parse_expr;
+        }
+
+        // Check if LHS expr can be implicit casted to Expected RHS type to make this
+        // Expression valid
+        let expected_lhs_types = rhs_type.can_perform_logical_xor_op_with();
+        for expected_type in expected_lhs_types.iter() {
+            if !expected_type.has_implicit_cast_from(&lhs) {
+                continue;
+            }
+
+            let casting = Box::new(CastExpr {
+                value: lhs,
+                result_type: expected_type.clone(),
+            });
+
+            lhs = Box::new(LogicalExpr {
+                left: casting,
+                operator: BinaryLogicalOperator::Xor,
+                right: rhs,
+            });
+
+            continue 'parse_expr;
         }
 
         // Return error if this operator can't be performed even with implicit cast
@@ -1971,10 +2098,10 @@ fn parse_bitwise_and_expression(
         let lhs_type = lhs.expr_type();
         let rhs_type = rhs.expr_type();
 
-        let rhs_expected_types = lhs_type.can_perform_and_op_with();
+        let expected_rhs_types = lhs_type.can_perform_and_op_with();
 
         // Can perform this operator between LHS and RHS
-        if rhs_expected_types.contains(&rhs_type) {
+        if expected_rhs_types.contains(&rhs_type) {
             lhs = Box::new(BitwiseExpr {
                 left: lhs,
                 operator: BinaryBitwiseOperator::And,
@@ -1985,19 +2112,43 @@ fn parse_bitwise_and_expression(
             continue 'parse_expr;
         }
 
-        // Check if can perform the operator with additional implicit casting
-        for expected_type in rhs_expected_types {
-            if expected_type.has_implicit_cast_from(&rhs) {
+        // Check if RHS expr can be implicit casted to Expected LHS type to make this
+        // Expression valid
+        for expected_type in expected_rhs_types.iter() {
+            if !expected_type.has_implicit_cast_from(&lhs) {
+                continue;
+            }
+
+            let casting = Box::new(CastExpr {
+                value: rhs,
+                result_type: expected_type.clone(),
+            });
+
+            lhs = Box::new(BitwiseExpr {
+                left: lhs,
+                operator: BinaryBitwiseOperator::And,
+                right: casting,
+                result_type: lhs_type.or_op_result_type(expected_type),
+            });
+
+            continue 'parse_expr;
+        }
+
+        // Check if LHS expr can be implicit casted to Expected RHS type to make this
+        // Expression valid
+        let expected_lhs_types = rhs_type.can_perform_and_op_with();
+        for expected_type in expected_lhs_types.iter() {
+            if expected_type.has_implicit_cast_from(&lhs) {
                 let casting = Box::new(CastExpr {
-                    value: rhs,
+                    value: lhs,
                     result_type: expected_type.clone(),
                 });
 
                 lhs = Box::new(BitwiseExpr {
-                    left: lhs,
+                    left: casting,
                     operator: BinaryBitwiseOperator::And,
-                    right: casting,
-                    result_type: lhs_type.or_op_result_type(&expected_type),
+                    right: rhs,
+                    result_type: rhs_type.or_op_result_type(expected_type),
                 });
 
                 continue 'parse_expr;
@@ -2038,10 +2189,10 @@ fn parse_equality_expression(
 
         // Parse and Check sides for `=` operator
         if operator.kind == TokenKind::Equal {
-            let rhs_expected_types = lhs_type.can_perform_eq_op_with();
+            let expected_rhs_types = lhs_type.can_perform_eq_op_with();
 
             // Can perform this operator between LHS and RHS
-            if rhs_expected_types.contains(&rhs_type) {
+            if expected_rhs_types.contains(&rhs_type) {
                 return Ok(Box::new(ComparisonExpr {
                     left: lhs,
                     operator: ComparisonOperator::Equal,
@@ -2049,20 +2200,43 @@ fn parse_equality_expression(
                 }));
             }
 
-            // Check if can perform the operator with additional implicit casting
-            for expected_type in rhs_expected_types {
-                if expected_type.has_implicit_cast_from(&rhs) {
-                    let casting = Box::new(CastExpr {
-                        value: rhs,
-                        result_type: expected_type.clone(),
-                    });
-
-                    return Ok(Box::new(ComparisonExpr {
-                        left: lhs,
-                        operator: ComparisonOperator::Equal,
-                        right: casting,
-                    }));
+            // Check if RHS expr can be implicit casted to Expected LHS type to make this
+            // Expression valid
+            for expected_type in expected_rhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&lhs) {
+                    continue;
                 }
+
+                let casting = Box::new(CastExpr {
+                    value: rhs,
+                    result_type: expected_type.clone(),
+                });
+
+                return Ok(Box::new(ComparisonExpr {
+                    left: lhs,
+                    operator: ComparisonOperator::Equal,
+                    right: casting,
+                }));
+            }
+
+            // Check if LHS expr can be implicit casted to Expected RHS type to make this
+            // Expression valid
+            let expected_lhs_types = rhs_type.can_perform_eq_op_with();
+            for expected_type in expected_lhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&lhs) {
+                    continue;
+                }
+
+                let casting = Box::new(CastExpr {
+                    value: lhs,
+                    result_type: expected_type.clone(),
+                });
+
+                return Ok(Box::new(ComparisonExpr {
+                    left: casting,
+                    operator: ComparisonOperator::Equal,
+                    right: rhs,
+                }));
             }
 
             // Return error if this operator can't be performed even with implicit cast
@@ -2077,10 +2251,10 @@ fn parse_equality_expression(
 
         // Parse and Check sides for `!=` operator
         if operator.kind == TokenKind::BangEqual {
-            let rhs_expected_types = lhs_type.can_perform_bang_eq_op_with();
+            let expected_rhs_types = lhs_type.can_perform_bang_eq_op_with();
 
             // Can perform this operator between LHS and RHS
-            if rhs_expected_types.contains(&rhs_type) {
+            if expected_rhs_types.contains(&rhs_type) {
                 return Ok(Box::new(ComparisonExpr {
                     left: lhs,
                     operator: ComparisonOperator::NotEqual,
@@ -2088,20 +2262,43 @@ fn parse_equality_expression(
                 }));
             }
 
-            // Check if can perform the operator with additional implicit casting
-            for expected_type in rhs_expected_types {
-                if expected_type.has_implicit_cast_from(&rhs) {
-                    let casting = Box::new(CastExpr {
-                        value: rhs,
-                        result_type: expected_type.clone(),
-                    });
-
-                    return Ok(Box::new(ComparisonExpr {
-                        left: lhs,
-                        operator: ComparisonOperator::NotEqual,
-                        right: casting,
-                    }));
+            // Check if RHS expr can be implicit casted to Expected LHS type to make this
+            // Expression valid
+            for expected_type in expected_rhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&lhs) {
+                    continue;
                 }
+
+                let casting = Box::new(CastExpr {
+                    value: rhs,
+                    result_type: expected_type.clone(),
+                });
+
+                return Ok(Box::new(ComparisonExpr {
+                    left: lhs,
+                    operator: ComparisonOperator::NotEqual,
+                    right: casting,
+                }));
+            }
+
+            // Check if LHS expr can be implicit casted to Expected RHS type to make this
+            // Expression valid
+            let expected_lhs_types = rhs_type.can_perform_eq_op_with();
+            for expected_type in expected_lhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&lhs) {
+                    continue;
+                }
+
+                let casting = Box::new(CastExpr {
+                    value: lhs,
+                    result_type: expected_type.clone(),
+                });
+
+                return Ok(Box::new(ComparisonExpr {
+                    left: casting,
+                    operator: ComparisonOperator::NotEqual,
+                    right: rhs,
+                }));
             }
 
             // Return error if this operator can't be performed even with implicit cast
@@ -2139,10 +2336,10 @@ fn parse_comparison_expression(
 
         // Parse and Check sides for `<` operator
         if operator.kind == TokenKind::Greater {
-            let rhs_expected_types = lhs_type.can_perform_gt_op_with();
+            let expected_rhs_types = lhs_type.can_perform_gt_op_with();
 
             // Can perform this operator between LHS and RHS
-            if rhs_expected_types.contains(&rhs_type) {
+            if expected_rhs_types.contains(&rhs_type) {
                 return Ok(Box::new(ComparisonExpr {
                     left: lhs,
                     operator: ComparisonOperator::Greater,
@@ -2150,20 +2347,43 @@ fn parse_comparison_expression(
                 }));
             }
 
-            // Check if can perform the operator with additional implicit casting
-            for expected_type in rhs_expected_types {
-                if expected_type.has_implicit_cast_from(&rhs) {
-                    let casting = Box::new(CastExpr {
-                        value: rhs,
-                        result_type: expected_type.clone(),
-                    });
-
-                    return Ok(Box::new(ComparisonExpr {
-                        left: lhs,
-                        operator: ComparisonOperator::Greater,
-                        right: casting,
-                    }));
+            // Check if RHS expr can be implicit casted to Expected LHS type to make this
+            // Expression valid
+            for expected_type in expected_rhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&lhs) {
+                    continue;
                 }
+
+                let casting = Box::new(CastExpr {
+                    value: rhs,
+                    result_type: expected_type.clone(),
+                });
+
+                return Ok(Box::new(ComparisonExpr {
+                    left: lhs,
+                    operator: ComparisonOperator::Greater,
+                    right: casting,
+                }));
+            }
+
+            // Check if LHS expr can be implicit casted to Expected RHS type to make this
+            // Expression valid
+            let expected_lhs_types = rhs_type.can_perform_gt_op_with();
+            for expected_type in expected_lhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&lhs) {
+                    continue;
+                }
+
+                let casting = Box::new(CastExpr {
+                    value: lhs,
+                    result_type: expected_type.clone(),
+                });
+
+                return Ok(Box::new(ComparisonExpr {
+                    left: casting,
+                    operator: ComparisonOperator::Greater,
+                    right: rhs,
+                }));
             }
 
             // Return error if this operator can't be performed even with implicit cast
@@ -2178,10 +2398,10 @@ fn parse_comparison_expression(
 
         // Parse and Check sides for `<=` operator
         if operator.kind == TokenKind::GreaterEqual {
-            let rhs_expected_types = lhs_type.can_perform_gte_op_with();
+            let expected_rhs_types = lhs_type.can_perform_gte_op_with();
 
             // Can perform this operator between LHS and RHS
-            if rhs_expected_types.contains(&rhs_type) {
+            if expected_rhs_types.contains(&rhs_type) {
                 return Ok(Box::new(ComparisonExpr {
                     left: lhs,
                     operator: ComparisonOperator::GreaterEqual,
@@ -2189,20 +2409,43 @@ fn parse_comparison_expression(
                 }));
             }
 
-            // Check if can perform the operator with additional implicit casting
-            for expected_type in rhs_expected_types {
-                if expected_type.has_implicit_cast_from(&rhs) {
-                    let casting = Box::new(CastExpr {
-                        value: rhs,
-                        result_type: expected_type.clone(),
-                    });
-
-                    return Ok(Box::new(ComparisonExpr {
-                        left: lhs,
-                        operator: ComparisonOperator::GreaterEqual,
-                        right: casting,
-                    }));
+            // Check if RHS expr can be implicit casted to Expected LHS type to make this
+            // Expression valid
+            for expected_type in expected_rhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&lhs) {
+                    continue;
                 }
+
+                let casting = Box::new(CastExpr {
+                    value: rhs,
+                    result_type: expected_type.clone(),
+                });
+
+                return Ok(Box::new(ComparisonExpr {
+                    left: lhs,
+                    operator: ComparisonOperator::GreaterEqual,
+                    right: casting,
+                }));
+            }
+
+            // Check if LHS expr can be implicit casted to Expected RHS type to make this
+            // Expression valid
+            let expected_lhs_types = rhs_type.can_perform_gte_op_with();
+            for expected_type in expected_lhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&lhs) {
+                    continue;
+                }
+
+                let casting = Box::new(CastExpr {
+                    value: lhs,
+                    result_type: expected_type.clone(),
+                });
+
+                return Ok(Box::new(ComparisonExpr {
+                    left: casting,
+                    operator: ComparisonOperator::GreaterEqual,
+                    right: rhs,
+                }));
             }
 
             // Return error if this operator can't be performed even with implicit cast
@@ -2217,10 +2460,10 @@ fn parse_comparison_expression(
 
         // Parse and Check sides for `>` operator
         if operator.kind == TokenKind::Less {
-            let rhs_expected_types = lhs_type.can_perform_lt_op_with();
+            let expected_rhs_types = lhs_type.can_perform_lt_op_with();
 
             // Can perform this operator between LHS and RHS
-            if rhs_expected_types.contains(&rhs_type) {
+            if expected_rhs_types.contains(&rhs_type) {
                 return Ok(Box::new(ComparisonExpr {
                     left: lhs,
                     operator: ComparisonOperator::Less,
@@ -2228,20 +2471,43 @@ fn parse_comparison_expression(
                 }));
             }
 
-            // Check if can perform the operator with additional implicit casting
-            for expected_type in rhs_expected_types {
-                if expected_type.has_implicit_cast_from(&rhs) {
-                    let casting = Box::new(CastExpr {
-                        value: rhs,
-                        result_type: expected_type.clone(),
-                    });
-
-                    return Ok(Box::new(ComparisonExpr {
-                        left: lhs,
-                        operator: ComparisonOperator::Less,
-                        right: casting,
-                    }));
+            // Check if RHS expr can be implicit casted to Expected LHS type to make this
+            // Expression valid
+            for expected_type in expected_rhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&lhs) {
+                    continue;
                 }
+
+                let casting = Box::new(CastExpr {
+                    value: rhs,
+                    result_type: expected_type.clone(),
+                });
+
+                return Ok(Box::new(ComparisonExpr {
+                    left: lhs,
+                    operator: ComparisonOperator::Less,
+                    right: casting,
+                }));
+            }
+
+            // Check if LHS expr can be implicit casted to Expected RHS type to make this
+            // Expression valid
+            let expected_lhs_types = rhs_type.can_perform_lt_op_with();
+            for expected_type in expected_lhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&lhs) {
+                    continue;
+                }
+
+                let casting = Box::new(CastExpr {
+                    value: lhs,
+                    result_type: expected_type.clone(),
+                });
+
+                return Ok(Box::new(ComparisonExpr {
+                    left: casting,
+                    operator: ComparisonOperator::Less,
+                    right: rhs,
+                }));
             }
 
             // Return error if this operator can't be performed even with implicit cast
@@ -2256,10 +2522,10 @@ fn parse_comparison_expression(
 
         // Parse and Check sides for `>=` operator
         if operator.kind == TokenKind::LessEqual {
-            let rhs_expected_types = lhs_type.can_perform_lt_op_with();
+            let expected_rhs_types = lhs_type.can_perform_lt_op_with();
 
             // Can perform this operator between LHS and RHS
-            if rhs_expected_types.contains(&rhs_type) {
+            if expected_rhs_types.contains(&rhs_type) {
                 return Ok(Box::new(ComparisonExpr {
                     left: lhs,
                     operator: ComparisonOperator::LessEqual,
@@ -2267,20 +2533,43 @@ fn parse_comparison_expression(
                 }));
             }
 
-            // Check if can perform the operator with additional implicit casting
-            for expected_type in rhs_expected_types {
-                if expected_type.has_implicit_cast_from(&rhs) {
-                    let casting = Box::new(CastExpr {
-                        value: rhs,
-                        result_type: expected_type.clone(),
-                    });
-
-                    return Ok(Box::new(ComparisonExpr {
-                        left: lhs,
-                        operator: ComparisonOperator::LessEqual,
-                        right: casting,
-                    }));
+            // Check if RHS expr can be implicit casted to Expected LHS type to make this
+            // Expression valid
+            for expected_type in expected_rhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&lhs) {
+                    continue;
                 }
+
+                let casting = Box::new(CastExpr {
+                    value: rhs,
+                    result_type: expected_type.clone(),
+                });
+
+                return Ok(Box::new(ComparisonExpr {
+                    left: lhs,
+                    operator: ComparisonOperator::LessEqual,
+                    right: casting,
+                }));
+            }
+
+            // Check if LHS expr can be implicit casted to Expected RHS type to make this
+            // Expression valid
+            let expected_lhs_types = rhs_type.can_perform_lt_op_with();
+            for expected_type in expected_lhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&lhs) {
+                    continue;
+                }
+
+                let casting = Box::new(CastExpr {
+                    value: lhs,
+                    result_type: expected_type.clone(),
+                });
+
+                return Ok(Box::new(ComparisonExpr {
+                    left: casting,
+                    operator: ComparisonOperator::LessEqual,
+                    right: rhs,
+                }));
             }
 
             // Return error if this operator can't be performed even with implicit cast
@@ -2295,10 +2584,10 @@ fn parse_comparison_expression(
 
         // Parse and Check sides for `<=>` operator
         if operator.kind == TokenKind::NullSafeEqual {
-            let rhs_expected_types = lhs_type.can_perform_null_safe_eq_op_with();
+            let expected_rhs_types = lhs_type.can_perform_null_safe_eq_op_with();
 
             // Can perform this operator between LHS and RHS
-            if rhs_expected_types.contains(&rhs_type) {
+            if expected_rhs_types.contains(&rhs_type) {
                 return Ok(Box::new(ComparisonExpr {
                     left: lhs,
                     operator: ComparisonOperator::NullSafeEqual,
@@ -2306,20 +2595,43 @@ fn parse_comparison_expression(
                 }));
             }
 
-            // Check if can perform the operator with additional implicit casting
-            for expected_type in rhs_expected_types {
-                if expected_type.has_implicit_cast_from(&rhs) {
-                    let casting = Box::new(CastExpr {
-                        value: rhs,
-                        result_type: expected_type.clone(),
-                    });
-
-                    return Ok(Box::new(ComparisonExpr {
-                        left: lhs,
-                        operator: ComparisonOperator::NullSafeEqual,
-                        right: casting,
-                    }));
+            // Check if RHS expr can be implicit casted to Expected LHS type to make this
+            // Expression valid
+            for expected_type in expected_rhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&lhs) {
+                    continue;
                 }
+
+                let casting = Box::new(CastExpr {
+                    value: rhs,
+                    result_type: expected_type.clone(),
+                });
+
+                return Ok(Box::new(ComparisonExpr {
+                    left: lhs,
+                    operator: ComparisonOperator::NullSafeEqual,
+                    right: casting,
+                }));
+            }
+
+            // Check if LHS expr can be implicit casted to Expected RHS type to make this
+            // Expression valid
+            let expected_lhs_types = rhs_type.can_perform_null_safe_eq_op_with();
+            for expected_type in expected_lhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&lhs) {
+                    continue;
+                }
+
+                let casting = Box::new(CastExpr {
+                    value: lhs,
+                    result_type: expected_type.clone(),
+                });
+
+                return Ok(Box::new(ComparisonExpr {
+                    left: casting,
+                    operator: ComparisonOperator::NullSafeEqual,
+                    right: rhs,
+                }));
             }
 
             // Return error if this operator can't be performed even with implicit cast
@@ -2355,10 +2667,10 @@ fn parse_contains_expression(
         let lhs_type = lhs.expr_type();
         let rhs_type = rhs.expr_type();
 
-        let rhs_expected_types = lhs_type.can_perform_contains_op_with();
+        let expected_rhs_types = lhs_type.can_perform_contains_op_with();
 
         // Can perform this operator between LHS and RHS
-        if rhs_expected_types.contains(&rhs_type) {
+        if expected_rhs_types.contains(&rhs_type) {
             return Ok(Box::new(ContainsExpr {
                 left: lhs,
                 right: rhs,
@@ -2366,18 +2678,20 @@ fn parse_contains_expression(
         }
 
         // Check if can perform the operator with additional implicit casting
-        for expected_type in rhs_expected_types {
-            if expected_type.has_implicit_cast_from(&rhs) {
-                let casting = Box::new(CastExpr {
-                    value: rhs,
-                    result_type: expected_type.clone(),
-                });
-
-                return Ok(Box::new(ContainsExpr {
-                    left: lhs,
-                    right: casting,
-                }));
+        for expected_type in expected_rhs_types.iter() {
+            if !expected_type.has_implicit_cast_from(&lhs) {
+                continue;
             }
+
+            let casting = Box::new(CastExpr {
+                value: rhs,
+                result_type: expected_type.clone(),
+            });
+
+            return Ok(Box::new(ContainsExpr {
+                left: lhs,
+                right: casting,
+            }));
         }
 
         // Return error if this operator can't be performed even with implicit cast
@@ -2412,10 +2726,10 @@ fn parse_contained_by_expression(
         let lhs_type = lhs.expr_type();
         let rhs_type = rhs.expr_type();
 
-        let lhs_expected_types = rhs_type.can_perform_contains_op_with();
+        let expected_lhs_types = rhs_type.can_perform_contains_op_with();
 
         // Can perform this operator between LHS and RHS
-        if lhs_expected_types.contains(&lhs_type) {
+        if expected_lhs_types.contains(&lhs_type) {
             return Ok(Box::new(ContainedByExpr {
                 left: lhs,
                 right: rhs,
@@ -2423,18 +2737,20 @@ fn parse_contained_by_expression(
         }
 
         // Check if can perform the operator with additional implicit casting
-        for expected_type in lhs_expected_types {
-            if expected_type.has_implicit_cast_from(&lhs) {
-                let casting = Box::new(CastExpr {
-                    value: lhs,
-                    result_type: expected_type.clone(),
-                });
-
-                return Ok(Box::new(ContainedByExpr {
-                    left: casting,
-                    right: rhs,
-                }));
+        for expected_type in expected_lhs_types.iter() {
+            if !expected_type.has_implicit_cast_from(&lhs) {
+                continue;
             }
+
+            let casting = Box::new(CastExpr {
+                value: lhs,
+                result_type: expected_type.clone(),
+            });
+
+            return Ok(Box::new(ContainedByExpr {
+                left: casting,
+                right: rhs,
+            }));
         }
 
         // Return error if this operator can't be performed even with implicit cast
@@ -2470,10 +2786,10 @@ fn parse_bitwise_shift_expression(
 
         // Parse and Check sides for `<<` operator
         if operator.kind == TokenKind::BitwiseRightShift {
-            let rhs_expected_types = lhs_type.can_perform_shr_op_with();
+            let expected_rhs_types = lhs_type.can_perform_shr_op_with();
 
             // Can perform this operator between LHS and RHS
-            if rhs_expected_types.contains(&rhs_type) {
+            if expected_rhs_types.contains(&rhs_type) {
                 lhs = Box::new(BitwiseExpr {
                     left: lhs,
                     operator: BinaryBitwiseOperator::RightShift,
@@ -2484,23 +2800,49 @@ fn parse_bitwise_shift_expression(
                 continue 'parse_expr;
             }
 
-            // Check if can perform the operator with additional implicit casting
-            for expected_type in rhs_expected_types {
-                if expected_type.has_implicit_cast_from(&rhs) {
-                    let casting = Box::new(CastExpr {
-                        value: rhs,
-                        result_type: expected_type.clone(),
-                    });
-
-                    lhs = Box::new(BitwiseExpr {
-                        left: lhs,
-                        operator: BinaryBitwiseOperator::RightShift,
-                        right: casting,
-                        result_type: lhs_type.shr_op_result_type(&expected_type),
-                    });
-
-                    continue 'parse_expr;
+            // Check if RHS expr can be implicit casted to Expected LHS type to make this
+            // Expression valid
+            for expected_type in expected_rhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&rhs) {
+                    continue;
                 }
+
+                let casting = Box::new(CastExpr {
+                    value: rhs,
+                    result_type: expected_type.clone(),
+                });
+
+                lhs = Box::new(BitwiseExpr {
+                    left: lhs,
+                    operator: BinaryBitwiseOperator::RightShift,
+                    right: casting,
+                    result_type: lhs_type.shr_op_result_type(expected_type),
+                });
+
+                continue 'parse_expr;
+            }
+
+            // Check if LHS expr can be implicit casted to Expected RHS type to make this
+            // Expression valid
+            let expected_lhs_types = rhs_type.can_perform_shr_op_with();
+            for expected_type in expected_lhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&lhs) {
+                    continue;
+                }
+
+                let casting = Box::new(CastExpr {
+                    value: lhs,
+                    result_type: expected_type.clone(),
+                });
+
+                lhs = Box::new(BitwiseExpr {
+                    left: casting,
+                    operator: BinaryBitwiseOperator::RightShift,
+                    right: rhs,
+                    result_type: rhs_type.shr_op_result_type(expected_type),
+                });
+
+                continue 'parse_expr;
             }
 
             // Return error if this operator can't be performed even with implicit cast
@@ -2515,10 +2857,10 @@ fn parse_bitwise_shift_expression(
 
         // Parse and Check sides for `>>` operator
         if operator.kind == TokenKind::BitwiseLeftShift {
-            let rhs_expected_types = lhs_type.can_perform_shl_op_with();
+            let expected_rhs_types = lhs_type.can_perform_shl_op_with();
 
             // Can perform this operator between LHS and RHS
-            if rhs_expected_types.contains(&rhs_type) {
+            if expected_rhs_types.contains(&rhs_type) {
                 lhs = Box::new(BitwiseExpr {
                     left: lhs,
                     operator: BinaryBitwiseOperator::LeftShift,
@@ -2529,23 +2871,49 @@ fn parse_bitwise_shift_expression(
                 continue 'parse_expr;
             }
 
-            // Check if can perform the operator with additional implicit casting
-            for expected_type in rhs_expected_types {
-                if expected_type.has_implicit_cast_from(&rhs) {
-                    let casting = Box::new(CastExpr {
-                        value: rhs,
-                        result_type: expected_type.clone(),
-                    });
-
-                    lhs = Box::new(BitwiseExpr {
-                        left: lhs,
-                        operator: BinaryBitwiseOperator::LeftShift,
-                        right: casting,
-                        result_type: lhs_type.shr_op_result_type(&expected_type),
-                    });
-
-                    continue 'parse_expr;
+            // Check if RHS expr can be implicit casted to Expected LHS type to make this
+            // Expression valid
+            for expected_type in expected_rhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&rhs) {
+                    continue;
                 }
+
+                let casting = Box::new(CastExpr {
+                    value: rhs,
+                    result_type: expected_type.clone(),
+                });
+
+                lhs = Box::new(BitwiseExpr {
+                    left: lhs,
+                    operator: BinaryBitwiseOperator::LeftShift,
+                    right: casting,
+                    result_type: lhs_type.shr_op_result_type(expected_type),
+                });
+
+                continue 'parse_expr;
+            }
+
+            // Check if LHS expr can be implicit casted to Expected RHS type to make this
+            // Expression valid
+            let expected_lhs_types = rhs_type.can_perform_shr_op_with();
+            for expected_type in expected_lhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&lhs) {
+                    continue;
+                }
+
+                let casting = Box::new(CastExpr {
+                    value: lhs,
+                    result_type: expected_type.clone(),
+                });
+
+                lhs = Box::new(BitwiseExpr {
+                    left: casting,
+                    operator: BinaryBitwiseOperator::LeftShift,
+                    right: rhs,
+                    result_type: rhs_type.shr_op_result_type(expected_type),
+                });
+
+                continue 'parse_expr;
             }
 
             // Return error if this operator can't be performed even with implicit cast
@@ -2583,10 +2951,10 @@ fn parse_term_expression(
 
         // Parse and Check sides for `+` operator
         if operator.kind == TokenKind::Plus {
-            let rhs_expected_types = lhs_type.can_perform_add_op_with();
+            let expected_rhs_types = lhs_type.can_perform_add_op_with();
 
             // Can perform this operator between LHS and RHS
-            if rhs_expected_types.contains(&rhs_type) {
+            if expected_rhs_types.contains(&rhs_type) {
                 lhs = Box::new(ArithmeticExpr {
                     left: lhs,
                     operator: ArithmeticOperator::Plus,
@@ -2597,23 +2965,49 @@ fn parse_term_expression(
                 continue 'parse_expr;
             }
 
-            // Check if can perform the operator with additional implicit casting
-            for expected_type in rhs_expected_types {
-                if expected_type.has_implicit_cast_from(&rhs) {
-                    let casting = Box::new(CastExpr {
-                        value: rhs,
-                        result_type: expected_type.clone(),
-                    });
-
-                    lhs = Box::new(ArithmeticExpr {
-                        left: lhs,
-                        operator: ArithmeticOperator::Plus,
-                        right: casting,
-                        result_type: lhs_type.add_op_result_type(&expected_type),
-                    });
-
-                    continue 'parse_expr;
+            // Check if RHS expr can be implicit casted to Expected LHS type to make this
+            // Expression valid
+            for expected_type in expected_rhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&rhs) {
+                    continue;
                 }
+
+                let casting = Box::new(CastExpr {
+                    value: rhs,
+                    result_type: expected_type.clone(),
+                });
+
+                lhs = Box::new(ArithmeticExpr {
+                    left: lhs,
+                    operator: ArithmeticOperator::Plus,
+                    right: casting,
+                    result_type: lhs_type.add_op_result_type(expected_type),
+                });
+
+                continue 'parse_expr;
+            }
+
+            // Check if LHS expr can be implicit casted to Expected RHS type to make this
+            // Expression valid
+            let expected_lhs_types = rhs_type.can_perform_add_op_with();
+            for expected_type in expected_lhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&rhs) {
+                    continue;
+                }
+
+                let casting = Box::new(CastExpr {
+                    value: lhs,
+                    result_type: expected_type.clone(),
+                });
+
+                lhs = Box::new(ArithmeticExpr {
+                    left: casting,
+                    operator: ArithmeticOperator::Plus,
+                    right: rhs,
+                    result_type: rhs_type.add_op_result_type(expected_type),
+                });
+
+                continue 'parse_expr;
             }
 
             // Return error if this operator can't be performed even with implicit cast
@@ -2630,10 +3024,10 @@ fn parse_term_expression(
 
         // Parse and Check sides for `-` operator
         if operator.kind == TokenKind::Minus {
-            let rhs_expected_types = lhs_type.can_perform_sub_op_with();
+            let expected_rhs_types = lhs_type.can_perform_sub_op_with();
 
             // Can perform this operator between LHS and RHS
-            if rhs_expected_types.contains(&rhs_type) {
+            if expected_rhs_types.contains(&rhs_type) {
                 lhs = Box::new(ArithmeticExpr {
                     left: lhs,
                     operator: ArithmeticOperator::Minus,
@@ -2643,23 +3037,49 @@ fn parse_term_expression(
                 continue 'parse_expr;
             }
 
-            // Check if can perform the operator with additional implicit casting
-            for expected_type in rhs_expected_types {
-                if expected_type.has_implicit_cast_from(&rhs) {
-                    let casting = Box::new(CastExpr {
-                        value: rhs,
-                        result_type: expected_type.clone(),
-                    });
-
-                    lhs = Box::new(ArithmeticExpr {
-                        left: lhs,
-                        operator: ArithmeticOperator::Minus,
-                        right: casting,
-                        result_type: lhs_type.sub_op_result_type(&expected_type),
-                    });
-
-                    continue 'parse_expr;
+            // Check if RHS expr can be implicit casted to Expected LHS type to make this
+            // Expression valid
+            for expected_type in expected_rhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&rhs) {
+                    continue;
                 }
+
+                let casting = Box::new(CastExpr {
+                    value: rhs,
+                    result_type: expected_type.clone(),
+                });
+
+                lhs = Box::new(ArithmeticExpr {
+                    left: lhs,
+                    operator: ArithmeticOperator::Minus,
+                    right: casting,
+                    result_type: lhs_type.sub_op_result_type(expected_type),
+                });
+
+                continue 'parse_expr;
+            }
+
+            // Check if LHS expr can be implicit casted to Expected RHS type to make this
+            // Expression valid
+            let expected_lhs_types = rhs_type.can_perform_sub_op_with();
+            for expected_type in expected_lhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&rhs) {
+                    continue;
+                }
+
+                let casting = Box::new(CastExpr {
+                    value: lhs,
+                    result_type: expected_type.clone(),
+                });
+
+                lhs = Box::new(ArithmeticExpr {
+                    left: casting,
+                    operator: ArithmeticOperator::Minus,
+                    right: rhs,
+                    result_type: rhs_type.sub_op_result_type(expected_type),
+                });
+
+                continue 'parse_expr;
             }
 
             // Return error if this operator can't be performed even with implicit cast
@@ -2697,10 +3117,10 @@ fn parse_factor_expression(
 
         // Parse and Check sides for `*` operator
         if operator.kind == TokenKind::Star {
-            let rhs_expected_types = lhs_type.can_perform_mul_op_with();
+            let expected_rhs_types = lhs_type.can_perform_mul_op_with();
 
             // Can perform this operator between LHS and RHS
-            if rhs_expected_types.contains(&rhs_type) {
+            if expected_rhs_types.contains(&rhs_type) {
                 lhs = Box::new(ArithmeticExpr {
                     left: lhs,
                     operator: ArithmeticOperator::Star,
@@ -2711,23 +3131,49 @@ fn parse_factor_expression(
                 continue 'parse_expr;
             }
 
-            // Check if can perform the operator with additional implicit casting
-            for expected_type in rhs_expected_types {
-                if expected_type.has_implicit_cast_from(&rhs) {
-                    let casting = Box::new(CastExpr {
-                        value: rhs,
-                        result_type: expected_type.clone(),
-                    });
-
-                    lhs = Box::new(ArithmeticExpr {
-                        left: lhs,
-                        operator: ArithmeticOperator::Star,
-                        right: casting,
-                        result_type: lhs_type.mul_op_result_type(&expected_type),
-                    });
-
-                    continue 'parse_expr;
+            // Check if RHS expr can be implicit casted to Expected LHS type to make this
+            // Expression valid
+            for expected_type in expected_rhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&rhs) {
+                    continue;
                 }
+
+                let casting = Box::new(CastExpr {
+                    value: rhs,
+                    result_type: expected_type.clone(),
+                });
+
+                lhs = Box::new(ArithmeticExpr {
+                    left: lhs,
+                    operator: ArithmeticOperator::Star,
+                    right: casting,
+                    result_type: lhs_type.mul_op_result_type(expected_type),
+                });
+
+                continue 'parse_expr;
+            }
+
+            // Check if LHS expr can be implicit casted to Expected RHS type to make this
+            // Expression valid
+            let expected_lhs_types = rhs_type.can_perform_mul_op_with();
+            for expected_type in expected_lhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&rhs) {
+                    continue;
+                }
+
+                let casting = Box::new(CastExpr {
+                    value: lhs,
+                    result_type: expected_type.clone(),
+                });
+
+                lhs = Box::new(ArithmeticExpr {
+                    left: casting,
+                    operator: ArithmeticOperator::Star,
+                    right: rhs,
+                    result_type: rhs_type.mul_op_result_type(expected_type),
+                });
+
+                continue 'parse_expr;
             }
 
             // Return error if this operator can't be performed even with implicit cast
@@ -2742,10 +3188,10 @@ fn parse_factor_expression(
 
         // Parse and Check sides for `/` operator
         if operator.kind == TokenKind::Slash {
-            let rhs_expected_types = lhs_type.can_perform_div_op_with();
+            let expected_rhs_types = lhs_type.can_perform_div_op_with();
 
             // Can perform this operator between LHS and RHS
-            if rhs_expected_types.contains(&rhs_type) {
+            if expected_rhs_types.contains(&rhs_type) {
                 lhs = Box::new(ArithmeticExpr {
                     left: lhs,
                     operator: ArithmeticOperator::Slash,
@@ -2756,23 +3202,49 @@ fn parse_factor_expression(
                 continue 'parse_expr;
             }
 
-            // Check if can perform the operator with additional implicit casting
-            for expected_type in rhs_expected_types {
-                if expected_type.has_implicit_cast_from(&rhs) {
-                    let casting = Box::new(CastExpr {
-                        value: rhs,
-                        result_type: expected_type.clone(),
-                    });
-
-                    lhs = Box::new(ArithmeticExpr {
-                        left: lhs,
-                        operator: ArithmeticOperator::Slash,
-                        right: casting,
-                        result_type: lhs_type.div_op_result_type(&expected_type),
-                    });
-
-                    continue 'parse_expr;
+            // Check if RHS expr can be implicit casted to Expected LHS type to make this
+            // Expression valid
+            for expected_type in expected_rhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&rhs) {
+                    continue;
                 }
+
+                let casting = Box::new(CastExpr {
+                    value: rhs,
+                    result_type: expected_type.clone(),
+                });
+
+                lhs = Box::new(ArithmeticExpr {
+                    left: lhs,
+                    operator: ArithmeticOperator::Slash,
+                    right: casting,
+                    result_type: lhs_type.div_op_result_type(expected_type),
+                });
+
+                continue 'parse_expr;
+            }
+
+            // Check if LHS expr can be implicit casted to Expected RHS type to make this
+            // Expression valid
+            let expected_lhs_types = rhs_type.can_perform_div_op_with();
+            for expected_type in expected_lhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&rhs) {
+                    continue;
+                }
+
+                let casting = Box::new(CastExpr {
+                    value: lhs,
+                    result_type: expected_type.clone(),
+                });
+
+                lhs = Box::new(ArithmeticExpr {
+                    left: casting,
+                    operator: ArithmeticOperator::Slash,
+                    right: rhs,
+                    result_type: rhs_type.div_op_result_type(expected_type),
+                });
+
+                continue 'parse_expr;
             }
 
             // Return error if this operator can't be performed even with implicit cast
@@ -2787,10 +3259,10 @@ fn parse_factor_expression(
 
         // Parse and Check sides for `%` operator
         if operator.kind == TokenKind::Percentage {
-            let rhs_expected_types = lhs_type.can_perform_rem_op_with();
+            let expected_rhs_types = lhs_type.can_perform_rem_op_with();
 
             // Can perform this operator between LHS and RHS
-            if rhs_expected_types.contains(&rhs_type) {
+            if expected_rhs_types.contains(&rhs_type) {
                 lhs = Box::new(ArithmeticExpr {
                     left: lhs,
                     operator: ArithmeticOperator::Modulus,
@@ -2801,23 +3273,49 @@ fn parse_factor_expression(
                 continue 'parse_expr;
             }
 
-            // Check if can perform the operator with additional implicit casting
-            for expected_type in rhs_expected_types {
-                if expected_type.has_implicit_cast_from(&rhs) {
-                    let casting = Box::new(CastExpr {
-                        value: rhs,
-                        result_type: expected_type.clone(),
-                    });
-
-                    lhs = Box::new(ArithmeticExpr {
-                        left: lhs,
-                        operator: ArithmeticOperator::Modulus,
-                        right: casting,
-                        result_type: lhs_type.rem_op_result_type(&expected_type),
-                    });
-
-                    continue 'parse_expr;
+            // Check if RHS expr can be implicit casted to Expected LHS type to make this
+            // Expression valid
+            for expected_type in expected_rhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&rhs) {
+                    continue;
                 }
+
+                let casting = Box::new(CastExpr {
+                    value: rhs,
+                    result_type: expected_type.clone(),
+                });
+
+                lhs = Box::new(ArithmeticExpr {
+                    left: lhs,
+                    operator: ArithmeticOperator::Modulus,
+                    right: casting,
+                    result_type: lhs_type.rem_op_result_type(expected_type),
+                });
+
+                continue 'parse_expr;
+            }
+
+            // Check if LHS expr can be implicit casted to Expected RHS type to make this
+            // Expression valid
+            let expected_lhs_types = rhs_type.can_perform_rem_op_with();
+            for expected_type in expected_lhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&rhs) {
+                    continue;
+                }
+
+                let casting = Box::new(CastExpr {
+                    value: lhs,
+                    result_type: expected_type.clone(),
+                });
+
+                lhs = Box::new(ArithmeticExpr {
+                    left: casting,
+                    operator: ArithmeticOperator::Modulus,
+                    right: rhs,
+                    result_type: rhs_type.rem_op_result_type(expected_type),
+                });
+
+                continue 'parse_expr;
             }
 
             // Return error if this operator can't be performed even with implicit cast
@@ -2832,9 +3330,9 @@ fn parse_factor_expression(
 
         // Parse and Check sides for `^` operator
         if operator.kind == TokenKind::Caret {
-            let rhs_expected_types = lhs_type.can_perform_caret_op_with();
+            let expected_rhs_types = lhs_type.can_perform_caret_op_with();
 
-            if rhs_expected_types.contains(&rhs_type) {
+            if expected_rhs_types.contains(&rhs_type) {
                 lhs = Box::new(ArithmeticExpr {
                     left: lhs,
                     operator: ArithmeticOperator::Exponentiation,
@@ -2845,23 +3343,49 @@ fn parse_factor_expression(
                 continue 'parse_expr;
             }
 
-            // Check if can perform the operator with additional implicit casting
-            for expected_type in rhs_expected_types {
-                if expected_type.has_implicit_cast_from(&rhs) {
-                    let casting = Box::new(CastExpr {
-                        value: rhs,
-                        result_type: expected_type.clone(),
-                    });
-
-                    lhs = Box::new(ArithmeticExpr {
-                        left: lhs,
-                        operator: ArithmeticOperator::Exponentiation,
-                        right: casting,
-                        result_type: lhs_type.caret_op_result_type(&expected_type),
-                    });
-
-                    continue 'parse_expr;
+            // Check if RHS expr can be implicit casted to Expected LHS type to make this
+            // Expression valid
+            for expected_type in expected_rhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&rhs) {
+                    continue;
                 }
+
+                let casting = Box::new(CastExpr {
+                    value: rhs,
+                    result_type: expected_type.clone(),
+                });
+
+                lhs = Box::new(ArithmeticExpr {
+                    left: lhs,
+                    operator: ArithmeticOperator::Exponentiation,
+                    right: casting,
+                    result_type: lhs_type.caret_op_result_type(expected_type),
+                });
+
+                continue 'parse_expr;
+            }
+
+            // Check if LHS expr can be implicit casted to Expected RHS type to make this
+            // Expression valid
+            let expected_lhs_types = rhs_type.can_perform_caret_op_with();
+            for expected_type in expected_lhs_types.iter() {
+                if !expected_type.has_implicit_cast_from(&rhs) {
+                    continue;
+                }
+
+                let casting = Box::new(CastExpr {
+                    value: lhs,
+                    result_type: expected_type.clone(),
+                });
+
+                lhs = Box::new(ArithmeticExpr {
+                    left: casting,
+                    operator: ArithmeticOperator::Exponentiation,
+                    right: rhs,
+                    result_type: rhs_type.caret_op_result_type(expected_type),
+                });
+
+                continue 'parse_expr;
             }
 
             // Return error if this operator can't be performed even with implicit cast
