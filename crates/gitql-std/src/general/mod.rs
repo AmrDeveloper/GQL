@@ -6,8 +6,8 @@ use gitql_ast::types::boolean::BoolType;
 use gitql_ast::types::dynamic::DynamicType;
 use gitql_ast::types::text::TextType;
 use gitql_ast::types::varargs::VarargsType;
-use gitql_core::signature::Function;
 use gitql_core::signature::Signature;
+use gitql_core::signature::StandardFunction;
 use gitql_core::values::base::Value;
 use gitql_core::values::boolean::BoolValue;
 use gitql_core::values::text::TextValue;
@@ -18,7 +18,7 @@ use crate::meta_types::second_element_type;
 use uuid::Uuid;
 
 #[inline(always)]
-pub fn register_std_general_functions(map: &mut HashMap<&'static str, Function>) {
+pub fn register_std_general_functions(map: &mut HashMap<&'static str, StandardFunction>) {
     map.insert("isnull", general_is_null);
     map.insert("isnumeric", general_is_numeric);
     map.insert("typeof", general_type_of);

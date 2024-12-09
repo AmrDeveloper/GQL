@@ -8,8 +8,8 @@ use gitql_ast::types::integer::IntType;
 use gitql_ast::types::text::TextType;
 use gitql_ast::types::time::TimeType;
 use gitql_ast::types::variant::VariantType;
-use gitql_core::signature::Function;
 use gitql_core::signature::Signature;
+use gitql_core::signature::StandardFunction;
 use gitql_core::values::base::Value;
 use gitql_core::values::boolean::BoolValue;
 use gitql_core::values::date::DateValue;
@@ -29,7 +29,7 @@ use chrono::Utc;
 use chrono::Weekday;
 
 #[inline(always)]
-pub fn register_std_datetime_functions(map: &mut HashMap<&'static str, Function>) {
+pub fn register_std_datetime_functions(map: &mut HashMap<&'static str, StandardFunction>) {
     map.insert("date", date_extract_date);
     map.insert("current_date", date_current_date);
     map.insert("current_time", date_current_time);

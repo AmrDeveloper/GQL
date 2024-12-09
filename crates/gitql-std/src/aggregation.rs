@@ -15,7 +15,7 @@ use gitql_ast::types::text::TextType;
 use gitql_ast::types::time::TimeType;
 use gitql_ast::types::varargs::VarargsType;
 use gitql_ast::types::variant::VariantType;
-use gitql_core::signature::Aggregation;
+use gitql_core::signature::AggregationFunction;
 use gitql_core::signature::Signature;
 use gitql_core::values::array::ArrayValue;
 use gitql_core::values::base::Value;
@@ -27,10 +27,10 @@ use gitql_core::values::text::TextValue;
 use crate::meta_types::array_of_type;
 use crate::meta_types::first_element_type;
 
-pub fn aggregation_functions() -> &'static HashMap<&'static str, Aggregation> {
-    static HASHMAP: OnceLock<HashMap<&'static str, Aggregation>> = OnceLock::new();
+pub fn aggregation_functions() -> &'static HashMap<&'static str, AggregationFunction> {
+    static HASHMAP: OnceLock<HashMap<&'static str, AggregationFunction>> = OnceLock::new();
     HASHMAP.get_or_init(|| {
-        let mut map: HashMap<&'static str, Aggregation> = HashMap::new();
+        let mut map: HashMap<&'static str, AggregationFunction> = HashMap::new();
         map.insert("max", aggregation_max);
         map.insert("min", aggregation_min);
         map.insert("sum", aggregation_sum);

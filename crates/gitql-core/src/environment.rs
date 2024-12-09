@@ -3,9 +3,10 @@ use std::collections::HashMap;
 use gitql_ast::types::base::DataType;
 
 use crate::schema::Schema;
-use crate::signature::Aggregation;
-use crate::signature::Function;
+use crate::signature::AggregationFunction;
 use crate::signature::Signature;
+use crate::signature::StandardFunction;
+use crate::signature::WindowFunction;
 use crate::types_table::TypesTable;
 use crate::values::base::Value;
 
@@ -19,19 +20,19 @@ pub struct Environment {
     pub std_signatures: HashMap<&'static str, Signature>,
 
     /// Standard function references
-    pub std_functions: HashMap<&'static str, Function>,
+    pub std_functions: HashMap<&'static str, StandardFunction>,
 
     /// Aggregation function signatures
     pub aggregation_signatures: HashMap<&'static str, Signature>,
 
     /// Aggregation function references
-    pub aggregation_functions: HashMap<&'static str, Aggregation>,
+    pub aggregation_functions: HashMap<&'static str, AggregationFunction>,
 
     /// Window function signatures
     pub window_signatures: HashMap<&'static str, Signature>,
 
     /// Window function references
-    pub window_functions: HashMap<&'static str, Aggregation>,
+    pub window_functions: HashMap<&'static str, WindowFunction>,
 
     /// All Global Variables values that can life for this program session
     pub globals: HashMap<String, Box<dyn Value>>,
@@ -68,7 +69,7 @@ impl Environment {
     pub fn with_standard_functions(
         &mut self,
         signatures: &HashMap<&'static str, Signature>,
-        functions: &HashMap<&'static str, Function>,
+        functions: &HashMap<&'static str, StandardFunction>,
     ) {
         self.std_signatures.extend(signatures.to_owned());
         self.std_functions.extend(functions.to_owned());
@@ -78,7 +79,7 @@ impl Environment {
     pub fn with_aggregation_functions(
         &mut self,
         signatures: &HashMap<&'static str, Signature>,
-        aggregation: &HashMap<&'static str, Aggregation>,
+        aggregation: &HashMap<&'static str, AggregationFunction>,
     ) {
         self.aggregation_signatures.extend(signatures.to_owned());
         self.aggregation_functions.extend(aggregation.to_owned());
@@ -88,7 +89,7 @@ impl Environment {
     pub fn with_window_functions(
         &mut self,
         signatures: &HashMap<&'static str, Signature>,
-        aggregation: &HashMap<&'static str, Aggregation>,
+        aggregation: &HashMap<&'static str, WindowFunction>,
     ) {
         self.window_signatures.extend(signatures.to_owned());
         self.window_functions.extend(aggregation.to_owned());
@@ -110,7 +111,7 @@ impl Environment {
     }
 
     /// Return Standard function reference by name
-    pub fn std_function(&self, str: &str) -> Option<&Function> {
+    pub fn std_function(&self, str: &str) -> Option<&StandardFunction> {
         self.std_functions.get(str)
     }
 
@@ -125,7 +126,7 @@ impl Environment {
     }
 
     /// Return Aggregation function reference by name
-    pub fn aggregation_function(&self, str: &str) -> Option<&Aggregation> {
+    pub fn aggregation_function(&self, str: &str) -> Option<&AggregationFunction> {
         self.aggregation_functions.get(str)
     }
 
@@ -140,7 +141,7 @@ impl Environment {
     }
 
     /// Return Window function reference by name
-    pub fn window_function(&self, str: &str) -> Option<&Aggregation> {
+    pub fn window_function(&self, str: &str) -> Option<&AggregationFunction> {
         self.window_functions.get(str)
     }
 

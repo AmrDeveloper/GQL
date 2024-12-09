@@ -170,6 +170,7 @@ pub(crate) fn parse_function_call_expression(
             // Check if this function is an Window function
             if env.is_window_function(function_name) {
                 let aggregations_count_before = context.aggregations.len();
+                let window_functions_count_before = context.window_functions.len();
                 let mut arguments = parse_zero_or_more_values_with_comma_between(
                     context,
                     env,
@@ -178,11 +179,19 @@ pub(crate) fn parse_function_call_expression(
                     "Window function",
                 )?;
 
-                // Prevent calling aggregation function with aggregation values as argument
-                let has_aggregations = context.aggregations.len() != aggregations_count_before;
-                if has_aggregations {
+                // Prevent calling window function with aggregation values as argument
+                if context.aggregations.len() != aggregations_count_before {
                     return Err(Diagnostic::error(
                         "Aggregated values can't as used for aggregation function argument",
+                    )
+                    .with_location(function_name_location)
+                    .as_boxed());
+                }
+
+                // Prevent calling window function with window function values as argument
+                if context.window_functions.len() != window_functions_count_before {
+                    return Err(Diagnostic::error(
+                        "Window functions values can't as used for Window function argument",
                     )
                     .with_location(function_name_location)
                     .as_boxed());
@@ -209,18 +218,15 @@ pub(crate) fn parse_function_call_expression(
                     // Register aggregation generated name with return type after resolving it
                     env.define(column_name.to_string(), return_type.clone());
 
-                    let is_used_as_window_function = *position < tokens.len()
-                        && matches!(tokens[*position].kind, TokenKind::Over);
+                    // Consume `OVER` keyword
+                    consume_token_or_error(
+                        tokens,
+                        position,
+                        TokenKind::Over,
+                        "Window function must have `OVER(...)` even if it empty",
+                    )?;
 
-                    if !is_used_as_window_function {
-                        return Err(Diagnostic::error(
-                            "Window function must have `OVER(...)` even if it empty",
-                        )
-                        .with_location(function_name_location)
-                        .as_boxed());
-                    }
-
-                    if is_used_as_window_function && context.has_select_statement {
+                    if context.has_select_statement {
                         return Err(Diagnostic::error(
                             "Window function can't called after `SELECT` statement",
                         )

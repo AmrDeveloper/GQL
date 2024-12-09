@@ -4,8 +4,8 @@ use gitql_ast::types::date::DateType;
 use gitql_ast::types::datetime::DateTimeType;
 use gitql_ast::types::integer::IntType;
 use gitql_ast::types::range::RangeType;
-use gitql_core::signature::Function;
 use gitql_core::signature::Signature;
+use gitql_core::signature::StandardFunction;
 use gitql_core::values::base::Value;
 use gitql_core::values::boolean::BoolValue;
 use gitql_core::values::range::RangeValue;
@@ -13,7 +13,7 @@ use gitql_core::values::range::RangeValue;
 use std::collections::HashMap;
 
 #[inline(always)]
-pub fn register_std_range_functions(map: &mut HashMap<&'static str, Function>) {
+pub fn register_std_range_functions(map: &mut HashMap<&'static str, StandardFunction>) {
     map.insert("int4range", int4range);
     map.insert("daterange", daterange);
     map.insert("tsrange", tsrange);

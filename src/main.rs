@@ -26,6 +26,8 @@ use gitql_parser::parser;
 use gitql_parser::tokenizer::Tokenizer;
 use gitql_std::aggregation::aggregation_function_signatures;
 use gitql_std::aggregation::aggregation_functions;
+use gitql_std::window::window_function_signatures;
+use gitql_std::window::window_functions;
 use lineeditor::LineEditorResult;
 
 mod git_data_provider;
@@ -69,9 +71,13 @@ fn main() {
             let aggregation_signatures = aggregation_function_signatures();
             let aggregation_functions = aggregation_functions();
 
+            let window_signatures = window_function_signatures();
+            let window_function = window_functions();
+
             let mut env = Environment::new(schema);
             env.with_standard_functions(&std_signatures, std_functions);
             env.with_aggregation_functions(&aggregation_signatures, aggregation_functions);
+            env.with_window_functions(&window_signatures, window_function);
 
             let query =
                 fs::read_to_string(script_file).expect("Should have been able to read the file");
@@ -100,9 +106,13 @@ fn main() {
             let aggregation_signatures = aggregation_function_signatures();
             let aggregation_functions = aggregation_functions();
 
+            let window_signatures = window_function_signatures();
+            let window_function = window_functions();
+
             let mut env = Environment::new(schema);
             env.with_standard_functions(&std_signatures, std_functions);
             env.with_aggregation_functions(&aggregation_signatures, aggregation_functions);
+            env.with_window_functions(&window_signatures, window_function);
 
             execute_gitql_query(query, &arguments, &repos, &mut env, &mut reporter);
         }
@@ -140,9 +150,13 @@ fn launch_gitql_repl(arguments: &Arguments) {
     let aggregation_signatures = aggregation_function_signatures();
     let aggregation_functions = aggregation_functions();
 
+    let window_signatures = window_function_signatures();
+    let window_function = window_functions();
+
     let mut global_env = Environment::new(schema);
     global_env.with_standard_functions(&std_signatures, std_functions);
     global_env.with_aggregation_functions(&aggregation_signatures, aggregation_functions);
+    global_env.with_window_functions(&window_signatures, window_function);
 
     let git_repositories = git_repos_result.ok().unwrap();
 

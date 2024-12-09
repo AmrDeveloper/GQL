@@ -6,8 +6,8 @@ use gitql_ast::types::float::FloatType;
 use gitql_ast::types::integer::IntType;
 use gitql_ast::types::optional::OptionType;
 use gitql_ast::types::variant::VariantType;
-use gitql_core::signature::Function;
 use gitql_core::signature::Signature;
+use gitql_core::signature::StandardFunction;
 use gitql_core::values::base::Value;
 use gitql_core::values::float::FloatValue;
 use gitql_core::values::integer::IntValue;
@@ -21,7 +21,7 @@ use rand::Rng;
 use rand::SeedableRng;
 
 #[inline(always)]
-pub fn register_std_number_functions(map: &mut HashMap<&'static str, Function>) {
+pub fn register_std_number_functions(map: &mut HashMap<&'static str, StandardFunction>) {
     map.insert("abs", numeric_abs);
     map.insert("pi", numeric_pi);
     map.insert("floor", numeric_floor);

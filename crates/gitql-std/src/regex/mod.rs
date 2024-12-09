@@ -1,8 +1,8 @@
 use gitql_ast::types::boolean::BoolType;
 use gitql_ast::types::integer::IntType;
 use gitql_ast::types::text::TextType;
-use gitql_core::signature::Function;
 use gitql_core::signature::Signature;
+use gitql_core::signature::StandardFunction;
 use gitql_core::values::base::Value;
 use gitql_core::values::boolean::BoolValue;
 use gitql_core::values::integer::IntValue;
@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use regex::Regex;
 
 #[inline(always)]
-pub fn register_std_regex_functions(map: &mut HashMap<&'static str, Function>) {
+pub fn register_std_regex_functions(map: &mut HashMap<&'static str, StandardFunction>) {
     map.insert("regexp_instr", regexp_instr);
     map.insert("regexp_like", regexp_like);
     map.insert("regexp_replace", regexp_replace);

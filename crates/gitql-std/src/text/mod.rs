@@ -4,8 +4,8 @@ use gitql_ast::types::integer::IntType;
 use gitql_ast::types::optional::OptionType;
 use gitql_ast::types::text::TextType;
 use gitql_ast::types::variant::VariantType;
-use gitql_core::signature::Function;
 use gitql_core::signature::Signature;
+use gitql_core::signature::StandardFunction;
 use gitql_core::values::base::Value;
 use gitql_core::values::integer::IntValue;
 use gitql_core::values::null::NullValue;
@@ -14,7 +14,7 @@ use gitql_core::values::text::TextValue;
 use std::collections::HashMap;
 
 #[inline(always)]
-pub fn register_std_text_functions(map: &mut HashMap<&'static str, Function>) {
+pub fn register_std_text_functions(map: &mut HashMap<&'static str, StandardFunction>) {
     map.insert("bin", text_bin);
     map.insert("lower", text_lowercase);
     map.insert("upper", text_uppercase);

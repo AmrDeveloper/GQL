@@ -5,8 +5,8 @@ use gitql_ast::types::array::ArrayType;
 use gitql_ast::types::dynamic::DynamicType;
 use gitql_ast::types::integer::IntType;
 use gitql_ast::types::text::TextType;
-use gitql_core::signature::Function;
 use gitql_core::signature::Signature;
+use gitql_core::signature::StandardFunction;
 use gitql_core::values::array::ArrayValue;
 use gitql_core::values::base::Value;
 use gitql_core::values::integer::IntValue;
@@ -21,7 +21,7 @@ use crate::meta_types::second_element_type;
 use rand::seq::SliceRandom;
 
 #[inline(always)]
-pub fn register_std_array_functions(map: &mut HashMap<&'static str, Function>) {
+pub fn register_std_array_functions(map: &mut HashMap<&'static str, StandardFunction>) {
     map.insert("array_append", array_append);
     map.insert("array_prepend", array_prepend);
     map.insert("array_remove", array_remove);
