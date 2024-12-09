@@ -21,13 +21,15 @@ use crate::engine_executor::execute_global_variable_statement;
 use crate::engine_executor::execute_statement;
 
 /// Static Logical Plan, later must be replaced by optimized and Logical Planner
-const FIXED_LOGICAL_PLAN: [&str; 8] = [
+const FIXED_LOGICAL_PLAN_LEN: usize = 9;
+const FIXED_LOGICAL_PLAN: [&str; FIXED_LOGICAL_PLAN_LEN] = [
     "select",
     "where",
     "group",
     "aggregation",
     "having",
     "order",
+    "window_functions",
     "offset",
     "limit",
 ];
@@ -88,10 +90,9 @@ fn evaluate_select_query(
     let mut statements_map = query.statements;
     let has_group_by_statement = statements_map.contains_key("group");
 
-    for gql_command in FIXED_LOGICAL_PLAN {
-        if statements_map.contains_key(gql_command) {
-            let statement = statements_map.get_mut(gql_command).unwrap();
-            match gql_command {
+    for logical_node_name in FIXED_LOGICAL_PLAN {
+        if let Some(statement) = statements_map.get_mut(logical_node_name) {
+            match logical_node_name {
                 "select" => {
                     // Select statement should be performed on all repositories, can be executed in parallel
                     let select_statement = statement

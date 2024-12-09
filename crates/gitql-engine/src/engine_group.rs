@@ -34,7 +34,7 @@ pub(crate) fn execute_group_by_statement(
     let values_count = statement.values.len();
 
     let is_rollup_enabled = statement.has_with_rollup;
-    let indeses_combinations = if is_rollup_enabled {
+    let indexes_combinations = if is_rollup_enabled {
         generate_list_of_all_combinations(values_count)
     } else {
         vec![(0..values_count).collect()]
@@ -43,9 +43,9 @@ pub(crate) fn execute_group_by_statement(
     // For each row should check the group by values combinations to build multi groups
     for row in main_group.rows.iter() {
         // Create all combination of values for each row
-        for indeses in indeses_combinations.iter() {
-            let mut row_values: Vec<String> = Vec::with_capacity(indeses.len());
-            for index in indeses {
+        for indexes in indexes_combinations.iter() {
+            let mut row_values: Vec<String> = Vec::with_capacity(indexes.len());
+            for index in indexes {
                 let value = evaluate_expression(
                     env,
                     &statement.values[*index],
@@ -80,7 +80,7 @@ pub(crate) fn execute_group_by_statement(
     // If the group by elements is one and rollup is enabled
     // For example: SELECT ... FROM <TABLE> GROUP BY X WITH ROLLUP
     // Should append the the main group at the end
-    if is_rollup_enabled && indeses_combinations.len() == 1 && indeses_combinations[0].len() == 1 {
+    if is_rollup_enabled && indexes_combinations.len() == 1 && indexes_combinations[0].len() == 1 {
         gitql_object.groups.push(main_group);
     }
 

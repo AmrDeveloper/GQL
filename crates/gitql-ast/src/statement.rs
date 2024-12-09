@@ -13,6 +13,7 @@ pub enum StatementKind {
     OrderBy,
     GroupBy,
     AggregateFunction,
+    WindowFunction,
     GlobalVariable,
     Into,
 }
@@ -192,6 +193,36 @@ impl Statement for GroupByStatement {
 
     fn kind(&self) -> StatementKind {
         StatementKind::GroupBy
+    }
+}
+
+pub struct OverClause {
+    pub clauses: Vec<Box<dyn Statement>>,
+}
+
+pub enum WindowFunctionKind {
+    AggregatedWindowFunction,
+    PureWindowFunction,
+}
+
+pub struct WindowFunction {
+    pub function_name: String,
+    pub arguments: Vec<Box<dyn Expr>>,
+    pub order_clauses: OverClause,
+    pub kind: WindowFunctionKind,
+}
+
+pub struct WindowFunctionsStatement {
+    pub functions: HashMap<String, WindowFunction>,
+}
+
+impl Statement for WindowFunctionsStatement {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn kind(&self) -> StatementKind {
+        StatementKind::WindowFunction
     }
 }
 

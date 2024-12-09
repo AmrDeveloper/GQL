@@ -27,6 +27,12 @@ pub struct Environment {
     /// Aggregation function references
     pub aggregation_functions: HashMap<&'static str, Aggregation>,
 
+    /// Window function signatures
+    pub window_signatures: HashMap<&'static str, Signature>,
+
+    /// Window function references
+    pub window_functions: HashMap<&'static str, Aggregation>,
+
     /// All Global Variables values that can life for this program session
     pub globals: HashMap<String, Box<dyn Value>>,
 
@@ -49,6 +55,8 @@ impl Environment {
             std_functions: HashMap::default(),
             aggregation_signatures: HashMap::default(),
             aggregation_functions: HashMap::default(),
+            window_signatures: HashMap::default(),
+            window_functions: HashMap::default(),
             globals: HashMap::default(),
             globals_types: HashMap::default(),
             scopes: HashMap::default(),
@@ -74,6 +82,16 @@ impl Environment {
     ) {
         self.aggregation_signatures.extend(signatures.to_owned());
         self.aggregation_functions.extend(aggregation.to_owned());
+    }
+
+    /// Register Window functions signatures and references
+    pub fn with_window_functions(
+        &mut self,
+        signatures: &HashMap<&'static str, Signature>,
+        aggregation: &HashMap<&'static str, Aggregation>,
+    ) {
+        self.window_signatures.extend(signatures.to_owned());
+        self.window_functions.extend(aggregation.to_owned());
     }
 
     /// Register new Modified Types table
@@ -109,6 +127,21 @@ impl Environment {
     /// Return Aggregation function reference by name
     pub fn aggregation_function(&self, str: &str) -> Option<&Aggregation> {
         self.aggregation_functions.get(str)
+    }
+
+    /// Return true if this name is a valid Window function
+    pub fn is_window_function(&self, str: &str) -> bool {
+        self.window_functions.contains_key(str)
+    }
+
+    /// Return Window function signature by name
+    pub fn window_function_signature(&self, str: &str) -> Option<&Signature> {
+        self.window_signatures.get(str)
+    }
+
+    /// Return Window function reference by name
+    pub fn window_function(&self, str: &str) -> Option<&Aggregation> {
+        self.window_functions.get(str)
     }
 
     /// Define in the current scope

@@ -17,6 +17,7 @@ use gitql_ast::statement::SelectStatement;
 use gitql_ast::statement::Statement;
 use gitql_ast::statement::StatementKind::*;
 use gitql_ast::statement::WhereStatement;
+use gitql_ast::statement::WindowFunctionsStatement;
 use gitql_core::environment::Environment;
 use gitql_core::object::GitQLObject;
 use gitql_core::object::Group;
@@ -31,6 +32,7 @@ use crate::engine_group::execute_group_by_statement;
 use crate::engine_join::apply_join_operation;
 use crate::engine_ordering::execute_order_by_statement;
 use crate::engine_output_into::execute_into_statement;
+use crate::engine_window_functions::execute_window_functions_statement;
 
 #[allow(clippy::borrowed_box)]
 pub fn execute_statement(
@@ -103,13 +105,20 @@ pub fn execute_statement(
                 .as_any()
                 .downcast_ref::<AggregationsStatement>()
                 .unwrap();
-            execute_aggregation_function_statement(
+            execute_aggregation_functions_statement(
                 env,
                 statement,
                 gitql_object,
                 alias_table,
                 has_group_by_statement,
             )
+        }
+        WindowFunction => {
+            let statement = statement
+                .as_any()
+                .downcast_ref::<WindowFunctionsStatement>()
+                .unwrap();
+            execute_window_functions_statement(env, statement, gitql_object)
         }
         Into => {
             let statement = statement.as_any().downcast_ref::<IntoStatement>().unwrap();
@@ -358,7 +367,7 @@ fn execute_offset_statement(
     Ok(())
 }
 
-fn execute_aggregation_function_statement(
+fn execute_aggregation_functions_statement(
     env: &mut Environment,
     statement: &AggregationsStatement,
     gitql_object: &mut GitQLObject,
@@ -382,7 +391,6 @@ fn execute_aggregation_function_statement(
         for aggregation in aggregations_map {
             if let AggregateValue::Function(function, arguments) = aggregation.1 {
                 // Get alias name if exists or column name by default
-
                 let result_column_name = aggregation.0;
                 let column_name = get_column_name(alias_table, result_column_name);
 
@@ -393,7 +401,7 @@ fn execute_aggregation_function_statement(
                     .unwrap();
 
                 // Evaluate the Arguments to Values
-                let mut group_values: Vec<Vec<Box<dyn Value>>> =
+                let mut group_arguments: Vec<Vec<Box<dyn Value>>> =
                     Vec::with_capacity(group.rows.len());
                 for object in &mut group.rows {
                     let mut row_values: Vec<Box<dyn Value>> =
@@ -409,12 +417,12 @@ fn execute_aggregation_function_statement(
                         row_values.push(value);
                     }
 
-                    group_values.push(row_values);
+                    group_arguments.push(row_values);
                 }
 
                 // Get the target aggregation function
-                let aggregation_function = env.aggregation_function(function.as_str()).unwrap();
-                let result = &aggregation_function(group_values);
+                let aggregation_function = env.aggregation_function(function).unwrap();
+                let result = &aggregation_function(group_arguments);
 
                 // Insert the calculated value in the group objects
                 for object in &mut group.rows {
