@@ -261,10 +261,10 @@ fn select_branches(
                     if let Ok(revwalk) = id.ancestors().all() {
                         revwalk.count() as i64
                     } else {
-                        -1
+                        0
                     }
                 } else {
-                    -1
+                    0
                 };
 
                 values.push(Box::new(IntValue {
