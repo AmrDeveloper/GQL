@@ -27,8 +27,8 @@ pub(crate) fn parse_function_call_expression(
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
     if *position < tokens.len() && matches!(tokens[*position].kind, TokenKind::Symbol(_)) {
-        let symbol_token = &tokens[*position];
         if *position + 1 < tokens.len() && tokens[*position + 1].kind == TokenKind::LeftParen {
+            let symbol_token = &tokens[*position];
             let function_name = &symbol_token.to_string();
             let function_name_location = symbol_token.location;
 
@@ -197,6 +197,14 @@ pub(crate) fn parse_function_call_expression(
                     .as_boxed());
                 }
 
+                if context.has_select_statement {
+                    return Err(Diagnostic::error(
+                        "Window function can't called after `SELECT` statement",
+                    )
+                    .with_location(function_name_location)
+                    .as_boxed());
+                }
+
                 if let Some(signature) = env.window_function_signature(function_name) {
                     // Perform type checking and implicit casting if needed for function arguments
                     check_function_call_arguments(
@@ -225,14 +233,6 @@ pub(crate) fn parse_function_call_expression(
                         TokenKind::Over,
                         "Window function must have `OVER(...)` even if it empty",
                     )?;
-
-                    if context.has_select_statement {
-                        return Err(Diagnostic::error(
-                            "Window function can't called after `SELECT` statement",
-                        )
-                        .with_location(function_name_location)
-                        .as_boxed());
-                    }
 
                     let order_clauses =
                         parse_window_function_over_clause(context, env, tokens, position)?;
