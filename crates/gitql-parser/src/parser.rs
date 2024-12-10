@@ -26,6 +26,7 @@ use crate::diagnostic::Diagnostic;
 use crate::parse_cast::parse_cast_call_expression;
 use crate::parse_cast::parse_cast_operator_expression;
 use crate::parse_function_call::parse_function_call_expression;
+use crate::parse_function_call::parse_window_function_over_clause;
 use crate::token::SourceLocation;
 use crate::token::Token;
 use crate::token::TokenKind;
@@ -372,6 +373,10 @@ fn parse_select_query(
                 let statement = parse_into_statement(tokens, position)?;
                 statements.insert("into", statement);
             }
+            TokenKind::Window => {
+                parse_window_named_over_clause(&mut context, env, tokens, position)?;
+                continue;
+            }
             _ => break,
         }
     }
@@ -386,9 +391,30 @@ fn parse_select_query(
 
     // If any window function is used, add Window Functions Node to the GitQL Query
     if !context.window_functions.is_empty() {
+        // TODO: Move this implementation into type checker function
+        // TODO: Improve the design to get benefits of named window
+        // Resolve named window clauses by their values, this is not the best option,
+        // we should reorder and group window functions to reduce the name of over clauses
+        for (_, function) in context.window_functions.iter_mut() {
+            if let Some(window_name) = &function.order_clauses.name {
+                if !context.named_window_clauses.contains_key(window_name) {
+                    return Err(Diagnostic::error(&format!(
+                        "Undefined `WINDOW` name {}",
+                        window_name
+                    ))
+                    .add_note("Make sure you already defined window over clause with this name")
+                    .as_boxed());
+                }
+
+                let mut over = context.named_window_clauses[window_name].clone();
+                function.order_clauses.clauses.append(&mut over.clauses);
+            }
+        }
+
         let window_functions = WindowFunctionsStatement {
             functions: context.window_functions,
         };
+
         statements.insert("window_functions", Box::new(window_functions));
     }
 
@@ -1401,6 +1427,57 @@ fn parse_into_statement(
         fields_terminated,
         enclosed,
     }))
+}
+
+fn parse_window_named_over_clause(
+    context: &mut ParserContext,
+    env: &mut Environment,
+    tokens: &[Token],
+    position: &mut usize,
+) -> Result<(), Box<Diagnostic>> {
+    consume_token_or_error(
+        tokens,
+        position,
+        TokenKind::Window,
+        "Expect `WINDOW` keyword.",
+    )?;
+
+    let window_name_token = consume_conditional_token_or_errors(
+        tokens,
+        position,
+        |t| matches!(t.kind, TokenKind::Symbol(_)),
+        "Expect `Identifier` as window over clauses name.",
+    )?;
+
+    let location = window_name_token.location;
+    let window_name = window_name_token.to_string();
+
+    consume_token_or_error(
+        tokens,
+        position,
+        TokenKind::As,
+        "Expect `AS` keyword after window name.",
+    )?;
+
+    let over_clauses = parse_window_function_over_clause(context, env, tokens, position)?;
+
+    // Make sure each window clauses has unique name
+    if context.named_window_clauses.contains_key(&window_name) {
+        return Err(Diagnostic::error(&format!(
+            "There is already defined window clauses with name {}",
+            window_name
+        ))
+        .add_note("Window over clauses names must be unique from each other")
+        .with_location(location)
+        .as_boxed());
+    }
+
+    // Register window over clauses with name
+    context
+        .named_window_clauses
+        .insert(window_name, over_clauses);
+
+    Ok(())
 }
 
 pub(crate) fn parse_expression(

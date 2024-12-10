@@ -58,6 +58,7 @@ pub enum TokenKind {
     Descending,
     Symmetric,
     Asymmetric,
+    Window,
     Over,
 
     // Values
@@ -166,6 +167,7 @@ impl Display for TokenKind {
             TokenKind::Descending => "DESC",
             TokenKind::Symmetric => "SYMMETRIC",
             TokenKind::Asymmetric => "ASYMMETRIC",
+            TokenKind::Window => "WINDOW",
             TokenKind::Over => "OVER",
 
             // Values
@@ -374,6 +376,7 @@ fn resolve_symbol_kind(symbol: String) -> TokenKind {
         "array" => TokenKind::Array,
 
         // Over
+        "window" => TokenKind::Window,
         "over" => TokenKind::Over,
 
         // Identifier

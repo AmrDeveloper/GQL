@@ -1,6 +1,8 @@
 use std::any::Any;
 use std::collections::HashMap;
 
+use dyn_clone::DynClone;
+
 use crate::expression::Expr;
 
 pub enum StatementKind {
@@ -18,7 +20,9 @@ pub enum StatementKind {
     Into,
 }
 
-pub trait Statement {
+dyn_clone::clone_trait_object!(Statement);
+
+pub trait Statement: DynClone {
     fn kind(&self) -> StatementKind;
     fn as_any(&self) -> &dyn Any;
 }
@@ -39,6 +43,7 @@ pub struct GQLQuery {
     pub hidden_selections: HashMap<String, Vec<String>>,
 }
 
+#[derive(Clone)]
 pub struct DoStatement {
     pub expression: Box<dyn Expr>,
 }
@@ -53,18 +58,20 @@ impl Statement for DoStatement {
     }
 }
 
+#[derive(Clone)]
 pub enum Distinct {
     None,
     DistinctAll,
     DistinctOn(Vec<String>),
 }
 
+#[derive(Clone)]
 pub struct TableSelection {
     pub table_name: String,
     pub columns_names: Vec<String>,
 }
 
-#[derive(PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum JoinKind {
     Cross,
     Inner,
@@ -73,19 +80,22 @@ pub enum JoinKind {
     Default,
 }
 
+#[derive(Clone)]
 pub enum JoinOperand {
     /// Used when JOIN is used first time on query, X JOIN Y,
     OuterAndInner(String, String),
-    /// Used for JOIN that used afrer first time, JOIN Z
+    /// Used for JOIN that used after first time, JOIN Z
     Inner(String),
 }
 
+#[derive(Clone)]
 pub struct Join {
     pub operand: JoinOperand,
     pub kind: JoinKind,
     pub predicate: Option<Box<dyn Expr>>,
 }
 
+#[derive(Clone)]
 pub struct SelectStatement {
     pub table_selections: Vec<TableSelection>,
     pub joins: Vec<Join>,
@@ -104,6 +114,7 @@ impl Statement for SelectStatement {
     }
 }
 
+#[derive(Clone)]
 pub struct WhereStatement {
     pub condition: Box<dyn Expr>,
 }
@@ -118,6 +129,7 @@ impl Statement for WhereStatement {
     }
 }
 
+#[derive(Clone)]
 pub struct HavingStatement {
     pub condition: Box<dyn Expr>,
 }
@@ -132,6 +144,7 @@ impl Statement for HavingStatement {
     }
 }
 
+#[derive(Clone)]
 pub struct LimitStatement {
     pub count: usize,
 }
@@ -146,6 +159,7 @@ impl Statement for LimitStatement {
     }
 }
 
+#[derive(Clone)]
 pub struct OffsetStatement {
     pub count: usize,
 }
@@ -160,12 +174,13 @@ impl Statement for OffsetStatement {
     }
 }
 
-#[derive(PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum SortingOrder {
     Ascending,
     Descending,
 }
 
+#[derive(Clone)]
 pub struct OrderByStatement {
     pub arguments: Vec<Box<dyn Expr>>,
     pub sorting_orders: Vec<SortingOrder>,
@@ -181,6 +196,7 @@ impl Statement for OrderByStatement {
     }
 }
 
+#[derive(Clone)]
 pub struct GroupByStatement {
     pub values: Vec<Box<dyn Expr>>,
     pub has_with_rollup: bool,
@@ -196,15 +212,19 @@ impl Statement for GroupByStatement {
     }
 }
 
+#[derive(Clone)]
 pub struct OverClause {
+    pub name: Option<String>,
     pub clauses: Vec<Box<dyn Statement>>,
 }
 
+#[derive(Clone)]
 pub enum WindowFunctionKind {
     AggregatedWindowFunction,
     PureWindowFunction,
 }
 
+#[derive(Clone)]
 pub struct WindowFunction {
     pub function_name: String,
     pub arguments: Vec<Box<dyn Expr>>,
@@ -212,6 +232,7 @@ pub struct WindowFunction {
     pub kind: WindowFunctionKind,
 }
 
+#[derive(Clone)]
 pub struct WindowFunctionsStatement {
     pub functions: HashMap<String, WindowFunction>,
 }
@@ -226,11 +247,13 @@ impl Statement for WindowFunctionsStatement {
     }
 }
 
+#[derive(Clone)]
 pub enum AggregateValue {
     Expression(Box<dyn Expr>),
     Function(String, Vec<Box<dyn Expr>>),
 }
 
+#[derive(Clone)]
 pub struct AggregationsStatement {
     pub aggregations: HashMap<String, AggregateValue>,
 }
@@ -245,6 +268,7 @@ impl Statement for AggregationsStatement {
     }
 }
 
+#[derive(Clone)]
 pub struct GlobalVariableStatement {
     pub name: String,
     pub value: Box<dyn Expr>,
@@ -260,6 +284,7 @@ impl Statement for GlobalVariableStatement {
     }
 }
 
+#[derive(Clone)]
 pub struct IntoStatement {
     pub file_path: String,
     pub lines_terminated: String,

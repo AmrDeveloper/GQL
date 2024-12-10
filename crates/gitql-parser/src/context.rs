@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use gitql_ast::statement::{AggregateValue, WindowFunction};
+use gitql_ast::statement::{AggregateValue, OverClause, WindowFunction};
 
 use crate::name_generator::NameGenerator;
 use crate::token::SourceLocation;
@@ -8,7 +8,9 @@ use crate::token::SourceLocation;
 #[derive(Default)]
 pub struct ParserContext {
     pub aggregations: HashMap<String, AggregateValue>,
+
     pub window_functions: HashMap<String, WindowFunction>,
+    pub named_window_clauses: HashMap<String, OverClause>,
 
     pub selected_fields: Vec<String>,
     pub hidden_selections: Vec<String>,
