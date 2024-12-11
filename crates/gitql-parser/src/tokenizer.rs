@@ -330,8 +330,11 @@ impl Tokenizer {
             if char == '!' {
                 let location = self.current_source_location();
 
+                // Consume `!`
                 self.advance();
                 let kind = if self.index < len && self.content[self.index] == '=' {
+                    // Consume `=`
+                    self.advance();
                     TokenKind::BangEqual
                 } else {
                     TokenKind::Bang

@@ -2323,6 +2323,16 @@ fn parse_equality_expression(
                 }));
             }
 
+            // Handle special case if one of the type is null
+            if lhs_type.is_null() || rhs_type.is_null() {
+                return Err(
+                    Diagnostic::error("Operator `=` can't used to check if value is null")
+                        .add_help("Please use `IS NULL` expression")
+                        .with_location(operator.location)
+                        .as_boxed(),
+                );
+            }
+
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
                 "Operator `=` can't be performed between types `{}` and `{}`",
@@ -2383,6 +2393,16 @@ fn parse_equality_expression(
                     operator: ComparisonOperator::NotEqual,
                     right: rhs,
                 }));
+            }
+
+            // Handle special case if one of the type is null
+            if lhs_type.is_null() || rhs_type.is_null() {
+                return Err(Diagnostic::error(
+                    "Operator `!=` can't used to check if value is null",
+                )
+                .add_help("Please use `IS NOT NULL` expression")
+                .with_location(operator.location)
+                .as_boxed());
             }
 
             // Return error if this operator can't be performed even with implicit cast
