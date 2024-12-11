@@ -6,6 +6,7 @@ use gitql_ast::statement::TableSelection;
 use gitql_ast::types::any::AnyType;
 use gitql_ast::types::base::DataType;
 use gitql_ast::types::dynamic::DynamicType;
+use gitql_ast::types::varargs::VarargsType;
 use gitql_core::environment::Environment;
 
 use crate::diagnostic::Diagnostic;
@@ -322,20 +323,16 @@ pub fn type_check_projection_symbols(
     Ok(())
 }
 
-/// Resolve dynamic data type depending on the parameters and arguments types
+/// Resolve dynamic data type depending on the parameters and arguments types to actual DataType
 #[allow(clippy::borrowed_box)]
 pub fn resolve_dynamic_data_type(
     parameters: &[Box<dyn DataType>],
     arguments: &[Box<dyn Expr>],
     data_type: &Box<dyn DataType>,
 ) -> Box<dyn DataType> {
-    let mut resolved_data_type = data_type.clone();
-    if let Some(dynamic_type) = resolved_data_type
-        .clone()
-        .as_any()
-        .downcast_ref::<DynamicType>()
-    {
-        resolved_data_type = (dynamic_type.function)(parameters);
+    // Resolve Dynamic type
+    if let Some(dynamic_type) = data_type.as_any().downcast_ref::<DynamicType>() {
+        let mut resolved_data_type = (dynamic_type.function)(parameters);
 
         // In Case that data type is Any or Variant [Type1 | Type2...] need to resolve it from arguments types
         // To be able to use it with other expressions
@@ -347,6 +344,22 @@ pub fn resolve_dynamic_data_type(
             }
             resolved_data_type = (dynamic_type.function)(&arguments_types);
         }
+
+        return resolved_data_type;
     }
-    resolved_data_type
+
+    // Resolve ...Dynamic to ...<TYPE> recursively
+    if let Some(varargs) = data_type.as_any().downcast_ref::<VarargsType>() {
+        if varargs
+            .base
+            .as_any()
+            .downcast_ref::<DynamicType>()
+            .is_some()
+        {
+            let base = resolve_dynamic_data_type(parameters, arguments, &varargs.base);
+            return Box::new(VarargsType { base });
+        }
+    }
+
+    data_type.clone()
 }
