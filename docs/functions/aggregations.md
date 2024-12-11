@@ -1,4 +1,4 @@
-An aggregate function in GQL performs a calculation on multiple values and returns a single value
+An aggregate function in GitQL performs a calculation on multiple values and returns a single value
 
 | Name         | Parameters | Return     | Description                                                       |
 | ------------ | ---------- | ---------- | ----------------------------------------------------------------- |
