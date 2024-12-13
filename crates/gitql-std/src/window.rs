@@ -3,6 +3,7 @@ use std::sync::OnceLock;
 
 use gitql_ast::types::any::AnyType;
 use gitql_ast::types::dynamic::DynamicType;
+use gitql_ast::types::integer::IntType;
 use gitql_core::signature::Signature;
 use gitql_core::signature::WindowFunction;
 use gitql_core::values::base::Value;
@@ -15,6 +16,7 @@ pub fn window_functions() -> &'static HashMap<&'static str, WindowFunction> {
     HASHMAP.get_or_init(|| {
         let mut map: HashMap<&'static str, WindowFunction> = HashMap::new();
         map.insert("first_value", window_first_value);
+        map.insert("nth_value", window_nth_value);
         map.insert("last_value", window_last_value);
         map
     })
@@ -26,6 +28,16 @@ pub fn window_function_signatures() -> HashMap<&'static str, Signature> {
         "first_value",
         Signature {
             parameters: vec![Box::new(AnyType)],
+            return_type: Box::new(DynamicType {
+                function: first_element_type,
+            }),
+        },
+    );
+
+    map.insert(
+        "nth_value",
+        Signature {
+            parameters: vec![Box::new(AnyType), Box::new(IntType)],
             return_type: Box::new(DynamicType {
                 function: first_element_type,
             }),
@@ -53,9 +65,22 @@ pub fn window_first_value(group_values: Vec<Vec<Box<dyn Value>>>) -> Box<dyn Val
     first_value.clone()
 }
 
+pub fn window_nth_value(group_values: Vec<Vec<Box<dyn Value>>>) -> Box<dyn Value> {
+    if group_values.is_empty() || group_values[0].is_empty() {
+        return Box::new(NullValue);
+    }
+
+    let n = group_values[group_values.len() - 1][1].as_int().unwrap() as usize;
+    if (n + 1) < group_values.len() {
+        return group_values[n][0].clone();
+    }
+
+    Box::new(NullValue)
+}
+
 pub fn window_last_value(group_values: Vec<Vec<Box<dyn Value>>>) -> Box<dyn Value> {
     if group_values.is_empty() || group_values[0].is_empty() {
         return Box::new(NullValue);
     }
-    group_values[0].last().unwrap().clone()
+    group_values[group_values.len() - 1][0].clone()
 }
