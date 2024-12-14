@@ -15,16 +15,13 @@ pub(crate) fn execute_order_by_statement(
     env: &mut Environment,
     statement: &OrderByStatement,
     gitql_object: &mut GitQLObject,
+    group_index: usize,
 ) -> Result<(), String> {
-    if gitql_object.is_empty() {
+    if gitql_object.is_empty() || group_index >= gitql_object.len() {
         return Ok(());
     }
 
-    if gitql_object.len() > 1 {
-        gitql_object.flat();
-    }
-
-    let main_group: &mut Group = &mut gitql_object.groups[0];
+    let main_group: &mut Group = &mut gitql_object.groups[group_index];
     if main_group.is_empty() {
         return Ok(());
     }
@@ -38,19 +35,19 @@ pub(crate) fn execute_order_by_statement(
 
     for row in main_group_rows.iter() {
         let row_addr = row.values.as_ptr() as usize;
-        let mut argument_evals: Vec<Box<dyn Value>> = Vec::with_capacity(arguments_len);
+        let mut arguments_values: Vec<Box<dyn Value>> = Vec::with_capacity(arguments_len);
         for argument in statement.arguments.iter() {
             // No need to compare if the ordering argument is constants
             if argument.is_const() {
-                argument_evals.push(Box::new(NullValue));
+                arguments_values.push(Box::new(NullValue));
                 continue;
             }
 
             let value = &evaluate_expression(env, argument, titles, &row.values)?;
-            argument_evals.push(value.to_owned());
+            arguments_values.push(value.to_owned());
         }
 
-        eval_map.insert(row_addr, argument_evals);
+        eval_map.insert(row_addr, arguments_values);
     }
 
     main_group.rows.sort_by(|a, b| {

@@ -1,11 +1,13 @@
 use gitql_ast::expression::CallExpr;
 use gitql_ast::expression::Expr;
 use gitql_ast::expression::SymbolExpr;
+use gitql_ast::expression::SymbolFlag;
 use gitql_ast::statement::AggregateValue;
-use gitql_ast::statement::OverClause;
-use gitql_ast::statement::Statement;
+use gitql_ast::statement::WindowDefinition;
 use gitql_ast::statement::WindowFunction;
 use gitql_ast::statement::WindowFunctionKind;
+use gitql_ast::statement::WindowOrderingClause;
+use gitql_ast::statement::WindowPartitioningClause;
 use gitql_core::environment::Environment;
 
 use crate::context::ParserContext;
@@ -13,8 +15,9 @@ use crate::diagnostic::Diagnostic;
 use crate::parser::consume_token_or_error;
 use crate::parser::is_current_token;
 use crate::parser::is_current_token_with_condition;
+use crate::parser::parse_expression;
 use crate::parser::parse_member_access_expression;
-use crate::parser::parse_order_by_statement;
+use crate::parser::parse_sorting_order;
 use crate::parser::parse_zero_or_more_values_with_comma_between;
 use crate::token::Token;
 use crate::token::TokenKind;
@@ -84,7 +87,6 @@ pub(crate) fn parse_function_call_expression(
 
         // Check if this function is an Aggregation functions
         if env.is_aggregation_function(function_name) {
-            let aggregations_count_before = context.aggregations.len();
             let mut arguments = parse_zero_or_more_values_with_comma_between(
                 context,
                 env,
@@ -92,16 +94,6 @@ pub(crate) fn parse_function_call_expression(
                 position,
                 "Aggregation function",
             )?;
-
-            // Prevent calling aggregation function with aggregation values as argument
-            let has_aggregations = context.aggregations.len() != aggregations_count_before;
-            if has_aggregations {
-                return Err(Diagnostic::error(
-                    "Aggregated values can't as used for aggregation function argument",
-                )
-                .with_location(function_name_location)
-                .as_boxed());
-            }
 
             if let Some(signature) = env.aggregation_signature(function_name.as_str()) {
                 // Perform type checking and implicit casting if needed for function arguments
@@ -135,23 +127,26 @@ pub(crate) fn parse_function_call_expression(
                     .as_boxed());
                 }
 
+                let mut flag = SymbolFlag::AggregationReference;
                 if is_used_as_window_function {
                     // Consume `OVER` token
                     *position += 1;
 
                     let order_clauses =
-                        parse_window_function_over_clause(context, env, tokens, position)?;
+                        parse_over_window_definition(context, env, tokens, position)?;
 
                     let function = WindowFunction {
                         function_name: function_name.to_string(),
                         arguments,
-                        order_clauses,
+                        window_definition: order_clauses,
                         kind: WindowFunctionKind::AggregatedWindowFunction,
                     };
 
                     context
                         .window_functions
                         .insert(column_name.clone(), function);
+
+                    flag = SymbolFlag::WindowReference;
                 } else {
                     let function = AggregateValue::Function(function_name.to_string(), arguments);
                     context.aggregations.insert(column_name.clone(), function);
@@ -161,6 +156,7 @@ pub(crate) fn parse_function_call_expression(
                 return Ok(Box::new(SymbolExpr {
                     value: column_name,
                     result_type: return_type,
+                    flag,
                 }));
             }
 
@@ -220,7 +216,8 @@ pub(crate) fn parse_function_call_expression(
                     function_name_location,
                 )?;
 
-                let column_name = context.name_generator.generate_temp_name();
+                // TODO: Make sure to be used in Order by
+                let column_name = context.name_generator.generate_column_name();
                 context.hidden_selections.push(column_name.to_string());
 
                 let return_type = resolve_dynamic_data_type(
@@ -240,13 +237,12 @@ pub(crate) fn parse_function_call_expression(
                     "Window function must have `OVER(...)` even if it empty",
                 )?;
 
-                let order_clauses =
-                    parse_window_function_over_clause(context, env, tokens, position)?;
+                let order_clauses = parse_over_window_definition(context, env, tokens, position)?;
 
                 let function = WindowFunction {
                     function_name: function_name.to_string(),
                     arguments,
-                    order_clauses,
+                    window_definition: order_clauses,
                     kind: WindowFunctionKind::PureWindowFunction,
                 };
 
@@ -258,6 +254,7 @@ pub(crate) fn parse_function_call_expression(
                 return Ok(Box::new(SymbolExpr {
                     value: column_name,
                     result_type: return_type,
+                    flag: SymbolFlag::WindowReference,
                 }));
             }
 
@@ -283,23 +280,22 @@ pub(crate) fn parse_function_call_expression(
     parse_member_access_expression(context, env, tokens, position)
 }
 
-pub(crate) fn parse_window_function_over_clause(
+pub(crate) fn parse_over_window_definition(
     context: &mut ParserContext,
     env: &mut Environment,
     tokens: &[Token],
     position: &mut usize,
-) -> Result<OverClause, Box<Diagnostic>> {
-    let mut clauses: Vec<Box<dyn Statement>> = vec![];
-
+) -> Result<WindowDefinition, Box<Diagnostic>> {
     // Consume one Symbol as Named Window Over, will be checked later before constructing the query object
     if is_current_token_with_condition(tokens, position, |t| matches!(t.kind, TokenKind::Symbol(_)))
     {
         let over_clause_name = tokens[*position].to_string();
         *position += 1;
 
-        return Ok(OverClause {
+        return Ok(WindowDefinition {
             name: Some(over_clause_name),
-            clauses,
+            partitioning_clause: None,
+            ordering_clause: None,
         });
     }
 
@@ -311,36 +307,98 @@ pub(crate) fn parse_window_function_over_clause(
         "Expect `(` after Over keyword",
     )?;
 
+    let mut window_definition = WindowDefinition {
+        name: None,
+        partitioning_clause: None,
+        ordering_clause: None,
+    };
+
     context.inside_over_clauses = true;
-    let mut has_order_by_clause = false;
     while !is_current_token(tokens, position, TokenKind::RightParen) {
-        match tokens[*position].kind {
-            TokenKind::Order => {
-                if has_order_by_clause {
-                    return Err(Diagnostic::error(
-                        "`OVER` clause can contains only one `ORDER BY`",
-                    )
-                    .with_location(tokens[*position].location)
-                    .as_boxed());
-                }
-                clauses.push(parse_order_by_statement(context, env, tokens, position)?);
-                has_order_by_clause = true;
-            }
-            _ => {
-                context.inside_over_clauses = false;
-                // TODO: update message later to '"`OVER` clause can only support `ORDER BY` or `PARTITION BY` Statements"'
+        if tokens[*position].kind == TokenKind::Partition {
+            // Check if `PARTITION BY` is used more than one time
+            if window_definition.partitioning_clause.is_some() {
                 return Err(Diagnostic::error(
-                    "`OVER` clause can only support `ORDER BY` Statements",
+                    "This window definition already has `PARTITION BY` statement",
                 )
                 .with_location(tokens[*position].location)
                 .as_boxed());
             }
+
+            // Consume `PARTITION`
+            *position += 1;
+
+            // Consume `BY` or report error message
+            consume_token_or_error(
+                tokens,
+                position,
+                TokenKind::By,
+                "Expect `BY` keyword after `PARTITION`",
+            )?;
+
+            let window_functions_count_before = context.window_functions.len();
+            let expr = parse_expression(context, env, tokens, position)?;
+            if window_functions_count_before != context.window_functions.len() {
+                return Err(Diagnostic::error(
+                    "Window functions are not allowed in window definitions",
+                )
+                .with_location(tokens[*position].location)
+                .as_boxed());
+            }
+
+            let partition_by = WindowPartitioningClause { expr };
+            window_definition.partitioning_clause = Some(partition_by);
+            continue;
         }
+
+        if tokens[*position].kind == TokenKind::Order {
+            // Check if `ORDER BY` is used more than one time
+            if window_definition.ordering_clause.is_some() {
+                return Err(Diagnostic::error(
+                    "This window definition already has `ORDER BY` statement",
+                )
+                .with_location(tokens[*position].location)
+                .as_boxed());
+            }
+
+            // Consume `ORDER`
+            *position += 1;
+
+            // Consume `BY` or report error message
+            consume_token_or_error(
+                tokens,
+                position,
+                TokenKind::By,
+                "Expect `BY` keyword after `ORDER`",
+            )?;
+
+            let window_functions_count_before = context.window_functions.len();
+            let expr = parse_expression(context, env, tokens, position)?;
+            if window_functions_count_before != context.window_functions.len() {
+                return Err(Diagnostic::error(
+                    "Window functions are not allowed in window definitions",
+                )
+                .with_location(tokens[*position].location)
+                .as_boxed());
+            }
+
+            let ordering = parse_sorting_order(tokens, position)?;
+            let order_by = WindowOrderingClause { expr, ordering };
+            window_definition.ordering_clause = Some(order_by);
+            continue;
+        }
+
+        context.inside_over_clauses = false;
+        return Err(Diagnostic::error(
+            "`OVER` clause can only support `ORDER BY` or `PARTITION BY`  clauses",
+        )
+        .with_location(tokens[*position].location)
+        .as_boxed());
     }
 
     context.inside_over_clauses = false;
 
-    // Consume `)` token
+    // Consume `)` token for closing OVER clauses with empty or valid Window definition
     consume_token_or_error(
         tokens,
         position,
@@ -348,8 +406,5 @@ pub(crate) fn parse_window_function_over_clause(
         "Expect `)` after Over clauses",
     )?;
 
-    Ok(OverClause {
-        name: None,
-        clauses,
-    })
+    Ok(window_definition)
 }

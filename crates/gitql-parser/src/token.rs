@@ -60,6 +60,7 @@ pub enum TokenKind {
     Asymmetric,
     Window,
     Over,
+    Partition,
 
     // Values
     Symbol(String),
@@ -169,6 +170,7 @@ impl Display for TokenKind {
             TokenKind::Asymmetric => "ASYMMETRIC",
             TokenKind::Window => "WINDOW",
             TokenKind::Over => "OVER",
+            TokenKind::Partition => "PARTITION",
 
             // Values
             TokenKind::Symbol(literal) => literal,
@@ -378,6 +380,7 @@ fn resolve_symbol_kind(symbol: String) -> TokenKind {
         // Over
         "window" => TokenKind::Window,
         "over" => TokenKind::Over,
+        "partition" => TokenKind::Partition,
 
         // Identifier
         _ => TokenKind::Symbol(symbol),

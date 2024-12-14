@@ -105,10 +105,18 @@ impl Expr for StringExpr {
     }
 }
 
+#[derive(PartialEq, Clone)]
+pub enum SymbolFlag {
+    AggregationReference,
+    WindowReference,
+    None,
+}
+
 #[derive(Clone)]
 pub struct SymbolExpr {
     pub value: String,
     pub result_type: Box<dyn DataType>,
+    pub flag: SymbolFlag,
 }
 
 impl Expr for SymbolExpr {

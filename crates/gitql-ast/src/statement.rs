@@ -199,7 +199,7 @@ impl Statement for OrderByStatement {
 #[derive(Clone)]
 pub struct GroupByStatement {
     pub values: Vec<Box<dyn Expr>>,
-    pub has_with_rollup: bool,
+    pub has_with_roll_up: bool,
 }
 
 impl Statement for GroupByStatement {
@@ -213,9 +213,21 @@ impl Statement for GroupByStatement {
 }
 
 #[derive(Clone)]
-pub struct OverClause {
+pub struct WindowPartitioningClause {
+    pub expr: Box<dyn Expr>,
+}
+
+#[derive(Clone)]
+pub struct WindowOrderingClause {
+    pub expr: Box<dyn Expr>,
+    pub ordering: SortingOrder,
+}
+
+#[derive(Clone)]
+pub struct WindowDefinition {
     pub name: Option<String>,
-    pub clauses: Vec<Box<dyn Statement>>,
+    pub partitioning_clause: Option<WindowPartitioningClause>,
+    pub ordering_clause: Option<WindowOrderingClause>,
 }
 
 #[derive(Clone)]
@@ -228,7 +240,7 @@ pub enum WindowFunctionKind {
 pub struct WindowFunction {
     pub function_name: String,
     pub arguments: Vec<Box<dyn Expr>>,
-    pub order_clauses: OverClause,
+    pub window_definition: WindowDefinition,
     pub kind: WindowFunctionKind,
 }
 

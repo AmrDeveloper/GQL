@@ -91,7 +91,13 @@ pub fn execute_statement(
                 .as_any()
                 .downcast_ref::<OrderByStatement>()
                 .unwrap();
-            execute_order_by_statement(env, statement, gitql_object)
+
+            if gitql_object.len() > 1 {
+                gitql_object.flat();
+            }
+
+            let main_group_index = 0;
+            execute_order_by_statement(env, statement, gitql_object, main_group_index)
         }
         GroupBy => {
             let statement = statement
@@ -118,7 +124,7 @@ pub fn execute_statement(
                 .as_any()
                 .downcast_ref::<WindowFunctionsStatement>()
                 .unwrap();
-            execute_window_functions_statement(env, statement, gitql_object)
+            execute_window_functions_statement(env, statement, gitql_object, alias_table)
         }
         Into => {
             let statement = statement.as_any().downcast_ref::<IntoStatement>().unwrap();
@@ -180,7 +186,7 @@ fn execute_select_statement(
         // Calculate list of titles once per table
         let mut table_titles = vec![];
         for selected_column in selected_columns.iter_mut() {
-            table_titles.push(get_column_name(alias_table, selected_column));
+            table_titles.push(resolve_actual_column_name(alias_table, selected_column));
         }
 
         // Call the provider only if table name is not empty
@@ -388,12 +394,10 @@ fn execute_aggregation_functions_statement(
         }
 
         // Resolve all aggregations functions first
-        for aggregation in aggregations_map {
-            if let AggregateValue::Function(function, arguments) = aggregation.1 {
+        for (result_column_name, aggregation) in aggregations_map {
+            if let AggregateValue::Function(function, arguments) = aggregation {
                 // Get alias name if exists or column name by default
-                let result_column_name = aggregation.0;
-                let column_name = get_column_name(alias_table, result_column_name);
-
+                let column_name = resolve_actual_column_name(alias_table, result_column_name);
                 let column_index = gitql_object
                     .titles
                     .iter()
@@ -422,7 +426,7 @@ fn execute_aggregation_functions_statement(
 
                 // Get the target aggregation function
                 let aggregation_function = env.aggregation_function(function).unwrap();
-                let result = &aggregation_function(group_arguments);
+                let result = &aggregation_function(&group_arguments);
 
                 // Insert the calculated value in the group objects
                 for object in &mut group.rows {
@@ -436,12 +440,10 @@ fn execute_aggregation_functions_statement(
         }
 
         // Resolve aggregations expressions
-        for aggregation in aggregations_map {
-            if let AggregateValue::Expression(expr) = aggregation.1 {
+        for (result_column_name, aggregation) in aggregations_map {
+            if let AggregateValue::Expression(expr) = aggregation {
                 // Get alias name if exists or column name by default
-                let result_column_name = aggregation.0;
-                let column_name = get_column_name(alias_table, result_column_name);
-
+                let column_name = resolve_actual_column_name(alias_table, result_column_name);
                 let column_index = gitql_object
                     .titles
                     .iter()
@@ -481,9 +483,10 @@ pub fn execute_global_variable_statement(
 }
 
 #[inline(always)]
-pub fn get_column_name(alias_table: &HashMap<String, String>, name: &str) -> String {
-    alias_table
-        .get(name)
-        .unwrap_or(&name.to_string())
-        .to_string()
+pub fn resolve_actual_column_name(alias_table: &HashMap<String, String>, name: &str) -> String {
+    if let Some(column_name) = alias_table.get(name) {
+        return column_name.to_string();
+    }
+
+    name.to_string()
 }

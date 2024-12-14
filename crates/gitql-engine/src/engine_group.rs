@@ -33,8 +33,8 @@ pub(crate) fn execute_group_by_statement(
     let mut next_group_index = 0;
     let values_count = statement.values.len();
 
-    let is_rollup_enabled = statement.has_with_rollup;
-    let indexes_combinations = if is_rollup_enabled {
+    let is_roll_up_enabled = statement.has_with_roll_up;
+    let indexes_combinations = if is_roll_up_enabled {
         generate_list_of_all_combinations(values_count)
     } else {
         vec![(0..values_count).collect()]
@@ -77,10 +77,10 @@ pub(crate) fn execute_group_by_statement(
         }
     }
 
-    // If the group by elements is one and rollup is enabled
+    // If the group by elements is one and ROLLUP is enabled
     // For example: SELECT ... FROM <TABLE> GROUP BY X WITH ROLLUP
     // Should append the the main group at the end
-    if is_rollup_enabled && indexes_combinations.len() == 1 && indexes_combinations[0].len() == 1 {
+    if is_roll_up_enabled && indexes_combinations.len() == 1 && indexes_combinations[0].len() == 1 {
         gitql_object.groups.push(main_group);
     }
 

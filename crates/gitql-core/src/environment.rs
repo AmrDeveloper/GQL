@@ -141,7 +141,7 @@ impl Environment {
     }
 
     /// Return Window function reference by name
-    pub fn window_function(&self, str: &str) -> Option<&AggregationFunction> {
+    pub fn window_function(&self, str: &str) -> Option<&WindowFunction> {
         self.window_functions.get(str)
     }
 

@@ -26,7 +26,7 @@ use crate::diagnostic::Diagnostic;
 use crate::parse_cast::parse_cast_call_expression;
 use crate::parse_cast::parse_cast_operator_expression;
 use crate::parse_function_call::parse_function_call_expression;
-use crate::parse_function_call::parse_window_function_over_clause;
+use crate::parse_function_call::parse_over_window_definition;
 use crate::token::SourceLocation;
 use crate::token::Token;
 use crate::token::TokenKind;
@@ -396,26 +396,26 @@ fn parse_select_query(
         // Resolve named window clauses by their values, this is not the best option,
         // we should reorder and group window functions to reduce the name of over clauses
         for (_, function) in context.window_functions.iter_mut() {
-            if let Some(window_name) = &function.order_clauses.name {
+            if let Some(window_name) = &function.window_definition.name {
                 if !context.named_window_clauses.contains_key(window_name) {
                     return Err(Diagnostic::error(&format!(
-                        "Undefined `WINDOW` name {}",
+                        "Can't resolve `WINDOW Definition` with name {}",
                         window_name
                     ))
                     .add_note("Make sure you already defined window over clause with this name")
                     .as_boxed());
                 }
 
-                let mut over = context.named_window_clauses[window_name].clone();
-                function.order_clauses.clauses.append(&mut over.clauses);
+                function.window_definition = context.named_window_clauses[window_name].clone();
             }
         }
 
-        let window_functions = WindowFunctionsStatement {
-            functions: context.window_functions,
-        };
-
-        statements.insert("window_functions", Box::new(window_functions));
+        statements.insert(
+            "window_functions",
+            Box::new(WindowFunctionsStatement {
+                functions: context.window_functions,
+            }),
+        );
     }
 
     // Remove all selected fields from hidden selection
@@ -1023,7 +1023,7 @@ fn parse_group_by_statement(
     context.has_group_by_statement = true;
     Ok(Box::new(GroupByStatement {
         values,
-        has_with_rollup,
+        has_with_roll_up: has_with_rollup,
     }))
 }
 
@@ -1182,7 +1182,7 @@ pub(crate) fn parse_order_by_statement(
     }))
 }
 
-fn parse_sorting_order(
+pub(crate) fn parse_sorting_order(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<SortingOrder, Box<Diagnostic>> {
@@ -1459,7 +1459,7 @@ fn parse_window_named_over_clause(
         "Expect `AS` keyword after window name.",
     )?;
 
-    let over_clauses = parse_window_function_over_clause(context, env, tokens, position)?;
+    let over_clauses = parse_over_window_definition(context, env, tokens, position)?;
 
     // Make sure each window clauses has unique name
     if context.named_window_clauses.contains_key(&window_name) {
@@ -1486,30 +1486,58 @@ pub(crate) fn parse_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
-    let aggregations_count_before = context.aggregations.len();
+    // let aggregations_count_before = context.aggregations.len();
     let expression = parse_assignment_expression(context, env, tokens, position)?;
-    let has_aggregations = context.aggregations.len() != aggregations_count_before;
+    // let has_aggregations = context.aggregations.len() != aggregations_count_before;
 
-    if has_aggregations {
-        let column_name = context.name_generator.generate_column_name();
-        let expr_type = expression.expr_type();
-        env.define(column_name.to_string(), expr_type.clone());
-
-        // Register the new aggregation generated field if the this expression is after group by
-        if context.has_group_by_statement && !context.hidden_selections.contains(&column_name) {
-            context.hidden_selections.push(column_name.to_string());
-        }
-
-        context
-            .aggregations
-            .insert(column_name.clone(), AggregateValue::Expression(expression));
-
-        return Ok(Box::new(SymbolExpr {
-            value: column_name,
-            result_type: expr_type,
-        }));
+    if expression.kind() != ExprKind::Symbol {
+        return Ok(expression);
     }
 
+    if let Some(symbol) = expression.as_any().downcast_ref::<SymbolExpr>() {
+        if symbol.flag == SymbolFlag::AggregationReference {
+            let column_name = context.name_generator.generate_column_name();
+            let expr_type = expression.expr_type();
+            env.define(column_name.to_string(), expr_type.clone());
+
+            // Register the new aggregation generated field if the this expression is after group by
+            if context.has_group_by_statement && !context.hidden_selections.contains(&column_name) {
+                context.hidden_selections.push(column_name.to_string());
+            }
+
+            context
+                .aggregations
+                .insert(column_name.clone(), AggregateValue::Expression(expression));
+
+            return Ok(Box::new(SymbolExpr {
+                value: column_name,
+                result_type: expr_type,
+                flag: SymbolFlag::AggregationReference,
+            }));
+        }
+    }
+    /*
+        if has_aggregations {
+            let column_name = context.name_generator.generate_column_name();
+            let expr_type = expression.expr_type();
+            env.define(column_name.to_string(), expr_type.clone());
+
+            // Register the new aggregation generated field if the this expression is after group by
+            if context.has_group_by_statement && !context.hidden_selections.contains(&column_name) {
+                context.hidden_selections.push(column_name.to_string());
+            }
+
+            context
+                .aggregations
+                .insert(column_name.clone(), AggregateValue::Expression(expression));
+
+            return Ok(Box::new(SymbolExpr {
+                value: column_name,
+                result_type: expr_type,
+                flag: 0,
+            }));
+        }
+    */
     Ok(expression)
 }
 
@@ -4271,7 +4299,11 @@ fn parse_symbol_expression(
         Box::new(UndefType)
     };
 
-    Ok(Box::new(SymbolExpr { value, result_type }))
+    Ok(Box::new(SymbolExpr {
+        value,
+        result_type,
+        flag: SymbolFlag::None,
+    }))
 }
 
 fn parse_array_value_expression(
