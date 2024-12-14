@@ -56,31 +56,38 @@ pub fn window_function_signatures() -> HashMap<&'static str, Signature> {
     map
 }
 
-pub fn window_first_value(group_values: Vec<Vec<Box<dyn Value>>>) -> Box<dyn Value> {
-    if group_values.is_empty() || group_values[0].is_empty() {
-        return Box::new(NullValue);
+pub fn window_first_value(frame: &[Vec<Box<dyn Value>>]) -> Vec<Box<dyn Value>> {
+    let frame_len = frame.len();
+    let first_value = &frame[0][0];
+    let mut values = Vec::with_capacity(frame_len);
+    for _ in 0..frame_len {
+        values.push(first_value.clone());
     }
-
-    let first_value = &group_values[0][0];
-    first_value.clone()
+    values
 }
 
-pub fn window_nth_value(group_values: Vec<Vec<Box<dyn Value>>>) -> Box<dyn Value> {
-    if group_values.is_empty() || group_values[0].is_empty() {
-        return Box::new(NullValue);
+pub fn window_nth_value(frame: &[Vec<Box<dyn Value>>]) -> Vec<Box<dyn Value>> {
+    let frame_len = frame.len();
+    let index = frame[0][1].as_int().unwrap();
+
+    let mut values: Vec<Box<dyn Value>> = Vec::with_capacity(frame_len);
+    for _ in 0..frame_len {
+        if index < 0 || index as usize >= frame_len {
+            values.push(Box::new(NullValue));
+        } else {
+            values.push(frame[index as usize][0].clone());
+        };
     }
 
-    let n = group_values[group_values.len() - 1][1].as_int().unwrap() as usize;
-    if (n + 1) < group_values.len() {
-        return group_values[n][0].clone();
-    }
-
-    Box::new(NullValue)
+    values
 }
 
-pub fn window_last_value(group_values: Vec<Vec<Box<dyn Value>>>) -> Box<dyn Value> {
-    if group_values.is_empty() || group_values[0].is_empty() {
-        return Box::new(NullValue);
+pub fn window_last_value(frame: &[Vec<Box<dyn Value>>]) -> Vec<Box<dyn Value>> {
+    let frame_len = frame.len();
+    let last_value = &frame[frame_len - 1][0];
+    let mut values = Vec::with_capacity(frame_len);
+    for _ in 0..frame_len {
+        values.push(last_value.clone());
     }
-    group_values[group_values.len() - 1][0].clone()
+    values
 }

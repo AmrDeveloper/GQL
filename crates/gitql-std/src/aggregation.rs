@@ -164,9 +164,9 @@ pub fn aggregation_function_signatures() -> HashMap<&'static str, Signature> {
     map
 }
 
-pub fn aggregation_max(group_values: Vec<Vec<Box<dyn Value>>>) -> Box<dyn Value> {
+pub fn aggregation_max(group_values: &[Vec<Box<dyn Value>>]) -> Box<dyn Value> {
     let mut max_value = &group_values[0][0];
-    for row_values in &group_values {
+    for row_values in group_values {
         let single_value = &row_values[0];
         if max_value.compare(single_value) == Some(Ordering::Less) {
             max_value = single_value;
@@ -175,9 +175,9 @@ pub fn aggregation_max(group_values: Vec<Vec<Box<dyn Value>>>) -> Box<dyn Value>
     max_value.clone()
 }
 
-pub fn aggregation_min(group_values: Vec<Vec<Box<dyn Value>>>) -> Box<dyn Value> {
+pub fn aggregation_min(group_values: &[Vec<Box<dyn Value>>]) -> Box<dyn Value> {
     let mut min_value = &group_values[0][0];
-    for row_values in &group_values {
+    for row_values in group_values {
         let single_value = &row_values[0];
         if min_value.compare(single_value) == Some(Ordering::Greater) {
             min_value = single_value;
@@ -186,7 +186,7 @@ pub fn aggregation_min(group_values: Vec<Vec<Box<dyn Value>>>) -> Box<dyn Value>
     min_value.clone()
 }
 
-pub fn aggregation_sum(group_values: Vec<Vec<Box<dyn Value>>>) -> Box<dyn Value> {
+pub fn aggregation_sum(group_values: &[Vec<Box<dyn Value>>]) -> Box<dyn Value> {
     let mut sum: i64 = 0;
     for row_values in group_values {
         if let Some(int_value) = row_values[0].as_any().downcast_ref::<IntValue>() {
@@ -196,9 +196,9 @@ pub fn aggregation_sum(group_values: Vec<Vec<Box<dyn Value>>>) -> Box<dyn Value>
     Box::new(IntValue { value: sum })
 }
 
-pub fn aggregation_average(group_values: Vec<Vec<Box<dyn Value>>>) -> Box<dyn Value> {
+pub fn aggregation_average(group_values: &[Vec<Box<dyn Value>>]) -> Box<dyn Value> {
     let mut sum: i64 = 0;
-    for row_values in &group_values {
+    for row_values in group_values {
         if let Some(int_value) = row_values[0].as_any().downcast_ref::<IntValue>() {
             sum += int_value.value;
         }
@@ -207,13 +207,13 @@ pub fn aggregation_average(group_values: Vec<Vec<Box<dyn Value>>>) -> Box<dyn Va
     Box::new(IntValue { value: sum / count })
 }
 
-pub fn aggregation_count(group_values: Vec<Vec<Box<dyn Value>>>) -> Box<dyn Value> {
+pub fn aggregation_count(group_values: &[Vec<Box<dyn Value>>]) -> Box<dyn Value> {
     Box::new(IntValue {
         value: group_values.len() as i64,
     })
 }
 
-pub fn aggregation_group_concat(group_values: Vec<Vec<Box<dyn Value>>>) -> Box<dyn Value> {
+pub fn aggregation_group_concat(group_values: &[Vec<Box<dyn Value>>]) -> Box<dyn Value> {
     let mut string_values: Vec<String> = vec![];
     for row_values in group_values {
         for value in row_values {
@@ -225,7 +225,7 @@ pub fn aggregation_group_concat(group_values: Vec<Vec<Box<dyn Value>>>) -> Box<d
     })
 }
 
-pub fn aggregation_bool_and(group_values: Vec<Vec<Box<dyn Value>>>) -> Box<dyn Value> {
+pub fn aggregation_bool_and(group_values: &[Vec<Box<dyn Value>>]) -> Box<dyn Value> {
     for row_values in group_values {
         if let Some(bool_value) = row_values[0].as_any().downcast_ref::<BoolValue>() {
             if !bool_value.value {
@@ -236,7 +236,7 @@ pub fn aggregation_bool_and(group_values: Vec<Vec<Box<dyn Value>>>) -> Box<dyn V
     Box::new(BoolValue { value: true })
 }
 
-pub fn aggregation_bool_or(group_values: Vec<Vec<Box<dyn Value>>>) -> Box<dyn Value> {
+pub fn aggregation_bool_or(group_values: &[Vec<Box<dyn Value>>]) -> Box<dyn Value> {
     for row_values in group_values {
         if let Some(bool_value) = row_values[0].as_any().downcast_ref::<BoolValue>() {
             if bool_value.value {
@@ -247,7 +247,7 @@ pub fn aggregation_bool_or(group_values: Vec<Vec<Box<dyn Value>>>) -> Box<dyn Va
     Box::new(BoolValue { value: false })
 }
 
-pub fn aggregation_bit_and(group_values: Vec<Vec<Box<dyn Value>>>) -> Box<dyn Value> {
+pub fn aggregation_bit_and(group_values: &[Vec<Box<dyn Value>>]) -> Box<dyn Value> {
     let mut value: i64 = 1;
     let mut has_non_null = false;
     for row_values in group_values {
@@ -268,7 +268,7 @@ pub fn aggregation_bit_and(group_values: Vec<Vec<Box<dyn Value>>>) -> Box<dyn Va
     }
 }
 
-pub fn aggregation_bit_or(group_values: Vec<Vec<Box<dyn Value>>>) -> Box<dyn Value> {
+pub fn aggregation_bit_or(group_values: &[Vec<Box<dyn Value>>]) -> Box<dyn Value> {
     let mut value: i64 = 0;
     let mut has_non_null = false;
     for row_values in group_values {
@@ -289,7 +289,7 @@ pub fn aggregation_bit_or(group_values: Vec<Vec<Box<dyn Value>>>) -> Box<dyn Val
     }
 }
 
-pub fn aggregation_bit_xor(group_values: Vec<Vec<Box<dyn Value>>>) -> Box<dyn Value> {
+pub fn aggregation_bit_xor(group_values: &[Vec<Box<dyn Value>>]) -> Box<dyn Value> {
     let mut value: i64 = 0;
     let mut has_non_null = false;
     for row_values in group_values {
@@ -310,7 +310,7 @@ pub fn aggregation_bit_xor(group_values: Vec<Vec<Box<dyn Value>>>) -> Box<dyn Va
     }
 }
 
-pub fn aggregation_array_agg(group_values: Vec<Vec<Box<dyn Value>>>) -> Box<dyn Value> {
+pub fn aggregation_array_agg(group_values: &[Vec<Box<dyn Value>>]) -> Box<dyn Value> {
     let mut array: Vec<Box<dyn Value>> = vec![];
     for row_values in group_values {
         array.push(row_values[0].clone());

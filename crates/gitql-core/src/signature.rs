@@ -16,7 +16,7 @@ pub type StandardFunction = fn(&[Box<dyn Value>]) -> Box<dyn Value>;
 /// This implementation allow aggregation function to accept more than one parameter,
 /// and also accept any Expression not only field name
 ///
-pub type AggregationFunction = fn(Vec<Vec<Box<dyn Value>>>) -> Box<dyn Value>;
+pub type AggregationFunction = fn(&[Vec<Box<dyn Value>>]) -> Box<dyn Value>;
 
 /// Window function  a selected row values for each row in a specific frame and return single [`Value`]
 ///
@@ -29,7 +29,7 @@ pub type AggregationFunction = fn(Vec<Vec<Box<dyn Value>>>) -> Box<dyn Value>;
 /// This implementation allow Window` function to accept more than one parameter,
 /// and also accept any Expression not only field name
 ///
-pub type WindowFunction = fn(Vec<Vec<Box<dyn Value>>>) -> Box<dyn Value>;
+pub type WindowFunction = fn(&[Vec<Box<dyn Value>>]) -> Vec<Box<dyn Value>>;
 
 /// Signature struct is a representation of function type
 ///
