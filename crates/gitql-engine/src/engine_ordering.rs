@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 use std::collections::HashMap;
 
+use gitql_ast::statement::NullsOrderPolicy;
 use gitql_ast::statement::OrderByStatement;
 use gitql_ast::statement::SortingOrder;
 use gitql_core::environment::Environment;
@@ -66,9 +67,25 @@ pub(crate) fn execute_order_by_statement(
             let a_value = &eval_map.get(&a_addr).unwrap()[arg_index];
             let b_value = &eval_map.get(&b_addr).unwrap()[arg_index];
 
+            let null_ordering_policy = &statement.nulls_order_policies[arg_index];
+            if a_value.is_null() {
+                return if null_ordering_policy.eq(&NullsOrderPolicy::NullsFirst) {
+                    Ordering::Less
+                } else {
+                    Ordering::Greater
+                };
+            }
+
+            if b_value.is_null() {
+                return if null_ordering_policy.eq(&NullsOrderPolicy::NullsFirst) {
+                    Ordering::Greater
+                } else {
+                    Ordering::Less
+                };
+            }
+
             // Calculate the ordering
             if let Some(order) = a_value.compare(b_value) {
-                // If comparing result still equal, check the next argument
                 if order == Ordering::Equal {
                     continue;
                 }

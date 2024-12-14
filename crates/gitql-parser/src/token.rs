@@ -61,6 +61,8 @@ pub enum TokenKind {
     Window,
     Over,
     Partition,
+    First,
+    Last,
 
     // Values
     Symbol(String),
@@ -71,6 +73,7 @@ pub enum TokenKind {
     True,
     False,
     Null,
+    Nulls,
     Infinity,
     NaN,
 
@@ -171,6 +174,9 @@ impl Display for TokenKind {
             TokenKind::Window => "WINDOW",
             TokenKind::Over => "OVER",
             TokenKind::Partition => "PARTITION",
+            TokenKind::Nulls => "NULLS",
+            TokenKind::First => "FIRST",
+            TokenKind::Last => "LAST",
 
             // Values
             TokenKind::Symbol(literal) => literal,
@@ -363,6 +369,7 @@ fn resolve_symbol_kind(symbol: String) -> TokenKind {
         "true" => TokenKind::True,
         "false" => TokenKind::False,
         "null" => TokenKind::Null,
+        "nulls" => TokenKind::Nulls,
 
         "infinity" => TokenKind::Infinity,
         "nan" => TokenKind::NaN,
@@ -373,6 +380,10 @@ fn resolve_symbol_kind(symbol: String) -> TokenKind {
         // Order by DES and ASC
         "asc" => TokenKind::Ascending,
         "desc" => TokenKind::Descending,
+
+        // Order by null ordering policy Null first and last
+        "first" => TokenKind::First,
+        "last" => TokenKind::Last,
 
         // Array data type
         "array" => TokenKind::Array,

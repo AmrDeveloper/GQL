@@ -180,10 +180,17 @@ pub enum SortingOrder {
     Descending,
 }
 
+#[derive(Clone, PartialEq)]
+pub enum NullsOrderPolicy {
+    NullsFirst,
+    NullsLast,
+}
+
 #[derive(Clone)]
 pub struct OrderByStatement {
     pub arguments: Vec<Box<dyn Expr>>,
     pub sorting_orders: Vec<SortingOrder>,
+    pub nulls_order_policies: Vec<NullsOrderPolicy>,
 }
 
 impl Statement for OrderByStatement {
@@ -219,8 +226,7 @@ pub struct WindowPartitioningClause {
 
 #[derive(Clone)]
 pub struct WindowOrderingClause {
-    pub expr: Box<dyn Expr>,
-    pub ordering: SortingOrder,
+    pub order_by: OrderByStatement,
 }
 
 #[derive(Clone)]

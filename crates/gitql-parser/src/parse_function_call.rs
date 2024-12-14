@@ -3,6 +3,7 @@ use gitql_ast::expression::Expr;
 use gitql_ast::expression::SymbolExpr;
 use gitql_ast::expression::SymbolFlag;
 use gitql_ast::statement::AggregateValue;
+use gitql_ast::statement::OrderByStatement;
 use gitql_ast::statement::WindowDefinition;
 use gitql_ast::statement::WindowFunction;
 use gitql_ast::statement::WindowFunctionKind;
@@ -17,7 +18,7 @@ use crate::parser::is_current_token;
 use crate::parser::is_current_token_with_condition;
 use crate::parser::parse_expression;
 use crate::parser::parse_member_access_expression;
-use crate::parser::parse_sorting_order;
+use crate::parser::parse_order_by_statement;
 use crate::parser::parse_zero_or_more_values_with_comma_between;
 use crate::token::Token;
 use crate::token::TokenKind;
@@ -361,30 +362,13 @@ pub(crate) fn parse_over_window_definition(
                 .as_boxed());
             }
 
-            // Consume `ORDER`
-            *position += 1;
+            let order_by = parse_order_by_statement(context, env, tokens, position)?
+                .as_any()
+                .downcast_ref::<OrderByStatement>()
+                .unwrap()
+                .to_owned();
 
-            // Consume `BY` or report error message
-            consume_token_or_error(
-                tokens,
-                position,
-                TokenKind::By,
-                "Expect `BY` keyword after `ORDER`",
-            )?;
-
-            let window_functions_count_before = context.window_functions.len();
-            let expr = parse_expression(context, env, tokens, position)?;
-            if window_functions_count_before != context.window_functions.len() {
-                return Err(Diagnostic::error(
-                    "Window functions are not allowed in window definitions",
-                )
-                .with_location(tokens[*position].location)
-                .as_boxed());
-            }
-
-            let ordering = parse_sorting_order(tokens, position)?;
-            let order_by = WindowOrderingClause { expr, ordering };
-            window_definition.ordering_clause = Some(order_by);
+            window_definition.ordering_clause = Some(WindowOrderingClause { order_by });
             continue;
         }
 

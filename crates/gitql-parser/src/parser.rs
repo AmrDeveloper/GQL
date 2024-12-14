@@ -1163,10 +1163,16 @@ pub(crate) fn parse_order_by_statement(
 
     let mut arguments: Vec<Box<dyn Expr>> = vec![];
     let mut sorting_orders: Vec<SortingOrder> = vec![];
+    let mut null_ordering_policies: Vec<NullsOrderPolicy> = vec![];
 
     loop {
-        arguments.push(parse_expression(context, env, tokens, position)?);
-        sorting_orders.push(parse_sorting_order(tokens, position)?);
+        let argument = parse_expression(context, env, tokens, position)?;
+        let sorting_order = parse_sorting_order(tokens, position)?;
+        let null_ordering_policy = parse_order_by_nulls_policy(tokens, position, &sorting_order)?;
+
+        arguments.push(argument);
+        sorting_orders.push(sorting_order);
+        null_ordering_policies.push(null_ordering_policy);
 
         if is_current_token(tokens, position, TokenKind::Comma) {
             // Consume `,` keyword
@@ -1179,10 +1185,11 @@ pub(crate) fn parse_order_by_statement(
     Ok(Box::new(OrderByStatement {
         arguments,
         sorting_orders,
+        nulls_order_policies: null_ordering_policies,
     }))
 }
 
-pub(crate) fn parse_sorting_order(
+fn parse_sorting_order(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<SortingOrder, Box<Diagnostic>> {
@@ -1224,6 +1231,43 @@ pub(crate) fn parse_sorting_order(
 
     // Return default sorting order
     Ok(sorting_order)
+}
+
+fn parse_order_by_nulls_policy(
+    tokens: &[Token],
+    position: &mut usize,
+    sorting_order: &SortingOrder,
+) -> Result<NullsOrderPolicy, Box<Diagnostic>> {
+    // Check for `NULLs FIRST` or `NULLs LAST`
+    if is_current_token(tokens, position, TokenKind::Nulls) {
+        // Consume `NULLs` keyword
+        *position += 1;
+
+        // Consume `FIRST` and return NUlls First policy
+        if is_current_token(tokens, position, TokenKind::First) {
+            *position += 1;
+            return Ok(NullsOrderPolicy::NullsFirst);
+        }
+
+        // Consume `LAST` and return NUlls Last policy
+        if is_current_token(tokens, position, TokenKind::Last) {
+            *position += 1;
+            return Ok(NullsOrderPolicy::NullsLast);
+        }
+
+        return Err(Diagnostic::error("Unexpected NULL ordering policy")
+            .add_note("Null ordering policy must be `FIRST` or `LAST`")
+            .add_help("Please use `NULL FIRST` or `NULL LAST`")
+            .with_location(tokens[*position].location)
+            .as_boxed());
+    }
+
+    let default_null_ordering_policy = match sorting_order {
+        SortingOrder::Ascending => NullsOrderPolicy::NullsLast,
+        SortingOrder::Descending => NullsOrderPolicy::NullsFirst,
+    };
+
+    Ok(default_null_ordering_policy)
 }
 
 fn parse_into_statement(

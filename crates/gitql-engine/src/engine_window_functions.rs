@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use gitql_ast::statement::GroupByStatement;
-use gitql_ast::statement::OrderByStatement;
 use gitql_ast::statement::WindowDefinition;
 use gitql_ast::statement::WindowFunctionKind;
 use gitql_ast::statement::WindowFunctionsStatement;
@@ -104,14 +103,9 @@ fn apply_window_definition_on_gitql_object(
     }
 
     // Apply ordering each partition
-    if let Some(order_by) = &window_definition.ordering_clause {
-        let order_by = OrderByStatement {
-            arguments: vec![order_by.expr.clone()],
-            sorting_orders: vec![order_by.ordering.clone()],
-        };
-
+    if let Some(window_ordering) = &window_definition.ordering_clause {
         for index in 0..gitql_object.len() {
-            execute_order_by_statement(env, &order_by, gitql_object, index)?;
+            execute_order_by_statement(env, &window_ordering.order_by, gitql_object, index)?;
         }
     }
 
