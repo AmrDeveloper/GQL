@@ -115,7 +115,7 @@ pub enum SymbolFlag {
 #[derive(Clone)]
 pub struct SymbolExpr {
     pub value: String,
-    pub result_type: Box<dyn DataType>,
+    pub expr_type: Box<dyn DataType>,
     pub flag: SymbolFlag,
 }
 
@@ -125,7 +125,7 @@ impl Expr for SymbolExpr {
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
-        self.result_type.clone()
+        self.expr_type.clone()
     }
 
     fn as_any(&self) -> &dyn Any {

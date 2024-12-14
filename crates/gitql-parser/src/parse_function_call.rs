@@ -9,6 +9,7 @@ use gitql_ast::statement::WindowFunction;
 use gitql_ast::statement::WindowFunctionKind;
 use gitql_ast::statement::WindowOrderingClause;
 use gitql_ast::statement::WindowPartitioningClause;
+use gitql_ast::statement::WindowValue;
 use gitql_core::environment::Environment;
 
 use crate::context::ParserContext;
@@ -105,7 +106,7 @@ pub(crate) fn parse_function_call_expression(
                     function_name_location,
                 )?;
 
-                let column_name = context.name_generator.generate_temp_name();
+                let column_name = context.name_generator.generate_column_name();
                 context.hidden_selections.push(column_name.to_string());
 
                 let return_type = resolve_dynamic_data_type(
@@ -145,7 +146,7 @@ pub(crate) fn parse_function_call_expression(
 
                     context
                         .window_functions
-                        .insert(column_name.clone(), function);
+                        .insert(column_name.clone(), WindowValue::Function(function));
 
                     flag = SymbolFlag::WindowReference;
                 } else {
@@ -156,7 +157,7 @@ pub(crate) fn parse_function_call_expression(
                 // Return a Symbol that reference to the aggregation function generated name
                 return Ok(Box::new(SymbolExpr {
                     value: column_name,
-                    result_type: return_type,
+                    expr_type: return_type,
                     flag,
                 }));
             }
@@ -217,7 +218,17 @@ pub(crate) fn parse_function_call_expression(
                     function_name_location,
                 )?;
 
-                // TODO: Make sure to be used in Order by
+                // Make sure Window function is called in the right place only
+                if !(context.inside_selections || context.inside_order_by) {
+                    return Err(Diagnostic::error(
+                        "Window function can only be called inside Select selection or Order by",
+                    )
+                    .add_note("Window functions evaluated later right before `ORDER BY`")
+                    .add_help("You can call Window function in Select selection or Order by")
+                    .with_location(function_name_location)
+                    .as_boxed());
+                }
+
                 let column_name = context.name_generator.generate_column_name();
                 context.hidden_selections.push(column_name.to_string());
 
@@ -249,12 +260,12 @@ pub(crate) fn parse_function_call_expression(
 
                 context
                     .window_functions
-                    .insert(column_name.clone(), function);
+                    .insert(column_name.clone(), WindowValue::Function(function));
 
                 // Return a Symbol that reference to the aggregation function generated name
                 return Ok(Box::new(SymbolExpr {
                     value: column_name,
-                    result_type: return_type,
+                    expr_type: return_type,
                     flag: SymbolFlag::WindowReference,
                 }));
             }

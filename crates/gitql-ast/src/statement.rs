@@ -251,8 +251,14 @@ pub struct WindowFunction {
 }
 
 #[derive(Clone)]
+pub enum WindowValue {
+    Function(WindowFunction),
+    Expression(Box<dyn Expr>),
+}
+
+#[derive(Clone)]
 pub struct WindowFunctionsStatement {
-    pub functions: HashMap<String, WindowFunction>,
+    pub window_values: HashMap<String, WindowValue>,
 }
 
 impl Statement for WindowFunctionsStatement {

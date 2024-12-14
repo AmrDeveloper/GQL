@@ -4,6 +4,7 @@ use gitql_ast::statement::GroupByStatement;
 use gitql_ast::statement::WindowDefinition;
 use gitql_ast::statement::WindowFunctionKind;
 use gitql_ast::statement::WindowFunctionsStatement;
+use gitql_ast::statement::WindowValue;
 use gitql_core::environment::Environment;
 use gitql_core::object::GitQLObject;
 
@@ -29,57 +30,85 @@ pub(crate) fn execute_window_functions_statement(
     let main_group = &mut gitql_object.groups[0];
     let rows_len = main_group.rows.len();
 
-    for (result_column_name, function) in statement.functions.iter() {
-        let args_len = function.arguments.len();
-        let column_name = resolve_actual_column_name(alias_table, result_column_name);
-        let column_index = gitql_object
-            .titles
-            .iter()
-            .position(|r| r.eq(&column_name))
-            .unwrap();
+    // Evaluate Window functions
+    for (result_column_name, window_value) in statement.window_values.iter() {
+        if let WindowValue::Function(function) = window_value {
+            let column_name = resolve_actual_column_name(alias_table, result_column_name);
+            let column_index = gitql_object
+                .titles
+                .iter()
+                .position(|r| r.eq(&column_name))
+                .unwrap();
 
-        // Apply window definition to end up with frames
-        apply_window_definition_on_gitql_object(env, gitql_object, &function.window_definition)?;
+            // Apply window definition to end up with frames
+            apply_window_definition_on_gitql_object(
+                env,
+                gitql_object,
+                &function.window_definition,
+            )?;
 
-        // Run window function on each group
-        for frame_index in 0..gitql_object.len() {
-            let mut frame_values = Vec::with_capacity(rows_len);
-            let frame = &mut gitql_object.groups[frame_index];
-            for row in frame.rows.iter_mut() {
-                let mut row_selected_values = Vec::with_capacity(args_len);
-                for argument in function.arguments.iter() {
-                    let argument =
-                        evaluate_expression(env, argument, &gitql_object.titles, &row.values)?;
+            // Run window function on each group
+            let args_len = function.arguments.len();
+            for frame_index in 0..gitql_object.len() {
+                let mut frame_values = Vec::with_capacity(rows_len);
+                let frame = &mut gitql_object.groups[frame_index];
+                for row in frame.rows.iter_mut() {
+                    let mut row_selected_values = Vec::with_capacity(args_len);
+                    for argument in function.arguments.iter() {
+                        let argument =
+                            evaluate_expression(env, argument, &gitql_object.titles, &row.values)?;
 
-                    row_selected_values.push(argument);
-                }
-
-                frame_values.push(row_selected_values);
-            }
-
-            if frame_values.is_empty() {
-                continue;
-            }
-
-            // Evaluate function for this frame
-            match function.kind {
-                WindowFunctionKind::AggregatedWindowFunction => {
-                    let aggregation_function =
-                        env.aggregation_function(&function.function_name).unwrap();
-                    let aggregated_value = aggregation_function(&frame_values);
-
-                    for row in frame.rows.iter_mut() {
-                        row.values[column_index] = aggregated_value.clone();
+                        row_selected_values.push(argument);
                     }
+
+                    frame_values.push(row_selected_values);
                 }
-                WindowFunctionKind::PureWindowFunction => {
-                    let window_function = env.window_function(&function.function_name).unwrap();
-                    let window_values = window_function(&frame_values);
-                    for (index, value) in window_values.iter().enumerate() {
-                        frame.rows[index].values[column_index] = value.clone();
+
+                if frame_values.is_empty() {
+                    continue;
+                }
+
+                // Evaluate function for this frame
+                match function.kind {
+                    WindowFunctionKind::AggregatedWindowFunction => {
+                        let aggregation_function =
+                            env.aggregation_function(&function.function_name).unwrap();
+                        let aggregated_value = aggregation_function(&frame_values);
+
+                        for row in frame.rows.iter_mut() {
+                            row.values[column_index] = aggregated_value.clone();
+                        }
                     }
+                    WindowFunctionKind::PureWindowFunction => {
+                        let window_function = env.window_function(&function.function_name).unwrap();
+                        let window_values = window_function(&frame_values);
+                        for (index, value) in window_values.iter().enumerate() {
+                            frame.rows[index].values[column_index] = value.clone();
+                        }
+                    }
+                };
+            }
+        }
+    }
+
+    // Evaluate Expressions that depend on Window Functions evaluation
+    for (result_column_name, window_value) in statement.window_values.iter() {
+        if let WindowValue::Expression(expression) = window_value {
+            let column_name = resolve_actual_column_name(alias_table, result_column_name);
+            let column_index = gitql_object
+                .titles
+                .iter()
+                .position(|r| r.eq(&column_name))
+                .unwrap();
+
+            for frame_index in 0..gitql_object.len() {
+                let frame = &mut gitql_object.groups[frame_index];
+                for row in frame.rows.iter_mut() {
+                    let window_value =
+                        evaluate_expression(env, expression, &gitql_object.titles, &row.values)?;
+                    row.values[column_index] = window_value.clone();
                 }
-            };
+            }
         }
     }
 

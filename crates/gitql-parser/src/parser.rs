@@ -273,7 +273,9 @@ fn parse_select_query(
                     .as_boxed());
                 }
 
+                context.inside_having = true;
                 let statement = parse_having_statement(&mut context, env, tokens, position)?;
+                context.inside_having = false;
                 statements.insert("having", statement);
             }
             TokenKind::Limit => {
@@ -360,7 +362,10 @@ fn parse_select_query(
                         .as_boxed());
                 }
 
+                context.inside_order_by = true;
                 let statement = parse_order_by_statement(&mut context, env, tokens, position)?;
+                context.inside_order_by = false;
+
                 statements.insert("order", statement);
             }
             TokenKind::Into => {
@@ -395,25 +400,27 @@ fn parse_select_query(
         // TODO: Improve the design to get benefits of named window
         // Resolve named window clauses by their values, this is not the best option,
         // we should reorder and group window functions to reduce the name of over clauses
-        for (_, function) in context.window_functions.iter_mut() {
-            if let Some(window_name) = &function.window_definition.name {
-                if !context.named_window_clauses.contains_key(window_name) {
-                    return Err(Diagnostic::error(&format!(
-                        "Can't resolve `WINDOW Definition` with name {}",
-                        window_name
-                    ))
-                    .add_note("Make sure you already defined window over clause with this name")
-                    .as_boxed());
-                }
+        for (_, window_value) in context.window_functions.iter_mut() {
+            if let WindowValue::Function(function) = window_value {
+                if let Some(window_name) = &function.window_definition.name {
+                    if !context.named_window_clauses.contains_key(window_name) {
+                        return Err(Diagnostic::error(&format!(
+                            "Can't resolve `WINDOW Definition` with name {}",
+                            window_name
+                        ))
+                        .add_note("Make sure you already defined window over clause with this name")
+                        .as_boxed());
+                    }
 
-                function.window_definition = context.named_window_clauses[window_name].clone();
+                    function.window_definition = context.named_window_clauses[window_name].clone();
+                }
             }
         }
 
         statements.insert(
             "window_functions",
             Box::new(WindowFunctionsStatement {
-                functions: context.window_functions,
+                window_values: context.window_functions,
             }),
         );
     }
@@ -508,6 +515,8 @@ fn parse_select_statement(
     let mut selected_expr_titles: Vec<String> = vec![];
     let mut selected_expr: Vec<Box<dyn Expr>> = vec![];
     let mut is_select_all = false;
+
+    context.inside_selections = true;
     parse_select_all_or_expressions(
         context,
         env,
@@ -518,6 +527,7 @@ fn parse_select_statement(
         &mut selected_expr,
         &mut is_select_all,
     )?;
+    context.inside_selections = false;
 
     // Parse optional `FROM` with one or more tables and joins
     let mut joins: Vec<Join> = vec![];
@@ -1530,58 +1540,58 @@ pub(crate) fn parse_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
-    // let aggregations_count_before = context.aggregations.len();
+    let aggregation_count_before = context.aggregations.len();
+    let window_count_before = context.window_functions.len();
     let expression = parse_assignment_expression(context, env, tokens, position)?;
-    // let has_aggregations = context.aggregations.len() != aggregations_count_before;
 
     if expression.kind() != ExprKind::Symbol {
+        // This Expression contains aggregate function call or aggregate value
+        if aggregation_count_before != context.aggregations.len() {
+            let column_name = context.name_generator.generate_column_name();
+            let expr_type = expression.expr_type();
+            env.define(column_name.to_string(), expr_type.clone());
+
+            // Register the new aggregation generated field if the this expression is after group by
+            if context.has_group_by_statement && !context.hidden_selections.contains(&column_name) {
+                context.hidden_selections.push(column_name.to_string());
+            }
+
+            context
+                .aggregations
+                .insert(column_name.clone(), AggregateValue::Expression(expression));
+
+            return Ok(Box::new(SymbolExpr {
+                value: column_name,
+                expr_type,
+                flag: SymbolFlag::None,
+            }));
+        }
+
+        // This Expression contains window function call or window value
+        if window_count_before != context.window_functions.len() {
+            let column_name = context.name_generator.generate_column_name();
+            let expr_type = expression.expr_type();
+            env.define(column_name.to_string(), expr_type.clone());
+
+            // Register the new window generated field if the this expression is after group by
+            if context.has_group_by_statement && !context.hidden_selections.contains(&column_name) {
+                context.hidden_selections.push(column_name.to_string());
+            }
+
+            context
+                .window_functions
+                .insert(column_name.clone(), WindowValue::Expression(expression));
+
+            return Ok(Box::new(SymbolExpr {
+                value: column_name,
+                expr_type,
+                flag: SymbolFlag::None,
+            }));
+        }
+
         return Ok(expression);
     }
 
-    if let Some(symbol) = expression.as_any().downcast_ref::<SymbolExpr>() {
-        if symbol.flag == SymbolFlag::AggregationReference {
-            let column_name = context.name_generator.generate_column_name();
-            let expr_type = expression.expr_type();
-            env.define(column_name.to_string(), expr_type.clone());
-
-            // Register the new aggregation generated field if the this expression is after group by
-            if context.has_group_by_statement && !context.hidden_selections.contains(&column_name) {
-                context.hidden_selections.push(column_name.to_string());
-            }
-
-            context
-                .aggregations
-                .insert(column_name.clone(), AggregateValue::Expression(expression));
-
-            return Ok(Box::new(SymbolExpr {
-                value: column_name,
-                result_type: expr_type,
-                flag: SymbolFlag::AggregationReference,
-            }));
-        }
-    }
-    /*
-        if has_aggregations {
-            let column_name = context.name_generator.generate_column_name();
-            let expr_type = expression.expr_type();
-            env.define(column_name.to_string(), expr_type.clone());
-
-            // Register the new aggregation generated field if the this expression is after group by
-            if context.has_group_by_statement && !context.hidden_selections.contains(&column_name) {
-                context.hidden_selections.push(column_name.to_string());
-            }
-
-            context
-                .aggregations
-                .insert(column_name.clone(), AggregateValue::Expression(expression));
-
-            return Ok(Box::new(SymbolExpr {
-                value: column_name,
-                result_type: expr_type,
-                flag: 0,
-            }));
-        }
-    */
     Ok(expression)
 }
 
@@ -4332,20 +4342,49 @@ fn parse_symbol_expression(
         }
     }
 
-    // Consume Symbol
+    let mut symbol_name = &value;
+
+    // If this symbol is alias, resolve it back to the original name and perform the checks
+    let has_alias = context.name_alias_table.values().any(|v| v.eq(symbol_name));
+    if has_alias {
+        for (key, value) in context.name_alias_table.iter() {
+            if value.eq(symbol_name) {
+                symbol_name = key;
+                break;
+            }
+        }
+    }
+
+    // If this symbol is a reference to Aggregate value, make sure it's used in the right place
+    if context.aggregations.contains_key(symbol_name)
+        && !(context.inside_selections || context.inside_having || context.inside_order_by)
+    {
+        return Err(Diagnostic::error(
+            "Can't use the value of aggregation function outside selection or order by",
+        )
+        .with_location(calculate_safe_location(tokens, *position))
+        .as_boxed());
+    }
+
+    // If this symbol is a reference to Window function value, make sure it's used in the right place
+    if context.window_functions.contains_key(symbol_name)
+        && !(context.inside_selections || context.inside_order_by)
+    {
+        return Err(Diagnostic::error(
+            "Can't use the value of window function outside selection or order by",
+        )
+        .with_location(calculate_safe_location(tokens, *position))
+        .as_boxed());
+    }
+
+    // Consume `Symbol` token
     *position += 1;
 
-    let result_type = if env.contains(&value) {
-        env.scopes[value.as_str()].clone()
-    } else if env.schema.tables_fields_types.contains_key(&value.as_str()) {
-        env.schema.tables_fields_types[&value.as_str()].clone()
-    } else {
-        Box::new(UndefType)
-    };
+    let result_type = resolve_symbol_type_or_undefine(env, &value);
 
     Ok(Box::new(SymbolExpr {
         value,
-        result_type,
+        expr_type: result_type,
         flag: SymbolFlag::None,
     }))
 }
@@ -4749,6 +4788,19 @@ fn expression_literal(expression: &Box<dyn Expr>) -> Option<String> {
         return Some(symbol.value.to_string());
     }
     None
+}
+
+#[inline(always)]
+fn resolve_symbol_type_or_undefine(env: &mut Environment, name: &String) -> Box<dyn DataType> {
+    if let Some(symbol_type) = env.scopes.get(name) {
+        symbol_type.clone()
+    } else if let Some(symbol_type) = env.globals_types.get(name) {
+        symbol_type.clone()
+    } else if let Some(symbol_type) = env.schema.tables_fields_types.get(name.as_str()) {
+        symbol_type.clone()
+    } else {
+        Box::new(UndefType)
+    }
 }
 
 #[inline(always)]
