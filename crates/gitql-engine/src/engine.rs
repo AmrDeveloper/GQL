@@ -28,8 +28,8 @@ const FIXED_LOGICAL_PLAN: [&str; FIXED_LOGICAL_PLAN_LEN] = [
     "group",
     "aggregation",
     "having",
-    "order",
     "window_functions",
+    "order",
     "offset",
     "limit",
 ];
