@@ -57,7 +57,6 @@ pub(crate) fn execute_window_functions_statement(
                     for argument in function.arguments.iter() {
                         let argument =
                             evaluate_expression(env, argument, &gitql_object.titles, &row.values)?;
-
                         row_selected_values.push(argument);
                     }
 
@@ -74,7 +73,6 @@ pub(crate) fn execute_window_functions_statement(
                         let aggregation_function =
                             env.aggregation_function(&function.function_name).unwrap();
                         let aggregated_value = aggregation_function(&frame_values);
-
                         for row in frame.rows.iter_mut() {
                             row.values[column_index] = aggregated_value.clone();
                         }
@@ -89,6 +87,7 @@ pub(crate) fn execute_window_functions_statement(
                 };
             }
         }
+        gitql_object.flat();
     }
 
     // Evaluate Expressions that depend on Window Functions evaluation
@@ -110,9 +109,8 @@ pub(crate) fn execute_window_functions_statement(
                 }
             }
         }
+        gitql_object.flat();
     }
-
-    gitql_object.flat();
 
     Ok(())
 }
