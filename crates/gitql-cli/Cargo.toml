@@ -1,7 +1,7 @@
 [package]
 name = "gitql-cli"
 authors = ["AmrDeveloper"]
-version = "0.32.0"
+version = "0.33.0"
 edition = "2021"
 description = "GitQL Command line interface (CLI) components"
 repository = "https://github.com/amrdeveloper/gql/tree/main/crates/gitql-cli"
@@ -10,10 +10,10 @@ keywords = ["cli", "gql", "language", "git", "sql"]
 categories = ["command-line-utilities"]
 
 [dependencies]
-gitql-core = { path = "../gitql-core", version = "0.9.0" }
-gitql-ast = { path = "../gitql-ast", version = "0.29.0" }
-gitql-parser = { path = "../gitql-parser", version = "0.31.0" }
-comfy-table = "7.1.0"
-termcolor = "1.4.1"
-serde_json = "1.0.115"
-csv = "1.3.0"
+gitql-core = { path = "../gitql-core", version = "0.10.0" }
+gitql-ast = { path = "../gitql-ast", version = "0.30.0" }
+gitql-parser = { path = "../gitql-parser", version = "0.32.0" }
+comfy-table = { workspace = true }
+termcolor = { workspace = true }
+serde_json = { workspace = true }
+csv = { workspace = true }
