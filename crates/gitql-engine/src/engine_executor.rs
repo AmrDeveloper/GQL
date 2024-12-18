@@ -292,16 +292,22 @@ fn execute_where_statement(
     statement: &WhereStatement,
     gitql_object: &mut GitQLObject,
 ) -> Result<(), String> {
+    if gitql_object.is_empty() {
+        return Ok(());
+    }
+
+    if gitql_object.len() > 1 {
+        gitql_object.flat()
+    }
+
     // Perform where command only on the first group
     // because group by command not executed yet
-    let condition = &statement.condition;
-    let main_group = &gitql_object.groups.first().unwrap().rows;
-    let rows = apply_filter_operation(env, condition, &gitql_object.titles, main_group)?;
-    let filtered_group: Group = Group { rows };
-
-    // Update the main group with the filtered data
-    gitql_object.groups.remove(0);
-    gitql_object.groups.push(filtered_group);
+    apply_filter_operation(
+        env,
+        &statement.condition,
+        &gitql_object.titles,
+        &mut gitql_object.groups[0].rows,
+    )?;
 
     Ok(())
 }
@@ -321,14 +327,12 @@ fn execute_having_statement(
 
     // Perform where command only on the first group
     // because group by command not executed yet
-    let condition = &statement.condition;
-    let main_group = &gitql_object.groups.first().unwrap().rows;
-    let rows = apply_filter_operation(env, condition, &gitql_object.titles, main_group)?;
-    let filtered_group: Group = Group { rows };
-
-    // Update the main group with the filtered data
-    gitql_object.groups.remove(0);
-    gitql_object.groups.push(filtered_group);
+    apply_filter_operation(
+        env,
+        &statement.condition,
+        &gitql_object.titles,
+        &mut gitql_object.groups[0].rows,
+    )?;
 
     Ok(())
 }

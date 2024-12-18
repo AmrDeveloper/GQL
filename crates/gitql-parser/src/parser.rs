@@ -273,9 +273,7 @@ fn parse_select_query(
                     .as_boxed());
                 }
 
-                context.inside_having = true;
                 let statement = parse_having_statement(&mut context, env, tokens, position)?;
-                context.inside_having = false;
                 statements.insert("having", statement);
             }
             TokenKind::Limit => {
@@ -301,7 +299,7 @@ fn parse_select_query(
                             .as_boxed());
                     }
 
-                    // Consume Comma
+                    // Consume `,``
                     *position += 1;
 
                     if *position >= len || !matches!(tokens[*position].kind, TokenKind::Integer(_))
@@ -362,10 +360,7 @@ fn parse_select_query(
                         .as_boxed());
                 }
 
-                context.inside_order_by = true;
                 let statement = parse_order_by_statement(&mut context, env, tokens, position)?;
-                context.inside_order_by = false;
-
                 statements.insert("order", statement);
             }
             TokenKind::Into => {
@@ -905,7 +900,7 @@ fn parse_from_option(
             // Make sure user set predicate condition for LEFT or RIGHT JOIN
             if predicate.is_none() && matches!(join_kind, JoinKind::Right | JoinKind::Left) {
                 return Err(Diagnostic::error(
-                    "You must set predicate condition using `ON` Keyword for LEFT OR RIHTH JOINS",
+                    "You must set predicate condition using `ON` Keyword for `LEFT` OR `RIGHT` JOINS",
                 )
                 .with_location(join_location)
                 .as_boxed());
@@ -999,7 +994,7 @@ fn parse_group_by_statement(
         tokens,
         position,
         TokenKind::By,
-        "Expect keyword `by` after keyword `group`",
+        "Expect keyword `BY` after keyword `group`",
     )?;
 
     // Parse one or more expression
@@ -1043,7 +1038,11 @@ fn parse_having_statement(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Statement>, Box<Diagnostic>> {
+    context.inside_having = true;
+
+    // Consume `HAVING` token
     *position += 1;
+
     if *position >= tokens.len() {
         return Err(
             Diagnostic::error("Expect expression after `HAVING` keyword")
@@ -1079,6 +1078,7 @@ fn parse_having_statement(
         })
     }
 
+    context.inside_having = false;
     Ok(Box::new(HavingStatement { condition }))
 }
 
@@ -1163,6 +1163,8 @@ pub(crate) fn parse_order_by_statement(
     // Consume `ORDER` keyword
     *position += 1;
 
+    context.inside_order_by = true;
+
     // Consume `BY` keyword
     consume_token_or_error(
         tokens,
@@ -1191,6 +1193,8 @@ pub(crate) fn parse_order_by_statement(
             break;
         }
     }
+
+    context.inside_order_by = false;
 
     Ok(Box::new(OrderByStatement {
         arguments,
@@ -1287,7 +1291,7 @@ fn parse_into_statement(
     // Consume `INTO` keyword
     *position += 1;
 
-    // Make sure user define explicity the into type
+    // Make sure user define explicitly the into type
     if *position >= tokens.len()
         || (tokens[*position].kind != TokenKind::Outfile
             && tokens[*position].kind != TokenKind::Dumpfile)
