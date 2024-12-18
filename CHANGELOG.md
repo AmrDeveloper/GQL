@@ -1,5 +1,23 @@
 # Change Log
 
+## Version 0.33.0 _(2024-12-18)_
+
+- Check for repositories in the script mode.
+- Support Const String as Alias.
+- Fix show tables query.
+- Support Implicit casting in both direction of binary expressions.
+- Support Window functions.
+- Support `ORDER` BY in window function over clause.
+- Support named Window over clauses.
+- Improve resolving variable arguments of dynamic type `...Dynamic`.
+- Implement `FIRST_VALUE`, `NTH_VALUE`, `LAST_VALUE` window functions.
+- Implement `ROW_NUMBER` window function.
+- Support Partition by clause in Window definition.
+- Aggregation and Window function arguments by reference.
+- Support `NULLS FIRST` and `NULLS LAST` in `ORDER BY` statement.
+- Report error where window or aggregate value is used before evaluation.
+- Improve the performance of filtering operator.
+
 ## Version 0.32.0 _(2024-11-30)_
 
 - Support Contained By expression using `@>` operator for Array, Range.
