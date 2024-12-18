@@ -106,6 +106,7 @@ nav:
       - Case: expression/case.md
       - Cast: expression/cast.md
       - Access Member: expression/access.md
+      - Call: expression/call.md
     - STD Functions and Operators:
       - "functions/index.md"
       - Logical: functions/logical.md

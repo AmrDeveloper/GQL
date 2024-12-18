@@ -296,12 +296,6 @@ fn execute_where_statement(
         return Ok(());
     }
 
-    if gitql_object.len() > 1 {
-        gitql_object.flat()
-    }
-
-    // Perform where command only on the first group
-    // because group by command not executed yet
     apply_filter_operation(
         env,
         &statement.condition,

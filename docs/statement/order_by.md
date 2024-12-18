@@ -14,3 +14,10 @@ The `ORDER BY` Statement with `USING <operator>` syntax inspired by PostgreSQL
 SELECT author_name, author_email FROM commits ORDER BY author_email, commit_id USING <
 SELECT author_name, author_email FROM commits ORDER BY author_name USING >
 ```
+
+You can define nulls order policy to set if you want null value to be first or last in the order
+
+```sql
+SELECT author_name, author_email FROM commits ORDER BY author_email NULLS FIRST
+SELECT author_name, author_email FROM commits ORDER BY author_name NULLS LAST
+```

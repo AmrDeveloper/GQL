@@ -6,3 +6,4 @@ GitQL Expressions
 - [Cast expression](cast.md)
 - [Array expression](array.md).
 - [Access Member](access.md).
+- [Call expression](call.md)
