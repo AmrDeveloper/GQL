@@ -447,7 +447,13 @@ impl Expr for LogicalExpr {
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
-        Box::new(BoolType)
+        let lhs_type = self.left.expr_type();
+        let rhs_type = &self.right.expr_type();
+        match self.operator {
+            BinaryLogicalOperator::Or => lhs_type.logical_or_op_result_type(rhs_type),
+            BinaryLogicalOperator::And => lhs_type.logical_and_op_result_type(rhs_type),
+            BinaryLogicalOperator::Xor => lhs_type.logical_xor_op_result_type(rhs_type),
+        }
     }
 
     fn as_any(&self) -> &dyn Any {
