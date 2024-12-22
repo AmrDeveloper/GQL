@@ -1,5 +1,6 @@
-use gitql_core::object::Row;
+use std::convert::Infallible;
 
+use gitql_core::object::Row;
 use gitql_core::values::base::Value;
 use gitql_core::values::boolean::BoolValue;
 use gitql_core::values::datetime::DateTimeValue;
@@ -9,8 +10,6 @@ use gitql_core::values::text::TextValue;
 use gitql_engine::data_provider::DataProvider;
 
 use gix::diff::blob::pipeline::Mode;
-use gix::object::blob::diff::init::Error;
-use gix::object::tree::diff::Action;
 use gix::refs::Category;
 
 pub struct GitDataProvider {
@@ -61,7 +60,7 @@ fn select_references(
         return Err(error.to_string());
     }
 
-    let repo_path = repo.path().to_str().unwrap().to_string();
+    let repo_path = repo.path().to_str().unwrap();
     let references = git_references.ok().unwrap();
     let mut rows: Vec<Row> = vec![];
 
@@ -69,12 +68,7 @@ fn select_references(
         let mut values: Vec<Box<dyn Value>> = Vec::with_capacity(selected_columns.len());
         for field_name in selected_columns {
             if field_name == "name" {
-                let name = reference
-                    .name()
-                    .category_and_short_name()
-                    .map(|(_, sn)| sn)
-                    .unwrap_or("".into())
-                    .to_string();
+                let name = reference.name().shorten().to_string();
                 values.push(Box::new(TextValue { value: name }));
                 continue;
             }
@@ -86,28 +80,12 @@ fn select_references(
             }
 
             if field_name == "type" {
-                let category = reference.name().category();
-                if category.map_or(false, |cat| cat == Category::LocalBranch) {
-                    values.push(Box::new(TextValue {
-                        value: "branch".to_string(),
-                    }));
-                } else if category.map_or(false, |cat| cat == Category::RemoteBranch) {
-                    values.push(Box::new(TextValue {
-                        value: "remote".to_string(),
-                    }));
-                } else if category.map_or(false, |cat| cat == Category::Tag) {
-                    values.push(Box::new(TextValue {
-                        value: "tag".to_string(),
-                    }));
-                } else if category.map_or(false, |cat| cat == Category::Note) {
-                    values.push(Box::new(TextValue {
-                        value: "note".to_string(),
-                    }));
+                let category = if let Some(category) = reference.name().category() {
+                    format!("{:?}", category)
                 } else {
-                    values.push(Box::new(TextValue {
-                        value: "other".to_string(),
-                    }));
-                }
+                    "Other".to_string()
+                };
+                values.push(Box::new(TextValue { value: category }));
                 continue;
             }
 
@@ -134,7 +112,7 @@ fn select_commits(repo: &gix::Repository, selected_columns: &[String]) -> Result
         return Err(error.to_string());
     }
 
-    let repo_path = repo.path().to_str().unwrap().to_string();
+    let repo_path = repo.path().to_str().unwrap();
     let walker = head_id.unwrap().ancestors().all().unwrap();
     let mut rows: Vec<Row> = vec![];
 
@@ -232,7 +210,7 @@ fn select_branches(
 ) -> Result<Vec<Row>, String> {
     let mut rows: Vec<Row> = vec![];
 
-    let repo_path = repo.path().to_str().unwrap().to_string();
+    let repo_path = repo.path().to_str().unwrap();
     let platform = repo.references().unwrap();
     let local_branches = platform.local_branches().unwrap();
     let remote_branches = platform.remote_branches().unwrap();
@@ -340,30 +318,29 @@ fn select_diffs(repo: &gix::Repository, selected_columns: &[String]) -> Result<V
         repo
     };
 
-    let walker = repo.head_id().unwrap().ancestors().all().unwrap();
-    let repo_path = repo.path().to_str().unwrap().to_string();
-
     let mut rewrite_cache = repo
         .diff_resource_cache(Mode::ToGit, Default::default())
         .unwrap();
+    let mut diff_cache: gix::diff::blob::Platform = rewrite_cache.clone();
 
-    let mut diff_cache = rewrite_cache.clone();
+    let should_calculate_diffs = selected_columns
+        .iter()
+        .any(|col| col == "insertions" || col == "deletions" || col == "files_changed");
+
+    let repo_path = repo.path().to_str().unwrap();
+    let walker = repo.head_id().unwrap().ancestors().all().unwrap();
+    let commits_info = walker.filter_map(Result::ok);
 
     let mut rows: Vec<Row> = vec![];
 
-    let select_insertions_or_deletions = selected_columns.contains(&"insertions".to_string())
-        || selected_columns.contains(&"deletions".to_string())
-        || selected_columns.contains(&"files_changed".to_string());
-
-    for commit_info in walker {
-        let commit_info = commit_info.unwrap();
+    for commit_info in commits_info.into_iter() {
         let commit = commit_info.id().object().unwrap().into_commit();
         let commit_ref = commit.decode().unwrap();
         let mut values: Vec<Box<dyn Value>> = Vec::with_capacity(selected_columns.len());
 
         // Calculate the diff between two commits take time, and  should calculated once per commit
         let (mut insertions, mut deletions, mut files_changed) = (0, 0, 0);
-        if select_insertions_or_deletions {
+        if should_calculate_diffs {
             let current = commit.tree().unwrap();
             let previous = commit_info
                 .parent_ids()
@@ -371,24 +348,22 @@ fn select_diffs(repo: &gix::Repository, selected_columns: &[String]) -> Result<V
                 .map(|id| id.object().unwrap().into_commit().tree().unwrap())
                 .unwrap_or_else(|| repo.empty_tree());
 
-            rewrite_cache.clear_resource_cache();
-            diff_cache.clear_resource_cache();
+            rewrite_cache.clear_resource_cache_keep_allocation();
+            diff_cache.clear_resource_cache_keep_allocation();
 
             if let Ok(mut changes) = previous.changes() {
                 let _ = changes.for_each_to_obtain_tree_with_cache(
                     &current,
                     &mut rewrite_cache,
-                    |change| -> Result<_, Error> {
+                    |change| {
                         files_changed += usize::from(change.entry_mode().is_no_tree());
-                        if select_insertions_or_deletions {
-                            if let Ok(mut platform) = change.diff(&mut diff_cache) {
-                                if let Ok(Some(counts)) = platform.line_counts() {
-                                    deletions += counts.removals;
-                                    insertions += counts.insertions;
-                                }
+                        if let Ok(mut platform) = change.diff(&mut diff_cache) {
+                            if let Ok(Some(counts)) = platform.line_counts() {
+                                deletions += counts.removals;
+                                insertions += counts.insertions;
                             }
                         }
-                        Ok(Action::Continue)
+                        Ok::<_, Infallible>(Default::default())
                     },
                 );
             }
@@ -459,7 +434,7 @@ fn select_diffs(repo: &gix::Repository, selected_columns: &[String]) -> Result<V
 fn select_tags(repo: &gix::Repository, selected_columns: &[String]) -> Result<Vec<Row>, String> {
     let platform = repo.references().unwrap();
     let tag_names = platform.tags().unwrap();
-    let repo_path = repo.path().to_str().unwrap().to_string();
+    let repo_path = repo.path().to_str().unwrap();
     let mut rows: Vec<Row> = vec![];
     for tag_ref in tag_names.flatten() {
         let mut values: Vec<Box<dyn Value>> = Vec::with_capacity(selected_columns.len());
@@ -470,9 +445,7 @@ fn select_tags(repo: &gix::Repository, selected_columns: &[String]) -> Result<Ve
                     .name()
                     .category_and_short_name()
                     .map_or_else(String::default, |(_, short_name)| short_name.to_string());
-                values.push(Box::new(TextValue {
-                    value: tag_name.to_string(),
-                }));
+                values.push(Box::new(TextValue { value: tag_name }));
                 continue;
             }
 
