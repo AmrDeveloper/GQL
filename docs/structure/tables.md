@@ -42,8 +42,8 @@ show tables
 | Name          | Type     | Description              |
 | ------------- | -------- | ------------------------ |
 | commit_id     | Text     | Commit id                |
-| name          | Text     | Author name              |
-| email         | Text     | Author email             |
+| author_name   | Text     | Author name              |
+| author_email  | Text     | Author email             |
 | insertions    | Number   | Number of inserted lines |
 | deletions     | Number   | Number of deleted lines  |
 | files_changed | Number   | Number of file changed   |

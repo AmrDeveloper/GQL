@@ -21,7 +21,6 @@ pub fn tables_fields_types() -> HashMap<&'static str, Box<dyn DataType>> {
     map.insert("insertions", Box::new(IntType));
     map.insert("deletions", Box::new(IntType));
     map.insert("files_changed", Box::new(IntType));
-    map.insert("email", Box::new(TextType));
     map.insert("type", Box::new(TextType));
     map.insert("datetime", Box::new(DateTimeType));
     map.insert("is_head", Box::new(BoolType));
@@ -68,8 +67,8 @@ pub fn tables_fields_names() -> &'static HashMap<&'static str, Vec<&'static str>
             "diffs",
             vec![
                 "commit_id",
-                "name",
-                "email",
+                "author_name",
+                "author_email",
                 "insertions",
                 "deletions",
                 "files_changed",

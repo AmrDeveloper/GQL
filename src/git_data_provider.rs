@@ -8,6 +8,9 @@ use gitql_core::values::null::NullValue;
 use gitql_core::values::text::TextValue;
 use gitql_engine::data_provider::DataProvider;
 
+use gix::diff::blob::pipeline::Mode;
+use gix::object::blob::diff::init::Error;
+use gix::object::tree::diff::Action;
 use gix::refs::Category;
 
 pub struct GitDataProvider {
@@ -132,10 +135,10 @@ fn select_commits(repo: &gix::Repository, selected_columns: &[String]) -> Result
     }
 
     let repo_path = repo.path().to_str().unwrap().to_string();
-    let revwalk = head_id.unwrap().ancestors().all().unwrap();
+    let walker = head_id.unwrap().ancestors().all().unwrap();
     let mut rows: Vec<Row> = vec![];
 
-    for commit_info in revwalk {
+    for commit_info in walker {
         let commit_info = commit_info.unwrap();
         let commit = repo.find_object(commit_info.id).unwrap().into_commit();
         let commit = commit.decode().unwrap();
@@ -258,8 +261,8 @@ fn select_branches(
 
             if column_name == "commit_count" {
                 let commit_count = if let Some(id) = branch.try_id() {
-                    if let Ok(revwalk) = id.ancestors().all() {
-                        revwalk.count() as i64
+                    if let Ok(walker) = id.ancestors().all() {
+                        walker.count() as i64
                     } else {
                         0
                     }
@@ -275,8 +278,8 @@ fn select_branches(
 
             if column_name == "updated" {
                 if let Ok(top_commit_id) = branch.peel_to_id_in_place() {
-                    let revwalk = top_commit_id.ancestors().all().unwrap();
-                    if let Some(commit_info) = revwalk.into_iter().next() {
+                    let walker = top_commit_id.ancestors().all().unwrap();
+                    if let Some(commit_info) = walker.into_iter().next() {
                         let commit_info = commit_info.unwrap();
                         if let Some(commit_timestamp) = commit_info.commit_time {
                             values.push(Box::new(DateTimeValue {
@@ -337,44 +340,76 @@ fn select_diffs(repo: &gix::Repository, selected_columns: &[String]) -> Result<V
         repo
     };
 
-    let revwalk = repo.head_id().unwrap().ancestors().all().unwrap();
+    let walker = repo.head_id().unwrap().ancestors().all().unwrap();
     let repo_path = repo.path().to_str().unwrap().to_string();
 
     let mut rewrite_cache = repo
-        .diff_resource_cache(gix::diff::blob::pipeline::Mode::ToGit, Default::default())
+        .diff_resource_cache(Mode::ToGit, Default::default())
         .unwrap();
 
     let mut diff_cache = rewrite_cache.clone();
+
     let mut rows: Vec<Row> = vec![];
 
     let select_insertions_or_deletions = selected_columns.contains(&"insertions".to_string())
-        || selected_columns.contains(&"deletions".to_string());
+        || selected_columns.contains(&"deletions".to_string())
+        || selected_columns.contains(&"files_changed".to_string());
 
-    for commit_info in revwalk {
+    for commit_info in walker {
         let commit_info = commit_info.unwrap();
         let commit = commit_info.id().object().unwrap().into_commit();
         let commit_ref = commit.decode().unwrap();
         let mut values: Vec<Box<dyn Value>> = Vec::with_capacity(selected_columns.len());
 
+        // Calculate the diff between two commits take time, and  should calculated once per commit
+        let (mut insertions, mut deletions, mut files_changed) = (0, 0, 0);
+        if select_insertions_or_deletions {
+            let current = commit.tree().unwrap();
+            let previous = commit_info
+                .parent_ids()
+                .next()
+                .map(|id| id.object().unwrap().into_commit().tree().unwrap())
+                .unwrap_or_else(|| repo.empty_tree());
+
+            rewrite_cache.clear_resource_cache();
+            diff_cache.clear_resource_cache();
+
+            if let Ok(mut changes) = previous.changes() {
+                let _ = changes.for_each_to_obtain_tree_with_cache(
+                    &current,
+                    &mut rewrite_cache,
+                    |change| -> Result<_, Error> {
+                        files_changed += usize::from(change.entry_mode().is_no_tree());
+                        if select_insertions_or_deletions {
+                            if let Ok(mut platform) = change.diff(&mut diff_cache) {
+                                if let Ok(Some(counts)) = platform.line_counts() {
+                                    deletions += counts.removals;
+                                    insertions += counts.insertions;
+                                }
+                            }
+                        }
+                        Ok(Action::Continue)
+                    },
+                );
+            }
+        }
+
         for column_name in selected_columns {
             if column_name == "commit_id" {
-                values.push(Box::new(TextValue {
-                    value: commit_info.id.to_string(),
-                }));
+                let value = commit_info.id.to_string();
+                values.push(Box::new(TextValue { value }));
                 continue;
             }
 
-            if column_name == "name" {
-                values.push(Box::new(TextValue {
-                    value: commit_ref.author().name.to_string(),
-                }));
+            if column_name == "author_name" {
+                let value = commit_ref.author().name.to_string();
+                values.push(Box::new(TextValue { value }));
                 continue;
             }
 
-            if column_name == "email" {
-                values.push(Box::new(TextValue {
-                    value: commit_ref.author().email.to_string(),
-                }));
+            if column_name == "author_email" {
+                let value = commit_ref.author().email.to_string();
+                values.push(Box::new(TextValue { value }));
                 continue;
             }
 
@@ -386,68 +421,29 @@ fn select_diffs(repo: &gix::Repository, selected_columns: &[String]) -> Result<V
                 continue;
             }
 
+            if column_name == "insertions" {
+                let value = insertions as i64;
+                values.push(Box::new(IntValue { value }));
+                continue;
+            }
+
+            if column_name == "deletions" {
+                let value = deletions as i64;
+                values.push(Box::new(IntValue { value }));
+                continue;
+            }
+
+            if column_name == "files_changed" {
+                let value = files_changed as i64;
+                values.push(Box::new(IntValue { value }));
+                continue;
+            }
+
             if column_name == "repo" {
                 values.push(Box::new(TextValue {
                     value: repo_path.to_string(),
                 }));
                 continue;
-            }
-
-            if column_name == "insertions"
-                || column_name == "deletions"
-                || column_name == "files_changed"
-            {
-                let current = commit.tree().unwrap();
-
-                let previous = commit_info
-                    .parent_ids()
-                    .next()
-                    .map(|id| id.object().unwrap().into_commit().tree().unwrap())
-                    .unwrap_or_else(|| repo.empty_tree());
-                rewrite_cache.clear_resource_cache();
-                diff_cache.clear_resource_cache();
-
-                let (mut insertions, mut deletions, mut files_changed) = (0, 0, 0);
-                let _ = previous
-                    .changes()
-                    .unwrap()
-                    .for_each_to_obtain_tree_with_cache(
-                        &current,
-                        &mut rewrite_cache,
-                        |change| -> Result<_, gix::object::blob::diff::init::Error> {
-                            files_changed += usize::from(change.entry_mode().is_no_tree());
-                            if select_insertions_or_deletions {
-                                if let Ok(mut platform) = change.diff(&mut diff_cache) {
-                                    if let Ok(Some(counts)) = platform.line_counts() {
-                                        deletions += counts.removals;
-                                        insertions += counts.insertions;
-                                    }
-                                }
-                            }
-                            Ok(gix::object::tree::diff::Action::Continue)
-                        },
-                    );
-
-                if column_name == "insertions" {
-                    values.push(Box::new(IntValue {
-                        value: insertions as i64,
-                    }));
-                    continue;
-                }
-
-                if column_name == "deletions" {
-                    values.push(Box::new(IntValue {
-                        value: deletions as i64,
-                    }));
-                    continue;
-                }
-
-                if column_name == "files_changed" {
-                    values.push(Box::new(IntValue {
-                        value: files_changed as i64,
-                    }));
-                    continue;
-                }
             }
 
             values.push(Box::new(NullValue));
