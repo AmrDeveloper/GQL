@@ -289,8 +289,10 @@ fn execute_gitql_query(
     for evaluation_result in evaluations_results {
         let mut rows_count = 0;
         if let SelectedGroups(mut groups) = evaluation_result {
-            rows_count += groups.len();
-            printer.print(&mut groups);
+            if !groups.is_empty() {
+                rows_count += groups.groups[0].len();
+                printer.print(&mut groups);
+            }
         }
 
         if arguments.analysis {
