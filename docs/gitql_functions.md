@@ -11,6 +11,8 @@ those functions are available only in the gitql application.
 
 ### GitQL Diffs functions
 
-| Name                     | Parameters  | Return  | Description                                           |
-| ------------------------ | ----------- | ------- | ----------------------------------------------------- |
-| DIFF_CHANGES_FILES_COUNT | DiffChanges | Integer | Return number of unique files changes in this commit. |
+| Name                     | Parameters        | Return  | Description                                               |
+| ------------------------ | ----------------- | ------- | --------------------------------------------------------- |
+| DIFF_CHANGES_CONTENT     | DiffChanges       | Text    | Return the full content of all changes appended together. |
+| DIFF_CHANGES_FILES_COUNT | DiffChanges       | Integer | Return number of unique files changes in this commit.     |
+| IS_DIFF_CHANGES_HAS_FILE | DiffChanges, Text | Boolean | Return true if this diff changes contains file.           |
