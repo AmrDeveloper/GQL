@@ -6,7 +6,7 @@ use gitql_core::values::base::Value;
 
 use crate::gitql::types::diff_changes::DiffChangesType;
 
-#[derive(Clone)]
+#[derive(PartialEq, Clone)]
 pub enum DiffChangeKind {
     Addition,
     Deletion,

@@ -11,8 +11,15 @@ those functions are available only in the gitql application.
 
 ### GitQL Diffs functions
 
-| Name                     | Parameters        | Return  | Description                                               |
-| ------------------------ | ----------------- | ------- | --------------------------------------------------------- |
-| DIFF_CHANGES_CONTENT     | DiffChanges       | Text    | Return the full content of all changes appended together. |
-| DIFF_CHANGES_FILES_COUNT | DiffChanges       | Integer | Return number of unique files changes in this commit.     |
-| IS_DIFF_CHANGES_HAS_FILE | DiffChanges, Text | Boolean | Return true if this diff changes contains file.           |
+| Name                               | Parameters        | Return  | Description                                                              |
+| ---------------------------------- | ----------------- | ------- | ------------------------------------------------------------------------ |
+| DIFF_CONTENT                       | DiffChanges       | Text    | Return the full content of all changes appended together.                |
+| DIFF_ADDED_CONTENT                 | DiffChanges       | Text    | Return the added content of all changes appended together.               |
+| DIFF_DELETED_CONTENT               | DiffChanges       | Text    | Return the deleted content of all changes appended together.             |
+| DIFF_MODIFIED_CONTENT              | DiffChanges       | Text    | Return the modified content of all changes appended together.            |
+| DIFF_CONTENT_CONTAINS              | DiffChanges, Text | Text    | Return true if the all content of changes contains second argument.      |
+| DIFF_ADDED_CONTENT_CONTAINS        | DiffChanges, Text | Text    | Return true if the added content of changes contains second argument.    |
+| DIFF_DELETED_CONTENT_CONTAINS      | DiffChanges, Text | Text    | Return true if the deleted content of changes contains second argument.  |
+| DIFF_MODIFICATION_CONTENT_CONTAINS | DiffChanges, Text | Text    | Return true if the modified content of changes contains second argument. |
+| DIFF_FILES_COUNT                   | DiffChanges       | Integer | Return number of unique files changes in this commit.                    |
+| IS_DIFF_HAS_FILE                   | DiffChanges, Text | Boolean | Return true if this diff changes contains file.                          |
