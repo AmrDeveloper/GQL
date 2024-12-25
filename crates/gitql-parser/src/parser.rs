@@ -1681,6 +1681,26 @@ fn parse_regex_expression(
             return Ok(apply_not_keyword_if_exists(regex_expr, has_not_keyword));
         }
 
+        // Check if RHS expr can be implicit casted to Expected LHS type to make this
+        // Expression valid
+        for expected_type in expected_rhs_types.iter() {
+            if !expected_type.has_implicit_cast_from(&pattern) {
+                continue;
+            }
+
+            let casting = Box::new(CastExpr {
+                value: pattern,
+                result_type: expected_type.clone(),
+            });
+
+            let expr = Box::new(RegexExpr {
+                input: lhs,
+                pattern: casting,
+            });
+
+            return Ok(apply_not_keyword_if_exists(expr, has_not_keyword));
+        }
+
         // Return error if this operator can't be performed even with implicit cast
         return Err(Diagnostic::error(&format!(
             "Operator `REGEXP` can't be performed between types `{}` and `{}`",
@@ -3638,6 +3658,26 @@ fn parse_like_expression(
             return Ok(apply_not_keyword_if_exists(expr, has_not_keyword));
         }
 
+        // Check if RHS expr can be implicit casted to Expected LHS type to make this
+        // Expression valid
+        for expected_type in expected_rhs_types.iter() {
+            if !expected_type.has_implicit_cast_from(&pattern) {
+                continue;
+            }
+
+            let casting = Box::new(CastExpr {
+                value: pattern,
+                result_type: expected_type.clone(),
+            });
+
+            let expr = Box::new(LikeExpr {
+                input: lhs,
+                pattern: casting,
+            });
+
+            return Ok(apply_not_keyword_if_exists(expr, has_not_keyword));
+        }
+
         // Return error if this operator can't be performed even with implicit cast
         return Err(Diagnostic::error(&format!(
             "Operator `LIKE` can't be performed between types `{}` and `{}`",
@@ -3676,6 +3716,24 @@ fn parse_glob_expression(
             return Ok(Box::new(GlobExpr {
                 input: lhs,
                 pattern,
+            }));
+        }
+
+        // Check if RHS expr can be implicit casted to Expected LHS type to make this
+        // Expression valid
+        for expected_type in expected_rhs_types.iter() {
+            if !expected_type.has_implicit_cast_from(&pattern) {
+                continue;
+            }
+
+            let casting = Box::new(CastExpr {
+                value: pattern,
+                result_type: expected_type.clone(),
+            });
+
+            return Ok(Box::new(GlobExpr {
+                input: lhs,
+                pattern: casting,
             }));
         }
 
