@@ -7,6 +7,8 @@ use gitql_ast::types::datetime::DateTimeType;
 use gitql_ast::types::integer::IntType;
 use gitql_ast::types::text::TextType;
 
+use crate::gitql::types::diff_changes::DiffChangesType;
+
 pub fn tables_fields_types() -> HashMap<&'static str, Box<dyn DataType>> {
     let mut map: HashMap<&'static str, Box<dyn DataType>> = HashMap::new();
     map.insert("commit_id", Box::new(TextType));
@@ -19,7 +21,8 @@ pub fn tables_fields_types() -> HashMap<&'static str, Box<dyn DataType>> {
     map.insert("committer_email", Box::new(TextType));
     map.insert("full_name", Box::new(TextType));
     map.insert("insertions", Box::new(IntType));
-    map.insert("deletions", Box::new(IntType));
+    map.insert("removals", Box::new(IntType));
+    map.insert("diff_changes", Box::new(DiffChangesType));
     map.insert("files_changed", Box::new(IntType));
     map.insert("type", Box::new(TextType));
     map.insert("datetime", Box::new(DateTimeType));
@@ -70,8 +73,9 @@ pub fn tables_fields_names() -> &'static HashMap<&'static str, Vec<&'static str>
                 "author_name",
                 "author_email",
                 "insertions",
-                "deletions",
+                "removals",
                 "files_changed",
+                "diff_changes",
                 "datetime",
                 "repo",
             ],

@@ -10,19 +10,24 @@ use gitql_core::values::text::TextValue;
 use gitql_engine::data_provider::DataProvider;
 
 use gix::diff::blob::pipeline::Mode;
+use gix::object::tree::diff::Change;
 use gix::refs::Category;
 
-pub struct GitDataProvider {
+use super::values::diff_changes::DiffChange;
+use super::values::diff_changes::DiffChangeKind;
+use super::values::diff_changes::DiffChangesValue;
+
+pub struct GitQLDataProvider {
     pub repos: Vec<gix::Repository>,
 }
 
-impl GitDataProvider {
+impl GitQLDataProvider {
     pub fn new(repos: Vec<gix::Repository>) -> Self {
         Self { repos }
     }
 }
 
-impl DataProvider for GitDataProvider {
+impl DataProvider for GitQLDataProvider {
     fn provide(&self, table: &str, selected_columns: &[String]) -> Result<Vec<Row>, String> {
         let mut rows: Vec<Row> = vec![];
 
@@ -321,11 +326,12 @@ fn select_diffs(repo: &gix::Repository, selected_columns: &[String]) -> Result<V
     let mut rewrite_cache = repo
         .diff_resource_cache(Mode::ToGit, Default::default())
         .unwrap();
-    let mut diff_cache: gix::diff::blob::Platform = rewrite_cache.clone();
 
-    let should_calculate_diffs = selected_columns
-        .iter()
-        .any(|col| col == "insertions" || col == "deletions" || col == "files_changed");
+    let mut diff_cache = rewrite_cache.clone();
+
+    let should_calculate_diffs = selected_columns.iter().any(|col| {
+        col == "insertions" || col == "removals" || col == "files_changed" || col == "diff_changes"
+    });
 
     let repo_path = repo.path().to_str().unwrap();
     let walker = repo.head_id().unwrap().ancestors().all().unwrap();
@@ -339,33 +345,139 @@ fn select_diffs(repo: &gix::Repository, selected_columns: &[String]) -> Result<V
         let mut values: Vec<Box<dyn Value>> = Vec::with_capacity(selected_columns.len());
 
         // Calculate the diff between two commits take time, and  should calculated once per commit
-        let (mut insertions, mut deletions, mut files_changed) = (0, 0, 0);
+        let (mut insertions, mut removals, mut files_changed) = (0, 0, 0);
+        let mut diff_changes: Vec<DiffChange> = vec![];
+
         if should_calculate_diffs {
-            let current = commit.tree().unwrap();
-            let previous = commit_info
+            if let Some(parent) = commit_info
                 .parent_ids()
                 .next()
                 .map(|id| id.object().unwrap().into_commit().tree().unwrap())
-                .unwrap_or_else(|| repo.empty_tree());
+            {
+                let current = commit.tree().unwrap();
+                rewrite_cache.clear_resource_cache_keep_allocation();
+                diff_cache.clear_resource_cache_keep_allocation();
 
-            rewrite_cache.clear_resource_cache_keep_allocation();
-            diff_cache.clear_resource_cache_keep_allocation();
+                if let Ok(mut changes) = current.changes() {
+                    let _ = changes.for_each_to_obtain_tree_with_cache(
+                        &parent,
+                        &mut rewrite_cache,
+                        |change| {
+                            files_changed += usize::from(change.entry_mode().is_no_tree());
+                            match change {
+                                Change::Addition {
+                                    location,
+                                    entry_mode: _,
+                                    relation: _,
+                                    id,
+                                } => {
+                                    let mut diff_change = DiffChange::new(DiffChangeKind::Addition);
+                                    diff_change.location = location.to_string();
+                                    if let Ok(object) = repo.find_object(id) {
+                                        if let Ok(blob) = object.try_into_blob() {
+                                            diff_change.content = blob.data.clone();
+                                        }
+                                    }
 
-            if let Ok(mut changes) = previous.changes() {
-                let _ = changes.for_each_to_obtain_tree_with_cache(
-                    &current,
-                    &mut rewrite_cache,
-                    |change| {
-                        files_changed += usize::from(change.entry_mode().is_no_tree());
-                        if let Ok(mut platform) = change.diff(&mut diff_cache) {
-                            if let Ok(Some(counts)) = platform.line_counts() {
-                                deletions += counts.removals;
-                                insertions += counts.insertions;
+                                    if let Ok(mut platform) = change.diff(&mut diff_cache) {
+                                        if let Ok(Some(counts)) = platform.line_counts() {
+                                            diff_change.insertions += counts.insertions;
+                                            diff_change.removals += counts.removals;
+                                        }
+                                    }
+
+                                    insertions += diff_change.insertions;
+                                    removals += diff_change.removals;
+                                    diff_changes.push(diff_change);
+                                }
+                                Change::Deletion {
+                                    location,
+                                    entry_mode: _,
+                                    relation: _,
+                                    id,
+                                } => {
+                                    let mut diff_change = DiffChange::new(DiffChangeKind::Deletion);
+                                    diff_change.location = location.to_string();
+                                    if let Ok(object) = repo.find_object(id) {
+                                        if let Ok(blob) = object.try_into_blob() {
+                                            diff_change.content = blob.data.clone();
+                                        }
+                                    }
+
+                                    if let Ok(mut platform) = change.diff(&mut diff_cache) {
+                                        if let Ok(Some(counts)) = platform.line_counts() {
+                                            diff_change.insertions += counts.insertions;
+                                            diff_change.removals += counts.removals;
+                                        }
+                                    }
+
+                                    insertions += diff_change.insertions;
+                                    removals += diff_change.removals;
+                                    diff_changes.push(diff_change);
+                                }
+                                Change::Modification {
+                                    location,
+                                    previous_entry_mode: _,
+                                    previous_id: _,
+                                    entry_mode: _,
+                                    id,
+                                } => {
+                                    let mut diff_change =
+                                        DiffChange::new(DiffChangeKind::Modification);
+                                    diff_change.location = location.to_string();
+                                    if let Ok(object) = repo.find_object(id) {
+                                        if let Ok(blob) = object.try_into_blob() {
+                                            diff_change.content = blob.data.clone();
+                                        }
+                                    }
+
+                                    if let Ok(mut platform) = change.diff(&mut diff_cache) {
+                                        if let Ok(Some(counts)) = platform.line_counts() {
+                                            diff_change.insertions += counts.insertions;
+                                            diff_change.removals += counts.removals;
+                                        }
+                                    }
+
+                                    insertions += diff_change.insertions;
+                                    removals += diff_change.removals;
+                                    diff_changes.push(diff_change);
+                                }
+                                Change::Rewrite {
+                                    source_location: _,
+                                    source_relation: _,
+                                    source_entry_mode: _,
+                                    source_id: _,
+                                    diff: _,
+                                    entry_mode: _,
+                                    location,
+                                    id,
+                                    relation: _,
+                                    copy: _,
+                                } => {
+                                    let mut diff_change = DiffChange::new(DiffChangeKind::Rewrite);
+                                    diff_change.location = location.to_string();
+                                    if let Ok(object) = repo.find_object(id) {
+                                        if let Ok(blob) = object.try_into_blob() {
+                                            diff_change.content = blob.data.clone();
+                                        }
+                                    }
+
+                                    if let Ok(mut platform) = change.diff(&mut diff_cache) {
+                                        if let Ok(Some(counts)) = platform.line_counts() {
+                                            diff_change.insertions += counts.insertions;
+                                            diff_change.removals += counts.removals;
+                                        }
+                                    }
+
+                                    insertions += diff_change.insertions;
+                                    removals += diff_change.removals;
+                                    diff_changes.push(diff_change);
+                                }
                             }
-                        }
-                        Ok::<_, Infallible>(Default::default())
-                    },
-                );
+                            Ok::<_, Infallible>(Default::default())
+                        },
+                    );
+                }
             }
         }
 
@@ -402,8 +514,8 @@ fn select_diffs(repo: &gix::Repository, selected_columns: &[String]) -> Result<V
                 continue;
             }
 
-            if column_name == "deletions" {
-                let value = deletions as i64;
+            if column_name == "removals" {
+                let value = removals as i64;
                 values.push(Box::new(IntValue { value }));
                 continue;
             }
@@ -411,6 +523,14 @@ fn select_diffs(repo: &gix::Repository, selected_columns: &[String]) -> Result<V
             if column_name == "files_changed" {
                 let value = files_changed as i64;
                 values.push(Box::new(IntValue { value }));
+                continue;
+            }
+
+            if column_name == "diff_changes" {
+                let value = DiffChangesValue {
+                    changes: diff_changes.to_owned(),
+                };
+                values.push(Box::new(value));
                 continue;
             }
 

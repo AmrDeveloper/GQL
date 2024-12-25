@@ -39,16 +39,17 @@ show tables
 
 ### Diffs table
 
-| Name          | Type     | Description              |
-| ------------- | -------- | ------------------------ |
-| commit_id     | Text     | Commit id                |
-| author_name   | Text     | Author name              |
-| author_email  | Text     | Author email             |
-| insertions    | Number   | Number of inserted lines |
-| deletions     | Number   | Number of deleted lines  |
-| files_changed | Number   | Number of file changed   |
-| datetime      | DateTime | Commit date time         |
-| repo          | Text     | Repository full path     |
+| Name          | Type        | Description                       |
+| ------------- | ----------- | --------------------------------- |
+| commit_id     | Text        | Commit id                         |
+| author_name   | Text        | Author name                       |
+| author_email  | Text        | Author email                      |
+| insertions    | Integer     | Number of inserted lines          |
+| removals      | Integer     | Number of deleted lines           |
+| files_changed | Integer     | Number of file changed            |
+| diff_changes  | DiffChanges | Diff content and info for changes |
+| datetime      | DateTime    | Commit date time                  |
+| repo          | Text        | Repository full path              |
 
 ---
 

@@ -2,10 +2,9 @@ use std::fs;
 use std::io;
 use std::io::IsTerminal;
 
-use crate::git_schema::tables_fields_names;
-use crate::git_schema::tables_fields_types;
-
-use git_data_provider::GitDataProvider;
+use gitql::create_gitql_environment;
+use gitql::gitql_data_provider::GitQLDataProvider;
+use gitql::validate_git_repositories;
 use gitql_cli::arguments;
 use gitql_cli::arguments::Arguments;
 use gitql_cli::arguments::Command;
@@ -17,23 +16,15 @@ use gitql_cli::printer::csv_printer::CSVPrinter;
 use gitql_cli::printer::json_printer::JSONPrinter;
 use gitql_cli::printer::table_printer::TablePrinter;
 use gitql_core::environment::Environment;
-use gitql_core::schema::Schema;
 use gitql_engine::data_provider::DataProvider;
 use gitql_engine::engine;
 use gitql_engine::engine::EvaluationResult::SelectedGroups;
 use gitql_parser::diagnostic::Diagnostic;
 use gitql_parser::parser;
 use gitql_parser::tokenizer::Tokenizer;
-use gitql_std::aggregation::aggregation_function_signatures;
-use gitql_std::aggregation::aggregation_functions;
-use gitql_std::window::window_function_signatures;
-use gitql_std::window::window_functions;
 use lineeditor::LineEditorResult;
 
-mod git_data_provider;
-mod git_functions;
-mod git_line_editor;
-mod git_schema;
+mod gitql;
 
 fn main() {
     if cfg!(debug_assertions) {
@@ -60,25 +51,7 @@ fn main() {
             }
 
             let repos = git_repos_result.ok().unwrap();
-            let schema = Schema {
-                tables_fields_names: tables_fields_names().to_owned(),
-                tables_fields_types: tables_fields_types().to_owned(),
-            };
-
-            let std_signatures = git_functions::gitql_std_signatures();
-            let std_functions = git_functions::gitql_std_functions();
-
-            let aggregation_signatures = aggregation_function_signatures();
-            let aggregation_functions = aggregation_functions();
-
-            let window_signatures = window_function_signatures();
-            let window_function = window_functions();
-
-            let mut env = Environment::new(schema);
-            env.with_standard_functions(&std_signatures, std_functions);
-            env.with_aggregation_functions(&aggregation_signatures, aggregation_functions);
-            env.with_window_functions(&window_signatures, window_function);
-
+            let mut env = create_gitql_environment();
             let query =
                 fs::read_to_string(script_file).expect("Should have been able to read the file");
             execute_gitql_query(query, &arguments, &repos, &mut env, &mut reporter);
@@ -95,24 +68,7 @@ fn main() {
             }
 
             let repos = git_repos_result.ok().unwrap();
-            let schema = Schema {
-                tables_fields_names: tables_fields_names().to_owned(),
-                tables_fields_types: tables_fields_types().to_owned(),
-            };
-
-            let std_signatures = git_functions::gitql_std_signatures();
-            let std_functions = git_functions::gitql_std_functions();
-
-            let aggregation_signatures = aggregation_function_signatures();
-            let aggregation_functions = aggregation_functions();
-
-            let window_signatures = window_function_signatures();
-            let window_function = window_functions();
-
-            let mut env = Environment::new(schema);
-            env.with_standard_functions(&std_signatures, std_functions);
-            env.with_aggregation_functions(&aggregation_signatures, aggregation_functions);
-            env.with_window_functions(&window_signatures, window_function);
+            let mut env = create_gitql_environment();
 
             execute_gitql_query(query, &arguments, &repos, &mut env, &mut reporter);
         }
@@ -127,6 +83,7 @@ fn main() {
         }
     }
 }
+use gitql::gitql_line_editor::create_new_line_editor;
 
 fn launch_gitql_repl(arguments: &Arguments) {
     let mut reporter = diagnostic_reporter::DiagnosticReporter::default();
@@ -139,31 +96,13 @@ fn launch_gitql_repl(arguments: &Arguments) {
         return;
     }
 
-    let schema = Schema {
-        tables_fields_names: tables_fields_names().clone(),
-        tables_fields_types: tables_fields_types().clone(),
-    };
-
-    let std_signatures = git_functions::gitql_std_signatures();
-    let std_functions = git_functions::gitql_std_functions();
-
-    let aggregation_signatures = aggregation_function_signatures();
-    let aggregation_functions = aggregation_functions();
-
-    let window_signatures = window_function_signatures();
-    let window_function = window_functions();
-
-    let mut global_env = Environment::new(schema);
-    global_env.with_standard_functions(&std_signatures, std_functions);
-    global_env.with_aggregation_functions(&aggregation_signatures, aggregation_functions);
-    global_env.with_window_functions(&window_signatures, window_function);
-
     let git_repositories = git_repos_result.ok().unwrap();
+    let mut global_env = create_gitql_environment();
 
     // Launch the right line editor if the flag is enabled
     // Later this line editor will be the default editor
     if arguments.enable_line_editor {
-        let mut line_editor = git_line_editor::create_new_line_editor();
+        let mut line_editor = create_new_line_editor();
         loop {
             if let Ok(LineEditorResult::Success(input)) = line_editor.read_line() {
                 println!();
@@ -265,14 +204,14 @@ fn execute_gitql_query(
     let front_duration = front_start.elapsed();
 
     let engine_start = std::time::Instant::now();
-    let provider: Box<dyn DataProvider> = Box::new(GitDataProvider::new(repos.to_vec()));
+    let provider: Box<dyn DataProvider> = Box::new(GitQLDataProvider::new(repos.to_vec()));
     let evaluation_result = engine::evaluate(env, &provider, query_node);
     let engine_duration = engine_start.elapsed();
 
     // Report Runtime exceptions if they exists
     if evaluation_result.is_err() {
         let exception = Diagnostic::exception(&evaluation_result.err().unwrap());
-        reporter.report_diagnostic(&query, exception);
+        reporter.report_diagnostic("", exception);
         return;
     }
 
@@ -303,16 +242,4 @@ fn execute_gitql_query(
             );
         }
     }
-}
-
-fn validate_git_repositories(repositories: &Vec<String>) -> Result<Vec<gix::Repository>, String> {
-    let mut git_repositories: Vec<gix::Repository> = vec![];
-    for repository in repositories {
-        let git_repository = gix::open(repository);
-        if git_repository.is_err() {
-            return Err(git_repository.err().unwrap().to_string());
-        }
-        git_repositories.push(git_repository.ok().unwrap());
-    }
-    Ok(git_repositories)
 }
