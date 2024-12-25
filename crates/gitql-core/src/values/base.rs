@@ -39,128 +39,112 @@ pub trait Value: DynClone {
     /// Return the current value as dynamic [`Any`]
     fn as_any(&self) -> &dyn Any;
 
-    /// Perform unary `=` operator and return new [`Value`] represent the old value after casted
-    /// or Exception message as [`String`]
+    /// Perform unary `=` operator and return new [`Value`] represent the result or Exception message as [`String`]
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn add_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    /// Perform unary `-` operator and return new [`Value`] represent the old value after casted
-    /// or Exception message as [`String`]
+    /// Perform unary `-` operator and return new [`Value`] represent the result or Exception message as [`String`]
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn sub_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    /// Perform unary `*` operator and return new [`Value`] represent the old value after casted
-    /// or Exception message as [`String`]
+    /// Perform unary `*` operator and return new [`Value`] represent the result or Exception message as [`String`]
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn mul_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    /// Perform unary `/` operator and return new [`Value`] represent the old value after casted
-    /// or Exception message as [`String`]
+    /// Perform unary `/` operator and return new [`Value`] represent the result or Exception message as [`String`]
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn div_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    /// Perform unary `%` operator and return new [`Value`] represent the old value after casted
-    /// or Exception message as [`String`]
+    /// Perform unary `%` operator and return new [`Value`] represent the result or Exception message as [`String`]
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn rem_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    /// Perform unary `^` operator and return new [`Value`] represent the old value after casted
-    /// or Exception message as [`String`]
+    /// Perform unary `^` operator and return new [`Value`] represent the result or Exception message as [`String`]
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn caret_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    /// Perform unary `|` operator and return new [`Value`] represent the old value after casted
-    /// or Exception message as [`String`]
+    /// Perform unary `|` operator and return new [`Value`] represent the result or Exception message as [`String`]
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn or_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    /// Perform unary `&` operator and return new [`Value`] represent the old value after casted
-    /// or Exception message as [`String`]
+    /// Perform unary `&` operator and return new [`Value`] represent the result or Exception message as [`String`]
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn and_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    /// Perform unary `#` operator and return new [`Value`] represent the old value after casted
-    /// or Exception message as [`String`]
+    /// Perform unary `#` operator and return new [`Value`] represent the result or Exception message as [`String`]
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn xor_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    /// Perform unary `||` or `OR` operator and return new [`Value`] represent the old value after casted
-    /// or Exception message as [`String`]
+    /// Perform unary `||` or `OR` operator and return new [`Value`] represent the result or Exception message as [`String`]
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn logical_or_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    /// Perform unary `&&` or `AND` operator and return new [`Value`] represent the old value after casted
-    /// or Exception message as [`String`]
+    /// Perform unary `&&` or `AND` operator and return new [`Value`] represent the result or Exception message as [`String`]
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn logical_and_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    /// Perform unary `XOR` operator and return new [`Value`] represent the old value after casted
-    /// or Exception message as [`String`]
+    /// Perform unary `XOR` operator and return new [`Value`] represent the result or Exception message as [`String`]
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn logical_xor_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    /// Perform unary `<<` operator and return new [`Value`] represent the old value after casted
-    /// or Exception message as [`String`]
+    /// Perform unary `<<` operator and return new [`Value`] represent the result or Exception message as [`String`]
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn shl_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    /// Perform unary `>>` operator and return new [`Value`] represent the old value after casted
-    /// or Exception message as [`String`]
+    /// Perform unary `>>` operator and return new [`Value`] represent the result or Exception message as [`String`]
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn shr_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    /// Perform unary `[I]` operator and return new [`Value`] represent the old value after casted
-    /// or Exception message as [`String`]
+    /// Perform unary `[I]` operator and return new [`Value`] represent the result or Exception message as [`String`]
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn index_op(&self, index: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    /// Perform unary `[S:E]` operator and return new [`Value`] represent the old value after casted
-    /// or Exception message as [`String`]
+    /// Perform unary `[S:E]` operator and return new [`Value`] represent the result or Exception message as [`String`]
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn slice_op(
@@ -171,90 +155,99 @@ pub trait Value: DynClone {
         Err("Unsupported operator for this type".to_string())
     }
 
-    /// Perform unary `=` operator and return new [`Value`] represent the old value after casted
-    /// or Exception message as [`String`]
+    /// Perform unary `=` operator and return new [`Value`] represent the result or Exception message as [`String`]
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn eq_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    /// Perform unary `!=` or `<>` operator and return new [`Value`] represent the old value after casted
-    /// or Exception message as [`String`]
+    /// Perform unary `!=` or `<>` operator and return new [`Value`] represent the result or Exception message as [`String`]
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn bang_eq_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    /// Perform unary `<=>` operator and return new [`Value`] represent the old value after casted
-    /// or Exception message as [`String`]
+    /// Perform unary `<=>` operator and return new [`Value`] represent the result or Exception message as [`String`]
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn null_safe_eq_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    /// Perform unary `>` operator and return new [`Value`] represent the old value after casted
-    /// or Exception message as [`String`]
+    /// Perform unary `>` operator and return new [`Value`] represent the result or Exception message as [`String`]
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn gt_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    /// Perform unary `>=` operator and return new [`Value`] represent the old value after casted
-    /// or Exception message as [`String`]
+    /// Perform unary `>=` operator and return new [`Value`] represent the result or Exception message as [`String`]
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn gte_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    /// Perform unary `<` operator and return new [`Value`] represent the old value after casted
-    /// or Exception message as [`String`]
+    /// Perform unary `<` operator and return new [`Value`] represent the result or Exception message as [`String`]
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn lt_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    /// Perform unary `<=` operator and return new [`Value`] represent the old value after casted
-    /// or Exception message as [`String`]
+    /// Perform unary `<=` operator and return new [`Value`] represent the result or Exception message as [`String`]
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn lte_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    /// Perform unary `NOT` operator and return new [`Value`] represent the old value after casted
-    /// or Exception message as [`String`]
+    /// Perform unary `NOT` operator and return new [`Value`] represent the result or Exception message as [`String`]
     fn not_op(&self) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    /// Perform unary `-` operator and return new [`Value`] represent the old value after casted
-    /// or Exception message as [`String`]
+    /// Perform unary `-` operator and return new [`Value`] represent the result or Exception message as [`String`]
     fn neg_op(&self) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    /// Perform unary `!` operator and return new [`Value`] represent the old value after casted
-    /// or Exception message as [`String`]
+    /// Perform unary `!` operator and return new [`Value`] represent the result or Exception message as [`String`]
     fn bang_op(&self) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    /// Perform `@>` operator and return new [`Value`] represent the old value after casted
-    /// or Exception message as [`String`]
+    /// Perform `@>` operator and return new [`Value`] represent the result or Exception message as [`String`]
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn contains_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
-    /// Perform Cast operator and return new [`Value`] represent the old value after casted
-    /// or Exception message as [`String`]
+    /// Perform `LIKE` operator and return new [`Value`] represent the result or Exception message as [`String`]
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn like_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+        Err("Unsupported operator for this type".to_string())
+    }
+
+    /// Perform `GLOB` operator and return new [`Value`] represent the result or Exception message as [`String`]
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn glob_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+        Err("Unsupported operator for this type".to_string())
+    }
+
+    /// Perform `REGEXP` operator and return new [`Value`] represent the result or Exception message as [`String`]
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn regexp_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+        Err("Unsupported operator for this type".to_string())
+    }
+
+    /// Perform Cast operator and return new [`Value`] represent the result or Exception message as [`String`]
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn cast_op(&self, target_type: &Box<dyn DataType>) -> Result<Box<dyn Value>, String> {

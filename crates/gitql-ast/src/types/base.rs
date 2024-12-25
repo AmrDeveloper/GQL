@@ -400,6 +400,30 @@ pub trait DataType: DynClone {
     fn can_perform_explicit_cast_op_to(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
+
+    /// Return a list of types that it's possible to perform unary `LIKE' operator with
+    /// between current DataType and any one of them
+    ///
+    /// No need to define the result type, it always BoolType
+    fn can_perform_like_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![]
+    }
+
+    /// Return a list of types that it's possible to perform unary `GLOB' operator with
+    /// between current DataType and any one of them
+    ///
+    /// No need to define the result type, it always BoolType
+    fn can_perform_glob_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![]
+    }
+
+    /// Return a list of types that it's possible to perform unary `REGEXP' operator with
+    /// between current DataType and any one of them
+    ///
+    /// No need to define the result type, it always BoolType
+    fn can_perform_regexp_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![]
+    }
 }
 
 impl dyn DataType {

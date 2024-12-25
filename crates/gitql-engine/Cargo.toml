@@ -12,5 +12,4 @@ categories = ["command-line-utilities"]
 [dependencies]
 gitql-core = { path = "../gitql-core", version = "0.10.0" }
 gitql-ast = { path = "../gitql-ast", version = "0.30.0" }
-regex = { workspace = true }
 chrono = { workspace = true }

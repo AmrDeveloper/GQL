@@ -1,6 +1,9 @@
 use std::any::Any;
 use std::cmp::Ordering;
 
+use regex::Regex;
+use regex::RegexBuilder;
+
 use gitql_ast::types::base::DataType;
 use gitql_ast::types::text::TextType;
 
@@ -89,6 +92,73 @@ impl Value for TextValue {
             return Ok(Box::new(BoolValue { value: are_equals }));
         }
         Err("Unexpected type to perform `<=` with".to_string())
+    }
+
+    fn like_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+        let pattern_text = other.as_text().unwrap();
+        let pattern = &format!(
+            "^{}$",
+            pattern_text
+                .to_lowercase()
+                .replace('%', ".*")
+                .replace('_', ".")
+        );
+
+        let regex_builder = RegexBuilder::new(pattern)
+            .multi_line(true)
+            .unicode(true)
+            .build();
+
+        match regex_builder {
+            Ok(regex) => {
+                let is_match = regex.is_match(&self.value.to_lowercase());
+                Ok(Box::new(BoolValue { value: is_match }))
+            }
+            Err(error_message) => Err(error_message.to_string()),
+        }
+    }
+
+    fn glob_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+        let pattern_text = other.as_text().unwrap();
+        let pattern = &format!(
+            "^{}$",
+            pattern_text
+                .replace('.', "\\.")
+                .replace('*', ".*")
+                .replace('?', ".")
+        );
+
+        match Regex::new(pattern) {
+            Ok(regex) => {
+                let is_match = regex.is_match(&self.value);
+                Ok(Box::new(BoolValue { value: is_match }))
+            }
+            Err(error_message) => Err(error_message.to_string()),
+        }
+    }
+
+    fn regexp_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+        let pattern_text = other.as_text().unwrap();
+        let pattern = &format!(
+            "^{}$",
+            pattern_text
+                .to_lowercase()
+                .replace('%', ".*")
+                .replace('_', ".")
+        );
+
+        let regex_builder = RegexBuilder::new(pattern)
+            .multi_line(true)
+            .unicode(true)
+            .build();
+
+        match regex_builder {
+            Ok(regex) => {
+                let is_match = regex.is_match(&self.value.to_lowercase());
+                Ok(Box::new(BoolValue { value: is_match }))
+            }
+            Err(error_message) => Err(error_message.to_string()),
+        }
     }
 
     fn cast_op(&self, target_type: &Box<dyn DataType>) -> Result<Box<dyn Value>, String> {

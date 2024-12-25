@@ -45,8 +45,6 @@ use gitql_core::values::integer::IntValue;
 use gitql_core::values::null::NullValue;
 use gitql_core::values::text::TextValue;
 
-use regex::Regex;
-use regex::RegexBuilder;
 use std::cmp::Ordering;
 use std::string::String;
 
@@ -384,34 +382,9 @@ fn evaluate_like(
     titles: &[String],
     object: &Vec<Box<dyn Value>>,
 ) -> Result<Box<dyn Value>, String> {
-    let pattern = evaluate_expression(env, &expr.pattern, titles, object)?;
     let input = evaluate_expression(env, &expr.input, titles, object)?;
-    if let Some(pattern_text) = pattern.as_any().downcast_ref::<TextValue>() {
-        if let Some(input_text) = input.as_any().downcast_ref::<TextValue>() {
-            let pattern = &format!(
-                "^{}$",
-                pattern_text
-                    .value
-                    .to_lowercase()
-                    .replace('%', ".*")
-                    .replace('_', ".")
-            );
-
-            let regex_result = RegexBuilder::new(pattern)
-                .multi_line(true)
-                .unicode(true)
-                .build();
-
-            if regex_result.is_err() {
-                return Err(regex_result.err().unwrap().to_string());
-            }
-            let regex = regex_result.ok().unwrap();
-            let is_match = regex.is_match(&input_text.value.to_lowercase());
-            return Ok(Box::new(BoolValue { value: is_match }));
-        }
-    }
-
-    Err("Invalid Arguments for LIKE expression".to_string())
+    let pattern = evaluate_expression(env, &expr.pattern, titles, object)?;
+    input.like_op(&pattern)
 }
 
 fn evaluate_regex(
@@ -420,34 +393,9 @@ fn evaluate_regex(
     titles: &[String],
     object: &Vec<Box<dyn Value>>,
 ) -> Result<Box<dyn Value>, String> {
-    let pattern = evaluate_expression(env, &expr.pattern, titles, object)?;
     let input = evaluate_expression(env, &expr.input, titles, object)?;
-    if let Some(pattern_text) = pattern.as_any().downcast_ref::<TextValue>() {
-        if let Some(input_text) = input.as_any().downcast_ref::<TextValue>() {
-            let pattern = &format!(
-                "^{}$",
-                pattern_text
-                    .value
-                    .to_lowercase()
-                    .replace('%', ".*")
-                    .replace('_', ".")
-            );
-
-            let regex_result = RegexBuilder::new(pattern)
-                .multi_line(true)
-                .unicode(true)
-                .build();
-
-            if regex_result.is_err() {
-                return Err(regex_result.err().unwrap().to_string());
-            }
-            let regex = regex_result.ok().unwrap();
-            let is_match = regex.is_match(&input_text.value.to_lowercase());
-            return Ok(Box::new(BoolValue { value: is_match }));
-        }
-    }
-
-    Err("Invalid Arguments for REGEX expression".to_string())
+    let pattern = evaluate_expression(env, &expr.pattern, titles, object)?;
+    input.regexp_op(&pattern)
 }
 
 fn evaluate_glob(
@@ -456,29 +404,9 @@ fn evaluate_glob(
     titles: &[String],
     object: &Vec<Box<dyn Value>>,
 ) -> Result<Box<dyn Value>, String> {
-    let rhs = evaluate_expression(env, &expr.pattern, titles, object)?;
-    if let Some(rhs_text) = rhs.as_any().downcast_ref::<TextValue>() {
-        let text = rhs_text.literal();
-        let pattern = &format!(
-            "^{}$",
-            text.replace('.', "\\.")
-                .replace('*', ".*")
-                .replace('?', ".")
-        );
-
-        let regex_result = Regex::new(pattern);
-        if regex_result.is_err() {
-            return Err(regex_result.err().unwrap().to_string());
-        }
-        let regex = regex_result.ok().unwrap();
-        let lhs = evaluate_expression(env, &expr.input, titles, object)?;
-        if let Some(lhs_text) = lhs.as_any().downcast_ref::<TextValue>() {
-            let is_match = regex.is_match(&lhs_text.value);
-            return Ok(Box::new(BoolValue { value: is_match }));
-        }
-    }
-
-    Err("Invalid Arguments for GLOB expression".to_string())
+    let input = evaluate_expression(env, &expr.input, titles, object)?;
+    let pattern = evaluate_expression(env, &expr.pattern, titles, object)?;
+    input.glob_op(&pattern)
 }
 
 fn evaluate_logical(

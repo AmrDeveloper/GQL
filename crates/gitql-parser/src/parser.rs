@@ -1642,7 +1642,7 @@ fn parse_regex_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
-    let expression = parse_is_null_expression(context, env, tokens, position)?;
+    let lhs = parse_is_null_expression(context, env, tokens, position)?;
 
     // Check for `REGEXP` or `NOT REGEXP`
     // <expr> REGEXP <expr> AND <expr>
@@ -1665,32 +1665,33 @@ fn parse_regex_expression(
             tokens[*position - 1].location
         };
 
-        if !expression.expr_type().is_text() {
-            return Err(
-                Diagnostic::error("`REGEXP` left hand side must be `Text` Type")
-                    .with_location(operator_location)
-                    .as_boxed(),
-            );
-        }
-
         let pattern = parse_is_null_expression(context, env, tokens, position)?;
-        if !pattern.expr_type().is_text() {
-            return Err(
-                Diagnostic::error("`REGEXP` right hand side must be `Text` Type")
-                    .with_location(operator_location)
-                    .as_boxed(),
-            );
+
+        let lhs_type = lhs.expr_type();
+        let rhs_type = pattern.expr_type();
+
+        // Can perform this operator between LHS and RHS
+        let expected_rhs_types = lhs_type.can_perform_regexp_op_with();
+        if expected_rhs_types.contains(&rhs_type) {
+            let regex_expr = Box::new(RegexExpr {
+                input: lhs,
+                pattern,
+            });
+
+            return Ok(apply_not_keyword_if_exists(regex_expr, has_not_keyword));
         }
 
-        let regex_expr = Box::new(RegexExpr {
-            input: expression,
-            pattern,
-        });
-
-        return Ok(apply_not_keyword_if_exists(regex_expr, has_not_keyword));
+        // Return error if this operator can't be performed even with implicit cast
+        return Err(Diagnostic::error(&format!(
+            "Operator `REGEXP` can't be performed between types `{}` and `{}`",
+            lhs_type.literal(),
+            rhs_type.literal()
+        ))
+        .with_location(operator_location)
+        .as_boxed());
     }
 
-    Ok(expression)
+    Ok(lhs)
 }
 
 fn parse_is_null_expression(
@@ -3621,31 +3622,30 @@ fn parse_like_expression(
             tokens[*position - 1].location
         };
 
-        if !lhs.expr_type().is_text() {
-            return Err(Diagnostic::error(&format!(
-                "Expect `LIKE` left hand side to be `TEXT` but got {}",
-                lhs.expr_type().literal()
-            ))
-            .with_location(operator_location)
-            .as_boxed());
-        }
-
         let pattern = parse_glob_expression(context, env, tokens, position)?;
-        if !pattern.expr_type().is_text() {
-            return Err(Diagnostic::error(&format!(
-                "Expect `LIKE` right hand side to be `TEXT` but got {}",
-                pattern.expr_type().literal()
-            ))
-            .with_location(operator_location)
-            .as_boxed());
+
+        let lhs_type = lhs.expr_type();
+        let rhs_type = pattern.expr_type();
+
+        // Can perform this operator between LHS and RHS
+        let expected_rhs_types = lhs_type.can_perform_like_op_with();
+        if expected_rhs_types.contains(&rhs_type) {
+            let expr = Box::new(LikeExpr {
+                input: lhs,
+                pattern,
+            });
+
+            return Ok(apply_not_keyword_if_exists(expr, has_not_keyword));
         }
 
-        let expr = Box::new(LikeExpr {
-            input: lhs,
-            pattern,
-        });
-
-        return Ok(apply_not_keyword_if_exists(expr, has_not_keyword));
+        // Return error if this operator can't be performed even with implicit cast
+        return Err(Diagnostic::error(&format!(
+            "Operator `LIKE` can't be performed between types `{}` and `{}`",
+            lhs_type.literal(),
+            rhs_type.literal()
+        ))
+        .with_location(operator_location)
+        .as_boxed());
     }
 
     Ok(lhs)
@@ -3660,32 +3660,33 @@ fn parse_glob_expression(
     let lhs = parse_cast_operator_expression(context, env, tokens, position)?;
 
     if is_current_token(tokens, position, TokenKind::Glob) {
-        let location = tokens[*position].location;
+        let glob_location = tokens[*position].location;
+
+        // Consume `GLOB` Token
         *position += 1;
 
-        if !lhs.expr_type().is_text() {
-            return Err(Diagnostic::error(&format!(
-                "Expect `GLOB` left hand side to be `TEXT` but got {}",
-                lhs.expr_type().literal()
-            ))
-            .with_location(location)
-            .as_boxed());
+        let pattern = parse_cast_operator_expression(context, env, tokens, position)?;
+
+        let lhs_type = lhs.expr_type();
+        let rhs_type = pattern.expr_type();
+
+        // Can perform this operator between LHS and RHS
+        let expected_rhs_types = lhs_type.can_perform_glob_op_with();
+        if expected_rhs_types.contains(&rhs_type) {
+            return Ok(Box::new(GlobExpr {
+                input: lhs,
+                pattern,
+            }));
         }
 
-        let pattern = parse_index_or_slice_expression(context, env, tokens, position)?;
-        if !pattern.expr_type().is_text() {
-            return Err(Diagnostic::error(&format!(
-                "Expect `GLOB` right hand side to be `TEXT` but got {}",
-                pattern.expr_type().literal()
-            ))
-            .with_location(location)
-            .as_boxed());
-        }
-
-        return Ok(Box::new(GlobExpr {
-            input: lhs,
-            pattern,
-        }));
+        // Return error if this operator can't be performed even with implicit cast
+        return Err(Diagnostic::error(&format!(
+            "Operator `GLOB` can't be performed between types `{}` and `{}`",
+            lhs_type.literal(),
+            rhs_type.literal()
+        ))
+        .with_location(glob_location)
+        .as_boxed());
     }
 
     Ok(lhs)

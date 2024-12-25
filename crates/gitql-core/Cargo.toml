@@ -14,3 +14,4 @@ gitql-ast = { path = "../gitql-ast", version = "0.30.0" }
 chrono = { workspace = true }
 dyn-clone = { workspace = true }
 indexmap = { workspace = true }
+regex = { workspace = true }

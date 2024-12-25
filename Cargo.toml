@@ -23,11 +23,11 @@ members = [
 ]
 
 [workspace.dependencies]
-gix = { version = "0.68.0", default-features = false }
+gix = { version = "0.69.1", default-features = false }
 dyn-clone = { version = "1.0.17" }
 comfy-table = { version = "7.1.3" }
 termcolor = { version = "1.4.1" }
-serde_json = { version = "1.0.133" }
+serde_json = { version = "1.0.134" }
 csv = { version = "1.3.1" }
 chrono = { version = "0.4.39" }
 regex = { version = "1.11.1" }

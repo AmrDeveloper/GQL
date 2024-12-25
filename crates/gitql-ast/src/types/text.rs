@@ -41,4 +41,16 @@ impl DataType for TextType {
     fn can_perform_lte_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(TextType)]
     }
+
+    fn can_perform_like_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(TextType)]
+    }
+
+    fn can_perform_glob_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(TextType)]
+    }
+
+    fn can_perform_regexp_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(TextType)]
+    }
 }
