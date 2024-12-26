@@ -87,7 +87,7 @@ pub(crate) fn register_diffs_function_signatures(map: &mut HashMap<&'static str,
         "diff_added_content_contains",
         Signature {
             parameters: vec![Box::new(DiffChangesType), Box::new(TextType)],
-            return_type: Box::new(TextType),
+            return_type: Box::new(BoolType),
         },
     );
 
@@ -95,7 +95,7 @@ pub(crate) fn register_diffs_function_signatures(map: &mut HashMap<&'static str,
         "diff_deleted_content_contains",
         Signature {
             parameters: vec![Box::new(DiffChangesType), Box::new(TextType)],
-            return_type: Box::new(TextType),
+            return_type: Box::new(BoolType),
         },
     );
 
@@ -103,7 +103,7 @@ pub(crate) fn register_diffs_function_signatures(map: &mut HashMap<&'static str,
         "diff_modified_content_contains",
         Signature {
             parameters: vec![Box::new(DiffChangesType), Box::new(TextType)],
-            return_type: Box::new(TextType),
+            return_type: Box::new(BoolType),
         },
     );
 
