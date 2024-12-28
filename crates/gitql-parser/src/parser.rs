@@ -1704,8 +1704,7 @@ fn parse_regex_expression(
         // Return error if this operator can't be performed even with implicit cast
         return Err(Diagnostic::error(&format!(
             "Operator `REGEXP` can't be performed between types `{}` and `{}`",
-            lhs_type.literal(),
-            rhs_type.literal()
+            lhs_type, rhs_type
         ))
         .with_location(operator_location)
         .as_boxed());
@@ -1902,8 +1901,7 @@ fn parse_logical_or_expression(
         // Return error if this operator can't be performed even with implicit cast
         return Err(Diagnostic::error(&format!(
             "Operator `OR` can't be performed between types `{}` and `{}`",
-            lhs_type.literal(),
-            rhs_type.literal()
+            lhs_type, rhs_type
         ))
         .with_location(operator.location)
         .as_boxed());
@@ -1990,8 +1988,7 @@ fn parse_logical_and_expression(
         // Return error if this operator can't be performed even with implicit cast
         return Err(Diagnostic::error(&format!(
             "Operator `AND` can't be performed between types `{}` and `{}`",
-            lhs_type.literal(),
-            rhs_type.literal()
+            lhs_type, rhs_type
         ))
         .with_location(operator.location)
         .as_boxed());
@@ -2081,8 +2078,7 @@ fn parse_bitwise_or_expression(
         // Return error if this operator can't be performed even with implicit cast
         return Err(Diagnostic::error(&format!(
             "Operator `|` can't be performed between types `{}` and `{}`",
-            lhs_type.literal(),
-            rhs_type.literal()
+            lhs_type, rhs_type
         ))
         .with_location(operator.location)
         .as_boxed());
@@ -2172,8 +2168,7 @@ fn parse_bitwise_xor_expression(
         // Return error if this operator can't be performed even with implicit cast
         return Err(Diagnostic::error(&format!(
             "Operator `#` can't be performed between types `{}` and `{}`",
-            lhs_type.literal(),
-            rhs_type.literal()
+            lhs_type, rhs_type
         ))
         .with_location(operator.location)
         .as_boxed());
@@ -2260,8 +2255,7 @@ fn parse_logical_xor_expression(
         // Return error if this operator can't be performed even with implicit cast
         return Err(Diagnostic::error(&format!(
             "Operator `XOR` can't be performed between types `{}` and `{}`",
-            lhs_type.literal(),
-            rhs_type.literal()
+            lhs_type, rhs_type
         ))
         .with_location(operator.location)
         .as_boxed());
@@ -2349,8 +2343,7 @@ fn parse_bitwise_and_expression(
         // Return error if this operator can't be performed even with implicit cast
         return Err(Diagnostic::error(&format!(
             "Operator `&&` can't be performed between types `{}` and `{}`",
-            lhs_type.literal(),
-            rhs_type.literal()
+            lhs_type, rhs_type
         ))
         .with_location(operator.location)
         .as_boxed());
@@ -2430,24 +2423,20 @@ fn parse_equality_expression(
                 }));
             }
 
-            // Handle special case if one of the type is null
+            let mut diagnostic = Diagnostic::error(&format!(
+                "Operator `=` can't be performed between types `{}` and `{}`",
+                lhs_type, rhs_type
+            ))
+            .with_location(operator.location);
+
             if lhs_type.is_null() || rhs_type.is_null() {
-                return Err(
-                    Diagnostic::error("Operator `=` can't used to check if value is null")
-                        .add_help("Please use `IS NULL` expression")
-                        .with_location(operator.location)
-                        .as_boxed(),
-                );
+                diagnostic = diagnostic
+                    .add_note("Operator `=` can't used to check if value is null")
+                    .add_help("Please use `IS NULL` expression");
             }
 
             // Return error if this operator can't be performed even with implicit cast
-            return Err(Diagnostic::error(&format!(
-                "Operator `=` can't be performed between types `{}` and `{}`",
-                lhs_type.literal(),
-                rhs_type.literal()
-            ))
-            .with_location(operator.location)
-            .as_boxed());
+            return Err(diagnostic.as_boxed());
         }
 
         // Parse and Check sides for `!=` operator
@@ -2502,24 +2491,21 @@ fn parse_equality_expression(
                 }));
             }
 
+            let mut diagnostic = Diagnostic::error(&format!(
+                "Operator `!=` can't be performed between types `{}` and `{}`",
+                lhs_type, rhs_type
+            ))
+            .with_location(operator.location);
+
             // Handle special case if one of the type is null
             if lhs_type.is_null() || rhs_type.is_null() {
-                return Err(Diagnostic::error(
-                    "Operator `!=` can't used to check if value is null",
-                )
-                .add_help("Please use `IS NOT NULL` expression")
-                .with_location(operator.location)
-                .as_boxed());
+                diagnostic = diagnostic
+                    .add_note("Operator `!=` can't used to check if value is null")
+                    .add_help("Please use `IS NOT NULL` expression");
             }
 
             // Return error if this operator can't be performed even with implicit cast
-            return Err(Diagnostic::error(&format!(
-                "Operator `!=` can't be performed between types `{}` and `{}`",
-                lhs_type.literal(),
-                rhs_type.literal()
-            ))
-            .with_location(operator.location)
-            .as_boxed());
+            return Err(diagnostic.as_boxed());
         }
     }
 
@@ -2600,8 +2586,7 @@ fn parse_comparison_expression(
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
                 "Operator `>` can't be performed between types `{}` and `{}`",
-                lhs_type.literal(),
-                rhs_type.literal()
+                lhs_type, rhs_type
             ))
             .with_location(operator.location)
             .as_boxed());
@@ -2662,8 +2647,7 @@ fn parse_comparison_expression(
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
                 "Operator `>=` can't be performed between types `{}` and `{}`",
-                lhs_type.literal(),
-                rhs_type.literal()
+                lhs_type, rhs_type
             ))
             .with_location(operator.location)
             .as_boxed());
@@ -2724,8 +2708,7 @@ fn parse_comparison_expression(
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
                 "Operator `<` can't be performed between types `{}` and `{}`",
-                lhs_type.literal(),
-                rhs_type.literal()
+                lhs_type, rhs_type
             ))
             .with_location(operator.location)
             .as_boxed());
@@ -2786,8 +2769,7 @@ fn parse_comparison_expression(
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
                 "Operator `<=` can't be performed between types `{}` and `{}`",
-                lhs_type.literal(),
-                rhs_type.literal()
+                lhs_type, rhs_type
             ))
             .with_location(operator.location)
             .as_boxed());
@@ -2848,8 +2830,7 @@ fn parse_comparison_expression(
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
                 "Operator `<=>` can't be performed between types `{}` and `{}`",
-                lhs_type.literal(),
-                rhs_type.literal()
+                lhs_type, rhs_type
             ))
             .with_location(operator.location)
             .as_boxed());
@@ -2908,8 +2889,7 @@ fn parse_contains_expression(
         // Return error if this operator can't be performed even with implicit cast
         return Err(Diagnostic::error(&format!(
             "Operator `@>` can't be performed between types `{}` and `{}`",
-            lhs_type.literal(),
-            rhs_type.literal()
+            lhs_type, rhs_type
         ))
         .with_location(operator.location)
         .as_boxed());
@@ -2967,8 +2947,7 @@ fn parse_contained_by_expression(
         // Return error if this operator can't be performed even with implicit cast
         return Err(Diagnostic::error(&format!(
             "Operator `<@` can't be performed between types `{}` and `{}`",
-            lhs_type.literal(),
-            rhs_type.literal()
+            lhs_type, rhs_type
         ))
         .with_location(operator.location)
         .as_boxed());
@@ -3059,8 +3038,7 @@ fn parse_bitwise_shift_expression(
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
                 "Operator `>>` can't be performed between types `{}` and `{}`",
-                lhs_type.literal(),
-                rhs_type.literal()
+                lhs_type, rhs_type
             ))
             .with_location(operator.location)
             .as_boxed());
@@ -3130,8 +3108,7 @@ fn parse_bitwise_shift_expression(
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
                 "Operator `<<` can't be performed between types `{}` and `{}`",
-                lhs_type.literal(),
-                rhs_type.literal()
+                lhs_type, rhs_type
             ))
             .with_location(operator.location)
             .as_boxed());
@@ -3224,7 +3201,7 @@ fn parse_term_expression(
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
                 "Operator `-` can't be performed between types `{}` and `{}`",
-                lhs_type.literal(), rhs_type.literal()
+                lhs_type, rhs_type
             ))
             .add_help(
                 "You can use `CONCAT(Any, Any, ...Any)` function to concatenate values with different types",
@@ -3296,8 +3273,7 @@ fn parse_term_expression(
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
                 "Operator `-` can't be performed between types `{}` and `{}`",
-                lhs_type.literal(),
-                rhs_type.literal()
+                lhs_type, rhs_type
             ))
             .with_location(operator.location)
             .as_boxed());
@@ -3390,8 +3366,7 @@ fn parse_factor_expression(
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
                 "Operator `*` can't be performed between types `{}` and `{}`",
-                lhs_type.literal(),
-                rhs_type.literal()
+                lhs_type, rhs_type
             ))
             .with_location(operator.location)
             .as_boxed());
@@ -3461,8 +3436,7 @@ fn parse_factor_expression(
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
                 "Operator `/` can't be performed between types `{}` and `{}`",
-                lhs_type.literal(),
-                rhs_type.literal()
+                lhs_type, rhs_type
             ))
             .with_location(operator.location)
             .as_boxed());
@@ -3532,8 +3506,7 @@ fn parse_factor_expression(
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
                 "Operator `%` can't be performed between types `{}` and `{}`",
-                lhs_type.literal(),
-                rhs_type.literal()
+                lhs_type, rhs_type
             ))
             .with_location(operator.location)
             .as_boxed());
@@ -3602,8 +3575,7 @@ fn parse_factor_expression(
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
                 "Operator `^` can't be performed between types `{}` and `{}`",
-                lhs_type.literal(),
-                rhs_type.literal()
+                lhs_type, rhs_type
             ))
             .with_location(operator.location)
             .as_boxed());
@@ -3681,8 +3653,7 @@ fn parse_like_expression(
         // Return error if this operator can't be performed even with implicit cast
         return Err(Diagnostic::error(&format!(
             "Operator `LIKE` can't be performed between types `{}` and `{}`",
-            lhs_type.literal(),
-            rhs_type.literal()
+            lhs_type, rhs_type
         ))
         .with_location(operator_location)
         .as_boxed());
@@ -3740,8 +3711,7 @@ fn parse_glob_expression(
         // Return error if this operator can't be performed even with implicit cast
         return Err(Diagnostic::error(&format!(
             "Operator `GLOB` can't be performed between types `{}` and `{}`",
-            lhs_type.literal(),
-            rhs_type.literal()
+            lhs_type, rhs_type
         ))
         .with_location(glob_location)
         .as_boxed());
@@ -3787,7 +3757,7 @@ pub(crate) fn parse_index_or_slice_expression(
             if !lhs_type.can_perform_slice_op() {
                 return Err(Diagnostic::error(&format!(
                     "Operator `[:]` can't be performed on type `{}`",
-                    lhs_type.literal()
+                    lhs_type
                 ))
                 .with_location(calculate_safe_location(tokens, *position))
                 .as_boxed());
@@ -3847,7 +3817,7 @@ pub(crate) fn parse_index_or_slice_expression(
 
                 return Err(Diagnostic::error(&format!(
                     "Operator Slice `[:]` can't be performed between on {} with start `{}` and end `{}`",
-                    lhs_type.literal(),
+                    lhs_type,
                     index_type.literal(),
                     "None"
                 ))
@@ -3873,7 +3843,7 @@ pub(crate) fn parse_index_or_slice_expression(
             if !rhs_expected_types.contains(&end_type) {
                 return Err(Diagnostic::error(&format!(
                     "Operator Slice `[:]` can't be performed between on {} with start `{}` and end `{}`",
-                    lhs_type.literal(),
+                    lhs_type,
                     index_type.literal(),
                     end_type.literal()
                 ))
@@ -3904,7 +3874,7 @@ pub(crate) fn parse_index_or_slice_expression(
         if !rhs_expected_types.contains(&index_type) {
             return Err(Diagnostic::error(&format!(
                 "Operator Index `[ ]` can't be performed on type `{}` with index type `{}`",
-                lhs_type.literal(),
+                lhs_type,
                 index_type.literal(),
             ))
             .add_help("Check the Type documentation to know the available Index types")
@@ -3977,8 +3947,7 @@ fn parse_prefix_unary_expression(
 
             return Err(Diagnostic::error(&format!(
                 "Operator unary `{}` can't be performed on type `{}`",
-                op_name,
-                rhs_type.literal()
+                op_name, rhs_type
             ))
             .with_location(operator.location)
             .as_boxed());
@@ -3998,7 +3967,7 @@ fn parse_prefix_unary_expression(
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
                 "Operator unary `-` can't be performed on type `{}`",
-                rhs_type.literal()
+                rhs_type
             ))
             .with_location(operator.location)
             .as_boxed());
@@ -4018,7 +3987,7 @@ fn parse_prefix_unary_expression(
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
                 "Operator unary `~` can't be performed on type `{}`",
-                rhs_type.literal()
+                rhs_type
             ))
             .with_location(operator.location)
             .as_boxed());
@@ -4078,7 +4047,7 @@ fn parse_between_expression(
         if !lhs_type.equals(range_start_type) || !lhs_type.equals(range_end_type) {
             return Err(Diagnostic::error(&format!(
                 "Expect `BETWEEN` Left hand side type, range start and end to has same type but got {}, {} and {}",
-                lhs_type.literal(),
+                lhs_type,
                 range_start_type.literal(),
                 range_end_type.literal()
             ))
@@ -4091,7 +4060,7 @@ fn parse_between_expression(
         if !lhs_type.can_perform_gte_op_with().contains(&lhs_type) {
             return Err(Diagnostic::error(&format!(
                 "Type `{}` used in Between expression can't support `>=` operator",
-                lhs_type.literal()
+                lhs_type
             ))
             .with_location(operator_location)
             .as_boxed());
@@ -4101,7 +4070,7 @@ fn parse_between_expression(
         if !lhs_type.can_perform_lte_op_with().contains(&lhs_type) {
             return Err(Diagnostic::error(&format!(
                 "Type `{}` used in Between expression can't support `<=` operator",
-                lhs_type.literal()
+                lhs_type
             ))
             .with_location(operator_location)
             .as_boxed());
