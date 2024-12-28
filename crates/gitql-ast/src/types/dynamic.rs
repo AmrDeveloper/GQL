@@ -2,11 +2,20 @@ use std::any::Any;
 
 use super::base::DataType;
 
+/// A function that resolve a dynamic type depending on a list of already resolved types
+pub type ResolveFunction = fn(&[Box<dyn DataType>]) -> Box<dyn DataType>;
+
 #[derive(Clone)]
 #[allow(clippy::borrowed_box)]
-#[allow(clippy::type_complexity)]
 pub struct DynamicType {
-    pub function: fn(&[Box<dyn DataType>]) -> Box<dyn DataType>,
+    pub function: ResolveFunction,
+}
+
+impl DynamicType {
+    #[allow(clippy::type_complexity)]
+    pub fn new(function: ResolveFunction) -> Self {
+        DynamicType { function }
+    }
 }
 
 impl DataType for DynamicType {

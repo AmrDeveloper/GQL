@@ -19,6 +19,18 @@ pub struct TextValue {
     pub value: String,
 }
 
+impl TextValue {
+    pub fn new(value: String) -> Self {
+        TextValue { value }
+    }
+
+    pub fn empty() -> Self {
+        TextValue {
+            value: String::default(),
+        }
+    }
+}
+
 impl Value for TextValue {
     fn literal(&self) -> String {
         self.value.to_string()

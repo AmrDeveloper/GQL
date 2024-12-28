@@ -12,6 +12,12 @@ pub struct TimeValue {
     pub value: String,
 }
 
+impl TimeValue {
+    pub fn new(time: String) -> Self {
+        TimeValue { value: time }
+    }
+}
+
 impl Value for TimeValue {
     fn literal(&self) -> String {
         self.value.to_string()

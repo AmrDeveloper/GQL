@@ -15,6 +15,24 @@ pub struct CompositeValue {
     pub members: IndexMap<String, Box<dyn Value>>,
 }
 
+impl CompositeValue {
+    pub fn new(name: String, members: IndexMap<String, Box<dyn Value>>) -> Self {
+        CompositeValue { name, members }
+    }
+
+    pub fn empty(name: String) -> Self {
+        CompositeValue {
+            name,
+            members: IndexMap::default(),
+        }
+    }
+
+    pub fn add_member(mut self, name: String, value: Box<dyn Value>) -> Self {
+        self.members.insert(name, value);
+        self
+    }
+}
+
 impl Value for CompositeValue {
     fn literal(&self) -> String {
         let mut str = String::new();

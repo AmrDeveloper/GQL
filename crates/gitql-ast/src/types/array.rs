@@ -9,6 +9,12 @@ pub struct ArrayType {
     pub base: Box<dyn DataType>,
 }
 
+impl ArrayType {
+    pub fn new(base: Box<dyn DataType>) -> Self {
+        ArrayType { base }
+    }
+}
+
 impl DataType for ArrayType {
     fn literal(&self) -> String {
         format!("Array({})", self.base.literal())

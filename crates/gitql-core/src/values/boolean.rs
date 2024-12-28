@@ -12,6 +12,20 @@ pub struct BoolValue {
     pub value: bool,
 }
 
+impl BoolValue {
+    pub fn new(value: bool) -> Self {
+        BoolValue { value }
+    }
+
+    pub fn new_true() -> Self {
+        BoolValue { value: true }
+    }
+
+    pub fn new_false() -> Self {
+        BoolValue { value: false }
+    }
+}
+
 impl Value for BoolValue {
     fn literal(&self) -> String {
         self.value.to_string()

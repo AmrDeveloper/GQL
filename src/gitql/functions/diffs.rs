@@ -45,82 +45,60 @@ pub(crate) fn register_diffs_functions(map: &mut HashMap<&'static str, StandardF
 pub(crate) fn register_diffs_function_signatures(map: &mut HashMap<&'static str, Signature>) {
     map.insert(
         "diff_content",
-        Signature {
-            parameters: vec![Box::new(DiffChangesType)],
-            return_type: Box::new(TextType),
-        },
+        Signature::with_return(Box::new(TextType)).add_parameter(Box::new(DiffChangesType)),
     );
 
     map.insert(
         "diff_added_content",
-        Signature {
-            parameters: vec![Box::new(DiffChangesType)],
-            return_type: Box::new(TextType),
-        },
+        Signature::with_return(Box::new(TextType)).add_parameter(Box::new(DiffChangesType)),
     );
 
     map.insert(
         "diff_deleted_content",
-        Signature {
-            parameters: vec![Box::new(DiffChangesType)],
-            return_type: Box::new(TextType),
-        },
+        Signature::with_return(Box::new(TextType)).add_parameter(Box::new(DiffChangesType)),
     );
 
     map.insert(
         "diff_modified_content",
-        Signature {
-            parameters: vec![Box::new(DiffChangesType)],
-            return_type: Box::new(TextType),
-        },
+        Signature::with_return(Box::new(TextType)).add_parameter(Box::new(DiffChangesType)),
     );
 
     map.insert(
         "diff_content_contains",
-        Signature {
-            parameters: vec![Box::new(DiffChangesType), Box::new(TextType)],
-            return_type: Box::new(TextType),
-        },
+        Signature::with_return(Box::new(BoolType))
+            .add_parameter(Box::new(DiffChangesType))
+            .add_parameter(Box::new(TextType)),
     );
 
     map.insert(
         "diff_added_content_contains",
-        Signature {
-            parameters: vec![Box::new(DiffChangesType), Box::new(TextType)],
-            return_type: Box::new(BoolType),
-        },
+        Signature::with_return(Box::new(BoolType))
+            .add_parameter(Box::new(DiffChangesType))
+            .add_parameter(Box::new(TextType)),
     );
 
     map.insert(
         "diff_deleted_content_contains",
-        Signature {
-            parameters: vec![Box::new(DiffChangesType), Box::new(TextType)],
-            return_type: Box::new(BoolType),
-        },
+        Signature::with_return(Box::new(BoolType))
+            .add_parameter(Box::new(DiffChangesType))
+            .add_parameter(Box::new(TextType)),
     );
 
     map.insert(
         "diff_modified_content_contains",
-        Signature {
-            parameters: vec![Box::new(DiffChangesType), Box::new(TextType)],
-            return_type: Box::new(BoolType),
-        },
+        Signature::with_return(Box::new(BoolType))
+            .add_parameter(Box::new(DiffChangesType))
+            .add_parameter(Box::new(TextType)),
     );
 
     map.insert(
         "diff_files_count",
-        Signature {
-            parameters: vec![Box::new(DiffChangesType)],
-            return_type: Box::new(IntType),
-        },
+        Signature::with_return(Box::new(IntType)).add_parameter(Box::new(DiffChangesType)),
     );
 
     map.insert(
         "is_diff_has_file",
-        Signature {
-            parameters: vec![Box::new(DiffChangesType)],
-            return_type: Box::new(BoolType),
-        },
+        Signature::with_return(Box::new(BoolType)).add_parameter(Box::new(DiffChangesType)),
     );
 }
 
@@ -131,11 +109,9 @@ fn diff_changes_full_content(values: &[Box<dyn Value>]) -> Box<dyn Value> {
             content += &String::from_utf8_lossy(&change.content);
         }
 
-        return Box::new(TextValue { value: content });
+        return Box::new(TextValue::new(content));
     }
-    Box::new(TextValue {
-        value: String::default(),
-    })
+    Box::new(TextValue::empty())
 }
 
 fn diff_changes_added_content(values: &[Box<dyn Value>]) -> Box<dyn Value> {
@@ -147,12 +123,10 @@ fn diff_changes_added_content(values: &[Box<dyn Value>]) -> Box<dyn Value> {
             }
         }
 
-        return Box::new(TextValue { value: content });
+        return Box::new(TextValue::new(content));
     }
 
-    Box::new(TextValue {
-        value: String::default(),
-    })
+    Box::new(TextValue::empty())
 }
 
 fn diff_changes_deleted_content(values: &[Box<dyn Value>]) -> Box<dyn Value> {
@@ -164,12 +138,10 @@ fn diff_changes_deleted_content(values: &[Box<dyn Value>]) -> Box<dyn Value> {
             }
         }
 
-        return Box::new(TextValue { value: content });
+        return Box::new(TextValue::new(content));
     }
 
-    Box::new(TextValue {
-        value: String::default(),
-    })
+    Box::new(TextValue::empty())
 }
 
 fn diff_changes_modified_content(values: &[Box<dyn Value>]) -> Box<dyn Value> {
@@ -181,12 +153,10 @@ fn diff_changes_modified_content(values: &[Box<dyn Value>]) -> Box<dyn Value> {
             }
         }
 
-        return Box::new(TextValue { value: content });
+        return Box::new(TextValue::new(content));
     }
 
-    Box::new(TextValue {
-        value: String::default(),
-    })
+    Box::new(TextValue::empty())
 }
 
 fn diff_changes_full_content_contains(values: &[Box<dyn Value>]) -> Box<dyn Value> {
@@ -197,10 +167,9 @@ fn diff_changes_full_content_contains(values: &[Box<dyn Value>]) -> Box<dyn Valu
             content += &String::from_utf8_lossy(&change.content);
         }
 
-        let is_contains = content.contains(&str);
-        return Box::new(BoolValue { value: is_contains });
+        return Box::new(BoolValue::new(content.contains(&str)));
     }
-    Box::new(BoolValue { value: false })
+    Box::new(BoolValue::new_false())
 }
 
 fn diff_changes_added_content_contains(values: &[Box<dyn Value>]) -> Box<dyn Value> {
@@ -213,10 +182,9 @@ fn diff_changes_added_content_contains(values: &[Box<dyn Value>]) -> Box<dyn Val
             }
         }
 
-        let is_contains = content.contains(&str);
-        return Box::new(BoolValue { value: is_contains });
+        return Box::new(BoolValue::new(content.contains(&str)));
     }
-    Box::new(BoolValue { value: false })
+    Box::new(BoolValue::new_false())
 }
 
 fn diff_changes_deleted_content_contains(values: &[Box<dyn Value>]) -> Box<dyn Value> {
@@ -229,10 +197,9 @@ fn diff_changes_deleted_content_contains(values: &[Box<dyn Value>]) -> Box<dyn V
             }
         }
 
-        let is_contains = content.contains(&str);
-        return Box::new(BoolValue { value: is_contains });
+        return Box::new(BoolValue::new(content.contains(&str)));
     }
-    Box::new(BoolValue { value: false })
+    Box::new(BoolValue::new_false())
 }
 
 fn diff_changes_modified_content_contains(values: &[Box<dyn Value>]) -> Box<dyn Value> {
@@ -245,10 +212,9 @@ fn diff_changes_modified_content_contains(values: &[Box<dyn Value>]) -> Box<dyn 
             }
         }
 
-        let is_contains = content.contains(&str);
-        return Box::new(BoolValue { value: is_contains });
+        return Box::new(BoolValue::new(content.contains(&str)));
     }
-    Box::new(BoolValue { value: false })
+    Box::new(BoolValue::new_false())
 }
 
 fn diff_changes_files_count(values: &[Box<dyn Value>]) -> Box<dyn Value> {
@@ -258,9 +224,9 @@ fn diff_changes_files_count(values: &[Box<dyn Value>]) -> Box<dyn Value> {
             unique_files.insert(&change.location);
         }
         let value = unique_files.len() as i64;
-        return Box::new(IntValue { value });
+        return Box::new(IntValue::new(value));
     }
-    Box::new(IntValue { value: 0 })
+    Box::new(IntValue::new_zero())
 }
 
 fn diff_changes_contains_file(values: &[Box<dyn Value>]) -> Box<dyn Value> {
@@ -268,9 +234,9 @@ fn diff_changes_contains_file(values: &[Box<dyn Value>]) -> Box<dyn Value> {
         let file = values[1].as_text().unwrap();
         for change in changes.changes.iter() {
             if change.location.eq(&file) {
-                return Box::new(BoolValue { value: true });
+                return Box::new(BoolValue::new_true());
             }
         }
     }
-    Box::new(BoolValue { value: false })
+    Box::new(BoolValue::new_false())
 }

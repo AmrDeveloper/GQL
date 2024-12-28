@@ -39,15 +39,45 @@ pub type WindowFunction = fn(&[Vec<Box<dyn Value>>]) -> Vec<Box<dyn Value>>;
 /// GitQL Function Signature has some rules to follow
 ///
 /// Rules:
-/// - Parameters must contains 0 or 1 [`DataType::Varargs`] parameter type only.
-/// - [`DataType::Varargs`] must be the last parameter.
+/// - Parameters must contains 0 or 1 [`VarargsType`] parameter type only.
+/// - [`VarargsType`] must be the last parameter.
 /// - You can add 0 or more [`DataType::Optional`] parameters.
-/// - [`DataType::Optional`] parameters must be at the end but also before [`DataType::Varargs`] if exists.
+/// - [`OptionalType`] parameters must be at the end but also before [`VarargsType`] if exists.
 ///
-/// The return type can be a static [`DataType`] such as Int, Flow or Dynamic
+/// The return type can be a static [`DataType`] such as Int, Float or Dynamic
 /// so you can return a dynamic type depending on parameters.
 #[derive(Clone)]
 pub struct Signature {
     pub parameters: Vec<Box<dyn DataType>>,
     pub return_type: Box<dyn DataType>,
+}
+
+impl Signature {
+    /// Create Instance of [`Signature`] with parameters and return type
+    pub fn new(parameters: Vec<Box<dyn DataType>>, return_type: Box<dyn DataType>) -> Self {
+        Signature {
+            parameters,
+            return_type,
+        }
+    }
+
+    /// Create Instance of [`Signature`] with return type and zero parameters
+    pub fn with_return(return_type: Box<dyn DataType>) -> Self {
+        Signature {
+            parameters: Vec::default(),
+            return_type,
+        }
+    }
+
+    /// Add list of parameters to the [`Signature`]
+    pub fn add_parameters(mut self, mut parameters: Vec<Box<dyn DataType>>) -> Self {
+        self.parameters.append(&mut parameters);
+        self
+    }
+
+    /// Add parameter to the [`Signature`]
+    pub fn add_parameter(mut self, parameter: Box<dyn DataType>) -> Self {
+        self.parameters.push(parameter);
+        self
+    }
 }

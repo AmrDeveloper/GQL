@@ -16,6 +16,12 @@ pub struct DateTimeValue {
     pub value: i64,
 }
 
+impl DateTimeValue {
+    pub fn new(timestamp: i64) -> Self {
+        DateTimeValue { value: timestamp }
+    }
+}
+
 impl Value for DateTimeValue {
     fn literal(&self) -> String {
         let datetime = DateTime::from_timestamp(self.value, 0).unwrap();

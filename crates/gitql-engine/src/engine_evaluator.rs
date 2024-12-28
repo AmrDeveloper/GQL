@@ -471,7 +471,7 @@ fn evaluate_benchmark_call(
         }
     }
 
-    Ok(Box::new(IntValue { value: 0 }))
+    Ok(Box::new(IntValue::new_zero()))
 }
 
 fn evaluate_between(

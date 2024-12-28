@@ -7,6 +7,12 @@ pub struct OptionType {
     pub base: Option<Box<dyn DataType>>,
 }
 
+impl OptionType {
+    pub fn new(base: Option<Box<dyn DataType>>) -> Self {
+        OptionType { base }
+    }
+}
+
 impl DataType for OptionType {
     fn literal(&self) -> String {
         if let Some(base) = &self.base {

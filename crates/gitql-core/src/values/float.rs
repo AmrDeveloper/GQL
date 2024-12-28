@@ -12,6 +12,12 @@ pub struct FloatValue {
     pub value: f64,
 }
 
+impl FloatValue {
+    pub fn new(value: f64) -> Self {
+        FloatValue { value }
+    }
+}
+
 impl Value for FloatValue {
     fn literal(&self) -> String {
         self.value.to_string()

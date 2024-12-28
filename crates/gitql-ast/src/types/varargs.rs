@@ -7,6 +7,12 @@ pub struct VarargsType {
     pub base: Box<dyn DataType>,
 }
 
+impl VarargsType {
+    pub fn new(base: Box<dyn DataType>) -> Self {
+        VarargsType { base }
+    }
+}
+
 impl DataType for VarargsType {
     fn literal(&self) -> String {
         format!("...{}", self.base.literal())

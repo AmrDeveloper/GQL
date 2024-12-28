@@ -7,6 +7,12 @@ pub struct VariantType {
     pub variants: Vec<Box<dyn DataType>>,
 }
 
+impl VariantType {
+    pub fn new(variants: Vec<Box<dyn DataType>>) -> Self {
+        VariantType { variants }
+    }
+}
+
 impl DataType for VariantType {
     fn literal(&self) -> String {
         let mut str = String::new();

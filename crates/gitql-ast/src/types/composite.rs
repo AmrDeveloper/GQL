@@ -9,6 +9,24 @@ pub struct CompositeType {
     pub members: HashMap<String, Box<dyn DataType>>,
 }
 
+impl CompositeType {
+    pub fn new(name: String, members: HashMap<String, Box<dyn DataType>>) -> Self {
+        CompositeType { name, members }
+    }
+
+    pub fn empty(name: String) -> Self {
+        CompositeType {
+            name,
+            members: HashMap::default(),
+        }
+    }
+
+    pub fn add_member(mut self, name: String, data_type: Box<dyn DataType>) -> Self {
+        self.members.insert(name, data_type);
+        self
+    }
+}
+
 impl DataType for CompositeType {
     fn literal(&self) -> String {
         self.name.to_string()

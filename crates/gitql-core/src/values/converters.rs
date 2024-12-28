@@ -42,17 +42,17 @@ pub fn string_literal_to_date_time(literal: &str) -> Box<dyn Value> {
 pub fn string_literal_to_boolean(literal: &str) -> Box<dyn Value> {
     match literal {
         // True values literal
-        "t" => Box::new(BoolValue { value: true }),
-        "true" => Box::new(BoolValue { value: true }),
-        "y" => Box::new(BoolValue { value: true }),
-        "yes" => Box::new(BoolValue { value: true }),
-        "1" => Box::new(BoolValue { value: true }),
+        "t" => Box::new(BoolValue::new_true()),
+        "true" => Box::new(BoolValue::new_true()),
+        "y" => Box::new(BoolValue::new_true()),
+        "yes" => Box::new(BoolValue::new_true()),
+        "1" => Box::new(BoolValue::new_true()),
         // False values literal
-        "f" => Box::new(BoolValue { value: false }),
-        "false" => Box::new(BoolValue { value: false }),
-        "n" => Box::new(BoolValue { value: false }),
-        "no" => Box::new(BoolValue { value: false }),
-        "0" => Box::new(BoolValue { value: false }),
+        "f" => Box::new(BoolValue::new_false()),
+        "false" => Box::new(BoolValue::new_false()),
+        "n" => Box::new(BoolValue::new_false()),
+        "no" => Box::new(BoolValue::new_false()),
+        "0" => Box::new(BoolValue::new_false()),
         // Invalid value, must be unreachable
         _ => Box::new(NullValue),
     }

@@ -14,6 +14,16 @@ pub struct RangeValue {
     pub base_type: Box<dyn DataType>,
 }
 
+impl RangeValue {
+    pub fn new(start: Box<dyn Value>, end: Box<dyn Value>, base_type: Box<dyn DataType>) -> Self {
+        RangeValue {
+            start,
+            end,
+            base_type,
+        }
+    }
+}
+
 impl Value for RangeValue {
     fn literal(&self) -> String {
         format!("{}..{}", self.start.literal(), self.end.literal())

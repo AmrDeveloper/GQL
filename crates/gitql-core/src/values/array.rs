@@ -14,6 +14,24 @@ pub struct ArrayValue {
     pub base_type: Box<dyn DataType>,
 }
 
+impl ArrayValue {
+    pub fn new(values: Vec<Box<dyn Value>>, base_type: Box<dyn DataType>) -> Self {
+        ArrayValue { values, base_type }
+    }
+
+    pub fn empty(base_type: Box<dyn DataType>) -> Self {
+        ArrayValue {
+            values: Vec::default(),
+            base_type,
+        }
+    }
+
+    pub fn add_element(mut self, element: Box<dyn Value>) -> Self {
+        self.values.push(element);
+        self
+    }
+}
+
 impl Value for ArrayValue {
     fn literal(&self) -> String {
         let mut str = String::new();
@@ -124,7 +142,7 @@ impl Value for ArrayValue {
                     }
                 }
             }
-            return Ok(Box::new(BoolValue { value: false }));
+            return Ok(Box::new(BoolValue::new_false()));
         }
         Err("Unexpected Array overlap type".to_string())
     }
@@ -136,6 +154,6 @@ impl Value for ArrayValue {
             }
         }
 
-        Ok(Box::new(BoolValue { value: false }))
+        Ok(Box::new(BoolValue::new_false()))
     }
 }

@@ -13,6 +13,16 @@ pub struct IntValue {
     pub value: i64,
 }
 
+impl IntValue {
+    pub fn new(value: i64) -> Self {
+        IntValue { value }
+    }
+
+    pub fn new_zero() -> Self {
+        IntValue { value: 0 }
+    }
+}
+
 impl Value for IntValue {
     fn literal(&self) -> String {
         self.value.to_string()

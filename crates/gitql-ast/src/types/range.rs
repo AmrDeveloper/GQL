@@ -8,6 +8,12 @@ pub struct RangeType {
     pub base: Box<dyn DataType>,
 }
 
+impl RangeType {
+    pub fn new(base: Box<dyn DataType>) -> Self {
+        RangeType { base }
+    }
+}
+
 impl DataType for RangeType {
     fn literal(&self) -> String {
         format!("Range({})", self.base.literal())
