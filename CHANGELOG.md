@@ -1,5 +1,19 @@
 # Change Log
 
+## Version 0.34.0 _(2024-12-30)_
+
+- Allow `LogicalExpr` to return dynamic type depend on operands.
+- Speedup selecting from diffs table by 58.36% (In Gitql repo from 6.001383125s to 2.4985875s) #124.
+- Speedup selecting from refs table by 32.45% (In Gitql repo from 5.367084ms to 3.625292ms).
+- Support overriding `LIKE`, `GLOB` and `REGEXP` for user defined types.
+- Introduce `diff_changes` column in diffs table to store changes.
+- Rename `deletions` columns to `removals` in diff table.
+- Implement `DIFF_CONTENT`, `DIFF_ADDED_CONTENT`, `DIFF_DELETED_CONTENT` and `DIFF_MODIFIED_CONTENT` functions in GitQL App scope.
+- Implement `DIFF_CONTENT_CONTAINS` and `DIFF_ADDED_CONTENT_CONTAINS` functions in GitQL App scope.
+- Implement `DIFF_DELETED_CONTENT_CONTAINS` and `DIFF_MODIFIED_CONTENT_CONTAINS` functions in GitQL App scope.
+- Implement `DIFF_FILES_COUNT` and `IS_DIFF_HAS_FILE` functions in GitQL App scope.
+- Create constructors for Types and Values that make it easy to create instance.
+
 ## Version 0.33.0 _(2024-12-18)_
 
 - Check for repositories in the script mode.
