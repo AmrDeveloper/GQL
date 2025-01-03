@@ -1945,7 +1945,7 @@ fn parse_logical_and_expression(
         // Check if RHS expr can be implicit casted to Expected LHS type to make this
         // Expression valid
         for expected_type in expected_rhs_types.iter() {
-            if !expected_type.has_implicit_cast_from(&lhs) {
+            if !expected_type.has_implicit_cast_from(&rhs) {
                 continue;
             }
 
@@ -2033,7 +2033,7 @@ fn parse_bitwise_or_expression(
         // Check if RHS expr can be implicit casted to Expected LHS type to make this
         // Expression valid
         for expected_type in expected_rhs_types.iter() {
-            if !expected_type.has_implicit_cast_from(&lhs) {
+            if !expected_type.has_implicit_cast_from(&rhs) {
                 continue;
             }
 
@@ -2123,7 +2123,7 @@ fn parse_bitwise_xor_expression(
         // Check if RHS expr can be implicit casted to Expected LHS type to make this
         // Expression valid
         for expected_type in expected_rhs_types.iter() {
-            if !expected_type.has_implicit_cast_from(&lhs) {
+            if !expected_type.has_implicit_cast_from(&rhs) {
                 continue;
             }
 
@@ -2212,7 +2212,7 @@ fn parse_logical_xor_expression(
         // Check if RHS expr can be implicit casted to Expected LHS type to make this
         // Expression valid
         for expected_type in expected_rhs_types.iter() {
-            if !expected_type.has_implicit_cast_from(&lhs) {
+            if !expected_type.has_implicit_cast_from(&rhs) {
                 continue;
             }
 
@@ -2300,7 +2300,7 @@ fn parse_bitwise_and_expression(
         // Check if RHS expr can be implicit casted to Expected LHS type to make this
         // Expression valid
         for expected_type in expected_rhs_types.iter() {
-            if !expected_type.has_implicit_cast_from(&lhs) {
+            if !expected_type.has_implicit_cast_from(&rhs) {
                 continue;
             }
 
@@ -2387,7 +2387,7 @@ fn parse_equality_expression(
             // Check if RHS expr can be implicit casted to Expected LHS type to make this
             // Expression valid
             for expected_type in expected_rhs_types.iter() {
-                if !expected_type.has_implicit_cast_from(&lhs) {
+                if !expected_type.has_implicit_cast_from(&rhs) {
                     continue;
                 }
 
@@ -2455,7 +2455,7 @@ fn parse_equality_expression(
             // Check if RHS expr can be implicit casted to Expected LHS type to make this
             // Expression valid
             for expected_type in expected_rhs_types.iter() {
-                if !expected_type.has_implicit_cast_from(&lhs) {
+                if !expected_type.has_implicit_cast_from(&rhs) {
                     continue;
                 }
 
@@ -2608,7 +2608,7 @@ fn parse_comparison_expression(
             // Check if RHS expr can be implicit casted to Expected LHS type to make this
             // Expression valid
             for expected_type in expected_rhs_types.iter() {
-                if !expected_type.has_implicit_cast_from(&lhs) {
+                if !expected_type.has_implicit_cast_from(&rhs) {
                     continue;
                 }
 
@@ -2669,7 +2669,7 @@ fn parse_comparison_expression(
             // Check if RHS expr can be implicit casted to Expected LHS type to make this
             // Expression valid
             for expected_type in expected_rhs_types.iter() {
-                if !expected_type.has_implicit_cast_from(&lhs) {
+                if !expected_type.has_implicit_cast_from(&rhs) {
                     continue;
                 }
 
@@ -2730,7 +2730,7 @@ fn parse_comparison_expression(
             // Check if RHS expr can be implicit casted to Expected LHS type to make this
             // Expression valid
             for expected_type in expected_rhs_types.iter() {
-                if !expected_type.has_implicit_cast_from(&lhs) {
+                if !expected_type.has_implicit_cast_from(&rhs) {
                     continue;
                 }
 
@@ -2791,7 +2791,7 @@ fn parse_comparison_expression(
             // Check if RHS expr can be implicit casted to Expected LHS type to make this
             // Expression valid
             for expected_type in expected_rhs_types.iter() {
-                if !expected_type.has_implicit_cast_from(&lhs) {
+                if !expected_type.has_implicit_cast_from(&rhs) {
                     continue;
                 }
 
@@ -2871,7 +2871,7 @@ fn parse_contains_expression(
 
         // Check if can perform the operator with additional implicit casting
         for expected_type in expected_rhs_types.iter() {
-            if !expected_type.has_implicit_cast_from(&lhs) {
+            if !expected_type.has_implicit_cast_from(&rhs) {
                 continue;
             }
 
@@ -3179,7 +3179,7 @@ fn parse_term_expression(
             // Expression valid
             let expected_lhs_types = rhs_type.can_perform_add_op_with();
             for expected_type in expected_lhs_types.iter() {
-                if !expected_type.has_implicit_cast_from(&rhs) {
+                if !expected_type.has_implicit_cast_from(&lhs) {
                     continue;
                 }
 
@@ -3251,7 +3251,7 @@ fn parse_term_expression(
             // Expression valid
             let expected_lhs_types = rhs_type.can_perform_sub_op_with();
             for expected_type in expected_lhs_types.iter() {
-                if !expected_type.has_implicit_cast_from(&rhs) {
+                if !expected_type.has_implicit_cast_from(&lhs) {
                     continue;
                 }
 
@@ -3344,7 +3344,7 @@ fn parse_factor_expression(
             // Expression valid
             let expected_lhs_types = rhs_type.can_perform_mul_op_with();
             for expected_type in expected_lhs_types.iter() {
-                if !expected_type.has_implicit_cast_from(&rhs) {
+                if !expected_type.has_implicit_cast_from(&lhs) {
                     continue;
                 }
 
@@ -3414,7 +3414,7 @@ fn parse_factor_expression(
             // Expression valid
             let expected_lhs_types = rhs_type.can_perform_div_op_with();
             for expected_type in expected_lhs_types.iter() {
-                if !expected_type.has_implicit_cast_from(&rhs) {
+                if !expected_type.has_implicit_cast_from(&lhs) {
                     continue;
                 }
 
@@ -3484,7 +3484,7 @@ fn parse_factor_expression(
             // Expression valid
             let expected_lhs_types = rhs_type.can_perform_rem_op_with();
             for expected_type in expected_lhs_types.iter() {
-                if !expected_type.has_implicit_cast_from(&rhs) {
+                if !expected_type.has_implicit_cast_from(&lhs) {
                     continue;
                 }
 
@@ -3553,7 +3553,7 @@ fn parse_factor_expression(
             // Expression valid
             let expected_lhs_types = rhs_type.can_perform_caret_op_with();
             for expected_type in expected_lhs_types.iter() {
-                if !expected_type.has_implicit_cast_from(&rhs) {
+                if !expected_type.has_implicit_cast_from(&lhs) {
                     continue;
                 }
 
