@@ -447,7 +447,7 @@ fn select_diffs(repo: &gix::Repository, selected_columns: &[String]) -> Result<V
                                     source_relation: _,
                                     source_entry_mode: _,
                                     source_id: _,
-                                    diff: _,
+                                    diff,
                                     entry_mode: _,
                                     location,
                                     id,
@@ -462,15 +462,14 @@ fn select_diffs(repo: &gix::Repository, selected_columns: &[String]) -> Result<V
                                         }
                                     }
 
-                                    if let Ok(mut platform) = change.diff(&mut diff_cache) {
-                                        if let Ok(Some(counts)) = platform.line_counts() {
-                                            diff_change.insertions += counts.insertions;
-                                            diff_change.removals += counts.removals;
-                                        }
+                                    if let Some(diff_line_stats) = diff {
+                                        diff_change.insertions += diff_line_stats.insertions;
+                                        diff_change.removals += diff_line_stats.removals;
+
+                                        insertions += diff_line_stats.insertions;
+                                        removals += diff_line_stats.removals;
                                     }
 
-                                    insertions += diff_change.insertions;
-                                    removals += diff_change.removals;
                                     diff_changes.push(diff_change);
                                 }
                             }
