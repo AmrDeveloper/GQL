@@ -35,11 +35,15 @@ impl ArrayValue {
 impl Value for ArrayValue {
     fn literal(&self) -> String {
         let mut str = String::new();
-        let last_position = self.values.len() - 1;
+        let elements = &self.values;
+        if elements.is_empty() {
+            return "[]".to_string();
+        }
+
         str += "[";
-        for (pos, element) in self.values.iter().enumerate() {
+        for (pos, element) in elements.iter().enumerate() {
             str += &element.literal();
-            if pos != last_position {
+            if pos + 1 != elements.len() {
                 str += ", ";
             }
         }

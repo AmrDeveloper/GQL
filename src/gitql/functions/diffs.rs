@@ -1,11 +1,13 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 
+use gitql_ast::types::array::ArrayType;
 use gitql_ast::types::boolean::BoolType;
 use gitql_ast::types::integer::IntType;
 use gitql_ast::types::text::TextType;
 use gitql_core::signature::Signature;
 use gitql_core::signature::StandardFunction;
+use gitql_core::values::array::ArrayValue;
 use gitql_core::values::base::Value;
 use gitql_core::values::boolean::BoolValue;
 use gitql_core::values::integer::IntValue;
@@ -36,6 +38,7 @@ pub(crate) fn register_diffs_functions(map: &mut HashMap<&'static str, StandardF
         diff_changes_modified_content_contains,
     );
 
+    map.insert("diff_changed_files", diff_changed_files);
     map.insert("diff_files_count", diff_changes_files_count);
 
     map.insert("is_diff_has_file", diff_changes_contains_file);
@@ -89,6 +92,12 @@ pub(crate) fn register_diffs_function_signatures(map: &mut HashMap<&'static str,
         Signature::with_return(Box::new(BoolType))
             .add_parameter(Box::new(DiffChangesType))
             .add_parameter(Box::new(TextType)),
+    );
+
+    map.insert(
+        "diff_changed_files",
+        Signature::with_return(Box::new(ArrayType::new(Box::new(TextType))))
+            .add_parameter(Box::new(DiffChangesType)),
     );
 
     map.insert(
@@ -215,6 +224,17 @@ fn diff_changes_modified_content_contains(values: &[Box<dyn Value>]) -> Box<dyn 
         return Box::new(BoolValue::new(content.contains(&str)));
     }
     Box::new(BoolValue::new_false())
+}
+
+fn diff_changed_files(values: &[Box<dyn Value>]) -> Box<dyn Value> {
+    if let Some(changes) = values[0].as_any().downcast_ref::<DiffChangesValue>() {
+        let mut elements: Vec<Box<dyn Value>> = vec![];
+        for change in changes.changes.iter() {
+            elements.push(Box::new(TextValue::new(change.location.to_string())));
+        }
+        return Box::new(ArrayValue::new(elements, Box::new(TextType)));
+    }
+    Box::new(ArrayValue::empty(Box::new(TextType)))
 }
 
 fn diff_changes_files_count(values: &[Box<dyn Value>]) -> Box<dyn Value> {
