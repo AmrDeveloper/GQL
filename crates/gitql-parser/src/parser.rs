@@ -2531,7 +2531,7 @@ fn parse_comparison_expression(
         let lhs_type = lhs.expr_type();
         let rhs_type = rhs.expr_type();
 
-        // Parse and Check sides for `<` operator
+        // Parse and Check sides for `>` operator
         if operator.kind == TokenKind::Greater {
             let expected_rhs_types = lhs_type.can_perform_gt_op_with();
 
@@ -2547,7 +2547,7 @@ fn parse_comparison_expression(
             // Check if RHS expr can be implicit casted to Expected LHS type to make this
             // Expression valid
             for expected_type in expected_rhs_types.iter() {
-                if !expected_type.has_implicit_cast_from(&lhs) {
+                if !expected_type.has_implicit_cast_from(&rhs) {
                     continue;
                 }
 
