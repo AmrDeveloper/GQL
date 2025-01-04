@@ -53,6 +53,19 @@ show tables
 
 ---
 
+## Diffs Changes table
+
+| Name       | Type    | Description                                                              |
+| ---------- | ------- | ------------------------------------------------------------------------ |
+| commit_id  | Text    | Commit id                                                                |
+| insertions | Integer | Number of inserted lines in one change                                   |
+| removals   | Integer | Number of deleted lines in one change                                    |
+| mode       | Text    | Change mode A for Add, D for Delete, M for Modification or R for Rewrite |
+| path       | Text    | Location of the change                                                   |
+| repo       | Text    | Repository full path                                                     |
+
+---
+
 ### Branches table
 
 | Name         | Type     | Description                      |

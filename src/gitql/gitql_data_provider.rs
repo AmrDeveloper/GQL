@@ -14,6 +14,7 @@ use gix::object::tree::diff::Change;
 use gix::refs::Category;
 
 use super::values::diff_changes::DiffChange;
+use super::values::diff_changes::DiffChangeInfo;
 use super::values::diff_changes::DiffChangeKind;
 use super::values::diff_changes::DiffChangesValue;
 
@@ -51,6 +52,7 @@ fn select_gql_objects(
         "commits" => select_commits(repo, selected_columns),
         "branches" => select_branches(repo, selected_columns),
         "diffs" => select_diffs(repo, selected_columns),
+        "diffs_changes" => select_diffs_changes(repo, selected_columns),
         "tags" => select_tags(repo, selected_columns),
         _ => Ok(vec![Row { values: vec![] }]),
     }
@@ -71,33 +73,31 @@ fn select_references(
 
     for reference in references.all().unwrap().flatten() {
         let mut values: Vec<Box<dyn Value>> = Vec::with_capacity(selected_columns.len());
-        for field_name in selected_columns {
-            if field_name == "name" {
+        for column_name in selected_columns {
+            if column_name == "name" {
                 let name = reference.name().shorten().to_string();
-                values.push(Box::new(TextValue { value: name }));
+                values.push(Box::new(TextValue::new(name)));
                 continue;
             }
 
-            if field_name == "full_name" {
+            if column_name == "full_name" {
                 let full_name = reference.name().as_bstr().to_string();
-                values.push(Box::new(TextValue { value: full_name }));
+                values.push(Box::new(TextValue::new(full_name)));
                 continue;
             }
 
-            if field_name == "type" {
+            if column_name == "type" {
                 let category = if let Some(category) = reference.name().category() {
                     format!("{:?}", category)
                 } else {
                     "Other".to_string()
                 };
-                values.push(Box::new(TextValue { value: category }));
+                values.push(Box::new(TextValue::new(category)));
                 continue;
             }
 
-            if field_name == "repo" {
-                values.push(Box::new(TextValue {
-                    value: repo_path.to_string(),
-                }));
+            if column_name == "repo" {
+                values.push(Box::new(TextValue::new(repo_path.to_string())));
                 continue;
             }
 
@@ -129,23 +129,19 @@ fn select_commits(repo: &gix::Repository, selected_columns: &[String]) -> Result
         let mut values: Vec<Box<dyn Value>> = Vec::with_capacity(selected_columns.len());
         for column_name in selected_columns {
             if column_name == "commit_id" {
-                values.push(Box::new(TextValue {
-                    value: commit_info.id.to_string(),
-                }));
+                values.push(Box::new(TextValue::new(commit_info.id.to_string())));
                 continue;
             }
 
             if column_name == "author_name" {
-                values.push(Box::new(TextValue {
-                    value: commit.author().name.to_string(),
-                }));
+                let author_name = commit.author().name.to_string();
+                values.push(Box::new(TextValue::new(author_name)));
                 continue;
             }
 
             if column_name == "author_email" {
-                values.push(Box::new(TextValue {
-                    value: commit.author().email.to_string(),
-                }));
+                let author_email = commit.author().email.to_string();
+                values.push(Box::new(TextValue::new(author_email)));
                 continue;
             }
 
@@ -157,23 +153,19 @@ fn select_commits(repo: &gix::Repository, selected_columns: &[String]) -> Result
             }
 
             if column_name == "committer_email" {
-                values.push(Box::new(TextValue {
-                    value: commit.committer().email.to_string(),
-                }));
+                let committer_email = commit.committer().email.to_string();
+                values.push(Box::new(TextValue::new(committer_email)));
                 continue;
             }
 
             if column_name == "title" {
-                values.push(Box::new(TextValue {
-                    value: commit.message().summary().to_string(),
-                }));
+                let title = commit.message().summary().to_string();
+                values.push(Box::new(TextValue::new(title)));
                 continue;
             }
 
             if column_name == "message" {
-                values.push(Box::new(TextValue {
-                    value: commit.message.to_string(),
-                }));
+                values.push(Box::new(TextValue::new(commit.message.to_string())));
                 continue;
             }
 
@@ -181,21 +173,17 @@ fn select_commits(repo: &gix::Repository, selected_columns: &[String]) -> Result
                 let time_stamp = commit_info
                     .commit_time
                     .unwrap_or_else(|| commit.time().seconds);
-                values.push(Box::new(DateTimeValue { value: time_stamp }));
+                values.push(Box::new(DateTimeValue::new(time_stamp)));
                 continue;
             }
 
             if column_name == "parents_count" {
-                values.push(Box::new(IntValue {
-                    value: commit.parents.len() as i64,
-                }));
+                values.push(Box::new(IntValue::new(commit.parents.len() as i64)));
                 continue;
             }
 
             if column_name == "repo" {
-                values.push(Box::new(TextValue {
-                    value: repo_path.to_string(),
-                }));
+                values.push(Box::new(TextValue::new(repo_path.to_string())));
                 continue;
             }
 
@@ -231,14 +219,13 @@ fn select_branches(
     }
 
     let head_ref = head_ref_option.unwrap();
-
     for mut branch in local_and_remote_branches.flatten() {
         let mut values: Vec<Box<dyn Value>> = Vec::with_capacity(selected_columns.len());
 
         for column_name in selected_columns {
             if column_name == "name" {
                 let branch_name = branch.name().as_bstr().to_string();
-                values.push(Box::new(TextValue { value: branch_name }));
+                values.push(Box::new(TextValue::new(branch_name)));
                 continue;
             }
 
@@ -252,10 +239,7 @@ fn select_branches(
                 } else {
                     0
                 };
-
-                values.push(Box::new(IntValue {
-                    value: commit_count,
-                }));
+                values.push(Box::new(IntValue::new(commit_count)));
                 continue;
             }
 
@@ -265,16 +249,13 @@ fn select_branches(
                     if let Some(commit_info) = walker.into_iter().next() {
                         let commit_info = commit_info.unwrap();
                         if let Some(commit_timestamp) = commit_info.commit_time {
-                            values.push(Box::new(DateTimeValue {
-                                value: commit_timestamp,
-                            }));
+                            values.push(Box::new(DateTimeValue::new(commit_timestamp)));
                             continue;
                         }
 
                         let commit = repo.find_object(commit_info.id).unwrap().into_commit();
                         let commit = commit.decode().unwrap();
-                        let time_stamp = commit.time().seconds;
-                        values.push(Box::new(DateTimeValue { value: time_stamp }));
+                        values.push(Box::new(DateTimeValue::new(commit.time().seconds)));
                         continue;
                     }
                 }
@@ -284,9 +265,7 @@ fn select_branches(
             }
 
             if column_name == "is_head" {
-                values.push(Box::new(BoolValue {
-                    value: branch.inner == head_ref.inner,
-                }));
+                values.push(Box::new(BoolValue::new(branch.inner == head_ref.inner)));
                 continue;
             }
 
@@ -295,14 +274,12 @@ fn select_branches(
                     .name()
                     .category()
                     .map_or(false, |cat| cat == Category::RemoteBranch);
-                values.push(Box::new(BoolValue { value: is_remote }));
+                values.push(Box::new(BoolValue::new(is_remote)));
                 continue;
             }
 
             if column_name == "repo" {
-                values.push(Box::new(TextValue {
-                    value: repo_path.to_string(),
-                }));
+                values.push(Box::new(TextValue::new(repo_path.to_string())));
                 continue;
             }
 
@@ -482,20 +459,19 @@ fn select_diffs(repo: &gix::Repository, selected_columns: &[String]) -> Result<V
 
         for column_name in selected_columns {
             if column_name == "commit_id" {
-                let value = commit_info.id.to_string();
-                values.push(Box::new(TextValue { value }));
+                values.push(Box::new(TextValue::new(commit_info.id.to_string())));
                 continue;
             }
 
             if column_name == "author_name" {
-                let value = commit_ref.author().name.to_string();
-                values.push(Box::new(TextValue { value }));
+                let author_name = commit_ref.author().name.to_string();
+                values.push(Box::new(TextValue::new(author_name)));
                 continue;
             }
 
             if column_name == "author_email" {
-                let value = commit_ref.author().email.to_string();
-                values.push(Box::new(TextValue { value }));
+                let author_email = commit_ref.author().email.to_string();
+                values.push(Box::new(TextValue::new(author_email)));
                 continue;
             }
 
@@ -503,40 +479,33 @@ fn select_diffs(repo: &gix::Repository, selected_columns: &[String]) -> Result<V
                 let time_stamp = commit_info
                     .commit_time
                     .unwrap_or_else(|| commit_ref.time().seconds);
-                values.push(Box::new(DateTimeValue { value: time_stamp }));
+                values.push(Box::new(DateTimeValue::new(time_stamp)));
                 continue;
             }
 
             if column_name == "insertions" {
-                let value = insertions as i64;
-                values.push(Box::new(IntValue { value }));
+                values.push(Box::new(IntValue::new(insertions as i64)));
                 continue;
             }
 
             if column_name == "removals" {
-                let value = removals as i64;
-                values.push(Box::new(IntValue { value }));
+                values.push(Box::new(IntValue::new(removals as i64)));
                 continue;
             }
 
             if column_name == "files_changed" {
-                let value = files_changed as i64;
-                values.push(Box::new(IntValue { value }));
+                values.push(Box::new(IntValue::new(files_changed as i64)));
                 continue;
             }
 
             if column_name == "diff_changes" {
-                let value = DiffChangesValue {
-                    changes: diff_changes.to_owned(),
-                };
-                values.push(Box::new(value));
+                values.push(Box::new(DiffChangesValue::new(diff_changes.to_owned())));
                 continue;
             }
 
             if column_name == "repo" {
-                values.push(Box::new(TextValue {
-                    value: repo_path.to_string(),
-                }));
+                values.push(Box::new(TextValue::new(repo_path.to_string())));
+
                 continue;
             }
 
@@ -545,6 +514,199 @@ fn select_diffs(repo: &gix::Repository, selected_columns: &[String]) -> Result<V
 
         let row = Row { values };
         rows.push(row);
+    }
+
+    Ok(rows)
+}
+
+fn select_diffs_changes(
+    repo: &gix::Repository,
+    selected_columns: &[String],
+) -> Result<Vec<Row>, String> {
+    let repo = {
+        let mut repo = repo.clone();
+        repo.object_cache_size_if_unset(4 * 1024 * 1024);
+        repo
+    };
+
+    let mut rewrite_cache = repo
+        .diff_resource_cache(Mode::ToGit, Default::default())
+        .unwrap();
+
+    let mut diff_cache = rewrite_cache.clone();
+
+    let repo_path = repo.path().to_str().unwrap();
+    let walker = repo.head_id().unwrap().ancestors().all().unwrap();
+    let commits_info = walker.filter_map(Result::ok);
+
+    let mut rows: Vec<Row> = vec![];
+    let selected_columns_len = selected_columns.len();
+    for commit_info in commits_info.into_iter() {
+        let commit = commit_info.id().object().unwrap().into_commit();
+        let commit_ref = commit.decode().unwrap();
+
+        if let Some(parent) = commit_info
+            .parent_ids()
+            .next()
+            .map(|id| id.object().unwrap().into_commit().tree().unwrap())
+        {
+            let current = commit.tree().unwrap();
+            rewrite_cache.clear_resource_cache_keep_allocation();
+            diff_cache.clear_resource_cache_keep_allocation();
+
+            if let Ok(mut changes) = current.changes() {
+                let _ = changes.for_each_to_obtain_tree_with_cache(
+                    &parent,
+                    &mut rewrite_cache,
+                    |change| {
+                        let diff_change = match change {
+                            Change::Addition {
+                                location,
+                                entry_mode: _,
+                                relation: _,
+                                id: _,
+                            } => {
+                                let mut change_info = DiffChangeInfo {
+                                    path: location.to_string(),
+                                    insertions: 0,
+                                    removals: 0,
+                                    mode: 'A',
+                                };
+
+                                if let Ok(mut platform) = change.diff(&mut diff_cache) {
+                                    if let Ok(Some(counts)) = platform.line_counts() {
+                                        change_info.insertions += counts.insertions;
+                                        change_info.removals += counts.removals;
+                                    }
+                                }
+
+                                change_info
+                            }
+                            Change::Deletion {
+                                location,
+                                entry_mode: _,
+                                relation: _,
+                                id: _,
+                            } => {
+                                let mut change_info = DiffChangeInfo {
+                                    path: location.to_string(),
+                                    insertions: 0,
+                                    removals: 0,
+                                    mode: 'D',
+                                };
+
+                                if let Ok(mut platform) = change.diff(&mut diff_cache) {
+                                    if let Ok(Some(counts)) = platform.line_counts() {
+                                        change_info.insertions += counts.insertions;
+                                        change_info.removals += counts.removals;
+                                    }
+                                }
+
+                                change_info
+                            }
+                            Change::Modification {
+                                location,
+                                previous_entry_mode: _,
+                                previous_id: _,
+                                entry_mode: _,
+                                id: _,
+                            } => {
+                                let mut change_info = DiffChangeInfo {
+                                    path: location.to_string(),
+                                    insertions: 0,
+                                    removals: 0,
+                                    mode: 'M',
+                                };
+
+                                if let Ok(mut platform) = change.diff(&mut diff_cache) {
+                                    if let Ok(Some(counts)) = platform.line_counts() {
+                                        change_info.insertions += counts.insertions;
+                                        change_info.removals += counts.removals;
+                                    }
+                                }
+
+                                change_info
+                            }
+                            Change::Rewrite {
+                                source_location: _,
+                                source_relation: _,
+                                source_entry_mode: _,
+                                source_id: _,
+                                diff,
+                                entry_mode: _,
+                                location,
+                                id: _,
+                                relation: _,
+                                copy: _,
+                            } => {
+                                let mut change_info = DiffChangeInfo {
+                                    path: location.to_string(),
+                                    insertions: 0,
+                                    removals: 0,
+                                    mode: 'R',
+                                };
+
+                                if let Some(diff_line_stats) = diff {
+                                    change_info.insertions += diff_line_stats.insertions;
+                                    change_info.removals += diff_line_stats.removals;
+                                }
+
+                                change_info
+                            }
+                        };
+
+                        let mut values: Vec<Box<dyn Value>> =
+                            Vec::with_capacity(selected_columns_len);
+                        for column_name in selected_columns {
+                            if column_name == "commit_id" {
+                                values.push(Box::new(TextValue::new(commit_info.id.to_string())));
+                                continue;
+                            }
+
+                            if column_name == "insertions" {
+                                values.push(Box::new(IntValue::new(diff_change.insertions as i64)));
+                                continue;
+                            }
+
+                            if column_name == "removals" {
+                                values.push(Box::new(IntValue::new(diff_change.removals as i64)));
+                                continue;
+                            }
+
+                            if column_name == "mode" {
+                                values.push(Box::new(TextValue::new(diff_change.mode.to_string())));
+                                continue;
+                            }
+
+                            if column_name == "path" {
+                                values.push(Box::new(TextValue::new(diff_change.path.to_string())));
+                                continue;
+                            }
+
+                            if column_name == "datetime" {
+                                let time_stamp = commit_info
+                                    .commit_time
+                                    .unwrap_or_else(|| commit_ref.time().seconds);
+                                values.push(Box::new(DateTimeValue::new(time_stamp)));
+                                continue;
+                            }
+
+                            if column_name == "repo" {
+                                values.push(Box::new(TextValue::new(repo_path.to_string())));
+                                continue;
+                            }
+
+                            values.push(Box::new(NullValue));
+                        }
+
+                        let row = Row { values };
+                        rows.push(row);
+
+                        Ok::<_, Infallible>(Default::default())
+                    },
+                );
+            }
+        }
     }
 
     Ok(rows)
@@ -564,14 +726,12 @@ fn select_tags(repo: &gix::Repository, selected_columns: &[String]) -> Result<Ve
                     .name()
                     .category_and_short_name()
                     .map_or_else(String::default, |(_, short_name)| short_name.to_string());
-                values.push(Box::new(TextValue { value: tag_name }));
+                values.push(Box::new(TextValue::new(tag_name)));
                 continue;
             }
 
             if column_name == "repo" {
-                values.push(Box::new(TextValue {
-                    value: repo_path.to_string(),
-                }));
+                values.push(Box::new(TextValue::new(repo_path.to_string())));
                 continue;
             }
 

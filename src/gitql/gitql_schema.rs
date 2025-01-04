@@ -31,6 +31,8 @@ pub fn tables_fields_types() -> HashMap<&'static str, Box<dyn DataType>> {
     map.insert("commit_count", Box::new(IntType));
     map.insert("parents_count", Box::new(IntType));
     map.insert("updated", Box::new(DateTimeType));
+    map.insert("path", Box::new(TextType));
+    map.insert("mode", Box::new(TextType));
     map.insert("repo", Box::new(TextType));
     map
 }
@@ -77,6 +79,17 @@ pub fn tables_fields_names() -> &'static HashMap<&'static str, Vec<&'static str>
                 "files_changed",
                 "diff_changes",
                 "datetime",
+                "repo",
+            ],
+        );
+        map.insert(
+            "diffs_changes",
+            vec![
+                "commit_id",
+                "insertions",
+                "removals",
+                "mode",
+                "path",
                 "repo",
             ],
         );

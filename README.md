@@ -58,7 +58,7 @@ SELECT author_name, author_email FROM commits ORDER BY author_name DESC, author_
 SELECT author_name, author_email FROM commits WHERE author_email LIKE "%gmail%" ORDER BY author_name
 SELECT * FROM commits WHERE LOWER(author_name) = "amrdeveloper"
 SELECT author_name FROM commits GROUP By author_name
-SELECT author_name FROM commits GROUP By author_name having author_name = "AmrDeveloper"
+SELECT author_name FROM commits GROUP By author_name HAVING author_name = "AmrDeveloper"
 
 SELECT * FROM branches
 SELECT * FROM branches WHERE is_head = true
@@ -66,6 +66,8 @@ SELECT name, LEN(name) FROM branches
 
 SELECT * FROM tags
 SELECT * FROM tags OFFSET 1 LIMIT 1
+
+SELECT path, count() AS changes_count, SUM(insertions) AS additions, SUM(removals) AS removes FROM diffs_changes GROUP BY path ORDER BY changes_count DESC
 ```
 
 ---

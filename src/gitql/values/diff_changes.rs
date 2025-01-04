@@ -20,9 +20,14 @@ pub struct DiffChange {
     pub content: Vec<u8>,
     pub insertions: u32,
     pub removals: u32,
-
-    #[allow(dead_code)]
     pub kind: DiffChangeKind,
+}
+
+pub(crate) struct DiffChangeInfo {
+    pub(crate) path: String,
+    pub(crate) insertions: u32,
+    pub(crate) removals: u32,
+    pub(crate) mode: char,
 }
 
 impl DiffChange {
@@ -40,6 +45,12 @@ impl DiffChange {
 #[derive(Clone)]
 pub struct DiffChangesValue {
     pub changes: Vec<DiffChange>,
+}
+
+impl DiffChangesValue {
+    pub fn new(changes: Vec<DiffChange>) -> Self {
+        DiffChangesValue { changes }
+    }
 }
 
 impl Value for DiffChangesValue {
