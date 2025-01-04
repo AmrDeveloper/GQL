@@ -1,5 +1,14 @@
 # Change Log
 
+## Version 0.34.1 _(2025-01-04)_
+
+- Fix implicit casting RHS with greater operator.
+- Improve implicit casting when applying operators.
+- Implement `DIFF_CHANGED_FILES` diff function.
+- Improve calculating diff line stats.
+- Introduce a new table for `diffs_changes` to perform analysis on every change.
+- Fix the order of applying distinct operator plan.
+
 ## Version 0.34.0 _(2024-12-30)_
 
 - Allow `LogicalExpr` to return dynamic type depend on operands.
