@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::vec;
 
 use gitql_ast::statement::DescribeStatement;
+use gitql_ast::statement::Distinct;
 use gitql_ast::statement::DoStatement;
 use gitql_ast::statement::GQLQuery;
 use gitql_ast::statement::GlobalVariableStatement;
@@ -90,6 +91,7 @@ fn evaluate_select_query(
     let mut statements_map = query.statements;
     let has_group_by_statement = statements_map.contains_key("group");
 
+    let mut distinct: Option<Distinct> = None;
     for logical_node_name in FIXED_LOGICAL_PLAN {
         if let Some(statement) = statements_map.get_mut(logical_node_name) {
             match logical_node_name {
@@ -115,12 +117,7 @@ fn evaluate_select_query(
                         return Ok(EvaluationResult::SelectedGroups(gitql_object));
                     }
 
-                    // Apply the distinct operation object is not empty too.
-                    apply_distinct_operator(
-                        &select_statement.distinct,
-                        &mut gitql_object,
-                        &hidden_selections,
-                    );
+                    distinct = Some(select_statement.distinct.to_owned());
                 }
                 _ => {
                     execute_statement(
@@ -135,6 +132,11 @@ fn evaluate_select_query(
                 }
             }
         }
+    }
+
+    // Apply the distinct operation after executing statements
+    if let Some(distinct) = distinct {
+        apply_distinct_operator(&distinct, &mut gitql_object, &hidden_selections);
     }
 
     // Remove Hidden Selection from the rows after executing the query plan
