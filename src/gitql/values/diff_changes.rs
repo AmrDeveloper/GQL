@@ -3,6 +3,9 @@ use std::cmp::Ordering;
 
 use gitql_ast::types::base::DataType;
 use gitql_core::values::base::Value;
+use gix::diff::blob::Platform;
+use gix::object::tree::diff::Change;
+use gix::Repository;
 
 use crate::gitql::types::diff_changes::DiffChangesType;
 
@@ -12,6 +15,45 @@ pub enum DiffChangeKind {
     Deletion,
     Modification,
     Rewrite,
+    Copy,
+}
+
+impl DiffChangeKind {
+    pub fn from(change: &Change) -> Self {
+        match change {
+            Change::Addition { .. } => DiffChangeKind::Addition,
+            Change::Deletion { .. } => DiffChangeKind::Deletion,
+            Change::Modification { .. } => DiffChangeKind::Modification,
+            Change::Rewrite {
+                source_location: _,
+                source_relation: _,
+                source_entry_mode: _,
+                source_id: _,
+                diff: _,
+                entry_mode: _,
+                location: _,
+                id: _,
+                relation: _,
+                copy,
+            } => {
+                if *copy {
+                    DiffChangeKind::Rewrite
+                } else {
+                    DiffChangeKind::Copy
+                }
+            }
+        }
+    }
+
+    pub fn mode(&self) -> char {
+        match self {
+            DiffChangeKind::Addition => 'A',
+            DiffChangeKind::Deletion => 'D',
+            DiffChangeKind::Modification => 'M',
+            DiffChangeKind::Rewrite => 'R',
+            DiffChangeKind::Copy => 'C',
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -23,22 +65,57 @@ pub struct DiffChange {
     pub kind: DiffChangeKind,
 }
 
-pub(crate) struct DiffChangeInfo {
-    pub(crate) path: String,
-    pub(crate) insertions: u32,
-    pub(crate) removals: u32,
-    pub(crate) mode: char,
-}
-
 impl DiffChange {
-    pub fn new(kind: DiffChangeKind) -> Self {
+    pub fn new_without_content(change: &Change, diff_cache: &mut Platform) -> Self {
+        let location = change.location().to_string();
+        let kind = DiffChangeKind::from(change);
+
+        let (mut insertions, mut removals) = (0, 0);
+        match change {
+            Change::Rewrite {
+                source_location: _,
+                source_relation: _,
+                source_entry_mode: _,
+                source_id: _,
+                diff,
+                entry_mode: _,
+                location: _,
+                id: _,
+                relation: _,
+                copy: _,
+            } => {
+                if let Some(diff_line_stats) = diff {
+                    insertions = diff_line_stats.insertions;
+                    removals = diff_line_stats.removals;
+                }
+            }
+            _ => {
+                if let Ok(mut platform) = change.diff(diff_cache) {
+                    if let Ok(Some(counts)) = platform.line_counts() {
+                        insertions = counts.insertions;
+                        removals = counts.removals;
+                    }
+                };
+            }
+        }
+
         DiffChange {
-            location: String::default(),
+            location,
             content: vec![],
-            insertions: 0,
-            removals: 0,
+            insertions,
+            removals,
             kind,
         }
+    }
+
+    pub fn new_with_content(change: &Change, diff_cache: &mut Platform, repo: &Repository) -> Self {
+        let mut diff_change = DiffChange::new_without_content(change, diff_cache);
+        if let Ok(object) = repo.find_object(change.id()) {
+            if let Ok(blob) = object.try_into_blob() {
+                diff_change.content = blob.data.clone()
+            }
+        }
+        diff_change
     }
 }
 

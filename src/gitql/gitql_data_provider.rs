@@ -10,12 +10,9 @@ use gitql_core::values::text::TextValue;
 use gitql_engine::data_provider::DataProvider;
 
 use gix::diff::blob::pipeline::Mode;
-use gix::object::tree::diff::Change;
 use gix::refs::Category;
 
 use super::values::diff_changes::DiffChange;
-use super::values::diff_changes::DiffChangeInfo;
-use super::values::diff_changes::DiffChangeKind;
 use super::values::diff_changes::DiffChangesValue;
 
 pub struct GitQLDataProvider {
@@ -341,115 +338,11 @@ fn select_diffs(repo: &gix::Repository, selected_columns: &[String]) -> Result<V
                         &mut rewrite_cache,
                         |change| {
                             files_changed += usize::from(change.entry_mode().is_no_tree());
-                            match change {
-                                Change::Addition {
-                                    location,
-                                    entry_mode: _,
-                                    relation: _,
-                                    id,
-                                } => {
-                                    let mut diff_change = DiffChange::new(DiffChangeKind::Addition);
-                                    diff_change.location = location.to_string();
-                                    if let Ok(object) = repo.find_object(id) {
-                                        if let Ok(blob) = object.try_into_blob() {
-                                            diff_change.content = blob.data.clone();
-                                        }
-                                    }
-
-                                    if let Ok(mut platform) = change.diff(&mut diff_cache) {
-                                        if let Ok(Some(counts)) = platform.line_counts() {
-                                            diff_change.insertions += counts.insertions;
-                                            diff_change.removals += counts.removals;
-                                        }
-                                    }
-
-                                    insertions += diff_change.insertions;
-                                    removals += diff_change.removals;
-                                    diff_changes.push(diff_change);
-                                }
-                                Change::Deletion {
-                                    location,
-                                    entry_mode: _,
-                                    relation: _,
-                                    id,
-                                } => {
-                                    let mut diff_change = DiffChange::new(DiffChangeKind::Deletion);
-                                    diff_change.location = location.to_string();
-                                    if let Ok(object) = repo.find_object(id) {
-                                        if let Ok(blob) = object.try_into_blob() {
-                                            diff_change.content = blob.data.clone();
-                                        }
-                                    }
-
-                                    if let Ok(mut platform) = change.diff(&mut diff_cache) {
-                                        if let Ok(Some(counts)) = platform.line_counts() {
-                                            diff_change.insertions += counts.insertions;
-                                            diff_change.removals += counts.removals;
-                                        }
-                                    }
-
-                                    insertions += diff_change.insertions;
-                                    removals += diff_change.removals;
-                                    diff_changes.push(diff_change);
-                                }
-                                Change::Modification {
-                                    location,
-                                    previous_entry_mode: _,
-                                    previous_id: _,
-                                    entry_mode: _,
-                                    id,
-                                } => {
-                                    let mut diff_change =
-                                        DiffChange::new(DiffChangeKind::Modification);
-                                    diff_change.location = location.to_string();
-                                    if let Ok(object) = repo.find_object(id) {
-                                        if let Ok(blob) = object.try_into_blob() {
-                                            diff_change.content = blob.data.clone();
-                                        }
-                                    }
-
-                                    if let Ok(mut platform) = change.diff(&mut diff_cache) {
-                                        if let Ok(Some(counts)) = platform.line_counts() {
-                                            diff_change.insertions += counts.insertions;
-                                            diff_change.removals += counts.removals;
-                                        }
-                                    }
-
-                                    insertions += diff_change.insertions;
-                                    removals += diff_change.removals;
-                                    diff_changes.push(diff_change);
-                                }
-                                Change::Rewrite {
-                                    source_location: _,
-                                    source_relation: _,
-                                    source_entry_mode: _,
-                                    source_id: _,
-                                    diff,
-                                    entry_mode: _,
-                                    location,
-                                    id,
-                                    relation: _,
-                                    copy: _,
-                                } => {
-                                    let mut diff_change = DiffChange::new(DiffChangeKind::Rewrite);
-                                    diff_change.location = location.to_string();
-                                    if let Ok(object) = repo.find_object(id) {
-                                        if let Ok(blob) = object.try_into_blob() {
-                                            diff_change.content = blob.data.clone();
-                                        }
-                                    }
-
-                                    if let Some(diff_line_stats) = diff {
-                                        diff_change.insertions += diff_line_stats.insertions;
-                                        diff_change.removals += diff_line_stats.removals;
-
-                                        insertions += diff_line_stats.insertions;
-                                        removals += diff_line_stats.removals;
-                                    }
-
-                                    diff_changes.push(diff_change);
-                                }
-                            }
+                            let diff_change =
+                                DiffChange::new_with_content(&change, &mut diff_cache, &repo);
+                            insertions += diff_change.insertions;
+                            removals += diff_change.removals;
+                            diff_changes.push(diff_change);
                             Ok::<_, Infallible>(Default::default())
                         },
                     );
@@ -559,101 +452,7 @@ fn select_diffs_changes(
                     &parent,
                     &mut rewrite_cache,
                     |change| {
-                        let diff_change = match change {
-                            Change::Addition {
-                                location,
-                                entry_mode: _,
-                                relation: _,
-                                id: _,
-                            } => {
-                                let mut change_info = DiffChangeInfo {
-                                    path: location.to_string(),
-                                    insertions: 0,
-                                    removals: 0,
-                                    mode: 'A',
-                                };
-
-                                if let Ok(mut platform) = change.diff(&mut diff_cache) {
-                                    if let Ok(Some(counts)) = platform.line_counts() {
-                                        change_info.insertions += counts.insertions;
-                                        change_info.removals += counts.removals;
-                                    }
-                                }
-
-                                change_info
-                            }
-                            Change::Deletion {
-                                location,
-                                entry_mode: _,
-                                relation: _,
-                                id: _,
-                            } => {
-                                let mut change_info = DiffChangeInfo {
-                                    path: location.to_string(),
-                                    insertions: 0,
-                                    removals: 0,
-                                    mode: 'D',
-                                };
-
-                                if let Ok(mut platform) = change.diff(&mut diff_cache) {
-                                    if let Ok(Some(counts)) = platform.line_counts() {
-                                        change_info.insertions += counts.insertions;
-                                        change_info.removals += counts.removals;
-                                    }
-                                }
-
-                                change_info
-                            }
-                            Change::Modification {
-                                location,
-                                previous_entry_mode: _,
-                                previous_id: _,
-                                entry_mode: _,
-                                id: _,
-                            } => {
-                                let mut change_info = DiffChangeInfo {
-                                    path: location.to_string(),
-                                    insertions: 0,
-                                    removals: 0,
-                                    mode: 'M',
-                                };
-
-                                if let Ok(mut platform) = change.diff(&mut diff_cache) {
-                                    if let Ok(Some(counts)) = platform.line_counts() {
-                                        change_info.insertions += counts.insertions;
-                                        change_info.removals += counts.removals;
-                                    }
-                                }
-
-                                change_info
-                            }
-                            Change::Rewrite {
-                                source_location: _,
-                                source_relation: _,
-                                source_entry_mode: _,
-                                source_id: _,
-                                diff,
-                                entry_mode: _,
-                                location,
-                                id: _,
-                                relation: _,
-                                copy: _,
-                            } => {
-                                let mut change_info = DiffChangeInfo {
-                                    path: location.to_string(),
-                                    insertions: 0,
-                                    removals: 0,
-                                    mode: 'R',
-                                };
-
-                                if let Some(diff_line_stats) = diff {
-                                    change_info.insertions += diff_line_stats.insertions;
-                                    change_info.removals += diff_line_stats.removals;
-                                }
-
-                                change_info
-                            }
-                        };
+                        let diff_change = DiffChange::new_without_content(&change, &mut diff_cache);
 
                         let mut values: Vec<Box<dyn Value>> =
                             Vec::with_capacity(selected_columns_len);
@@ -674,12 +473,14 @@ fn select_diffs_changes(
                             }
 
                             if column_name == "mode" {
-                                values.push(Box::new(TextValue::new(diff_change.mode.to_string())));
+                                let mode = diff_change.kind.mode().to_string();
+                                values.push(Box::new(TextValue::new(mode)));
                                 continue;
                             }
 
                             if column_name == "path" {
-                                values.push(Box::new(TextValue::new(diff_change.path.to_string())));
+                                let path = diff_change.location.to_string();
+                                values.push(Box::new(TextValue::new(path)));
                                 continue;
                             }
 
