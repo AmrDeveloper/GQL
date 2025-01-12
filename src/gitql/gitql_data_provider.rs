@@ -267,10 +267,7 @@ fn select_branches(
             }
 
             if column_name == "is_remote" {
-                let is_remote = branch
-                    .name()
-                    .category()
-                    .map_or(false, |cat| cat == Category::RemoteBranch);
+                let is_remote = branch.name().category() == Some(Category::RemoteBranch);
                 values.push(Box::new(BoolValue::new(is_remote)));
                 continue;
             }

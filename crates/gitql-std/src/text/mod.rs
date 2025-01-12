@@ -388,9 +388,7 @@ pub fn text_left(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
 
 pub fn text_datalength(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
     let text = inputs[0].as_text().unwrap();
-    Box::new(IntValue {
-        value: text.as_bytes().len() as i64,
-    })
+    Box::new(IntValue::new(text.len() as i64))
 }
 
 pub fn text_char(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
