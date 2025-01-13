@@ -7,6 +7,7 @@ pub mod date;
 pub mod datetime;
 pub mod float;
 pub mod integer;
+pub mod interval;
 pub mod null;
 pub mod range;
 pub mod text;

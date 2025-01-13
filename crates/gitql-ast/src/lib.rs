@@ -3,3 +3,6 @@ pub mod format_checker;
 pub mod operator;
 pub mod statement;
 pub mod types;
+
+mod interval;
+pub use interval::Interval;

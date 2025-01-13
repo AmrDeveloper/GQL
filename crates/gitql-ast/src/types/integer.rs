@@ -1,6 +1,7 @@
 use std::any::Any;
 
-use crate::types::{boolean::BoolType, float::FloatType};
+use crate::types::boolean::BoolType;
+use crate::types::float::FloatType;
 
 use super::base::DataType;
 

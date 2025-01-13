@@ -8,6 +8,7 @@ pub mod datetime;
 pub mod dynamic;
 pub mod float;
 pub mod integer;
+pub mod interval;
 pub mod null;
 pub mod optional;
 pub mod range;

@@ -27,6 +27,7 @@ use crate::parse_cast::parse_cast_call_expression;
 use crate::parse_cast::parse_cast_operator_expression;
 use crate::parse_function_call::parse_function_call_expression;
 use crate::parse_function_call::parse_over_window_definition;
+use crate::parse_interval::parse_interval_expression;
 use crate::token::SourceLocation;
 use crate::token::Token;
 use crate::token::TokenKind;
@@ -4242,6 +4243,7 @@ fn parse_primary_expression(
         TokenKind::Cast => parse_cast_call_expression(context, env, tokens, position),
         TokenKind::Benchmark => parse_benchmark_call_expression(context, env, tokens, position),
         TokenKind::GlobalVariable(_) => parse_global_variable_expression(env, tokens, position),
+        TokenKind::Interval => parse_interval_expression(tokens, position),
         TokenKind::String(str) => {
             *position += 1;
             let value = str.to_string();

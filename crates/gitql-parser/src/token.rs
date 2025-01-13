@@ -63,6 +63,7 @@ pub enum TokenKind {
     Partition,
     First,
     Last,
+    Interval,
 
     // Values
     Symbol(String),
@@ -177,13 +178,14 @@ impl Display for TokenKind {
             TokenKind::Nulls => "NULLS",
             TokenKind::First => "FIRST",
             TokenKind::Last => "LAST",
+            TokenKind::Interval => "INTERVAL",
 
             // Values
             TokenKind::Symbol(literal) => literal,
             TokenKind::GlobalVariable(literal) => literal,
             TokenKind::String(string) => string,
-            TokenKind::Integer(integer) => &format!("{}", integer),
-            TokenKind::Float(float) => &format!("{}", float),
+            TokenKind::Integer(integer) => &integer.to_string(),
+            TokenKind::Float(float) => &float.to_string(),
             TokenKind::True => "True",
             TokenKind::False => "False",
             TokenKind::Null => "Null",
@@ -327,6 +329,8 @@ fn resolve_symbol_kind(symbol: String) -> TokenKind {
 
         "cast" => TokenKind::Cast,
         "benchmark" => TokenKind::Benchmark,
+
+        "interval" => TokenKind::Interval,
 
         // Select into
         "into" => TokenKind::Into,

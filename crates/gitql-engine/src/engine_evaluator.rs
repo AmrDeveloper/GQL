@@ -19,6 +19,7 @@ use gitql_ast::expression::GlobalVariableExpr;
 use gitql_ast::expression::GroupExpr;
 use gitql_ast::expression::InExpr;
 use gitql_ast::expression::IndexExpr;
+use gitql_ast::expression::IntervalExpr;
 use gitql_ast::expression::IsNullExpr;
 use gitql_ast::expression::LikeExpr;
 use gitql_ast::expression::LogicalExpr;
@@ -42,6 +43,7 @@ use gitql_core::values::boolean::BoolValue;
 use gitql_core::values::composite::CompositeValue;
 use gitql_core::values::float::FloatValue;
 use gitql_core::values::integer::IntValue;
+use gitql_core::values::interval::IntervalValue;
 use gitql_core::values::null::NullValue;
 use gitql_core::values::text::TextValue;
 
@@ -89,6 +91,10 @@ pub fn evaluate_expression(
         Boolean => {
             let expr = expression.as_any().downcast_ref::<BooleanExpr>().unwrap();
             evaluate_boolean(expr)
+        }
+        Interval => {
+            let expr = expression.as_any().downcast_ref::<IntervalExpr>().unwrap();
+            evaluate_interval(expr)
         }
         PrefixUnary => {
             let expr = expression.as_any().downcast_ref::<UnaryExpr>().unwrap();
@@ -205,9 +211,7 @@ fn evaluate_assignment(
 }
 
 fn evaluate_string(expr: &StringExpr) -> Result<Box<dyn Value>, String> {
-    Ok(Box::new(TextValue {
-        value: expr.value.to_owned(),
-    }))
+    Ok(Box::new(TextValue::new(expr.value.to_owned())))
 }
 
 fn evaluate_symbol(
@@ -257,14 +261,17 @@ fn evaluate_global_variable(
 
 fn evaluate_number(expr: &NumberExpr) -> Result<Box<dyn Value>, String> {
     Ok(match expr.value {
-        Number::Int(integer) => Box::new(IntValue { value: integer }),
-        Number::Float(float) => Box::new(FloatValue { value: float }),
+        Number::Int(integer) => Box::new(IntValue::new(integer)),
+        Number::Float(float) => Box::new(FloatValue::new(float)),
     })
 }
 
 fn evaluate_boolean(expr: &BooleanExpr) -> Result<Box<dyn Value>, String> {
-    let value = expr.is_true;
-    Ok(Box::new(BoolValue { value }))
+    Ok(Box::new(BoolValue::new(expr.is_true)))
+}
+
+fn evaluate_interval(expr: &IntervalExpr) -> Result<Box<dyn Value>, String> {
+    Ok(Box::new(IntervalValue::new(expr.interval.clone())))
 }
 
 fn evaluate_collection_index(

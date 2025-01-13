@@ -13,6 +13,7 @@ use super::date::DateType;
 use super::datetime::DateTimeType;
 use super::float::FloatType;
 use super::integer::IntType;
+use super::interval::IntervalType;
 use super::null::NullType;
 use super::optional::OptionType;
 use super::range::RangeType;
@@ -470,6 +471,11 @@ impl dyn DataType {
     /// Return true if this type is [`DateTimeType`]
     pub fn is_date_time(&self) -> bool {
         self.as_any().downcast_ref::<DateTimeType>().is_some()
+    }
+
+    /// Return true if this type is [`IntervalType`]
+    pub fn is_interval(&self) -> bool {
+        self.as_any().downcast_ref::<IntervalType>().is_some()
     }
 
     /// Return true if this type is [`ArrayType`]

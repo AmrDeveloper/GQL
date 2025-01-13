@@ -9,12 +9,14 @@ use super::types::integer::IntType;
 use super::types::null::NullType;
 use super::types::text::TextType;
 
+use crate::interval::Interval;
 use crate::operator::ArithmeticOperator;
 use crate::operator::BinaryBitwiseOperator;
 use crate::operator::BinaryLogicalOperator;
 use crate::operator::ComparisonOperator;
 use crate::operator::PrefixUnaryOperator;
 use crate::types::float::FloatType;
+use crate::types::interval::IntervalType;
 
 #[derive(PartialEq)]
 pub enum ExprKind {
@@ -25,6 +27,7 @@ pub enum ExprKind {
     GlobalVariable,
     Number,
     Boolean,
+    Interval,
     PrefixUnary,
     Index,
     Slice,
@@ -196,6 +199,31 @@ impl Expr for NumberExpr {
             Number::Int(_) => Box::new(IntType),
             Number::Float(_) => Box::new(FloatType),
         }
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+#[derive(Clone)]
+pub struct IntervalExpr {
+    pub interval: Interval,
+}
+
+impl IntervalExpr {
+    pub fn new(interval: Interval) -> Self {
+        IntervalExpr { interval }
+    }
+}
+
+impl Expr for IntervalExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::Interval
+    }
+
+    fn expr_type(&self) -> Box<dyn DataType> {
+        Box::new(IntervalType)
     }
 
     fn as_any(&self) -> &dyn Any {
