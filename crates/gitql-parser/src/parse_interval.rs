@@ -39,10 +39,15 @@ fn parse_interval_literal(
     interval_str: &str,
     location: SourceLocation,
 ) -> Result<Interval, Box<Diagnostic>> {
-    let tokens: Vec<&str> = interval_str.split_whitespace().collect();
+    if interval_str.is_empty() {
+        return Err(Diagnostic::error("Invalid input syntax for type interval")
+            .with_location(location)
+            .as_boxed());
+    }
 
     let mut position = 0;
     let mut interval = Interval::default();
+    let tokens = interval_str.split_whitespace().collect::<Vec<&str>>();
     while position < tokens.len() {
         let token = tokens[position].trim();
         if token.is_empty() {
