@@ -133,6 +133,9 @@ fn parse_interval_literal(
                     }
                 }
             }
+
+            position += 1;
+            continue;
         }
 
         return Err(Diagnostic::error("Invalid input syntax for type interval")
