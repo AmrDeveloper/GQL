@@ -752,6 +752,8 @@ impl Tokenizer {
 
         // Advance `\n`
         self.advance();
+        self.line_end += 1;
+        self.column_end = 0;
     }
 
     fn ignore_c_style_comment(&mut self) -> Result<(), Box<Diagnostic>> {
