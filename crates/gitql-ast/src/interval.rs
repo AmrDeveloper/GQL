@@ -21,6 +21,17 @@ impl Interval {
         result.seconds += interval.seconds;
         result
     }
+
+    pub fn sub(&self, interval: &Interval) -> Interval {
+        let mut result = self.clone();
+        result.years -= interval.years;
+        result.months -= interval.months;
+        result.days -= interval.days;
+        result.hours -= interval.hours;
+        result.minutes -= interval.minutes;
+        result.seconds -= interval.seconds;
+        result
+    }
 }
 
 impl fmt::Display for Interval {

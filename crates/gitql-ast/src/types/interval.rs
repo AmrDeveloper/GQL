@@ -25,4 +25,12 @@ impl DataType for IntervalType {
     fn add_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(IntervalType)
     }
+
+    fn can_perform_sub_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(IntervalType)]
+    }
+
+    fn sub_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
+        Box::new(IntervalType)
+    }
 }

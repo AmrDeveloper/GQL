@@ -24,6 +24,7 @@ SELECT 1 + 2
 SELECT LEN("Git Query Language")
 SELECT "One" IN ("One", "Two", "Three")
 SELECT "Git Query Language" LIKE "%Query%"
+SELECT INTERVAL '1 year 2 mons 3 days 04:05:06.789'
 
 SET @arr = [1, 2, 3];
 SELECT [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
@@ -32,7 +33,7 @@ SELECT @arr[1:2], @arr[2:], @arr[:2];
 
 SELECT DISTINCT title AS tt FROM commits
 SELECT author_name, COUNT(author_name) AS commit_num FROM commits GROUP BY author_name, author_email ORDER BY commit_num DESC LIMIT 10
-SELECT commit_count FROM branches WHERE commit_count BETWEEN 0 .. 10
+SELECT commit_count FROM branches WHERE commit_count BETWEEN 0 AND 10
 
 SELECT * FROM refs WHERE type = "branch"
 SELECT * FROM refs ORDER BY type
@@ -40,10 +41,10 @@ SELECT * FROM refs ORDER BY type
 SELECT * FROM commits
 SELECT author_name, author_email FROM commits
 SELECT author_name, author_email FROM commits ORDER BY author_name DESC, author_email ASC
-SELECT author_name, author_email FROM commits WHERE name LIKE "%gmail%" ORDER BY author_name
-SELECT * FROM commits WHERE LOWER(name) = "amrdeveloper"
+SELECT author_name, author_email FROM commits WHERE author_email LIKE "%gmail%" ORDER BY author_name
+SELECT * FROM commits WHERE LOWER(author_name) = "amrdeveloper"
 SELECT author_name FROM commits GROUP By author_name
-SELECT author_name FROM commits GROUP By author_name having author_name = "AmrDeveloper"
+SELECT author_name FROM commits GROUP By author_name HAVING author_name = "AmrDeveloper"
 
 SELECT * FROM branches
 SELECT * FROM branches WHERE is_head = true
@@ -51,6 +52,8 @@ SELECT name, LEN(name) FROM branches
 
 SELECT * FROM tags
 SELECT * FROM tags OFFSET 1 LIMIT 1
+
+SELECT path, count() AS changes_count, SUM(insertions) AS additions, SUM(removals) AS removes FROM diffs_changes GROUP BY path ORDER BY changes_count DESC
 ```
 
 ---
