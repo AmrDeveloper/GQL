@@ -113,7 +113,7 @@ SELECT path, count() AS changes_count, SUM(insertions) AS additions, SUM(removal
 ```
 MIT License
 
-Copyright (c) 2023 Amr Hesham
+Copyright (c) 2023 - 2025 Amr Hesham
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

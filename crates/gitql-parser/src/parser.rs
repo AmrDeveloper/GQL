@@ -3201,7 +3201,7 @@ fn parse_term_expression(
 
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
-                "Operator `-` can't be performed between types `{}` and `{}`",
+                "Operator `+` can't be performed between types `{}` and `{}`",
                 lhs_type, rhs_type
             ))
             .add_help(

@@ -41,4 +41,12 @@ impl Value for IntervalValue {
     fn as_any(&self) -> &dyn Any {
         self
     }
+
+    fn add_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+        if let Some(other_interval) = other.as_any().downcast_ref::<IntervalValue>() {
+            let result = self.interval.add(&other_interval.interval);
+            return Ok(Box::new(IntervalValue::new(result)));
+        }
+        Err("Unexpected type to perform `+` with".to_string())
+    }
 }

@@ -10,6 +10,19 @@ pub struct Interval {
     pub seconds: f64,
 }
 
+impl Interval {
+    pub fn add(&self, interval: &Interval) -> Interval {
+        let mut result = self.clone();
+        result.years += interval.years;
+        result.months += interval.months;
+        result.days += interval.days;
+        result.hours += interval.hours;
+        result.minutes += interval.minutes;
+        result.seconds += interval.seconds;
+        result
+    }
+}
+
 impl fmt::Display for Interval {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut parts = Vec::new();
