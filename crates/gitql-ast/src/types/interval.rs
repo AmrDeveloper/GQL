@@ -18,6 +18,14 @@ impl DataType for IntervalType {
         self
     }
 
+    fn can_perform_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(IntervalType)]
+    }
+
+    fn can_perform_bang_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(IntervalType)]
+    }
+
     fn can_perform_add_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(IntervalType)]
     }
