@@ -1,12 +1,15 @@
-use std::fmt;
+use std::cmp::Ordering;
+use std::fmt::Display;
+use std::fmt::Formatter;
+use std::fmt::Result;
 
-#[derive(PartialEq, Default, Clone)]
+#[derive(Default, PartialEq, Clone)]
 pub struct Interval {
-    pub years: i32,
-    pub months: i32,
-    pub days: i32,
-    pub hours: i32,
-    pub minutes: i32,
+    pub years: i64,
+    pub months: i64,
+    pub days: i64,
+    pub hours: i64,
+    pub minutes: i64,
     pub seconds: f64,
 }
 
@@ -32,10 +35,30 @@ impl Interval {
         result.seconds -= interval.seconds;
         result
     }
+
+    pub fn to_seconds(&self) -> i64 {
+        let days =
+            self.years as f64 * 365.25 + self.months as f64 * (365.25 / 12.0) + self.days as f64;
+
+        let seconds = days * 24.0 * 60.0 * 60.0
+            + self.hours as f64 * 60.0 * 60.0
+            + self.minutes as f64 * 60.0
+            + self.seconds;
+
+        seconds as i64
+    }
 }
 
-impl fmt::Display for Interval {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl PartialOrd for Interval {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        let self_seconds = self.to_seconds();
+        let other_seconds = other.to_seconds();
+        self_seconds.partial_cmp(&other_seconds)
+    }
+}
+
+impl Display for Interval {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let mut parts = Vec::new();
 
         if self.years != 0 {
