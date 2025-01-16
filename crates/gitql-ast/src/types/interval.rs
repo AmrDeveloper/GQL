@@ -26,6 +26,22 @@ impl DataType for IntervalType {
         vec![Box::new(IntervalType)]
     }
 
+    fn can_perform_gt_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(IntervalType)]
+    }
+
+    fn can_perform_gte_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(IntervalType)]
+    }
+
+    fn can_perform_lt_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(IntervalType)]
+    }
+
+    fn can_perform_lte_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(IntervalType)]
+    }
+
     fn can_perform_add_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(IntervalType)]
     }

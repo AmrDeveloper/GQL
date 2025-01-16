@@ -31,7 +31,10 @@ impl Value for IntervalValue {
         false
     }
 
-    fn compare(&self, _other: &Box<dyn Value>) -> Option<Ordering> {
+    fn compare(&self, other: &Box<dyn Value>) -> Option<Ordering> {
+        if let Some(other_interval) = other.as_any().downcast_ref::<IntervalValue>() {
+            return self.interval.partial_cmp(&other_interval.interval);
+        }
         None
     }
 
@@ -59,18 +62,50 @@ impl Value for IntervalValue {
         Err("Unexpected type to perform `!=` with".to_string())
     }
 
+    fn gt_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+        if let Some(other_interval) = other.as_any().downcast_ref::<IntervalValue>() {
+            let result = self.interval.gt(&other_interval.interval);
+            return Ok(Box::new(BoolValue::new(result)));
+        }
+        Err("Unexpected type to perform `>` with".to_string())
+    }
+
+    fn gte_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+        if let Some(other_interval) = other.as_any().downcast_ref::<IntervalValue>() {
+            let result = self.interval.ge(&other_interval.interval);
+            return Ok(Box::new(BoolValue::new(result)));
+        }
+        Err("Unexpected type to perform `>=` with".to_string())
+    }
+
+    fn lt_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+        if let Some(other_interval) = other.as_any().downcast_ref::<IntervalValue>() {
+            let result = self.interval.lt(&other_interval.interval);
+            return Ok(Box::new(BoolValue::new(result)));
+        }
+        Err("Unexpected type to perform `<` with".to_string())
+    }
+
+    fn lte_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+        if let Some(other_interval) = other.as_any().downcast_ref::<IntervalValue>() {
+            let result = self.interval.le(&other_interval.interval);
+            return Ok(Box::new(BoolValue::new(result)));
+        }
+        Err("Unexpected type to perform `<=` with".to_string())
+    }
+
     fn add_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_interval) = other.as_any().downcast_ref::<IntervalValue>() {
-            let result = self.interval.add(&other_interval.interval);
-            return Ok(Box::new(IntervalValue::new(result)));
+            let interval = self.interval.add(&other_interval.interval)?;
+            return Ok(Box::new(IntervalValue::new(interval)));
         }
         Err("Unexpected type to perform `+` with".to_string())
     }
 
     fn sub_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_interval) = other.as_any().downcast_ref::<IntervalValue>() {
-            let result = self.interval.sub(&other_interval.interval);
-            return Ok(Box::new(IntervalValue::new(result)));
+            let interval = self.interval.sub(&other_interval.interval)?;
+            return Ok(Box::new(IntervalValue::new(interval)));
         }
         Err("Unexpected type to perform `-` with".to_string())
     }

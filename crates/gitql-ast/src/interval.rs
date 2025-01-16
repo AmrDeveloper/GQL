@@ -1,7 +1,9 @@
 use std::cmp::Ordering;
 use std::fmt::Display;
 use std::fmt::Formatter;
-use std::fmt::Result;
+
+const INTERVAL_MAX_VALUE_I: i64 = 170_000_000;
+const INTERVAL_MAX_VALUE_F: f64 = 170_000_000.0;
 
 #[derive(Default, PartialEq, Clone)]
 pub struct Interval {
@@ -14,26 +16,26 @@ pub struct Interval {
 }
 
 impl Interval {
-    pub fn add(&self, interval: &Interval) -> Interval {
+    pub fn add(&self, other: &Interval) -> Result<Interval, String> {
         let mut result = self.clone();
-        result.years += interval.years;
-        result.months += interval.months;
-        result.days += interval.days;
-        result.hours += interval.hours;
-        result.minutes += interval.minutes;
-        result.seconds += interval.seconds;
-        result
+        result.years = interval_value_or_error_i64(result.years + other.years)?;
+        result.months = interval_value_or_error_i64(result.months + other.months)?;
+        result.days = interval_value_or_error_i64(result.days + other.days)?;
+        result.hours = interval_value_or_error_i64(result.hours + other.hours)?;
+        result.minutes = interval_value_or_error_i64(result.minutes + other.minutes)?;
+        result.seconds = interval_value_or_error_f64(result.seconds + other.seconds)?;
+        Ok(result)
     }
 
-    pub fn sub(&self, interval: &Interval) -> Interval {
+    pub fn sub(&self, other: &Interval) -> Result<Interval, String> {
         let mut result = self.clone();
-        result.years -= interval.years;
-        result.months -= interval.months;
-        result.days -= interval.days;
-        result.hours -= interval.hours;
-        result.minutes -= interval.minutes;
-        result.seconds -= interval.seconds;
-        result
+        result.years = interval_value_or_error_i64(result.years - other.years)?;
+        result.months = interval_value_or_error_i64(result.months - other.months)?;
+        result.days = interval_value_or_error_i64(result.days - other.days)?;
+        result.hours = interval_value_or_error_i64(result.hours - other.hours)?;
+        result.minutes = interval_value_or_error_i64(result.minutes - other.minutes)?;
+        result.seconds = interval_value_or_error_f64(result.seconds - other.seconds)?;
+        Ok(result)
     }
 
     pub fn to_seconds(&self) -> i64 {
@@ -58,7 +60,7 @@ impl PartialOrd for Interval {
 }
 
 impl Display for Interval {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut parts = Vec::new();
 
         if self.years != 0 {
@@ -106,4 +108,18 @@ impl Display for Interval {
 
         Ok(())
     }
+}
+
+fn interval_value_or_error_i64(value: i64) -> Result<i64, String> {
+    if !(-INTERVAL_MAX_VALUE_I..=INTERVAL_MAX_VALUE_I).contains(&value) {
+        return Ok(value);
+    }
+    Err("Interval value out of range".to_string())
+}
+
+fn interval_value_or_error_f64(value: f64) -> Result<f64, String> {
+    if !(-INTERVAL_MAX_VALUE_F..=INTERVAL_MAX_VALUE_F).contains(&value) {
+        return Ok(value);
+    }
+    Err("Interval value out of range".to_string())
 }
