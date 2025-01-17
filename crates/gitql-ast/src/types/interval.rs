@@ -1,5 +1,7 @@
 use std::any::Any;
 
+use crate::types::integer::IntType;
+
 use super::base::DataType;
 
 #[derive(Clone)]
@@ -55,6 +57,22 @@ impl DataType for IntervalType {
     }
 
     fn sub_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
+        Box::new(IntervalType)
+    }
+
+    fn can_perform_mul_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(IntType)]
+    }
+
+    fn mul_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
+        Box::new(IntervalType)
+    }
+
+    fn can_perform_div_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(IntType)]
+    }
+
+    fn div_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(IntervalType)
     }
 }

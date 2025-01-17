@@ -109,4 +109,20 @@ impl Value for IntervalValue {
         }
         Err("Unexpected type to perform `-` with".to_string())
     }
+
+    fn mul_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+        if let Some(value) = other.as_int() {
+            let interval = self.interval.mul(value)?;
+            return Ok(Box::new(IntervalValue::new(interval)));
+        }
+        Err("Unexpected type to perform `*` with".to_string())
+    }
+
+    fn div_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+        if let Some(value) = other.as_int() {
+            let interval = self.interval.div(value)?;
+            return Ok(Box::new(IntervalValue::new(interval)));
+        }
+        Err("Unexpected type to perform `/` with".to_string())
+    }
 }

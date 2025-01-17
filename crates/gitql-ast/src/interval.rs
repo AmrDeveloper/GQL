@@ -1,6 +1,8 @@
 use std::cmp::Ordering;
 use std::fmt::Display;
 use std::fmt::Formatter;
+use std::ops::Div;
+use std::ops::Mul;
 
 const INTERVAL_MAX_VALUE_I: i64 = 170_000_000;
 const INTERVAL_MAX_VALUE_F: f64 = 170_000_000.0;
@@ -35,6 +37,28 @@ impl Interval {
         result.hours = interval_value_or_error_i64(result.hours - other.hours)?;
         result.minutes = interval_value_or_error_i64(result.minutes - other.minutes)?;
         result.seconds = interval_value_or_error_f64(result.seconds - other.seconds)?;
+        Ok(result)
+    }
+
+    pub fn mul(&self, other: i64) -> Result<Interval, String> {
+        let mut result = self.clone();
+        result.years = interval_value_or_error_i64(result.years * other)?;
+        result.months = interval_value_or_error_i64(result.months * other)?;
+        result.days = interval_value_or_error_i64(result.days * other)?;
+        result.hours = interval_value_or_error_i64(result.hours * other)?;
+        result.minutes = interval_value_or_error_i64(result.minutes * other)?;
+        result.seconds = interval_value_or_error_f64(result.seconds.mul(other as f64))?;
+        Ok(result)
+    }
+
+    pub fn div(&self, other: i64) -> Result<Interval, String> {
+        let mut result = self.clone();
+        result.years = interval_value_or_error_i64(result.years / other)?;
+        result.months = interval_value_or_error_i64(result.months / other)?;
+        result.days = interval_value_or_error_i64(result.days / other)?;
+        result.hours = interval_value_or_error_i64(result.hours / other)?;
+        result.minutes = interval_value_or_error_i64(result.minutes / other)?;
+        result.seconds = interval_value_or_error_f64(result.seconds.div(other as f64))?;
         Ok(result)
     }
 
@@ -111,14 +135,14 @@ impl Display for Interval {
 }
 
 fn interval_value_or_error_i64(value: i64) -> Result<i64, String> {
-    if !(-INTERVAL_MAX_VALUE_I..=INTERVAL_MAX_VALUE_I).contains(&value) {
+    if (-INTERVAL_MAX_VALUE_I..=INTERVAL_MAX_VALUE_I).contains(&value) {
         return Ok(value);
     }
-    Err("Interval value out of range".to_string())
+    Err(format!("Interval value out of range {}", value))
 }
 
 fn interval_value_or_error_f64(value: f64) -> Result<f64, String> {
-    if !(-INTERVAL_MAX_VALUE_F..=INTERVAL_MAX_VALUE_F).contains(&value) {
+    if (-INTERVAL_MAX_VALUE_F..=INTERVAL_MAX_VALUE_F).contains(&value) {
         return Ok(value);
     }
     Err("Interval value out of range".to_string())
