@@ -1,3 +1,5 @@
+### Aggregations functions
+
 An aggregate function in GitQL performs a calculation on multiple values and returns a single value
 
 | Name         | Parameters | Return     | Description                                                       |

@@ -1,3 +1,5 @@
+### Aggregations functions
+
 A Window function in GitQL performs a calculation on a window (frame) of values and returns a single value
 
 | Name        | Parameters | Return | Description                                                                        |

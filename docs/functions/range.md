@@ -1,9 +1,10 @@
 ### Range operators
 
-| Operator | Description |
-| -------- | ----------- |
-| @>       | Comtains    |
-| &&       | Overlap     |
+| Operator | Arguments            | Description |
+| -------- | -------------------- | ----------- |
+| @>       | (Range<T>, T)        | Contains    |
+| <@       | (T, Range<T>)        | Contain by  |
+| &&       | (Range<T>, Range<T>) | Overlap     |
 
 ### Range functions
 

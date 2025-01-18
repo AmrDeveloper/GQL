@@ -107,6 +107,7 @@ nav:
       - Cast: expression/cast.md
       - Access Member: expression/access.md
       - Call: expression/call.md
+      - Interval: expression/interval.md
     - STD Functions and Operators:
       - "functions/index.md"
       - Logical: functions/logical.md
@@ -118,6 +119,7 @@ nav:
       - Array: functions/array.md
       - Range: functions/range.md
       - Other: functions/other.md
+      - Interval: functions/interval.md
       - Aggregate Functions: functions/aggregations.md
       - Window Functions: functions/window.md
     - GitQL Functions: gitql_functions.md
