@@ -100,7 +100,9 @@ impl Value for DateTimeValue {
 
     fn cast_op(&self, target_type: &Box<dyn DataType>) -> Result<Box<dyn Value>, String> {
         if target_type.is_date() {
-            return Ok(Box::new(DateValue { value: self.value }));
+            return Ok(Box::new(DateValue {
+                timestamp: self.value,
+            }));
         }
         Err("Unexpected type to perform `Cast` with".to_string())
     }

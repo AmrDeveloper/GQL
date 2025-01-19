@@ -4,6 +4,7 @@ use crate::expression::Expr;
 use crate::expression::StringExpr;
 use crate::format_checker::is_valid_date_format;
 use crate::types::datetime::DateTimeType;
+use crate::types::integer::IntType;
 
 use super::base::DataType;
 
@@ -21,6 +22,14 @@ impl DataType for DateType {
 
     fn as_any(&self) -> &dyn Any {
         self
+    }
+
+    fn can_perform_add_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(IntType)]
+    }
+
+    fn add_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
+        Box::new(DateType)
     }
 
     fn can_perform_eq_op_with(&self) -> Vec<Box<dyn DataType>> {

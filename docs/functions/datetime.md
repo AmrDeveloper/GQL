@@ -1,4 +1,10 @@
-### Date functions
+### Date, Time and DateTime operators
+
+| Operator | Arguments       | Description                    |
+| -------- | --------------- | ------------------------------ |
+| +        | (Date, Integer) | Add a number of days to a date |
+
+### Date, Time and DateTime functions
 
 | Name              | Parameters                | Return   | Description                                                                   |
 | ----------------- | ------------------------- | -------- | ----------------------------------------------------------------------------- |

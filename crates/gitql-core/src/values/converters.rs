@@ -20,7 +20,7 @@ pub fn string_literal_to_date(literal: &str) -> Box<dyn Value> {
         0
     };
 
-    Box::new(DateValue { value: timestamp })
+    Box::new(DateValue { timestamp })
 }
 
 pub fn string_literal_to_date_time(literal: &str) -> Box<dyn Value> {

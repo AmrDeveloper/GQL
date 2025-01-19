@@ -20,30 +20,6 @@ impl DataType for IntervalType {
         self
     }
 
-    fn can_perform_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
-        vec![Box::new(IntervalType)]
-    }
-
-    fn can_perform_bang_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
-        vec![Box::new(IntervalType)]
-    }
-
-    fn can_perform_gt_op_with(&self) -> Vec<Box<dyn DataType>> {
-        vec![Box::new(IntervalType)]
-    }
-
-    fn can_perform_gte_op_with(&self) -> Vec<Box<dyn DataType>> {
-        vec![Box::new(IntervalType)]
-    }
-
-    fn can_perform_lt_op_with(&self) -> Vec<Box<dyn DataType>> {
-        vec![Box::new(IntervalType)]
-    }
-
-    fn can_perform_lte_op_with(&self) -> Vec<Box<dyn DataType>> {
-        vec![Box::new(IntervalType)]
-    }
-
     fn can_perform_add_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(IntervalType)]
     }
@@ -74,5 +50,29 @@ impl DataType for IntervalType {
 
     fn div_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(IntervalType)
+    }
+
+    fn can_perform_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(IntervalType)]
+    }
+
+    fn can_perform_bang_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(IntervalType)]
+    }
+
+    fn can_perform_gt_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(IntervalType)]
+    }
+
+    fn can_perform_gte_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(IntervalType)]
+    }
+
+    fn can_perform_lt_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(IntervalType)]
+    }
+
+    fn can_perform_lte_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(IntervalType)]
     }
 }

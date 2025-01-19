@@ -12,31 +12,31 @@ const VALUE_DATE_FORMAT: &str = "%Y-%m-%d";
 
 #[derive(Clone)]
 pub struct DateValue {
-    pub value: i64,
+    pub timestamp: i64,
 }
 
 impl DateValue {
     pub fn new(timestamp: i64) -> Self {
-        DateValue { value: timestamp }
+        DateValue { timestamp }
     }
 }
 
 impl Value for DateValue {
     fn literal(&self) -> String {
-        let datetime = DateTime::from_timestamp(self.value, 0).unwrap();
+        let datetime = DateTime::from_timestamp(self.timestamp, 0).unwrap();
         format!("{}", datetime.format(VALUE_DATE_FORMAT))
     }
 
     fn equals(&self, other: &Box<dyn Value>) -> bool {
         if let Some(other_date) = other.as_any().downcast_ref::<DateValue>() {
-            return self.value == other_date.value;
+            return self.timestamp == other_date.timestamp;
         }
         false
     }
 
     fn compare(&self, other: &Box<dyn Value>) -> Option<Ordering> {
         if let Some(other_date) = other.as_any().downcast_ref::<DateValue>() {
-            return self.value.partial_cmp(&other_date.value);
+            return self.timestamp.partial_cmp(&other_date.timestamp);
         }
         None
     }
@@ -49,9 +49,18 @@ impl Value for DateValue {
         self
     }
 
+    fn add_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+        if let Some(days) = other.as_int() {
+            let days_to_timestamp = days * 24 * 60 * 60;
+            let timestamp = days_to_timestamp + self.timestamp;
+            return Ok(Box::new(DateValue::new(timestamp)));
+        }
+        Err("Unexpected type to perform `+` with".to_string())
+    }
+
     fn eq_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_text) = other.as_any().downcast_ref::<DateValue>() {
-            let are_equals = self.value == other_text.value;
+            let are_equals = self.timestamp == other_text.timestamp;
             return Ok(Box::new(BoolValue { value: are_equals }));
         }
         Err("Unexpected type to perform `=` with".to_string())
@@ -59,7 +68,7 @@ impl Value for DateValue {
 
     fn bang_eq_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_text) = other.as_any().downcast_ref::<DateValue>() {
-            let are_equals = self.value != other_text.value;
+            let are_equals = self.timestamp != other_text.timestamp;
             return Ok(Box::new(BoolValue { value: are_equals }));
         }
         Err("Unexpected type to perform `!=` with".to_string())
@@ -67,7 +76,7 @@ impl Value for DateValue {
 
     fn gt_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_text) = other.as_any().downcast_ref::<DateValue>() {
-            let are_equals = self.value > other_text.value;
+            let are_equals = self.timestamp > other_text.timestamp;
             return Ok(Box::new(BoolValue { value: are_equals }));
         }
         Err("Unexpected type to perform `>` with".to_string())
@@ -75,7 +84,7 @@ impl Value for DateValue {
 
     fn gte_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_text) = other.as_any().downcast_ref::<DateValue>() {
-            let are_equals = self.value >= other_text.value;
+            let are_equals = self.timestamp >= other_text.timestamp;
             return Ok(Box::new(BoolValue { value: are_equals }));
         }
         Err("Unexpected type to perform `>=` with".to_string())
@@ -83,7 +92,7 @@ impl Value for DateValue {
 
     fn lt_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_text) = other.as_any().downcast_ref::<DateValue>() {
-            let are_equals = self.value < other_text.value;
+            let are_equals = self.timestamp < other_text.timestamp;
             return Ok(Box::new(BoolValue { value: are_equals }));
         }
         Err("Unexpected type to perform `<` with".to_string())
@@ -91,7 +100,7 @@ impl Value for DateValue {
 
     fn lte_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_text) = other.as_any().downcast_ref::<DateValue>() {
-            let are_equals = self.value <= other_text.value;
+            let are_equals = self.timestamp <= other_text.timestamp;
             return Ok(Box::new(BoolValue { value: are_equals }));
         }
         Err("Unexpected type to perform `<=` with".to_string())

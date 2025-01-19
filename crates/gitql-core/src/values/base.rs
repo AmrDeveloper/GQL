@@ -326,7 +326,7 @@ impl dyn Value {
     /// or None if this type it's called from wrong [`Value`]
     pub fn as_date(&self) -> Option<i64> {
         if let Some(date_value) = self.as_any().downcast_ref::<DateValue>() {
-            return Some(date_value.value);
+            return Some(date_value.timestamp);
         }
         None
     }
@@ -340,7 +340,7 @@ impl dyn Value {
     /// or None if this type it's called from wrong [`Value`]
     pub fn as_time(&self) -> Option<String> {
         if let Some(time_value) = self.as_any().downcast_ref::<DateValue>() {
-            return Some(time_value.value.to_string());
+            return Some(time_value.timestamp.to_string());
         }
         None
     }

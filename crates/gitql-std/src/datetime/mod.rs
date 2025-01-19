@@ -236,12 +236,12 @@ pub fn date_extract_date(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
         return inputs[0].clone();
     }
     let timestamp = inputs[0].as_date_time().unwrap();
-    Box::new(DateValue { value: timestamp })
+    Box::new(DateValue { timestamp })
 }
 
 pub fn date_current_date(_inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
     let timestamp = Utc::now().timestamp();
-    Box::new(DateValue { value: timestamp })
+    Box::new(DateValue { timestamp })
 }
 
 pub fn date_current_time(_inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
@@ -262,7 +262,7 @@ pub fn date_make_date(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
     let date = NaiveDate::from_yo_opt(year, day_of_year).unwrap();
     let datetime = date.and_hms_opt(0, 0, 0).unwrap();
     let timestamp = Utc.from_utc_datetime(&datetime).timestamp();
-    Box::new(DateValue { value: timestamp })
+    Box::new(DateValue { timestamp })
 }
 
 pub fn date_make_time(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
@@ -467,6 +467,6 @@ pub fn date_last_day(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
     let last_day = parsed_date + days_in_month - chrono::Duration::days(1);
 
     Box::new(DateValue {
-        value: last_day.timestamp(),
+        timestamp: last_day.timestamp(),
     })
 }
