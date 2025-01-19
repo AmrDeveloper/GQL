@@ -12,6 +12,7 @@
   <img alt="GitHub release" src="https://img.shields.io/github/v/release/amrdeveloper/gql">
   <img alt="GitHub issues" src="https://img.shields.io/github/issues/amrdeveloper/gql">
   <img alt="GitHub" src="https://img.shields.io/github/license/amrdeveloper/gql">
+  <img all="Crates.io" src="https://img.shields.io/crates/d/gitql?label=Crates.io%20Downloads">
   <img alt="GitHub all releases" src="https://img.shields.io/github/downloads/amrdeveloper/gql/total">
 </p>
 
@@ -57,7 +58,7 @@ SELECT * FROM commits
 SELECT author_name, author_email FROM commits
 SELECT author_name, author_email FROM commits ORDER BY author_name DESC, author_email ASC
 SELECT author_name, author_email FROM commits WHERE author_email LIKE "%gmail%" ORDER BY author_name
-SELECT * FROM commits WHERE LOWER(author_name) = "amrdeveloper"
+SELECT * FROM commits WHERE LOWER(author_name) = "AmrDeveloper"
 SELECT author_name FROM commits GROUP By author_name
 SELECT author_name FROM commits GROUP By author_name HAVING author_name = "AmrDeveloper"
 

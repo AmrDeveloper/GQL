@@ -109,19 +109,9 @@ impl Display for Interval {
             ));
         }
 
-        let mut time_parts = Vec::new();
-        if self.hours != 0 {
-            time_parts.push(format!("{}", self.hours));
-        }
-        if self.minutes != 0 {
-            time_parts.push(format!("{}", self.minutes));
-        }
-        if self.seconds != 0.0 {
-            time_parts.push(format!("{}", self.seconds));
-        }
-
-        if !time_parts.is_empty() {
-            parts.push(time_parts.join(":"));
+        let (hours, minutes, seconds) = (self.hours, self.minutes, self.seconds);
+        if hours != 0 || minutes != 0 || seconds != 0f64 {
+            parts.push(format!("{:02}:{:02}:{:02}", hours, minutes, seconds));
         }
 
         if parts.is_empty() {
@@ -129,7 +119,6 @@ impl Display for Interval {
         } else {
             write!(f, "{}", parts.join(" "))?;
         }
-
         Ok(())
     }
 }
