@@ -88,7 +88,7 @@ fn parse_interval_literal(
                 continue;
             }
 
-            if matches!(maybe_unit, "mon" | "mons") {
+            if matches!(maybe_unit, "mon" | "mons" | "months") {
                 check_interval_value_and_unit(&mut has_months, value, maybe_unit, location)?;
                 interval.months = value;
                 position += 1;
@@ -106,6 +106,9 @@ fn parse_interval_literal(
                 "Invalid input syntax for interval unit `{}`",
                 maybe_unit
             ))
+            .add_help(
+                "Interval date unit can be `[year | years | mon | mons | months | day or days]`",
+            )
             .with_location(location)
             .as_boxed());
         }

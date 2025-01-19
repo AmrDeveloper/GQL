@@ -96,7 +96,7 @@ impl Display for Interval {
         }
         if self.months != 0 {
             parts.push(format!(
-                "{} mon{}",
+                "{} month{}",
                 self.months,
                 if self.months > 1 { "s" } else { "" }
             ));
