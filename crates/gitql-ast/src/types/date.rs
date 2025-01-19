@@ -32,6 +32,14 @@ impl DataType for DateType {
         Box::new(DateType)
     }
 
+    fn can_perform_sub_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(IntType)]
+    }
+
+    fn sub_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
+        Box::new(DateType)
+    }
+
     fn can_perform_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(DateType)]
     }

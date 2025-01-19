@@ -52,10 +52,19 @@ impl Value for DateValue {
     fn add_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(days) = other.as_int() {
             let days_to_timestamp = days * 24 * 60 * 60;
-            let timestamp = days_to_timestamp + self.timestamp;
+            let timestamp = self.timestamp + days_to_timestamp;
             return Ok(Box::new(DateValue::new(timestamp)));
         }
         Err("Unexpected type to perform `+` with".to_string())
+    }
+
+    fn sub_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+        if let Some(days) = other.as_int() {
+            let days_to_timestamp = days * 24 * 60 * 60;
+            let timestamp = self.timestamp - days_to_timestamp;
+            return Ok(Box::new(DateValue::new(timestamp)));
+        }
+        Err("Unexpected type to perform `-` with".to_string())
     }
 
     fn eq_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {

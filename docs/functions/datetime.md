@@ -1,8 +1,9 @@
 ### Date, Time and DateTime operators
 
-| Operator | Arguments       | Description                    |
-| -------- | --------------- | ------------------------------ |
-| +        | (Date, Integer) | Add a number of days to a date |
+| Operator | Arguments       | Description                         |
+| -------- | --------------- | ----------------------------------- |
+| +        | (Date, Integer) | Add a number of days to a date      |
+| -        | (Date, Integer) | Subtract a number of days to a date |
 
 ### Date, Time and DateTime functions
 
