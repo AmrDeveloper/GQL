@@ -16,10 +16,11 @@ use super::values::diff_changes::DiffChange;
 use super::values::diff_changes::DiffChangesValue;
 
 pub struct GitQLDataProvider {
-    pub repos: Vec<gix::Repository>,
+    repos: Vec<gix::Repository>,
 }
 
 impl GitQLDataProvider {
+    #[must_use]
     pub fn new(repos: Vec<gix::Repository>) -> Self {
         Self { repos }
     }
@@ -143,9 +144,8 @@ fn select_commits(repo: &gix::Repository, selected_columns: &[String]) -> Result
             }
 
             if column_name == "committer_name" {
-                values.push(Box::new(TextValue {
-                    value: commit.committer().name.to_string(),
-                }));
+                let committer_name = commit.committer().name.to_string();
+                values.push(Box::new(TextValue::new(committer_name)));
                 continue;
             }
 
@@ -227,16 +227,13 @@ fn select_branches(
             }
 
             if column_name == "commit_count" {
-                let commit_count = if let Some(id) = branch.try_id() {
+                if let Some(id) = branch.try_id() {
                     if let Ok(walker) = id.ancestors().all() {
-                        walker.count() as i64
-                    } else {
-                        0
+                        values.push(Box::new(IntValue::new(walker.count() as i64)));
+                        continue;
                     }
-                } else {
-                    0
-                };
-                values.push(Box::new(IntValue::new(commit_count)));
+                }
+                values.push(Box::new(IntValue::new_zero()));
                 continue;
             }
 
@@ -395,7 +392,6 @@ fn select_diffs(repo: &gix::Repository, selected_columns: &[String]) -> Result<V
 
             if column_name == "repo" {
                 values.push(Box::new(TextValue::new(repo_path.to_string())));
-
                 continue;
             }
 

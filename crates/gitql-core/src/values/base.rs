@@ -4,6 +4,7 @@ use std::fmt;
 
 use dyn_clone::DynClone;
 use gitql_ast::types::base::DataType;
+use gitql_ast::Interval;
 
 use super::array::ArrayValue;
 use super::boolean::BoolValue;
@@ -12,6 +13,7 @@ use super::date::DateValue;
 use super::datetime::DateTimeValue;
 use super::float::FloatValue;
 use super::integer::IntValue;
+use super::interval::IntervalValue;
 use super::null::NullValue;
 use super::range::RangeValue;
 use super::text::TextValue;
@@ -355,6 +357,20 @@ impl dyn Value {
     pub fn as_date_time(&self) -> Option<i64> {
         if let Some(date_time_value) = self.as_any().downcast_ref::<DateTimeValue>() {
             return Some(date_time_value.value);
+        }
+        None
+    }
+
+    /// Return true if this value is [`IntervalValue`]
+    pub fn is_interval(&self) -> bool {
+        self.as_any().downcast_ref::<IntervalValue>().is_some()
+    }
+
+    /// Return List of [`Interval`] represent the value of [`IntervalValue`]
+    /// or None if this type it's called from wrong [`Value`]
+    pub fn as_interval(&self) -> Option<Interval> {
+        if let Some(interval_value) = self.as_any().downcast_ref::<IntervalValue>() {
+            return Some(interval_value.interval.clone());
         }
         None
     }
