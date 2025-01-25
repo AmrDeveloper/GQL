@@ -1,4 +1,13 @@
+use std::collections::HashMap;
+
 extern crate chrono;
+use chrono::DateTime;
+use chrono::Datelike;
+use chrono::NaiveDate;
+use chrono::TimeZone;
+use chrono::Timelike;
+use chrono::Utc;
+use chrono::Weekday;
 
 use gitql_ast::types::any::AnyType;
 use gitql_ast::types::boolean::BoolType;
@@ -19,16 +28,6 @@ use gitql_core::values::integer::IntValue;
 use gitql_core::values::interval::IntervalValue;
 use gitql_core::values::text::TextValue;
 use gitql_core::values::time::TimeValue;
-
-use std::collections::HashMap;
-
-use chrono::DateTime;
-use chrono::Datelike;
-use chrono::NaiveDate;
-use chrono::TimeZone;
-use chrono::Timelike;
-use chrono::Utc;
-use chrono::Weekday;
 
 #[inline(always)]
 pub fn register_std_datetime_functions(map: &mut HashMap<&'static str, StandardFunction>) {
@@ -58,6 +57,7 @@ pub fn register_std_datetime_functions(map: &mut HashMap<&'static str, StandardF
     map.insert("yearweek", date_year_and_week);
 
     map.insert("justify_days", interval_justify_days);
+    map.insert("justify_hours", interval_justify_hours);
 }
 
 #[inline(always)]
@@ -235,6 +235,14 @@ pub fn register_std_datetime_function_signatures(map: &mut HashMap<&'static str,
 
     map.insert(
         "justify_days",
+        Signature {
+            parameters: vec![Box::new(IntervalType)],
+            return_type: Box::new(IntervalType),
+        },
+    );
+
+    map.insert(
+        "justify_hours",
         Signature {
             parameters: vec![Box::new(IntervalType)],
             return_type: Box::new(IntervalType),
@@ -473,6 +481,15 @@ pub fn interval_justify_days(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
     while input_interval.days >= 30 {
         input_interval.months += 1;
         input_interval.days -= 30;
+    }
+    Box::new(IntervalValue::new(input_interval))
+}
+
+pub fn interval_justify_hours(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    let mut input_interval = inputs[0].as_interval().unwrap();
+    while input_interval.days >= 24 {
+        input_interval.days += 1;
+        input_interval.hours -= 24;
     }
     Box::new(IntervalValue::new(input_interval))
 }

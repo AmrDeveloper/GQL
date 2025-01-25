@@ -8,6 +8,7 @@
 | /        | (Interval, Interval) | division two intervals       |
 
 
-| Name         | Parameters | Return   | Description                                               |
-| ------------ | ---------- | -------- | --------------------------------------------------------- |
-| JUSTIFY_DAYS | Interval   | Interval | Adjust interval, converting 30-day time periods to months |
+| Name          | Parameters | Return   | Description                                               |
+| ------------- | ---------- | -------- | --------------------------------------------------------- |
+| JUSTIFY_DAYS  | Interval   | Interval | Adjust interval, converting 30-day time periods to months |
+| JUSTIFY_HOURS | Interval   | Interval | Adjust interval, converting 24-hour time periods to days  |
