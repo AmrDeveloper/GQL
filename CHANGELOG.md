@@ -1,5 +1,16 @@
 # Change Log
 
+## Version 0.36.0 _(2025-01-27)_
+
+- Implement Interval type, value and ast node.
+- Fix token position after consuming comments.
+- Add support for interval `+`, `-`, `*` and `/`operators.
+- Add support for interval `=` and `!=` operators.
+- Add support for interval `>`, `>=`, `<` and `<=` operators.
+- Check that interval value in range -170M to 170M.
+- Add support for `+` and `-` operator between `Date` and `Int`.
+- Implement `justify_days`, `justify_hours` interval functions.
+
 ## Version 0.35.0 _(2025-01-04)_
 
 - Fix implicit casting RHS with greater operator.

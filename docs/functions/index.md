@@ -8,7 +8,7 @@ GitQL Standard functions and operators
 - [Regex](regex.md).
 - [Array](array.md).
 - [Range](range.md).
-- [General](other.md).
 - [Interval](interval.md).
 - [Window] (window.md)
 - [Aggregations](aggregations.md).
+- [General](other.md).

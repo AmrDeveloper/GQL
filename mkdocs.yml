@@ -118,10 +118,10 @@ nav:
       - Regex: functions/regex.md
       - Array: functions/array.md
       - Range: functions/range.md
-      - Other: functions/other.md
       - Interval: functions/interval.md
       - Aggregate Functions: functions/aggregations.md
       - Window Functions: functions/window.md
+      - Other: functions/other.md
     - GitQL Functions: gitql_functions.md
   - GitQL SDK:
     - "sdk/index.md"

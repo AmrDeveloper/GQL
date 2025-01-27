@@ -1,7 +1,7 @@
 [package]
 name = "gitql"
 authors = ["AmrDeveloper"]
-version = "0.35.0"
+version = "0.36.0"
 edition = "2021"
 description = "A SQL like query language to perform queries on .git files"
 license = "MIT"
@@ -23,28 +23,28 @@ members = [
 ]
 
 [workspace.dependencies]
-gix = { version = "0.69.1", default-features = false }
+gix = { version = "0.70.0", default-features = false }
 dyn-clone = { version = "1.0.17" }
 comfy-table = { version = "7.1.3" }
 termcolor = { version = "1.4.1" }
-serde_json = { version = "1.0.135" }
+serde_json = { version = "1.0.137" }
 csv = { version = "1.3.1" }
 chrono = { version = "0.4.39" }
 regex = { version = "1.11.1" }
 rand = { version = "0.8.5" }
 indexmap = { version = "2.7.0" }
-uuid = { version = "1.11.1", features = ["v4"] }
+uuid = { version = "1.12.1", features = ["v4"] }
 
 [profile.release]
 lto = true
 
 [dependencies]
-gitql-core = { path = "./crates/gitql-core", version = "0.12.0" }
-gitql-std = { path = "./crates/gitql-std", version = "0.12.0" }
-gitql-ast = { path = "./crates/gitql-ast", version = "0.31.0" }
-gitql-parser = { path = "./crates/gitql-parser", version = "0.34.0" }
-gitql-engine = { path = "./crates/gitql-engine", version = "0.35.0" }
-gitql-cli = { path = "./crates/gitql-cli", version = "0.35.0" }
+gitql-core = { path = "./crates/gitql-core", version = "0.13.0" }
+gitql-std = { path = "./crates/gitql-std", version = "0.13.0" }
+gitql-ast = { path = "./crates/gitql-ast", version = "0.32.0" }
+gitql-parser = { path = "./crates/gitql-parser", version = "0.35.0" }
+gitql-engine = { path = "./crates/gitql-engine", version = "0.36.0" }
+gitql-cli = { path = "./crates/gitql-cli", version = "0.36.0" }
 
 gix = { workspace = true, features = ["blob-diff", "max-performance"] }
 
