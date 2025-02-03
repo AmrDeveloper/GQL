@@ -9,7 +9,7 @@ repo_name: Amrdeveloper/GQL
 repo_url: https://github.com/amrdeveloper/GQL
 
 # Copyright
-copyright: Copyright &copy; 2024 Amr Hesham
+copyright: Copyright &copy; 2025 Amr Hesham
 
 # Configuration
 theme:
@@ -55,6 +55,7 @@ theme:
     - navigation.tabs
     - navigation.top
     - navigation.tracking
+    - navigation.instant.progress
 
     # Search features
     - search.suggest
