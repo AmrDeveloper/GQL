@@ -164,14 +164,10 @@ pub fn register_std_number_function_signatures(map: &mut HashMap<&'static str, S
 pub fn numeric_abs(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
     let input_type = inputs[0].data_type();
     if input_type.is_float() {
-        return Box::new(FloatValue {
-            value: inputs[0].as_float().unwrap().abs(),
-        });
+        let value = inputs[0].as_float().unwrap().abs();
+        return Box::new(FloatValue::new(value));
     }
-
-    Box::new(IntValue {
-        value: inputs[0].as_int().unwrap().abs(),
-    })
+    Box::new(IntValue::new(inputs[0].as_int().unwrap().abs()))
 }
 
 pub fn numeric_pi(_inputs: &[Box<dyn Value>]) -> Box<dyn Value> {

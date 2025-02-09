@@ -20,6 +20,7 @@ use super::range::RangeType;
 use super::text::TextType;
 use super::time::TimeType;
 use super::undefined::UndefType;
+use super::varargs::VarargsType;
 use super::variant::VariantType;
 
 dyn_clone::clone_trait_object!(DataType);
@@ -520,9 +521,9 @@ impl dyn DataType {
         self.as_any().downcast_ref::<OptionType>().is_some()
     }
 
-    /// Return true if this type is [`VariantType`]
+    /// Return true if this type is [`VarargsType`]
     pub fn is_varargs(&self) -> bool {
-        self.as_any().downcast_ref::<VariantType>().is_some()
+        self.as_any().downcast_ref::<VarargsType>().is_some()
     }
 
     /// Return true if this type is [`CompositeType`]
