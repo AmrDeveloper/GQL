@@ -177,7 +177,8 @@ fn parse_describe_query(
     {
         return Err(
             Diagnostic::error(&format!("Unresolved table name `{}`", table_name))
-                .add_help("You can use the command `SHOW TABLES` to get list of current tables")
+                .add_help("You can use the `SHOW TABLES` query to get list of current tables")
+                .add_help("Check the documentations to see available tables")
                 .with_location(calculate_safe_location(tokens, *position))
                 .as_boxed(),
         );
@@ -808,6 +809,7 @@ fn parse_from_option(
             .contains_key(table_name.as_str())
         {
             return Err(Diagnostic::error("Unresolved table name")
+                .add_help("You can use the `SHOW TABLES` query to get list of current tables")
                 .add_help("Check the documentations to see available tables")
                 .with_location(tokens[*position - 1].location)
                 .as_boxed());
