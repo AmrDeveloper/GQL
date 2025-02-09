@@ -73,7 +73,7 @@ pub fn check_function_call_arguments(
     if !has_varargs_parameter && arguments_count > parameters_count {
         return Err(Diagnostic::error(&format!(
             "Function `{}` expects `{}` arguments but got `{}`",
-            function_name, arguments_count, parameters_count
+            function_name, parameters_count, arguments_count
         ))
         .with_location(location)
         .as_boxed());
