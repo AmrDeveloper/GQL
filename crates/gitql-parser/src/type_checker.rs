@@ -4,9 +4,9 @@ use gitql_ast::expression::CastExpr;
 use gitql_ast::expression::Expr;
 use gitql_ast::statement::TableSelection;
 use gitql_ast::types::any::AnyType;
-use gitql_ast::types::base::DataType;
 use gitql_ast::types::dynamic::DynamicType;
 use gitql_ast::types::varargs::VarargsType;
+use gitql_ast::types::DataType;
 use gitql_core::environment::Environment;
 
 use crate::diagnostic::Diagnostic;

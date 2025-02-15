@@ -3,7 +3,8 @@ use std::cmp::Ordering;
 use std::fmt;
 
 use dyn_clone::DynClone;
-use gitql_ast::types::base::DataType;
+use gitql_ast::operator::GroupComparisonOperator;
+use gitql_ast::types::DataType;
 use gitql_ast::Interval;
 
 use super::array::ArrayValue;
@@ -164,10 +165,32 @@ pub trait Value: DynClone {
         Err("Unsupported operator for this type".to_string())
     }
 
+    /// Perform unary `= [ALL|ANY|SOME]` operator and return new [`Value`] represent the result or Exception message as [`String`]
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn group_eq_op(
+        &self,
+        other: &Box<dyn Value>,
+        group_op: &GroupComparisonOperator,
+    ) -> Result<Box<dyn Value>, String> {
+        Err("Unsupported operator for this type".to_string())
+    }
+
     /// Perform unary `!=` or `<>` operator and return new [`Value`] represent the result or Exception message as [`String`]
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn bang_eq_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+        Err("Unsupported operator for this type".to_string())
+    }
+
+    /// Perform unary `!= or <> [ALL|ANY|SOME]` operator and return new [`Value`] represent the result or Exception message as [`String`]
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn group_bang_eq_op(
+        &self,
+        other: &Box<dyn Value>,
+        group_op: &GroupComparisonOperator,
+    ) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
@@ -178,10 +201,32 @@ pub trait Value: DynClone {
         Err("Unsupported operator for this type".to_string())
     }
 
+    /// Perform unary `<=> [ALL|ANY|SOME]` operator and return new [`Value`] represent the result or Exception message as [`String`]
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn group_null_safe_eq_op(
+        &self,
+        other: &Box<dyn Value>,
+        group_op: &GroupComparisonOperator,
+    ) -> Result<Box<dyn Value>, String> {
+        Err("Unsupported operator for this type".to_string())
+    }
+
     /// Perform unary `>` operator and return new [`Value`] represent the result or Exception message as [`String`]
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn gt_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+        Err("Unsupported operator for this type".to_string())
+    }
+
+    /// Perform unary `> [ALL|ANY|SOME]` operator and return new [`Value`] represent the result or Exception message as [`String`]
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn group_gt_op(
+        &self,
+        other: &Box<dyn Value>,
+        group_op: &GroupComparisonOperator,
+    ) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 
@@ -192,6 +237,17 @@ pub trait Value: DynClone {
         Err("Unsupported operator for this type".to_string())
     }
 
+    /// Perform unary `>= [ALL|ANY|SOME]` operator and return new [`Value`] represent the result or Exception message as [`String`]
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn group_gte_op(
+        &self,
+        other: &Box<dyn Value>,
+        group_op: &GroupComparisonOperator,
+    ) -> Result<Box<dyn Value>, String> {
+        Err("Unsupported operator for this type".to_string())
+    }
+
     /// Perform unary `<` operator and return new [`Value`] represent the result or Exception message as [`String`]
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
@@ -199,10 +255,32 @@ pub trait Value: DynClone {
         Err("Unsupported operator for this type".to_string())
     }
 
+    /// Perform unary `< [ALL|ANY|SOME]` operator and return new [`Value`] represent the result or Exception message as [`String`]
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn group_lt_op(
+        &self,
+        other: &Box<dyn Value>,
+        group_op: &GroupComparisonOperator,
+    ) -> Result<Box<dyn Value>, String> {
+        Err("Unsupported operator for this type".to_string())
+    }
+
     /// Perform unary `<=` operator and return new [`Value`] represent the result or Exception message as [`String`]
     #[allow(unused_variables)]
     #[allow(clippy::borrowed_box)]
     fn lte_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+        Err("Unsupported operator for this type".to_string())
+    }
+
+    /// Perform unary `<= [ALL|ANY|SOME]` operator and return new [`Value`] represent the result or Exception message as [`String`]
+    #[allow(unused_variables)]
+    #[allow(clippy::borrowed_box)]
+    fn group_lte_op(
+        &self,
+        other: &Box<dyn Value>,
+        group_op: &GroupComparisonOperator,
+    ) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())
     }
 

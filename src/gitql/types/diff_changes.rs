@@ -1,6 +1,6 @@
 use std::any::Any;
 
-use gitql_ast::types::base::DataType;
+use gitql_ast::types::DataType;
 
 #[derive(Clone)]
 pub struct DiffChangesType;

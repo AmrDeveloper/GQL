@@ -4,6 +4,7 @@ use std::fmt;
 use dyn_clone::DynClone;
 
 use crate::expression::Expr;
+use crate::operator::GroupComparisonOperator;
 
 use super::any::AnyType;
 use super::array::ArrayType;
@@ -288,6 +289,18 @@ pub trait DataType: DynClone {
         vec![]
     }
 
+    /// Return a list of types that it's possible to perform `= [ALL|ANY|SOME]' operator with
+    /// between current DataType and any one of them
+    ///
+    /// No need to define the result type, it always BoolType
+    #[allow(unused_variables)]
+    fn can_perform_group_eq_op_with(
+        &self,
+        group_op: &GroupComparisonOperator,
+    ) -> Vec<Box<dyn DataType>> {
+        vec![]
+    }
+
     /// Return a list of types that it's possible to perform `!=' or `<>` operator with
     /// between current DataType and any one of them
     ///
@@ -296,11 +309,35 @@ pub trait DataType: DynClone {
         vec![]
     }
 
-    /// Return a list of types that it's possible to perform `<=>' operator with
+    /// Return a list of types that it's possible to perform `!= [ALL|ANY|SOME]' operator with
     /// between current DataType and any one of them
     ///
     /// No need to define the result type, it always BoolType
+    #[allow(unused_variables)]
+    fn can_perform_group_bang_eq_op_with(
+        &self,
+        group_op: &GroupComparisonOperator,
+    ) -> Vec<Box<dyn DataType>> {
+        vec![]
+    }
+
+    /// Return a list of types that it's possible to perform `<=>' operator with
+    /// between current DataType and any one of them
+    ///
+    /// No need to define the result type, it always IntType
     fn can_perform_null_safe_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![]
+    }
+
+    /// Return a list of types that it's possible to perform `<=> [ALL|ANY|SOME]' operator with
+    /// between current DataType and any one of them
+    ///
+    /// No need to define the result type, it always IntType
+    #[allow(unused_variables)]
+    fn can_perform_group_null_safe_eq_op_with(
+        &self,
+        group_op: &GroupComparisonOperator,
+    ) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
@@ -312,11 +349,35 @@ pub trait DataType: DynClone {
         vec![]
     }
 
+    /// Return a list of types that it's possible to perform `> [ALL|ANY|SOME]' operator with
+    /// between current DataType and any one of them
+    ///
+    /// No need to define the result type, it always BoolType
+    #[allow(unused_variables)]
+    fn can_perform_group_gt_op_with(
+        &self,
+        group_op: &GroupComparisonOperator,
+    ) -> Vec<Box<dyn DataType>> {
+        vec![]
+    }
+
     /// Return a list of types that it's possible to perform `>=' operator with
     /// between current DataType and any one of them
     ///
     /// No need to define the result type, it always BoolType
     fn can_perform_gte_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![]
+    }
+
+    /// Return a list of types that it's possible to perform `>= [ALL|ANY|SOME]' operator with
+    /// between current DataType and any one of them
+    ///
+    /// No need to define the result type, it always BoolType
+    #[allow(unused_variables)]
+    fn can_perform_group_gte_op_with(
+        &self,
+        group_op: &GroupComparisonOperator,
+    ) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
@@ -328,11 +389,35 @@ pub trait DataType: DynClone {
         vec![]
     }
 
+    /// Return a list of types that it's possible to perform `< [ALL|ANY|SOME]' operator with
+    /// between current DataType and any one of them
+    ///
+    /// No need to define the result type, it always BoolType
+    #[allow(unused_variables)]
+    fn can_perform_group_lt_op_with(
+        &self,
+        group_op: &GroupComparisonOperator,
+    ) -> Vec<Box<dyn DataType>> {
+        vec![]
+    }
+
     /// Return a list of types that it's possible to perform `=<' operator with
     /// between current DataType and any one of them
     ///
     /// No need to define the result type, it always BoolType
     fn can_perform_lte_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![]
+    }
+
+    /// Return a list of types that it's possible to perform `<= [ALL|ANY|SOME]' operator with
+    /// between current DataType and any one of them
+    ///
+    /// No need to define the result type, it always BoolType
+    #[allow(unused_variables)]
+    fn can_perform_group_lte_op_with(
+        &self,
+        group_op: &GroupComparisonOperator,
+    ) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 

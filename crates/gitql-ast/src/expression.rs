@@ -3,17 +3,18 @@ use std::any::Any;
 use dyn_clone::DynClone;
 
 use super::types::array::ArrayType;
-use super::types::base::DataType;
 use super::types::boolean::BoolType;
 use super::types::integer::IntType;
 use super::types::null::NullType;
 use super::types::text::TextType;
+use super::types::DataType;
 
 use crate::interval::Interval;
 use crate::operator::ArithmeticOperator;
 use crate::operator::BinaryBitwiseOperator;
 use crate::operator::BinaryLogicalOperator;
 use crate::operator::ComparisonOperator;
+use crate::operator::GroupComparisonOperator;
 use crate::operator::PrefixUnaryOperator;
 use crate::types::float::FloatType;
 use crate::types::interval::IntervalType;
@@ -33,6 +34,7 @@ pub enum ExprKind {
     Slice,
     Arithmetic,
     Comparison,
+    GroupComparison,
     Contains,
     ContainedBy,
     Like,
@@ -351,6 +353,32 @@ impl Expr for ComparisonExpr {
 
     fn expr_type(&self) -> Box<dyn DataType> {
         if self.operator == ComparisonOperator::NullSafeEqual {
+            Box::new(IntType)
+        } else {
+            Box::new(BoolType)
+        }
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+#[derive(Clone)]
+pub struct GroupComparisonExpr {
+    pub left: Box<dyn Expr>,
+    pub comparison_operator: ComparisonOperator,
+    pub group_operator: GroupComparisonOperator,
+    pub right: Box<dyn Expr>,
+}
+
+impl Expr for GroupComparisonExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::GroupComparison
+    }
+
+    fn expr_type(&self) -> Box<dyn DataType> {
+        if self.comparison_operator == ComparisonOperator::NullSafeEqual {
             Box::new(IntType)
         } else {
             Box::new(BoolType)

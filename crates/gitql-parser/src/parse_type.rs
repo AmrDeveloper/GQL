@@ -1,5 +1,5 @@
 use gitql_ast::types::array::ArrayType;
-use gitql_ast::types::base::DataType;
+use gitql_ast::types::DataType;
 use gitql_core::environment::Environment;
 
 use crate::diagnostic::Diagnostic;

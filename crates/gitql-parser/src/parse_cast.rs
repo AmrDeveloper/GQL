@@ -1,6 +1,6 @@
 use gitql_ast::expression::CastExpr;
 use gitql_ast::expression::Expr;
-use gitql_ast::types::base::DataType;
+use gitql_ast::types::DataType;
 use gitql_core::environment::Environment;
 
 use crate::context::ParserContext;

@@ -78,6 +78,10 @@ pub enum TokenKind {
     Infinity,
     NaN,
 
+    All,
+    Some,
+    Any,
+
     Greater,
     GreaterEqual,
     Less,
@@ -191,6 +195,11 @@ impl Display for TokenKind {
             TokenKind::Null => "Null",
             TokenKind::Infinity => "Infinity",
             TokenKind::NaN => "NaN",
+
+            // Group Operators
+            TokenKind::All => "ALL",
+            TokenKind::Some => "Some",
+            TokenKind::Any => "Any",
 
             // Others
             TokenKind::Greater => ">",
@@ -369,12 +378,18 @@ fn resolve_symbol_kind(symbol: String) -> TokenKind {
         "and" => TokenKind::AndKeyword,
         "xor" => TokenKind::XorKeyword,
 
+        // Group Operators
+        "all" => TokenKind::All,
+        "some" => TokenKind::Some,
+        "any" => TokenKind::Any,
+
         // True, False and Null
         "true" => TokenKind::True,
         "false" => TokenKind::False,
         "null" => TokenKind::Null,
         "nulls" => TokenKind::Nulls,
 
+        // Infinity and NaN
         "infinity" => TokenKind::Infinity,
         "nan" => TokenKind::NaN,
 

@@ -1,7 +1,7 @@
 Now we created a new Type called `IntPairType` that can be used as Function parameter, return type or column type, but we need a custom value that can represent this type, it's almost the same concept, so lets start creating the `IntPairValue`.
 
 ```rust linenums="1"
-use gitql_ast::types::base::DataType;
+use gitql_ast::types::DataType;
 
 use super::base::Value;
 

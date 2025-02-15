@@ -1,6 +1,5 @@
 pub mod any;
 pub mod array;
-pub mod base;
 pub mod boolean;
 pub mod composite;
 pub mod date;
@@ -17,3 +16,6 @@ pub mod time;
 pub mod undefined;
 pub mod varargs;
 pub mod variant;
+
+mod base;
+pub use base::DataType;

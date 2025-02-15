@@ -1,5 +1,5 @@
 use gitql_ast::types::array::ArrayType;
-use gitql_ast::types::base::DataType;
+use gitql_ast::types::DataType;
 
 /// Returns the type of of first element
 /// (T1, T2, ...) -> T1

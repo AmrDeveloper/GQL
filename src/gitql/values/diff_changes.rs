@@ -1,7 +1,7 @@
 use std::any::Any;
 use std::cmp::Ordering;
 
-use gitql_ast::types::base::DataType;
+use gitql_ast::types::DataType;
 use gitql_core::values::base::Value;
 use gix::diff::blob::Platform;
 use gix::object::tree::diff::Change;

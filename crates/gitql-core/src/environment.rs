@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use gitql_ast::types::base::DataType;
+use gitql_ast::types::DataType;
 
 use crate::schema::Schema;
 use crate::signature::AggregationFunction;

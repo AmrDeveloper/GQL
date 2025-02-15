@@ -2,7 +2,7 @@ use std::any::Any;
 use std::cmp::Ordering;
 
 use gitql_ast::types::array::ArrayType;
-use gitql_ast::types::base::DataType;
+use gitql_ast::types::DataType;
 
 use super::base::Value;
 use super::boolean::BoolValue;

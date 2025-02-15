@@ -16,6 +16,7 @@ use gitql_ast::expression::Expr;
 use gitql_ast::expression::ExprKind::*;
 use gitql_ast::expression::GlobExpr;
 use gitql_ast::expression::GlobalVariableExpr;
+use gitql_ast::expression::GroupComparisonExpr;
 use gitql_ast::expression::GroupExpr;
 use gitql_ast::expression::InExpr;
 use gitql_ast::expression::IndexExpr;
@@ -121,6 +122,13 @@ pub fn evaluate_expression(
                 .downcast_ref::<ComparisonExpr>()
                 .unwrap();
             evaluate_comparison(env, expr, titles, object)
+        }
+        GroupComparison => {
+            let expr = expression
+                .as_any()
+                .downcast_ref::<GroupComparisonExpr>()
+                .unwrap();
+            evaluate_group_comparison(env, expr, titles, object)
         }
         Contains => {
             let expr = expression.as_any().downcast_ref::<ContainsExpr>().unwrap();
@@ -237,11 +245,7 @@ fn evaluate_array(
     for value in &expr.values {
         values.push(evaluate_expression(env, value, titles, object)?);
     }
-
-    Ok(Box::new(ArrayValue {
-        values,
-        base_type: expr.element_type.clone(),
-    }))
+    Ok(Box::new(ArrayValue::new(values, expr.element_type.clone())))
 }
 
 fn evaluate_global_variable(
@@ -330,7 +334,6 @@ fn evaluate_arithmetic(
 ) -> Result<Box<dyn Value>, String> {
     let lhs = evaluate_expression(env, &expr.left, titles, object)?;
     let rhs = evaluate_expression(env, &expr.right, titles, object)?;
-
     match expr.operator {
         ArithmeticOperator::Plus => lhs.add_op(&rhs),
         ArithmeticOperator::Minus => lhs.sub_op(&rhs),
@@ -349,7 +352,6 @@ fn evaluate_comparison(
 ) -> Result<Box<dyn Value>, String> {
     let lhs = evaluate_expression(env, &expr.left, titles, object)?;
     let rhs = evaluate_expression(env, &expr.right, titles, object)?;
-
     match expr.operator {
         ComparisonOperator::Greater => lhs.gt_op(&rhs),
         ComparisonOperator::GreaterEqual => lhs.gte_op(&rhs),
@@ -358,6 +360,25 @@ fn evaluate_comparison(
         ComparisonOperator::Equal => lhs.eq_op(&rhs),
         ComparisonOperator::NotEqual => lhs.bang_eq_op(&rhs),
         ComparisonOperator::NullSafeEqual => lhs.null_safe_eq_op(&rhs),
+    }
+}
+
+fn evaluate_group_comparison(
+    env: &mut Environment,
+    expr: &GroupComparisonExpr,
+    titles: &[String],
+    object: &Vec<Box<dyn Value>>,
+) -> Result<Box<dyn Value>, String> {
+    let lhs = evaluate_expression(env, &expr.left, titles, object)?;
+    let rhs = evaluate_expression(env, &expr.right, titles, object)?;
+    match expr.comparison_operator {
+        ComparisonOperator::Greater => lhs.group_gt_op(&rhs, &expr.group_operator),
+        ComparisonOperator::GreaterEqual => lhs.group_gte_op(&rhs, &expr.group_operator),
+        ComparisonOperator::Less => lhs.group_lt_op(&rhs, &expr.group_operator),
+        ComparisonOperator::LessEqual => lhs.group_lte_op(&rhs, &expr.group_operator),
+        ComparisonOperator::Equal => lhs.group_eq_op(&rhs, &expr.group_operator),
+        ComparisonOperator::NotEqual => lhs.group_bang_eq_op(&rhs, &expr.group_operator),
+        ComparisonOperator::NullSafeEqual => lhs.group_null_safe_eq_op(&rhs, &expr.group_operator),
     }
 }
 
@@ -439,7 +460,6 @@ fn evaluate_bitwise(
 ) -> Result<Box<dyn Value>, String> {
     let lhs = evaluate_expression(env, &expr.left, titles, object)?;
     let rhs = evaluate_expression(env, &expr.right, titles, object)?;
-
     match expr.operator {
         BinaryBitwiseOperator::Or => lhs.or_op(&rhs),
         BinaryBitwiseOperator::And => lhs.and_op(&rhs),
@@ -460,7 +480,6 @@ fn evaluate_call(
     for arg in expr.arguments.iter() {
         arguments.push(evaluate_expression(env, arg, titles, object)?);
     }
-
     let function = env.std_function(function_name).unwrap();
     Ok(function(&arguments))
 }
@@ -477,7 +496,6 @@ fn evaluate_benchmark_call(
             evaluate_expression(env, &expr.expression, titles, object)?;
         }
     }
-
     Ok(Box::new(IntValue::new_zero()))
 }
 
@@ -508,9 +526,7 @@ fn evaluate_between(
                 && value.compare(&range_end).unwrap().is_le()
         }
     };
-    Ok(Box::new(BoolValue {
-        value: comparing_result,
-    }))
+    Ok(Box::new(BoolValue::new(comparing_result)))
 }
 
 fn evaluate_case(
@@ -544,19 +560,13 @@ fn evaluate_in(
     object: &Vec<Box<dyn Value>>,
 ) -> Result<Box<dyn Value>, String> {
     let argument = evaluate_expression(env, &expr.argument, titles, object)?;
-
     for value_expr in &expr.values {
         let value = evaluate_expression(env, value_expr, titles, object)?;
         if argument.equals(&value) {
-            return Ok(Box::new(BoolValue {
-                value: !expr.has_not_keyword,
-            }));
+            return Ok(Box::new(BoolValue::new(!expr.has_not_keyword)));
         }
     }
-
-    Ok(Box::new(BoolValue {
-        value: expr.has_not_keyword,
-    }))
+    Ok(Box::new(BoolValue::new(expr.has_not_keyword)))
 }
 
 fn evaluate_is_null(
@@ -567,9 +577,8 @@ fn evaluate_is_null(
 ) -> Result<Box<dyn Value>, String> {
     let argument = evaluate_expression(env, &expr.argument, titles, object)?;
     let is_null = argument.as_any().downcast_ref::<NullValue>().is_some();
-    Ok(Box::new(BoolValue {
-        value: if expr.has_not { !is_null } else { is_null },
-    }))
+    let result = if expr.has_not { !is_null } else { is_null };
+    Ok(Box::new(BoolValue::new(result)))
 }
 
 fn evaluate_cast(

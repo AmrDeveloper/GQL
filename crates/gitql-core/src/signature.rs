@@ -1,6 +1,6 @@
 use super::values::base::Value;
 
-use gitql_ast::types::base::DataType;
+use gitql_ast::types::DataType;
 
 /// Standard function accept array of values and return single [`Value`]
 pub type StandardFunction = fn(&[Box<dyn Value>]) -> Box<dyn Value>;

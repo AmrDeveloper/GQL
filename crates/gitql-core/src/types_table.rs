@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use gitql_ast::types::base::DataType;
 use gitql_ast::types::boolean::BoolType;
 use gitql_ast::types::date::DateType;
 use gitql_ast::types::datetime::DateTimeType;
@@ -8,6 +7,7 @@ use gitql_ast::types::float::FloatType;
 use gitql_ast::types::integer::IntType;
 use gitql_ast::types::text::TextType;
 use gitql_ast::types::time::TimeType;
+use gitql_ast::types::DataType;
 
 /// Map of Types and Names to be used in type parser
 pub struct TypesTable {

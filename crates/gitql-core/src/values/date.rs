@@ -5,8 +5,8 @@ use super::base::Value;
 use super::boolean::BoolValue;
 
 use chrono::DateTime;
-use gitql_ast::types::base::DataType;
 use gitql_ast::types::date::DateType;
+use gitql_ast::types::DataType;
 
 const VALUE_DATE_FORMAT: &str = "%Y-%m-%d";
 

@@ -4,8 +4,8 @@ use std::cmp::Ordering;
 use regex::Regex;
 use regex::RegexBuilder;
 
-use gitql_ast::types::base::DataType;
 use gitql_ast::types::text::TextType;
+use gitql_ast::types::DataType;
 
 use super::base::Value;
 use super::boolean::BoolValue;

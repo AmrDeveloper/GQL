@@ -2,8 +2,8 @@ use std::any::Any;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 
-use gitql_ast::types::base::DataType;
 use gitql_ast::types::composite::CompositeType;
+use gitql_ast::types::DataType;
 
 use indexmap::IndexMap;
 

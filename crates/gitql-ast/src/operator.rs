@@ -27,6 +27,13 @@ pub enum ComparisonOperator {
 }
 
 #[derive(Clone, PartialEq)]
+pub enum GroupComparisonOperator {
+    All,
+    Any,
+    Some,
+}
+
+#[derive(Clone, PartialEq)]
 pub enum BinaryLogicalOperator {
     Or,
     And,

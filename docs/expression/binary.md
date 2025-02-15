@@ -21,6 +21,15 @@ Used to perform arithmetic operators on number types.
 - `<=` used to check if value is less than or equals than other value.
 - `<=>` Returns 1 rather than NULL if both operands are NULL, and 0 rather than NULL if one operand is NULL.
 
+### Group Comparison Expression
+- `= [ALL | ANY | SOME]` used to check value equals againts a group of other values.
+- `!= [ALL | ANY | SOME]` or `<> [ALL | ANY | SOME]` used to check if two values are not equals.
+- `> [ALL | ANY | SOME]` used to check value greater againts a group of other values.
+- `>= [ALL | ANY | SOME]` used to check if value is greater than or equals againts a group of other values.
+- `< [ALL | ANY | SOME]` used to check if value is less than againts a group of other values.
+- `<= [ALL | ANY | SOME]` used to check if value is less than or equals than other a group of other values.
+- `<=> [ALL | ANY | SOME]` Returns 1 rather than NULL if both operands are NULL, and 0 rather than NULL if one operand is NULL.
+
 ---
 
 ### Contains Expression

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use gitql_ast::types::base::DataType;
+use gitql_ast::types::DataType;
 
 /// A Representation of the Data Schema that constructed the following
 ///

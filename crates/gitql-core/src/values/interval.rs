@@ -1,8 +1,8 @@
 use std::any::Any;
 use std::cmp::Ordering;
 
-use gitql_ast::types::base::DataType;
 use gitql_ast::types::interval::IntervalType;
+use gitql_ast::types::DataType;
 use gitql_ast::Interval;
 
 use super::base::Value;
