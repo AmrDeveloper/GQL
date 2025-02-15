@@ -458,6 +458,14 @@ impl dyn Value {
         self.as_any().downcast_ref::<ArrayValue>().is_some()
     }
 
+    /// Return true if this value is [`ArrayValue`] and element type match condition
+    pub fn is_array_of(&self, condition: fn(&Box<dyn DataType>) -> bool) -> bool {
+        if let Some(array) = self.as_any().downcast_ref::<ArrayValue>() {
+            return condition(&array.base_type);
+        }
+        false
+    }
+
     /// Return List of [`Value`] represent the inner values of [`ArrayValue`]
     /// or None if this type it's called from wrong [`Value`]
     pub fn as_array(&self) -> Option<Vec<Box<dyn Value>>> {

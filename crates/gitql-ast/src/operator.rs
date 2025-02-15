@@ -30,7 +30,6 @@ pub enum ComparisonOperator {
 pub enum GroupComparisonOperator {
     All,
     Any,
-    Some,
 }
 
 #[derive(Clone, PartialEq)]

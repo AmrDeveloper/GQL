@@ -4,7 +4,6 @@ use std::fmt;
 use dyn_clone::DynClone;
 
 use crate::expression::Expr;
-use crate::operator::GroupComparisonOperator;
 
 use super::any::AnyType;
 use super::array::ArrayType;
@@ -294,10 +293,7 @@ pub trait DataType: DynClone {
     ///
     /// No need to define the result type, it always BoolType
     #[allow(unused_variables)]
-    fn can_perform_group_eq_op_with(
-        &self,
-        group_op: &GroupComparisonOperator,
-    ) -> Vec<Box<dyn DataType>> {
+    fn can_perform_group_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
@@ -314,10 +310,7 @@ pub trait DataType: DynClone {
     ///
     /// No need to define the result type, it always BoolType
     #[allow(unused_variables)]
-    fn can_perform_group_bang_eq_op_with(
-        &self,
-        group_op: &GroupComparisonOperator,
-    ) -> Vec<Box<dyn DataType>> {
+    fn can_perform_group_bang_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
@@ -334,10 +327,7 @@ pub trait DataType: DynClone {
     ///
     /// No need to define the result type, it always IntType
     #[allow(unused_variables)]
-    fn can_perform_group_null_safe_eq_op_with(
-        &self,
-        group_op: &GroupComparisonOperator,
-    ) -> Vec<Box<dyn DataType>> {
+    fn can_perform_group_null_safe_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
@@ -354,10 +344,7 @@ pub trait DataType: DynClone {
     ///
     /// No need to define the result type, it always BoolType
     #[allow(unused_variables)]
-    fn can_perform_group_gt_op_with(
-        &self,
-        group_op: &GroupComparisonOperator,
-    ) -> Vec<Box<dyn DataType>> {
+    fn can_perform_group_gt_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
@@ -374,10 +361,7 @@ pub trait DataType: DynClone {
     ///
     /// No need to define the result type, it always BoolType
     #[allow(unused_variables)]
-    fn can_perform_group_gte_op_with(
-        &self,
-        group_op: &GroupComparisonOperator,
-    ) -> Vec<Box<dyn DataType>> {
+    fn can_perform_group_gte_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
@@ -394,10 +378,7 @@ pub trait DataType: DynClone {
     ///
     /// No need to define the result type, it always BoolType
     #[allow(unused_variables)]
-    fn can_perform_group_lt_op_with(
-        &self,
-        group_op: &GroupComparisonOperator,
-    ) -> Vec<Box<dyn DataType>> {
+    fn can_perform_group_lt_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
@@ -414,10 +395,7 @@ pub trait DataType: DynClone {
     ///
     /// No need to define the result type, it always BoolType
     #[allow(unused_variables)]
-    fn can_perform_group_lte_op_with(
-        &self,
-        group_op: &GroupComparisonOperator,
-    ) -> Vec<Box<dyn DataType>> {
+    fn can_perform_group_lte_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![]
     }
 
