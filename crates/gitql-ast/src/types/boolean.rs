@@ -2,6 +2,7 @@ use std::any::Any;
 
 use crate::expression::Expr;
 use crate::expression::StringExpr;
+use crate::types::array::ArrayType;
 use crate::types::integer::IntType;
 
 use super::base::DataType;
@@ -58,24 +59,48 @@ impl DataType for BoolType {
         vec![Box::new(BoolType)]
     }
 
+    fn can_perform_group_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(ArrayType::new(Box::new(BoolType)))]
+    }
+
     fn can_perform_bang_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(BoolType)]
+    }
+
+    fn can_perform_group_bang_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(ArrayType::new(Box::new(BoolType)))]
     }
 
     fn can_perform_gt_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(BoolType)]
     }
 
+    fn can_perform_group_gt_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(ArrayType::new(Box::new(BoolType)))]
+    }
+
     fn can_perform_gte_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(BoolType)]
+    }
+
+    fn can_perform_group_gte_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(ArrayType::new(Box::new(BoolType)))]
     }
 
     fn can_perform_lt_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(BoolType)]
     }
 
+    fn can_perform_group_lt_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(ArrayType::new(Box::new(BoolType)))]
+    }
+
     fn can_perform_lte_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(BoolType)]
+    }
+
+    fn can_perform_group_lte_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(ArrayType::new(Box::new(BoolType)))]
     }
 
     fn not_op_result_type(&self) -> Box<dyn DataType> {

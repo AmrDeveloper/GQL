@@ -150,9 +150,7 @@ impl Expr for ArrayExpr {
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
-        Box::new(ArrayType {
-            base: self.element_type.clone(),
-        })
+        Box::new(ArrayType::new(self.element_type.clone()))
     }
 
     fn as_any(&self) -> &dyn Any {

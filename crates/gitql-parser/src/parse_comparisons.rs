@@ -30,9 +30,10 @@ pub(crate) fn parse_comparison_expression(
         // Parse and Consume optional `ALL | ANY | SOME`
         let potential_group_op_pos = *position;
         let optional_group_op = parse_optional_group_operator(tokens, position);
+        let has_group_op = optional_group_op.is_some();
 
         // Consume `(` after Group operator if exists
-        if optional_group_op.is_some() {
+        if has_group_op {
             consume_token_or_error(
                 tokens,
                 position,
@@ -47,7 +48,7 @@ pub(crate) fn parse_comparison_expression(
         let rhs = parse_contains_expression(context, env, tokens, position)?;
 
         // Consume `)` after Group operator expression if exists
-        if optional_group_op.is_some() {
+        if has_group_op {
             consume_token_or_error(
                 tokens,
                 position,
@@ -64,7 +65,7 @@ pub(crate) fn parse_comparison_expression(
 
         // Parse and Check sides for `=` operator
         if operator.kind == TokenKind::Equal {
-            let expected_rhs_types = if optional_group_op.is_some() {
+            let expected_rhs_types = if has_group_op {
                 lhs_type.can_perform_group_eq_op_with()
             } else {
                 lhs_type.can_perform_eq_op_with()
@@ -102,7 +103,7 @@ pub(crate) fn parse_comparison_expression(
 
             // Check if LHS expr can be implicit casted to Expected RHS type to make this
             // Expression valid
-            let expected_lhs_types = if optional_group_op.is_some() {
+            let expected_lhs_types = if has_group_op {
                 rhs_type.can_perform_group_eq_op_with()
             } else {
                 rhs_type.can_perform_eq_op_with()
@@ -144,7 +145,7 @@ pub(crate) fn parse_comparison_expression(
 
         // Parse and Check sides for `!=` operator
         if operator.kind == TokenKind::BangEqual {
-            let expected_rhs_types = if optional_group_op.is_some() {
+            let expected_rhs_types = if has_group_op {
                 lhs_type.can_perform_group_bang_eq_op_with()
             } else {
                 lhs_type.can_perform_bang_eq_op_with()
@@ -182,7 +183,7 @@ pub(crate) fn parse_comparison_expression(
 
             // Check if LHS expr can be implicit casted to Expected RHS type to make this
             // Expression valid
-            let expected_lhs_types = if optional_group_op.is_some() {
+            let expected_lhs_types = if has_group_op {
                 rhs_type.can_perform_group_bang_eq_op_with()
             } else {
                 rhs_type.can_perform_bang_eq_op_with()
@@ -225,7 +226,7 @@ pub(crate) fn parse_comparison_expression(
 
         // Parse and Check sides for `>` operator
         if operator.kind == TokenKind::Greater {
-            let expected_rhs_types = if optional_group_op.is_some() {
+            let expected_rhs_types = if has_group_op {
                 lhs_type.can_perform_group_gt_op_with()
             } else {
                 lhs_type.can_perform_gt_op_with()
@@ -263,7 +264,7 @@ pub(crate) fn parse_comparison_expression(
 
             // Check if LHS expr can be implicit casted to Expected RHS type to make this
             // Expression valid
-            let expected_lhs_types = if optional_group_op.is_some() {
+            let expected_lhs_types = if has_group_op {
                 rhs_type.can_perform_group_gt_op_with()
             } else {
                 rhs_type.can_perform_gt_op_with()
@@ -298,7 +299,7 @@ pub(crate) fn parse_comparison_expression(
 
         // Parse and Check sides for `>=` operator
         if operator.kind == TokenKind::GreaterEqual {
-            let expected_rhs_types = if optional_group_op.is_some() {
+            let expected_rhs_types = if has_group_op {
                 lhs_type.can_perform_group_gte_op_with()
             } else {
                 lhs_type.can_perform_gte_op_with()
@@ -336,7 +337,7 @@ pub(crate) fn parse_comparison_expression(
 
             // Check if LHS expr can be implicit casted to Expected RHS type to make this
             // Expression valid
-            let expected_lhs_types = if optional_group_op.is_some() {
+            let expected_lhs_types = if has_group_op {
                 rhs_type.can_perform_group_gte_op_with()
             } else {
                 rhs_type.can_perform_gte_op_with()
@@ -371,7 +372,7 @@ pub(crate) fn parse_comparison_expression(
 
         // Parse and Check sides for `<` operator
         if operator.kind == TokenKind::Less {
-            let expected_rhs_types = if optional_group_op.is_some() {
+            let expected_rhs_types = if has_group_op {
                 lhs_type.can_perform_group_lt_op_with()
             } else {
                 lhs_type.can_perform_lt_op_with()
@@ -409,7 +410,7 @@ pub(crate) fn parse_comparison_expression(
 
             // Check if LHS expr can be implicit casted to Expected RHS type to make this
             // Expression valid
-            let expected_lhs_types = if optional_group_op.is_some() {
+            let expected_lhs_types = if has_group_op {
                 rhs_type.can_perform_group_lt_op_with()
             } else {
                 rhs_type.can_perform_lt_op_with()
@@ -444,7 +445,7 @@ pub(crate) fn parse_comparison_expression(
 
         // Parse and Check sides for `<=` operator
         if operator.kind == TokenKind::LessEqual {
-            let expected_rhs_types = if optional_group_op.is_some() {
+            let expected_rhs_types = if has_group_op {
                 lhs_type.can_perform_group_lt_op_with()
             } else {
                 lhs_type.can_perform_lt_op_with()
@@ -482,7 +483,7 @@ pub(crate) fn parse_comparison_expression(
 
             // Check if LHS expr can be implicit casted to Expected RHS type to make this
             // Expression valid
-            let expected_lhs_types = if optional_group_op.is_some() {
+            let expected_lhs_types = if has_group_op {
                 rhs_type.can_perform_group_lt_op_with()
             } else {
                 rhs_type.can_perform_lt_op_with()
@@ -517,7 +518,7 @@ pub(crate) fn parse_comparison_expression(
 
         // Parse and Check sides for `<=>` operator
         if operator.kind == TokenKind::NullSafeEqual {
-            let expected_rhs_types = if optional_group_op.is_some() {
+            let expected_rhs_types = if has_group_op {
                 lhs_type.can_perform_group_null_safe_eq_op_with()
             } else {
                 lhs_type.can_perform_null_safe_eq_op_with()
@@ -555,7 +556,7 @@ pub(crate) fn parse_comparison_expression(
 
             // Check if LHS expr can be implicit casted to Expected RHS type to make this
             // Expression valid
-            let expected_lhs_types = if optional_group_op.is_some() {
+            let expected_lhs_types = if has_group_op {
                 rhs_type.can_perform_group_null_safe_eq_op_with()
             } else {
                 rhs_type.can_perform_null_safe_eq_op_with()

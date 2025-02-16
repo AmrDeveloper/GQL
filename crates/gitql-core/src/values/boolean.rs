@@ -1,6 +1,7 @@
 use std::any::Any;
 use std::cmp::Ordering;
 
+use gitql_ast::operator::GroupComparisonOperator;
 use gitql_ast::types::boolean::BoolType;
 use gitql_ast::types::DataType;
 
@@ -86,13 +87,67 @@ impl Value for BoolValue {
             let value = self.value == other_bool.value;
             return Ok(Box::new(BoolValue { value }));
         }
-        Err("Unexpected type to perform `==` with".to_string())
+        Err("Unexpected type to perform `=` with".to_string())
+    }
+
+    fn group_eq_op(
+        &self,
+        other: &Box<dyn Value>,
+        group_op: &GroupComparisonOperator,
+    ) -> Result<Box<dyn Value>, String> {
+        if other.is_array_of(|element_type| element_type.is_bool()) {
+            let elements = &other.as_array().unwrap();
+            let mut matches_count = 0;
+            for element in elements.iter() {
+                if self.value == element.as_bool().unwrap() {
+                    matches_count += 1;
+                    if GroupComparisonOperator::Any.eq(group_op) {
+                        break;
+                    }
+                }
+            }
+
+            let result = match group_op {
+                GroupComparisonOperator::All => matches_count == elements.len(),
+                GroupComparisonOperator::Any => matches_count > 0,
+            };
+
+            return Ok(Box::new(BoolValue::new(result)));
+        }
+        Err("Unexpected type to perform `=` with".to_string())
     }
 
     fn bang_eq_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_bool) = other.as_any().downcast_ref::<BoolValue>() {
             let value = self.value != other_bool.value;
             return Ok(Box::new(BoolValue { value }));
+        }
+        Err("Unexpected type to perform `!=` with".to_string())
+    }
+
+    fn group_bang_eq_op(
+        &self,
+        other: &Box<dyn Value>,
+        group_op: &GroupComparisonOperator,
+    ) -> Result<Box<dyn Value>, String> {
+        if other.is_array_of(|element_type| element_type.is_bool()) {
+            let elements = &other.as_array().unwrap();
+            let mut matches_count = 0;
+            for element in elements.iter() {
+                if self.value != element.as_bool().unwrap() {
+                    matches_count += 1;
+                    if GroupComparisonOperator::Any.eq(group_op) {
+                        break;
+                    }
+                }
+            }
+
+            let result = match group_op {
+                GroupComparisonOperator::All => matches_count == elements.len(),
+                GroupComparisonOperator::Any => matches_count > 0,
+            };
+
+            return Ok(Box::new(BoolValue::new(result)));
         }
         Err("Unexpected type to perform `!=` with".to_string())
     }
@@ -105,10 +160,64 @@ impl Value for BoolValue {
         Err("Unexpected type to perform `>` with".to_string())
     }
 
+    fn group_gt_op(
+        &self,
+        other: &Box<dyn Value>,
+        group_op: &GroupComparisonOperator,
+    ) -> Result<Box<dyn Value>, String> {
+        if other.is_array_of(|element_type| element_type.is_bool()) {
+            let elements = &other.as_array().unwrap();
+            let mut matches_count = 0;
+            for element in elements.iter() {
+                if self.value & !element.as_bool().unwrap() {
+                    matches_count += 1;
+                    if GroupComparisonOperator::Any.eq(group_op) {
+                        break;
+                    }
+                }
+            }
+
+            let result = match group_op {
+                GroupComparisonOperator::All => matches_count == elements.len(),
+                GroupComparisonOperator::Any => matches_count > 0,
+            };
+
+            return Ok(Box::new(BoolValue::new(result)));
+        }
+        Err("Unexpected type to perform `>` with".to_string())
+    }
+
     fn gte_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_bool) = other.as_any().downcast_ref::<BoolValue>() {
             let value = self.value >= other_bool.value;
             return Ok(Box::new(BoolValue { value }));
+        }
+        Err("Unexpected type to perform `>=` with".to_string())
+    }
+
+    fn group_gte_op(
+        &self,
+        other: &Box<dyn Value>,
+        group_op: &GroupComparisonOperator,
+    ) -> Result<Box<dyn Value>, String> {
+        if other.is_array_of(|element_type| element_type.is_bool()) {
+            let elements = &other.as_array().unwrap();
+            let mut matches_count = 0;
+            for element in elements.iter() {
+                if self.value >= element.as_bool().unwrap() {
+                    matches_count += 1;
+                    if GroupComparisonOperator::Any.eq(group_op) {
+                        break;
+                    }
+                }
+            }
+
+            let result = match group_op {
+                GroupComparisonOperator::All => matches_count == elements.len(),
+                GroupComparisonOperator::Any => matches_count > 0,
+            };
+
+            return Ok(Box::new(BoolValue::new(result)));
         }
         Err("Unexpected type to perform `>=` with".to_string())
     }
@@ -121,10 +230,64 @@ impl Value for BoolValue {
         Err("Unexpected type to perform `<` with".to_string())
     }
 
+    fn group_lt_op(
+        &self,
+        other: &Box<dyn Value>,
+        group_op: &GroupComparisonOperator,
+    ) -> Result<Box<dyn Value>, String> {
+        if other.is_array_of(|element_type| element_type.is_bool()) {
+            let elements = &other.as_array().unwrap();
+            let mut matches_count = 0;
+            for element in elements.iter() {
+                if !self.value & element.as_bool().unwrap() {
+                    matches_count += 1;
+                    if GroupComparisonOperator::Any.eq(group_op) {
+                        break;
+                    }
+                }
+            }
+
+            let result = match group_op {
+                GroupComparisonOperator::All => matches_count == elements.len(),
+                GroupComparisonOperator::Any => matches_count > 0,
+            };
+
+            return Ok(Box::new(BoolValue::new(result)));
+        }
+        Err("Unexpected type to perform `<` with".to_string())
+    }
+
     fn lte_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_bool) = other.as_any().downcast_ref::<BoolValue>() {
             let value = self.value <= other_bool.value;
             return Ok(Box::new(BoolValue { value }));
+        }
+        Err("Unexpected type to perform `<=` with".to_string())
+    }
+
+    fn group_lte_op(
+        &self,
+        other: &Box<dyn Value>,
+        group_op: &GroupComparisonOperator,
+    ) -> Result<Box<dyn Value>, String> {
+        if other.is_array_of(|element_type| element_type.is_bool()) {
+            let elements = &other.as_array().unwrap();
+            let mut matches_count = 0;
+            for element in elements.iter() {
+                if self.value <= element.as_bool().unwrap() {
+                    matches_count += 1;
+                    if GroupComparisonOperator::Any.eq(group_op) {
+                        break;
+                    }
+                }
+            }
+
+            let result = match group_op {
+                GroupComparisonOperator::All => matches_count == elements.len(),
+                GroupComparisonOperator::Any => matches_count > 0,
+            };
+
+            return Ok(Box::new(BoolValue::new(result)));
         }
         Err("Unexpected type to perform `<=` with".to_string())
     }
