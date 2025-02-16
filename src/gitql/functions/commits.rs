@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use gitql_ast::types::text::TextType;
 use gitql_core::signature::Signature;
 use gitql_core::signature::StandardFunction;
-use gitql_core::values::base::Value;
 use gitql_core::values::text::TextValue;
+use gitql_core::values::Value;
 
 #[inline(always)]
 pub(crate) fn register_commits_functions(map: &mut HashMap<&'static str, StandardFunction>) {

@@ -6,9 +6,9 @@ use gitql_ast::statement::JoinOperand;
 use gitql_ast::statement::TableSelection;
 use gitql_core::environment::Environment;
 use gitql_core::object::Row;
-use gitql_core::values::base::Value;
 use gitql_core::values::boolean::BoolValue;
 use gitql_core::values::null::NullValue;
+use gitql_core::values::Value;
 
 use crate::engine_evaluator::evaluate_expression;
 

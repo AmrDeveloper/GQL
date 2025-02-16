@@ -3,7 +3,7 @@ use std::io::Write;
 
 use gitql_ast::statement::IntoStatement;
 use gitql_core::object::GitQLObject;
-use gitql_core::values::base::Value;
+use gitql_core::values::Value;
 
 pub(crate) fn execute_into_statement(
     statement: &IntoStatement,

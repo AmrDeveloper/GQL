@@ -1,4 +1,4 @@
-use super::values::base::Value;
+use super::values::Value;
 
 use gitql_ast::types::DataType;
 

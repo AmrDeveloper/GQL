@@ -1,9 +1,9 @@
-use crate::values::base::Value;
 use crate::values::boolean::BoolValue;
 use crate::values::date::DateValue;
 use crate::values::datetime::DateTimeValue;
 use crate::values::null::NullValue;
 use crate::values::time::TimeValue;
+use crate::values::Value;
 
 pub fn string_literal_to_time(literal: &str) -> Box<dyn Value> {
     Box::new(TimeValue {

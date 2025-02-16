@@ -8,10 +8,10 @@ use gitql_ast::types::text::TextType;
 use gitql_core::signature::Signature;
 use gitql_core::signature::StandardFunction;
 use gitql_core::values::array::ArrayValue;
-use gitql_core::values::base::Value;
 use gitql_core::values::boolean::BoolValue;
 use gitql_core::values::integer::IntValue;
 use gitql_core::values::text::TextValue;
+use gitql_core::values::Value;
 
 use crate::gitql::types::diff_changes::DiffChangesType;
 use crate::gitql::values::diff_changes::DiffChangeKind;

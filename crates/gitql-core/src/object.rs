@@ -1,4 +1,4 @@
-use super::values::base::Value;
+use super::values::Value;
 
 /// In memory representation of the list of [`Value`] in one Row
 #[derive(Clone, Default)]

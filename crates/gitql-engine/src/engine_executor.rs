@@ -22,8 +22,8 @@ use gitql_core::environment::Environment;
 use gitql_core::object::GitQLObject;
 use gitql_core::object::Group;
 use gitql_core::object::Row;
-use gitql_core::values::base::Value;
 use gitql_core::values::null::NullValue;
+use gitql_core::values::Value;
 
 use crate::data_provider::DataProvider;
 use crate::engine_evaluator::evaluate_expression;

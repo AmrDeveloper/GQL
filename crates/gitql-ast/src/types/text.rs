@@ -1,5 +1,7 @@
 use std::any::Any;
 
+use crate::types::array::ArrayType;
+
 use super::base::DataType;
 
 #[derive(Clone)]
@@ -22,24 +24,48 @@ impl DataType for TextType {
         vec![Box::new(TextType)]
     }
 
+    fn can_perform_group_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(ArrayType::new(Box::new(TextType)))]
+    }
+
     fn can_perform_bang_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(TextType)]
+    }
+
+    fn can_perform_group_bang_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(ArrayType::new(Box::new(TextType)))]
     }
 
     fn can_perform_gt_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(TextType)]
     }
 
+    fn can_perform_group_gt_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(ArrayType::new(Box::new(TextType)))]
+    }
+
     fn can_perform_gte_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(TextType)]
+    }
+
+    fn can_perform_group_gte_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(ArrayType::new(Box::new(TextType)))]
     }
 
     fn can_perform_lt_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(TextType)]
     }
 
+    fn can_perform_group_lt_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(ArrayType::new(Box::new(TextType)))]
+    }
+
     fn can_perform_lte_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(TextType)]
+    }
+
+    fn can_perform_group_lte_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(ArrayType::new(Box::new(TextType)))]
     }
 
     fn can_perform_like_op_with(&self) -> Vec<Box<dyn DataType>> {

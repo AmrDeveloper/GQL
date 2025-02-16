@@ -1,5 +1,4 @@
 pub mod array;
-pub mod base;
 pub mod boolean;
 pub mod composite;
 pub mod converters;
@@ -12,3 +11,6 @@ pub mod null;
 pub mod range;
 pub mod text;
 pub mod time;
+
+mod base;
+pub use base::Value;

@@ -20,7 +20,6 @@ use gitql_ast::types::time::TimeType;
 use gitql_ast::types::variant::VariantType;
 use gitql_core::signature::Signature;
 use gitql_core::signature::StandardFunction;
-use gitql_core::values::base::Value;
 use gitql_core::values::boolean::BoolValue;
 use gitql_core::values::date::DateValue;
 use gitql_core::values::datetime::DateTimeValue;
@@ -28,6 +27,7 @@ use gitql_core::values::integer::IntValue;
 use gitql_core::values::interval::IntervalValue;
 use gitql_core::values::text::TextValue;
 use gitql_core::values::time::TimeValue;
+use gitql_core::values::Value;
 
 #[inline(always)]
 pub fn register_std_datetime_functions(map: &mut HashMap<&'static str, StandardFunction>) {

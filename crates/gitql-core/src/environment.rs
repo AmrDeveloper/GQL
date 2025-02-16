@@ -8,7 +8,7 @@ use crate::signature::Signature;
 use crate::signature::StandardFunction;
 use crate::signature::WindowFunction;
 use crate::types_table::TypesTable;
-use crate::values::base::Value;
+use crate::values::Value;
 
 /// Environment that track schema, functions, scopes and types
 /// to be used in different places in the query engine

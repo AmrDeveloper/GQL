@@ -8,10 +8,10 @@ use gitql_ast::types::optional::OptionType;
 use gitql_ast::types::variant::VariantType;
 use gitql_core::signature::Signature;
 use gitql_core::signature::StandardFunction;
-use gitql_core::values::base::Value;
 use gitql_core::values::float::FloatValue;
 use gitql_core::values::integer::IntValue;
 use gitql_core::values::null::NullValue;
+use gitql_core::values::Value;
 
 use crate::meta_types::first_element_type;
 

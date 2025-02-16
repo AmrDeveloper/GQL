@@ -39,7 +39,6 @@ use gitql_ast::operator::ComparisonOperator;
 use gitql_ast::operator::PrefixUnaryOperator;
 use gitql_core::environment::Environment;
 use gitql_core::values::array::ArrayValue;
-use gitql_core::values::base::Value;
 use gitql_core::values::boolean::BoolValue;
 use gitql_core::values::composite::CompositeValue;
 use gitql_core::values::float::FloatValue;
@@ -47,6 +46,7 @@ use gitql_core::values::integer::IntValue;
 use gitql_core::values::interval::IntervalValue;
 use gitql_core::values::null::NullValue;
 use gitql_core::values::text::TextValue;
+use gitql_core::values::Value;
 
 use std::cmp::Ordering;
 use std::string::String;

@@ -3,10 +3,10 @@ use gitql_ast::types::integer::IntType;
 use gitql_ast::types::text::TextType;
 use gitql_core::signature::Signature;
 use gitql_core::signature::StandardFunction;
-use gitql_core::values::base::Value;
 use gitql_core::values::boolean::BoolValue;
 use gitql_core::values::integer::IntValue;
 use gitql_core::values::text::TextValue;
+use gitql_core::values::Value;
 
 use std::collections::HashMap;
 

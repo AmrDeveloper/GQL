@@ -6,9 +6,9 @@ use gitql_ast::types::dynamic::DynamicType;
 use gitql_ast::types::integer::IntType;
 use gitql_core::signature::Signature;
 use gitql_core::signature::WindowFunction;
-use gitql_core::values::base::Value;
 use gitql_core::values::integer::IntValue;
 use gitql_core::values::null::NullValue;
+use gitql_core::values::Value;
 
 use crate::meta_types::first_element_type;
 

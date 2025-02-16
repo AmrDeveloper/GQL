@@ -1,12 +1,12 @@
 use std::convert::Infallible;
 
 use gitql_core::object::Row;
-use gitql_core::values::base::Value;
 use gitql_core::values::boolean::BoolValue;
 use gitql_core::values::datetime::DateTimeValue;
 use gitql_core::values::integer::IntValue;
 use gitql_core::values::null::NullValue;
 use gitql_core::values::text::TextValue;
+use gitql_core::values::Value;
 use gitql_engine::data_provider::DataProvider;
 
 use gix::diff::blob::pipeline::Mode;
