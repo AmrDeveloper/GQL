@@ -3,6 +3,7 @@ use std::any::Any;
 use crate::expression::Expr;
 use crate::expression::StringExpr;
 use crate::format_checker::is_valid_date_format;
+use crate::types::array::ArrayType;
 use crate::types::datetime::DateTimeType;
 use crate::types::integer::IntType;
 
@@ -44,24 +45,48 @@ impl DataType for DateType {
         vec![Box::new(DateType)]
     }
 
+    fn can_perform_group_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(ArrayType::new(Box::new(DateType)))]
+    }
+
     fn can_perform_bang_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(DateType)]
+    }
+
+    fn can_perform_group_bang_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(ArrayType::new(Box::new(DateType)))]
     }
 
     fn can_perform_gt_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(DateType)]
     }
 
+    fn can_perform_group_gt_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(ArrayType::new(Box::new(DateType)))]
+    }
+
     fn can_perform_gte_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(DateType)]
+    }
+
+    fn can_perform_group_gte_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(ArrayType::new(Box::new(DateType)))]
     }
 
     fn can_perform_lt_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(DateType)]
     }
 
+    fn can_perform_group_lt_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(ArrayType::new(Box::new(DateType)))]
+    }
+
     fn can_perform_lte_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(DateType)]
+    }
+
+    fn can_perform_group_lte_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(ArrayType::new(Box::new(DateType)))]
     }
 
     fn has_implicit_cast_from(&self, expr: &Box<dyn Expr>) -> bool {

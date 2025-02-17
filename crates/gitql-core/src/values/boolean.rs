@@ -55,37 +55,33 @@ impl Value for BoolValue {
     }
 
     fn bang_op(&self) -> Result<Box<dyn Value>, String> {
-        Ok(Box::new(BoolValue { value: !self.value }))
+        Ok(Box::new(BoolValue::new(!self.value)))
     }
 
     fn logical_or_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_bool) = other.as_any().downcast_ref::<BoolValue>() {
-            let value = self.value || other_bool.value;
-            return Ok(Box::new(BoolValue { value }));
+            return Ok(Box::new(BoolValue::new(self.value || other_bool.value)));
         }
         Err("Unexpected type to perform `||` with".to_string())
     }
 
     fn logical_and_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_bool) = other.as_any().downcast_ref::<BoolValue>() {
-            let value = self.value && other_bool.value;
-            return Ok(Box::new(BoolValue { value }));
+            return Ok(Box::new(BoolValue::new(self.value && other_bool.value)));
         }
         Err("Unexpected type to perform `&&` with".to_string())
     }
 
     fn logical_xor_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_bool) = other.as_any().downcast_ref::<BoolValue>() {
-            let value = self.value ^ other_bool.value;
-            return Ok(Box::new(BoolValue { value }));
+            return Ok(Box::new(BoolValue::new(self.value ^ other_bool.value)));
         }
         Err("Unexpected type to perform `^` with".to_string())
     }
 
     fn eq_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_bool) = other.as_any().downcast_ref::<BoolValue>() {
-            let value = self.value == other_bool.value;
-            return Ok(Box::new(BoolValue { value }));
+            return Ok(Box::new(BoolValue::new(self.value == other_bool.value)));
         }
         Err("Unexpected type to perform `=` with".to_string())
     }
@@ -119,8 +115,7 @@ impl Value for BoolValue {
 
     fn bang_eq_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_bool) = other.as_any().downcast_ref::<BoolValue>() {
-            let value = self.value != other_bool.value;
-            return Ok(Box::new(BoolValue { value }));
+            return Ok(Box::new(BoolValue::new(self.value != other_bool.value)));
         }
         Err("Unexpected type to perform `!=` with".to_string())
     }
@@ -154,8 +149,7 @@ impl Value for BoolValue {
 
     fn gt_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_bool) = other.as_any().downcast_ref::<BoolValue>() {
-            let value = self.value & !other_bool.value;
-            return Ok(Box::new(BoolValue { value }));
+            return Ok(Box::new(BoolValue::new(self.value & !other_bool.value)));
         }
         Err("Unexpected type to perform `>` with".to_string())
     }
@@ -189,8 +183,7 @@ impl Value for BoolValue {
 
     fn gte_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_bool) = other.as_any().downcast_ref::<BoolValue>() {
-            let value = self.value >= other_bool.value;
-            return Ok(Box::new(BoolValue { value }));
+            return Ok(Box::new(BoolValue::new(self.value >= other_bool.value)));
         }
         Err("Unexpected type to perform `>=` with".to_string())
     }
@@ -224,8 +217,7 @@ impl Value for BoolValue {
 
     fn lt_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_bool) = other.as_any().downcast_ref::<BoolValue>() {
-            let value = !self.value & other_bool.value;
-            return Ok(Box::new(BoolValue { value }));
+            return Ok(Box::new(BoolValue::new(!self.value & other_bool.value)));
         }
         Err("Unexpected type to perform `<` with".to_string())
     }
@@ -259,8 +251,7 @@ impl Value for BoolValue {
 
     fn lte_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_bool) = other.as_any().downcast_ref::<BoolValue>() {
-            let value = self.value <= other_bool.value;
-            return Ok(Box::new(BoolValue { value }));
+            return Ok(Box::new(BoolValue::new(self.value <= other_bool.value)));
         }
         Err("Unexpected type to perform `<=` with".to_string())
     }
@@ -293,7 +284,7 @@ impl Value for BoolValue {
     }
 
     fn not_op(&self) -> Result<Box<dyn Value>, String> {
-        Ok(Box::new(BoolValue { value: !self.value }))
+        Ok(Box::new(BoolValue::new(!self.value)))
     }
 
     fn cast_op(&self, target_type: &Box<dyn DataType>) -> Result<Box<dyn Value>, String> {

@@ -66,7 +66,7 @@ impl Value for CompositeValue {
         for member in self.members.iter() {
             members.insert(member.0.to_string(), member.1.data_type().clone());
         }
-        Box::new(CompositeType { name, members })
+        Box::new(CompositeType::new(name, members))
     }
 
     fn as_any(&self) -> &dyn Any {

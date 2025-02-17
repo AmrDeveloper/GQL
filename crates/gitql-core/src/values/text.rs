@@ -61,8 +61,7 @@ impl Value for TextValue {
 
     fn eq_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_text) = other.as_any().downcast_ref::<TextValue>() {
-            let are_equals = self.value == other_text.value;
-            return Ok(Box::new(BoolValue { value: are_equals }));
+            return Ok(Box::new(BoolValue::new(self.value == other_text.value)));
         }
         Err("Unexpected type to perform `=` with".to_string())
     }
@@ -96,8 +95,7 @@ impl Value for TextValue {
 
     fn bang_eq_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_text) = other.as_any().downcast_ref::<TextValue>() {
-            let are_equals = self.value != other_text.value;
-            return Ok(Box::new(BoolValue { value: are_equals }));
+            return Ok(Box::new(BoolValue::new(self.value != other_text.value)));
         }
         Err("Unexpected type to perform `!=` with".to_string())
     }
@@ -131,8 +129,7 @@ impl Value for TextValue {
 
     fn gt_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_text) = other.as_any().downcast_ref::<TextValue>() {
-            let are_equals = self.value > other_text.value;
-            return Ok(Box::new(BoolValue { value: are_equals }));
+            return Ok(Box::new(BoolValue::new(self.value > other_text.value)));
         }
         Err("Unexpected type to perform `>` with".to_string())
     }
@@ -166,8 +163,7 @@ impl Value for TextValue {
 
     fn gte_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_text) = other.as_any().downcast_ref::<TextValue>() {
-            let are_equals = self.value >= other_text.value;
-            return Ok(Box::new(BoolValue { value: are_equals }));
+            return Ok(Box::new(BoolValue::new(self.value >= other_text.value)));
         }
         Err("Unexpected type to perform `>=` with".to_string())
     }
@@ -201,8 +197,7 @@ impl Value for TextValue {
 
     fn lt_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_text) = other.as_any().downcast_ref::<TextValue>() {
-            let are_equals = self.value < other_text.value;
-            return Ok(Box::new(BoolValue { value: are_equals }));
+            return Ok(Box::new(BoolValue::new(self.value < other_text.value)));
         }
         Err("Unexpected type to perform `<` with".to_string())
     }
@@ -236,8 +231,7 @@ impl Value for TextValue {
 
     fn lte_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_text) = other.as_any().downcast_ref::<TextValue>() {
-            let are_equals = self.value <= other_text.value;
-            return Ok(Box::new(BoolValue { value: are_equals }));
+            return Ok(Box::new(BoolValue::new(self.value <= other_text.value)));
         }
         Err("Unexpected type to perform `<=` with".to_string())
     }
