@@ -54,7 +54,7 @@ impl Value for IntValue {
     fn add_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_int) = other.as_any().downcast_ref::<IntValue>() {
             let value = self.value + other_int.value;
-            return Ok(Box::new(IntValue { value }));
+            return Ok(Box::new(IntValue::new(value)));
         }
         Err("Unexpected type to perform `+` with".to_string())
     }
@@ -62,7 +62,7 @@ impl Value for IntValue {
     fn sub_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_int) = other.as_any().downcast_ref::<IntValue>() {
             let value = self.value - other_int.value;
-            return Ok(Box::new(IntValue { value }));
+            return Ok(Box::new(IntValue::new(value)));
         }
         Err("Unexpected type to perform `-` with".to_string())
     }
@@ -70,7 +70,7 @@ impl Value for IntValue {
     fn mul_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_int) = other.as_any().downcast_ref::<IntValue>() {
             let value = self.value * other_int.value;
-            return Ok(Box::new(IntValue { value }));
+            return Ok(Box::new(IntValue::new(value)));
         }
         Err("Unexpected type to perform `*` with".to_string())
     }
@@ -81,7 +81,7 @@ impl Value for IntValue {
                 return Err("Can't perform `/` operator with 0 value".to_string());
             }
             let value = self.value / other_int.value;
-            return Ok(Box::new(IntValue { value }));
+            return Ok(Box::new(IntValue::new(value)));
         }
         Err("Unexpected type to perform `/` with".to_string())
     }
@@ -89,7 +89,7 @@ impl Value for IntValue {
     fn rem_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_int) = other.as_any().downcast_ref::<IntValue>() {
             let value = self.value % other_int.value;
-            return Ok(Box::new(IntValue { value }));
+            return Ok(Box::new(IntValue::new(value)));
         }
         Err("Unexpected type to perform `%` with".to_string())
     }
@@ -100,7 +100,7 @@ impl Value for IntValue {
                 return Err("Caret right side hand can't be negative value".to_string());
             }
             let value = self.value.pow(other_int.value as u32);
-            return Ok(Box::new(IntValue { value }));
+            return Ok(Box::new(IntValue::new(value)));
         }
         Err("Unexpected type to perform `^` with".to_string())
     }
@@ -108,7 +108,7 @@ impl Value for IntValue {
     fn or_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_int) = other.as_any().downcast_ref::<IntValue>() {
             let value = self.value | other_int.value;
-            return Ok(Box::new(IntValue { value }));
+            return Ok(Box::new(IntValue::new(value)));
         }
         Err("Unexpected type to perform `|` with".to_string())
     }
@@ -116,7 +116,7 @@ impl Value for IntValue {
     fn and_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_int) = other.as_any().downcast_ref::<IntValue>() {
             let value = self.value & other_int.value;
-            return Ok(Box::new(IntValue { value }));
+            return Ok(Box::new(IntValue::new(value)));
         }
         Err("Unexpected type to perform `&` with".to_string())
     }
@@ -124,7 +124,7 @@ impl Value for IntValue {
     fn xor_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_int) = other.as_any().downcast_ref::<IntValue>() {
             let value = self.value ^ other_int.value;
-            return Ok(Box::new(IntValue { value }));
+            return Ok(Box::new(IntValue::new(value)));
         }
         Err("Unexpected type to perform `^` with".to_string())
     }
@@ -132,7 +132,7 @@ impl Value for IntValue {
     fn shl_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_int) = other.as_any().downcast_ref::<IntValue>() {
             let value = self.value << other_int.value;
-            return Ok(Box::new(IntValue { value }));
+            return Ok(Box::new(IntValue::new(value)));
         }
         Err("Unexpected type to perform `<<` with".to_string())
     }
@@ -140,7 +140,7 @@ impl Value for IntValue {
     fn shr_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_int) = other.as_any().downcast_ref::<IntValue>() {
             let value = self.value >> other_int.value;
-            return Ok(Box::new(IntValue { value }));
+            return Ok(Box::new(IntValue::new(value)));
         }
         Err("Unexpected type to perform `>>` with".to_string())
     }
@@ -148,7 +148,7 @@ impl Value for IntValue {
     fn eq_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_bool) = other.as_any().downcast_ref::<IntValue>() {
             let value = self.value == other_bool.value;
-            return Ok(Box::new(BoolValue { value }));
+            return Ok(Box::new(BoolValue::new(value)));
         }
         Err("Unexpected type to perform `=` with".to_string())
     }
@@ -183,7 +183,7 @@ impl Value for IntValue {
     fn bang_eq_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_bool) = other.as_any().downcast_ref::<IntValue>() {
             let value = self.value != other_bool.value;
-            return Ok(Box::new(BoolValue { value }));
+            return Ok(Box::new(BoolValue::new(value)));
         }
         Err("Unexpected type to perform `!=` with".to_string())
     }
@@ -218,7 +218,7 @@ impl Value for IntValue {
     fn gt_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_bool) = other.as_any().downcast_ref::<IntValue>() {
             let value = self.value > other_bool.value;
-            return Ok(Box::new(BoolValue { value }));
+            return Ok(Box::new(BoolValue::new(value)));
         }
         Err("Unexpected type to perform `>` with".to_string())
     }
@@ -253,7 +253,7 @@ impl Value for IntValue {
     fn gte_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_bool) = other.as_any().downcast_ref::<IntValue>() {
             let value = self.value >= other_bool.value;
-            return Ok(Box::new(BoolValue { value }));
+            return Ok(Box::new(BoolValue::new(value)));
         }
         Err("Unexpected type to perform `>` with".to_string())
     }
@@ -288,7 +288,7 @@ impl Value for IntValue {
     fn lt_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_bool) = other.as_any().downcast_ref::<IntValue>() {
             let value = self.value < other_bool.value;
-            return Ok(Box::new(BoolValue { value }));
+            return Ok(Box::new(BoolValue::new(value)));
         }
         Err("Unexpected type to perform `<` with".to_string())
     }
@@ -323,7 +323,7 @@ impl Value for IntValue {
     fn lte_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
         if let Some(other_bool) = other.as_any().downcast_ref::<IntValue>() {
             let value = self.value <= other_bool.value;
-            return Ok(Box::new(BoolValue { value }));
+            return Ok(Box::new(BoolValue::new(value)));
         }
         Err("Unexpected type to perform `<=` with".to_string())
     }
@@ -363,7 +363,7 @@ impl Value for IntValue {
         // Cast to Boolean
         if target_type.is_bool() {
             let value = self.value != 0;
-            return Ok(Box::new(BoolValue { value }));
+            return Ok(Box::new(BoolValue::new(value)));
         }
 
         // Cast to Float

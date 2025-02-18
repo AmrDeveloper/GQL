@@ -1,6 +1,6 @@
 use std::any::Any;
 
-use crate::types::integer::IntType;
+use crate::types::{array::ArrayType, integer::IntType};
 
 use super::base::DataType;
 
@@ -56,24 +56,48 @@ impl DataType for FloatType {
         vec![Box::new(FloatType)]
     }
 
+    fn can_perform_group_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(ArrayType::new(Box::new(FloatType)))]
+    }
+
     fn can_perform_bang_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(FloatType)]
+    }
+
+    fn can_perform_group_bang_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(ArrayType::new(Box::new(FloatType)))]
     }
 
     fn can_perform_gt_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(FloatType)]
     }
 
+    fn can_perform_group_gt_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(ArrayType::new(Box::new(FloatType)))]
+    }
+
     fn can_perform_gte_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(FloatType)]
+    }
+
+    fn can_perform_group_gte_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(ArrayType::new(Box::new(FloatType)))]
     }
 
     fn can_perform_lt_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(FloatType)]
     }
 
+    fn can_perform_group_lt_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(ArrayType::new(Box::new(FloatType)))]
+    }
+
     fn can_perform_lte_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(FloatType)]
+    }
+
+    fn can_perform_group_lte_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(ArrayType::new(Box::new(FloatType)))]
     }
 
     fn can_perform_neg_op(&self) -> bool {
