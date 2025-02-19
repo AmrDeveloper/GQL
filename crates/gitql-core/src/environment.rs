@@ -89,10 +89,10 @@ impl Environment {
     pub fn with_window_functions(
         &mut self,
         signatures: &HashMap<&'static str, Signature>,
-        aggregation: &HashMap<&'static str, WindowFunction>,
+        window: &HashMap<&'static str, WindowFunction>,
     ) {
         self.window_signatures.extend(signatures.to_owned());
-        self.window_functions.extend(aggregation.to_owned());
+        self.window_functions.extend(window.to_owned());
     }
 
     /// Register new Modified Types table
