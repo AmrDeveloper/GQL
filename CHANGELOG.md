@@ -1,5 +1,14 @@
 # Change Log
 
+## Version 0.37.0 _(2025-02-23)_
+
+- Implement Group Comparison Expression `Expr <Op> <ALL | ANY | SOME> Expr`.
+- Implement Group Comparison Expression for `Int`, `Float`, `Text`, and `Bool` types.
+- Implement Group Comparison Expression for  `Date`, `Time` and `DateTime` types.
+- Improve the unresolved table error message.
+- Fix number of required arguments error message.
+- Fix type checker case of variant.
+
 ## Version 0.36.0 _(2025-01-27)_
 
 - Implement Interval type, value and ast node.
