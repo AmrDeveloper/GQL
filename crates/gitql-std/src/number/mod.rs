@@ -15,7 +15,6 @@ use gitql_core::values::Value;
 
 use crate::meta_types::first_element_type;
 
-use rand::distributions::Uniform;
 use rand::rngs::StdRng;
 use rand::Rng;
 use rand::SeedableRng;
@@ -283,10 +282,7 @@ pub fn numeric_mod(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
 pub fn numeric_rand(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
     let mut rng: StdRng = match inputs.first() {
         Some(s) => SeedableRng::seed_from_u64(s.as_int().unwrap().try_into().unwrap()),
-        None => SeedableRng::from_entropy(),
+        None => StdRng::from_rng(&mut rand::rng()),
     };
-
-    Box::new(FloatValue {
-        value: rng.sample(Uniform::from(0.0..1.0)),
-    })
+    Box::new(FloatValue::new(rng.random_range(0.0..1.0)))
 }

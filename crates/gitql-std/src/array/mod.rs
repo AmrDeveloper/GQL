@@ -41,16 +41,12 @@ pub fn register_std_array_function_signatures(map: &mut HashMap<&'static str, Si
         "array_append",
         Signature {
             parameters: vec![
-                Box::new(ArrayType {
-                    base: Box::new(AnyType),
-                }),
+                Box::new(ArrayType::new(Box::new(AnyType))),
                 Box::new(DynamicType {
                     function: |elements| array_element_type(first_element_type(elements)),
                 }),
             ],
-            return_type: Box::new(DynamicType {
-                function: first_element_type,
-            }),
+            return_type: Box::new(DynamicType::new(first_element_type)),
         },
     );
     map.insert(
@@ -62,41 +58,29 @@ pub fn register_std_array_function_signatures(map: &mut HashMap<&'static str, Si
                     function: |elements| array_of_type(first_element_type(elements)),
                 }),
             ],
-            return_type: Box::new(DynamicType {
-                function: second_element_type,
-            }),
+            return_type: Box::new(DynamicType::new(second_element_type)),
         },
     );
     map.insert(
         "array_remove",
         Signature {
             parameters: vec![
-                Box::new(ArrayType {
-                    base: Box::new(AnyType),
-                }),
+                Box::new(ArrayType::new(Box::new(AnyType))),
                 Box::new(DynamicType {
                     function: |elements| array_element_type(first_element_type(elements)),
                 }),
             ],
-            return_type: Box::new(DynamicType {
-                function: first_element_type,
-            }),
+            return_type: Box::new(DynamicType::new(first_element_type)),
         },
     );
     map.insert(
         "array_cat",
         Signature {
             parameters: vec![
-                Box::new(ArrayType {
-                    base: Box::new(AnyType),
-                }),
-                Box::new(DynamicType {
-                    function: first_element_type,
-                }),
+                Box::new(ArrayType::new(Box::new(AnyType))),
+                Box::new(DynamicType::new(first_element_type)),
             ],
-            return_type: Box::new(DynamicType {
-                function: first_element_type,
-            }),
+            return_type: Box::new(DynamicType::new(first_element_type)),
         },
     );
     map.insert(
@@ -181,20 +165,18 @@ pub fn array_append(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
     let mut array = inputs[0].as_array().unwrap();
     let element = &inputs[1];
     array.push(element.to_owned());
-    Box::new(ArrayValue {
-        values: array,
-        base_type: inputs[0].data_type().clone(),
-    })
+
+    let element_type = inputs[0].data_type().clone();
+    Box::new(ArrayValue::new(array, element_type))
 }
 
 pub fn array_prepend(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
     let element = &inputs[0];
     let mut array = inputs[1].as_array().unwrap();
     array.insert(0, element.clone());
-    Box::new(ArrayValue {
-        values: array,
-        base_type: inputs[1].data_type().clone(),
-    })
+
+    let element_type = inputs[0].data_type().clone();
+    Box::new(ArrayValue::new(array, element_type))
 }
 
 pub fn array_remove(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
@@ -204,10 +186,9 @@ pub fn array_remove(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
         .into_iter()
         .filter(|element| !element_to_remove.equals(element))
         .collect();
-    Box::new(ArrayValue {
-        values: array_after_remove,
-        base_type: inputs[0].data_type().clone(),
-    })
+
+    let element_type = inputs[0].data_type().clone();
+    Box::new(ArrayValue::new(array_after_remove, element_type))
 }
 
 pub fn array_cat(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
@@ -216,16 +197,15 @@ pub fn array_cat(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
     let mut result = Vec::with_capacity(first.len() + other.len());
     result.append(&mut first);
     result.append(&mut other);
-    Box::new(ArrayValue {
-        values: result,
-        base_type: inputs[0].data_type().clone(),
-    })
+
+    let element_type = inputs[0].data_type().clone();
+    Box::new(ArrayValue::new(result, element_type))
 }
 
 pub fn array_length(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
     let array = inputs[0].as_array().unwrap();
     let value = array.len() as i64;
-    Box::new(IntValue { value })
+    Box::new(IntValue::new(value))
 }
 
 pub fn array_shuffle(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
@@ -235,24 +215,17 @@ pub fn array_shuffle(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
         .downcast_ref::<ArrayType>()
         .unwrap()
         .base;
-
     let mut array = inputs[0].as_array().unwrap();
-    array.shuffle(&mut rand::thread_rng());
-    Box::new(ArrayValue {
-        values: array,
-        base_type: element_type.clone(),
-    })
+    array.shuffle(&mut rand::rng());
+    Box::new(ArrayValue::new(array, element_type.clone()))
 }
 
 pub fn array_position(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
     let array = inputs[0].as_array().unwrap();
     let elemnet = &inputs[1];
     if let Some(index) = array.iter().position(|r| r.equals(elemnet)) {
-        return Box::new(IntValue {
-            value: (index + 1) as i64,
-        });
+        return Box::new(IntValue::new((index + 1) as i64));
     }
-
     Box::new(NullValue)
 }
 
@@ -262,22 +235,15 @@ pub fn array_positions(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
     let mut positions: Vec<Box<dyn Value>> = vec![];
     for (index, element) in array.into_iter().enumerate() {
         if element.equals(target) {
-            positions.push(Box::new(IntValue {
-                value: (index + 1) as i64,
-            }));
+            positions.push(Box::new(IntValue::new((index + 1) as i64)));
         }
     }
-    Box::new(ArrayValue {
-        values: positions,
-        base_type: Box::new(IntType),
-    })
+    Box::new(ArrayValue::new(positions, Box::new(IntType)))
 }
 
 pub fn array_dims(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
     let array_type = inputs[0].data_type();
-    Box::new(TextValue {
-        value: array_type.to_string(),
-    })
+    Box::new(TextValue::new(array_type.to_string()))
 }
 
 pub fn array_replace(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
@@ -290,11 +256,7 @@ pub fn array_replace(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
             *element = to.clone();
         }
     }
-
-    Box::new(ArrayValue {
-        values: array_values,
-        base_type: array_type,
-    })
+    Box::new(ArrayValue::new(array_values, array_type))
 }
 
 pub fn array_trim(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
@@ -303,8 +265,5 @@ pub fn array_trim(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
     let array_len = array.len();
     let n = i64::min(array.len().try_into().unwrap(), inputs[1].as_int().unwrap());
     array.truncate(array_len - n as usize);
-    Box::new(ArrayValue {
-        values: array,
-        base_type: array_type,
-    })
+    Box::new(ArrayValue::new(array, array_type))
 }
