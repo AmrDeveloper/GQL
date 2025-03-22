@@ -22,6 +22,7 @@ use gitql_core::environment::Environment;
 
 use crate::context::ParserContext;
 use crate::diagnostic::Diagnostic;
+use crate::name_similarity::find_closeest_string;
 use crate::parse_cast::parse_cast_call_expression;
 use crate::parse_cast::parse_cast_operator_expression;
 use crate::parse_comparisons::parse_comparison_expression;
@@ -175,13 +176,22 @@ fn parse_describe_query(
         .tables_fields_names
         .contains_key(table_name.as_str())
     {
-        return Err(
-            Diagnostic::error(&format!("Unresolved table name `{}`", table_name))
-                .add_help("You can use the `SHOW TABLES` query to get list of current tables")
-                .add_help("Check the documentations to see available tables")
-                .with_location(calculate_safe_location(tokens, *position))
-                .as_boxed(),
-        );
+        let mut diagnostic =
+            Diagnostic::error(&format!("Cannot find table with name `{}`", table_name))
+                .add_note("You can use the `SHOW TABLES` query to get list of current tables")
+                .add_note("Check the documentations to see available tables")
+                .with_location(calculate_safe_location(tokens, *position));
+
+        let canditates: Vec<&&str> = env.schema.tables_fields_names.keys().collect();
+        if let Some(closest_valid_name) = find_closeest_string(&table_name, &canditates) {
+            let message = &format!(
+                "a table with a similar name exists: `{}`",
+                closest_valid_name
+            );
+            diagnostic = diagnostic.add_help(message);
+        }
+
+        return Err(diagnostic.as_boxed());
     }
 
     // Consume Table Name
@@ -808,11 +818,22 @@ fn parse_from_option(
             .tables_fields_names
             .contains_key(table_name.as_str())
         {
-            return Err(Diagnostic::error("Unresolved table name")
-                .add_help("You can use the `SHOW TABLES` query to get list of current tables")
-                .add_help("Check the documentations to see available tables")
-                .with_location(tokens[*position - 1].location)
-                .as_boxed());
+            let mut diagnostic =
+                Diagnostic::error(&format!("Cannot find table with name `{}`", table_name))
+                    .add_note("You can use the `SHOW TABLES` query to get list of current tables")
+                    .add_note("Check the documentations to see available tables")
+                    .with_location(calculate_safe_location(tokens, *position));
+
+            let canditates: Vec<&&str> = env.schema.tables_fields_names.keys().collect();
+            if let Some(closest_valid_name) = find_closeest_string(&table_name, &canditates) {
+                let message = &format!(
+                    "a table with a similar name exists: `{}`",
+                    closest_valid_name
+                );
+                diagnostic = diagnostic.add_help(message);
+            }
+
+            return Err(diagnostic.as_boxed());
         }
 
         // Register the table

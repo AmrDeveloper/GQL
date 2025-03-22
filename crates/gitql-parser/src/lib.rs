@@ -1,6 +1,7 @@
 pub mod context;
 pub mod diagnostic;
 pub mod name_generator;
+pub mod name_similarity;
 pub mod type_checker;
 
 pub mod token;

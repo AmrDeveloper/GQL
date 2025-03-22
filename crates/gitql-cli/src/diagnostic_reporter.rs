@@ -45,14 +45,14 @@ impl DiagnosticReporter {
             println!("   |");
         }
 
-        self.stdout.set_color(Some(Color::Yellow));
-        for note in diagnostic.notes() {
-            println!(" = Note: {}", note);
-        }
-
         self.stdout.set_color(Some(Color::Cyan));
         for help in diagnostic.helps() {
             println!(" = Help: {}", help);
+        }
+
+        self.stdout.set_color(Some(Color::Yellow));
+        for note in diagnostic.notes() {
+            println!(" = Note: {}", note);
         }
 
         self.stdout.set_color(Some(Color::Blue));
