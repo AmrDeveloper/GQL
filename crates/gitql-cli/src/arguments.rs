@@ -8,6 +8,8 @@ pub enum OutputFormat {
     JSON,
     /// Print the output in csv format
     CSV,
+    /// Print the output in YAML format
+    YAML,
 }
 
 /// Arguments for GitQL
@@ -156,6 +158,8 @@ pub fn parse_arguments(args: &[String]) -> Command {
                     arguments.output_format = OutputFormat::JSON;
                 } else if output_type == "render" {
                     arguments.output_format = OutputFormat::Render;
+                } else if output_type == "yaml" {
+                    arguments.output_format = OutputFormat::YAML;
                 } else {
                     return Command::Error("Invalid output format".to_string());
                 }

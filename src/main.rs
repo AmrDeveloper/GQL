@@ -15,6 +15,7 @@ use gitql_cli::printer::base::OutputPrinter;
 use gitql_cli::printer::csv_printer::CSVPrinter;
 use gitql_cli::printer::json_printer::JSONPrinter;
 use gitql_cli::printer::table_printer::TablePrinter;
+use gitql_cli::printer::yaml_printer::YAMLPrinter;
 use gitql_core::environment::Environment;
 use gitql_engine::data_provider::DataProvider;
 use gitql_engine::engine;
@@ -219,8 +220,9 @@ fn execute_gitql_query(
         OutputFormat::Render => {
             Box::new(TablePrinter::new(arguments.pagination, arguments.page_size))
         }
-        OutputFormat::JSON => Box::new(JSONPrinter {}),
-        OutputFormat::CSV => Box::new(CSVPrinter {}),
+        OutputFormat::JSON => Box::new(JSONPrinter),
+        OutputFormat::CSV => Box::new(CSVPrinter),
+        OutputFormat::YAML => Box::new(YAMLPrinter),
     };
 
     // Render the result only if they are selected groups not any other statement

@@ -16,4 +16,6 @@ gitql-parser = { path = "../gitql-parser", version = "0.36.0" }
 comfy-table = { workspace = true }
 termcolor = { workspace = true }
 serde_json = { workspace = true }
+yaml-rust = { workspace = true }
 csv = { workspace = true }
+linked-hash-map = { workspace = true }
