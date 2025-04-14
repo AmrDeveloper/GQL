@@ -1,6 +1,6 @@
 use gitql_core::object::Row;
 
-use super::base::OutputPrinter;
+use super::BaseOutputPrinter;
 
 enum PaginationInput {
     NextPage,
@@ -22,7 +22,7 @@ impl TablePrinter {
     }
 }
 
-impl OutputPrinter for TablePrinter {
+impl BaseOutputPrinter for TablePrinter {
     fn print(&self, object: &mut gitql_core::object::GitQLObject) {
         if object.is_empty() || object.groups[0].is_empty() {
             return;

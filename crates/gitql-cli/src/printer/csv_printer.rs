@@ -1,11 +1,11 @@
 use csv::Writer;
 use gitql_core::object::GitQLObject;
 
-use super::base::OutputPrinter;
+use super::BaseOutputPrinter;
 
 pub struct CSVPrinter;
 
-impl OutputPrinter for CSVPrinter {
+impl BaseOutputPrinter for CSVPrinter {
     fn print(&self, object: &mut GitQLObject) {
         let mut writer = Writer::from_writer(vec![]);
         let _ = writer.write_record(object.titles.clone());

@@ -1,13 +1,13 @@
-use super::base::OutputPrinter;
-
 use gitql_core::object::GitQLObject;
 use linked_hash_map::LinkedHashMap;
 use yaml_rust::Yaml;
 use yaml_rust::YamlEmitter;
 
+use super::BaseOutputPrinter;
+
 pub struct YAMLPrinter;
 
-impl OutputPrinter for YAMLPrinter {
+impl BaseOutputPrinter for YAMLPrinter {
     fn print(&self, object: &mut GitQLObject) {
         let mut out_str = String::new();
         let mut emitter = YamlEmitter::new(&mut out_str);

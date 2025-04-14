@@ -11,11 +11,11 @@ use gitql_cli::arguments::Command;
 use gitql_cli::arguments::OutputFormat;
 use gitql_cli::diagnostic_reporter;
 use gitql_cli::diagnostic_reporter::DiagnosticReporter;
-use gitql_cli::printer::base::OutputPrinter;
-use gitql_cli::printer::csv_printer::CSVPrinter;
-use gitql_cli::printer::json_printer::JSONPrinter;
-use gitql_cli::printer::table_printer::TablePrinter;
-use gitql_cli::printer::yaml_printer::YAMLPrinter;
+use gitql_cli::printer::BaseOutputPrinter;
+use gitql_cli::printer::CSVPrinter;
+use gitql_cli::printer::JSONPrinter;
+use gitql_cli::printer::TablePrinter;
+use gitql_cli::printer::YAMLPrinter;
 use gitql_core::environment::Environment;
 use gitql_engine::data_provider::DataProvider;
 use gitql_engine::engine;
@@ -216,7 +216,7 @@ fn execute_gitql_query(
         return;
     }
 
-    let printer: Box<dyn OutputPrinter> = match arguments.output_format {
+    let printer: Box<dyn BaseOutputPrinter> = match arguments.output_format {
         OutputFormat::Render => {
             Box::new(TablePrinter::new(arguments.pagination, arguments.page_size))
         }

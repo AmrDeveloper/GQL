@@ -1,10 +1,10 @@
 use gitql_core::object::GitQLObject;
 
-use super::base::OutputPrinter;
+use super::BaseOutputPrinter;
 
 pub struct JSONPrinter;
 
-impl OutputPrinter for JSONPrinter {
+impl BaseOutputPrinter for JSONPrinter {
     fn print(&self, object: &mut GitQLObject) {
         let mut elements: Vec<serde_json::Value> = vec![];
 
