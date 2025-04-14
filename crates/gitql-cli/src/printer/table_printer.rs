@@ -1,3 +1,6 @@
+use comfy_table::Color;
+use comfy_table::ContentArrangement;
+use gitql_core::object::GitQLObject;
 use gitql_core::object::Row;
 
 use super::BaseOutputPrinter;
@@ -11,6 +14,23 @@ enum PaginationInput {
 pub struct TablePrinter {
     pub pagination: bool,
     pub page_size: usize,
+    pub theme_config: TableThemeConfig,
+}
+
+pub struct TableThemeConfig {
+    pub header_forground_color: Option<Color>,
+    pub header_background_color: Option<Color>,
+    pub arrangement: Option<ContentArrangement>,
+}
+
+impl Default for TableThemeConfig {
+    fn default() -> TableThemeConfig {
+        TableThemeConfig {
+            header_forground_color: Some(Color::Green),
+            header_background_color: None,
+            arrangement: Some(comfy_table::ContentArrangement::Dynamic),
+        }
+    }
 }
 
 impl TablePrinter {
@@ -18,12 +38,17 @@ impl TablePrinter {
         TablePrinter {
             pagination,
             page_size,
+            theme_config: TableThemeConfig::default(),
         }
+    }
+
+    pub fn set_theme(&mut self, theme: TableThemeConfig) {
+        self.theme_config = theme;
     }
 }
 
 impl BaseOutputPrinter for TablePrinter {
-    fn print(&self, object: &mut gitql_core::object::GitQLObject) {
+    fn print(&self, object: &mut GitQLObject) {
         if object.is_empty() || object.groups[0].is_empty() {
             return;
         }
@@ -33,15 +58,23 @@ impl BaseOutputPrinter for TablePrinter {
         let group_len = group.len();
 
         // Setup table headers
-        let header_color = comfy_table::Color::Green;
         let mut table_headers = vec![];
         for key in titles {
-            table_headers.push(comfy_table::Cell::new(key).fg(header_color));
+            let mut table_cell = comfy_table::Cell::new(key);
+            if let Some(forground_color) = self.theme_config.header_forground_color {
+                table_cell = table_cell.fg(forground_color);
+            }
+
+            if let Some(background_color) = self.theme_config.header_background_color {
+                table_cell = table_cell.bg(background_color);
+            }
+
+            table_headers.push(table_cell);
         }
 
         // Print all data without pagination
         if !self.pagination || self.page_size >= group_len {
-            print_group_as_table(titles, table_headers, &group.rows);
+            self.print_group_as_table(titles, table_headers, &group.rows);
             return;
         }
 
@@ -55,9 +88,9 @@ impl BaseOutputPrinter for TablePrinter {
 
             let current_page_groups = &group.rows[start_index..end_index];
             println!("Page {}/{}", current_page, number_of_pages);
-            print_group_as_table(titles, table_headers.clone(), current_page_groups);
+            self.print_group_as_table(titles, table_headers.clone(), current_page_groups);
 
-            let pagination_input = handle_pagination_input(current_page, number_of_pages);
+            let pagination_input = self.handle_pagination_input(current_page, number_of_pages);
             match pagination_input {
                 PaginationInput::NextPage => current_page += 1,
                 PaginationInput::PreviousPage => current_page -= 1,
@@ -67,74 +100,88 @@ impl BaseOutputPrinter for TablePrinter {
     }
 }
 
-fn print_group_as_table(titles: &[String], table_headers: Vec<comfy_table::Cell>, rows: &[Row]) {
-    let mut table = comfy_table::Table::new();
+impl TablePrinter {
+    fn print_group_as_table(
+        &self,
+        titles: &[String],
+        table_headers: Vec<comfy_table::Cell>,
+        rows: &[Row],
+    ) {
+        let mut table = comfy_table::Table::new();
 
-    // Setup table style
-    table.load_preset(comfy_table::presets::UTF8_FULL);
-    table.apply_modifier(comfy_table::modifiers::UTF8_ROUND_CORNERS);
-    table.set_content_arrangement(comfy_table::ContentArrangement::Dynamic);
+        // Setup table style
+        table.load_preset(comfy_table::presets::UTF8_FULL);
+        table.apply_modifier(comfy_table::modifiers::UTF8_ROUND_CORNERS);
 
-    table.set_header(table_headers);
-
-    let titles_len = titles.len();
-
-    // Add rows to the table
-    for row in rows {
-        let mut table_row: Vec<comfy_table::Cell> = vec![];
-        for index in 0..titles_len {
-            if let Some(value) = row.values.get(index) {
-                table_row.push(comfy_table::Cell::new(value.literal()));
-            }
+        if let Some(arrangement) = &self.theme_config.arrangement {
+            table.set_content_arrangement(arrangement.clone());
         }
-        table.add_row(table_row);
+
+        table.set_header(table_headers);
+
+        let titles_len = titles.len();
+
+        // Add rows to the table
+        for row in rows {
+            let mut table_row: Vec<comfy_table::Cell> = vec![];
+            for index in 0..titles_len {
+                if let Some(value) = row.values.get(index) {
+                    table_row.push(comfy_table::Cell::new(value.literal()));
+                }
+            }
+            table.add_row(table_row);
+        }
+
+        // Print table
+        println!("{table}");
     }
 
-    // Print table
-    println!("{table}");
-}
-
-fn handle_pagination_input(current_page: usize, number_of_pages: usize) -> PaginationInput {
-    loop {
-        if current_page < 2 {
-            println!("Enter 'n' for next page, or 'q' to quit:");
-        } else if current_page == number_of_pages {
-            println!("'p' for previous page, or 'q' to quit:");
-        } else {
-            println!("Enter 'n' for next page, 'p' for previous page, or 'q' to quit:");
-        }
-
-        std::io::Write::flush(&mut std::io::stdout()).expect("flush failed!");
-
-        let mut line = String::new();
-        std::io::stdin()
-            .read_line(&mut line)
-            .expect("Failed to read input");
-
-        let input = line.trim();
-        if input == "q" || input == "n" || input == "p" {
-            match input {
-                "n" => {
-                    if current_page < number_of_pages {
-                        return PaginationInput::NextPage;
-                    } else {
-                        println!("Already on the last page");
-                        continue;
-                    }
-                }
-                "p" => {
-                    if current_page > 1 {
-                        return PaginationInput::PreviousPage;
-                    } else {
-                        println!("Already on the first page");
-                        continue;
-                    }
-                }
-                "q" => return PaginationInput::Quit,
-                _ => unreachable!(),
+    fn handle_pagination_input(
+        &self,
+        current_page: usize,
+        number_of_pages: usize,
+    ) -> PaginationInput {
+        loop {
+            if current_page < 2 {
+                println!("Enter 'n' for next page, or 'q' to quit:");
+            } else if current_page == number_of_pages {
+                println!("'p' for previous page, or 'q' to quit:");
+            } else {
+                println!("Enter 'n' for next page, 'p' for previous page, or 'q' to quit:");
             }
-        }
 
-        println!("Invalid input");
+            std::io::Write::flush(&mut std::io::stdout()).expect("flush failed!");
+
+            let mut line = String::new();
+            std::io::stdin()
+                .read_line(&mut line)
+                .expect("Failed to read input");
+
+            let input = line.trim();
+            if input == "q" || input == "n" || input == "p" {
+                match input {
+                    "n" => {
+                        if current_page < number_of_pages {
+                            return PaginationInput::NextPage;
+                        } else {
+                            println!("Already on the last page");
+                            continue;
+                        }
+                    }
+                    "p" => {
+                        if current_page > 1 {
+                            return PaginationInput::PreviousPage;
+                        } else {
+                            println!("Already on the first page");
+                            continue;
+                        }
+                    }
+                    "q" => return PaginationInput::Quit,
+                    _ => unreachable!(),
+                }
+            }
+
+            println!("Invalid input");
+        }
     }
 }
