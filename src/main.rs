@@ -8,12 +8,12 @@ use gitql::validate_git_repositories;
 use gitql_cli::arguments;
 use gitql_cli::arguments::Arguments;
 use gitql_cli::arguments::Command;
-use gitql_cli::arguments::OutputFormat;
 use gitql_cli::diagnostic_reporter;
 use gitql_cli::diagnostic_reporter::DiagnosticReporter;
 use gitql_cli::printer::BaseOutputPrinter;
 use gitql_cli::printer::CSVPrinter;
 use gitql_cli::printer::JSONPrinter;
+use gitql_cli::printer::OutputFormatKind;
 use gitql_cli::printer::TablePrinter;
 use gitql_cli::printer::YAMLPrinter;
 use gitql_core::environment::Environment;
@@ -217,12 +217,12 @@ fn execute_gitql_query(
     }
 
     let printer: Box<dyn BaseOutputPrinter> = match arguments.output_format {
-        OutputFormat::Render => {
+        OutputFormatKind::Table => {
             Box::new(TablePrinter::new(arguments.pagination, arguments.page_size))
         }
-        OutputFormat::JSON => Box::new(JSONPrinter),
-        OutputFormat::CSV => Box::new(CSVPrinter),
-        OutputFormat::YAML => Box::new(YAMLPrinter),
+        OutputFormatKind::JSON => Box::new(JSONPrinter),
+        OutputFormatKind::CSV => Box::new(CSVPrinter),
+        OutputFormatKind::YAML => Box::new(YAMLPrinter),
     };
 
     // Render the result only if they are selected groups not any other statement

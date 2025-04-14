@@ -1,5 +1,18 @@
 use gitql_core::object::GitQLObject;
 
+/// Represent the different type of available formats
+#[derive(Debug, PartialEq)]
+pub enum OutputFormatKind {
+    /// Render the output as table
+    Table,
+    /// Print the output in JSON format
+    JSON,
+    /// Print the output in CSV format
+    CSV,
+    /// Print the output in YAML format
+    YAML,
+}
+
 pub trait BaseOutputPrinter {
     fn print(&self, object: &mut GitQLObject);
 }
