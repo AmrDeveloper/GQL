@@ -19,9 +19,7 @@ pub fn second_element_type(elements: &[Box<dyn DataType>]) -> Box<dyn DataType> 
 /// T -> Array<T>
 #[inline(always)]
 pub fn array_of_type(element_type: Box<dyn DataType>) -> Box<dyn DataType> {
-    Box::new(ArrayType {
-        base: element_type.clone(),
-    })
+    Box::new(ArrayType::new(element_type.clone()))
 }
 
 /// Returns element type of passed Array type

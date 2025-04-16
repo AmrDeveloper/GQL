@@ -48,7 +48,7 @@ fn main() {
                     "",
                     Diagnostic::error(git_repos_result.err().unwrap().as_str()),
                 );
-                return;
+                std::process::exit(1);
             }
 
             let repos = git_repos_result.ok().unwrap();
@@ -65,7 +65,7 @@ fn main() {
                     &query,
                     Diagnostic::error(git_repos_result.err().unwrap().as_str()),
                 );
-                return;
+                std::process::exit(1);
             }
 
             let repos = git_repos_result.ok().unwrap();
@@ -94,7 +94,7 @@ fn launch_gitql_repl(arguments: &Arguments) {
             "",
             Diagnostic::error(git_repos_result.err().unwrap().as_str()),
         );
-        return;
+        std::process::exit(1);
     }
 
     let git_repositories = git_repos_result.ok().unwrap();
@@ -186,19 +186,19 @@ fn execute_gitql_query(
     if tokenizer_result.is_err() {
         let diagnostic = tokenizer_result.err().unwrap();
         reporter.report_diagnostic(&query, *diagnostic);
-        return;
+        std::process::exit(1);
     }
 
     let tokens = tokenizer_result.ok().unwrap();
     if tokens.is_empty() {
-        return;
+        std::process::exit(1);
     }
 
     let parser_result = parser::parse_gql(tokens, env);
     if parser_result.is_err() {
         let diagnostic = parser_result.err().unwrap();
         reporter.report_diagnostic(&query, *diagnostic);
-        return;
+        std::process::exit(1);
     }
 
     let query_node = parser_result.ok().unwrap();
@@ -213,7 +213,7 @@ fn execute_gitql_query(
     if evaluation_result.is_err() {
         let exception = Diagnostic::exception(&evaluation_result.err().unwrap());
         reporter.report_diagnostic("", exception);
-        return;
+        std::process::exit(1);
     }
 
     let printer: Box<dyn BaseOutputPrinter> = match arguments.output_format {
