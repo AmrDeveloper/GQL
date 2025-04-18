@@ -191,7 +191,7 @@ fn execute_gitql_query(
 
     let tokens = tokenizer_result.ok().unwrap();
     if tokens.is_empty() {
-        std::process::exit(1);
+        return;
     }
 
     let parser_result = parser::parse_gql(tokens, env);
