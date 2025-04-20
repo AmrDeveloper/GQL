@@ -1,5 +1,12 @@
 # Change Log
 
+## Version 0.38.0 _(2025-04-20)_
+
+- Improve Invalid table name diagnostic to suggest the closest correct name.
+- Support output yaml format.
+- Implement theme customization for table printer.
+- Migrate to Gix 0.71.0.
+
 ## Version 0.37.0 _(2025-02-23)_
 
 - Implement Group Comparison Expression `Expr <Op> <ALL | ANY | SOME> Expr`.
