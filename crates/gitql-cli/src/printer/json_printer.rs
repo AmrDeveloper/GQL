@@ -1,3 +1,6 @@
+use std::io::stdout;
+use std::io::Write;
+
 use gitql_core::object::GitQLObject;
 
 use super::BaseOutputPrinter;
@@ -23,7 +26,10 @@ impl BaseOutputPrinter for JSONPrinter {
         }
 
         if let Ok(json_str) = serde_json::to_string(&serde_json::Value::Array(elements)) {
-            println!("{}", json_str);
+            if let Err(error) = writeln!(stdout(), "{}", json_str) {
+                eprintln!("{}", error);
+                std::process::exit(1);
+            }
         }
     }
 }

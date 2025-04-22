@@ -1,3 +1,6 @@
+use std::io::stdout;
+use std::io::Write;
+
 use csv::Writer;
 use gitql_core::object::GitQLObject;
 
@@ -21,7 +24,12 @@ impl BaseOutputPrinter for CSVPrinter {
         }
 
         if let Ok(writer_content) = writer.into_inner() {
-            println!("{:?}", String::from_utf8(writer_content));
+            if let Ok(content) = String::from_utf8(writer_content) {
+                if let Err(error) = writeln!(stdout(), "{}", content) {
+                    eprintln!("{}", error);
+                    std::process::exit(1);
+                }
+            }
         }
     }
 }

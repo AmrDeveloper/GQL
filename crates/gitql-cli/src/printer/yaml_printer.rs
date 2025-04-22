@@ -1,3 +1,6 @@
+use std::io::stdout;
+use std::io::Write;
+
 use gitql_core::object::GitQLObject;
 use linked_hash_map::LinkedHashMap;
 use yaml_rust::Yaml;
@@ -29,7 +32,14 @@ impl BaseOutputPrinter for YAMLPrinter {
             rows_rows.push(row_yaml);
         }
 
-        let _ = emitter.dump(&Yaml::Array(rows_rows));
-        println!("{}", out_str);
+        if let Err(error) = emitter.dump(&Yaml::Array(rows_rows)) {
+            eprintln!("{}", error);
+            std::process::exit(1);
+        }
+
+        if let Err(error) = writeln!(stdout(), "{}", out_str) {
+            eprintln!("{}", error);
+            std::process::exit(1);
+        }
     }
 }
