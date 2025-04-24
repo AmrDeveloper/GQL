@@ -338,8 +338,10 @@ fn parse_select_query(
                                 .as_boxed());
                             }
 
-                            let count = integer as usize;
-                            statements.insert("offset", Box::new(OffsetStatement { count }));
+                            let start = Box::new(NumberExpr {
+                                value: Number::Int(integer),
+                            });
+                            statements.insert("offset", Box::new(OffsetStatement { start }));
                         }
                         _ => {
                             return Err(Diagnostic::error("`OFFSET` integer value is invalid")
@@ -361,7 +363,7 @@ fn parse_select_query(
                         .as_boxed());
                 }
 
-                let statement = parse_offset_statement(tokens, position)?;
+                let statement = parse_offset_statement(&mut context, env, tokens, position)?;
                 statements.insert("offset", statement);
             }
             TokenKind::Order => {
@@ -1143,6 +1145,8 @@ fn parse_limit_statement(
 }
 
 fn parse_offset_statement(
+    context: &mut ParserContext,
+    env: &mut Environment,
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Statement>, Box<Diagnostic>> {
@@ -1155,27 +1159,14 @@ fn parse_offset_statement(
             .as_boxed());
     }
 
-    match tokens[*position].kind {
-        TokenKind::Integer(integer) => {
-            // Consume Integer value
-            *position += 1;
-
-            // Make sure offset value is always positive
-            if integer < 0 {
-                return Err(
-                    Diagnostic::error("Expect positive number after `OFFSET` keyword")
-                        .with_location(calculate_safe_location(tokens, *position - 1))
-                        .as_boxed(),
-                );
-            }
-
-            let count = integer as usize;
-            Ok(Box::new(OffsetStatement { count }))
-        }
-        _ => Err(Diagnostic::error("Expect number after `OFFSET` keyword")
-            .with_location(calculate_safe_location(tokens, *position - 1))
-            .as_boxed()),
+    let start = parse_expression(context, env, tokens, position)?;
+    if start.expr_type().is_int() {
+        return Ok(Box::new(OffsetStatement { start }));
     }
+
+    Err(Diagnostic::error("Expect int after `OFFSET` keyword")
+        .with_location(calculate_safe_location(tokens, *position - 1))
+        .as_boxed())
 }
 
 pub(crate) fn parse_order_by_statement(

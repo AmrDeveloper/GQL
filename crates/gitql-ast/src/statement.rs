@@ -161,7 +161,7 @@ impl Statement for LimitStatement {
 
 #[derive(Clone)]
 pub struct OffsetStatement {
-    pub count: usize,
+    pub start: Box<dyn Expr>,
 }
 
 impl Statement for OffsetStatement {

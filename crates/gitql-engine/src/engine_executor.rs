@@ -84,7 +84,7 @@ pub fn execute_statement(
                 .as_any()
                 .downcast_ref::<OffsetStatement>()
                 .unwrap();
-            execute_offset_statement(statement, gitql_object)
+            execute_offset_statement(env, statement, gitql_object)
         }
         OrderBy => {
             let statement = statement
@@ -352,6 +352,7 @@ fn execute_limit_statement(
 }
 
 fn execute_offset_statement(
+    env: &mut Environment,
     statement: &OffsetStatement,
     gitql_object: &mut GitQLObject,
 ) -> Result<(), String> {
@@ -364,9 +365,21 @@ fn execute_offset_statement(
     }
 
     let main_group: &mut Group = &mut gitql_object.groups[0];
-    main_group
-        .rows
-        .drain(0..cmp::min(statement.count, main_group.len()));
+    let start = &evaluate_expression(
+        env,
+        &statement.start,
+        &gitql_object.titles,
+        &main_group.rows[0].values,
+    )?;
+
+    // If start evaluates to NULL, it is treated the same as OFFSET 0
+    if start.is_null() {
+        return Ok(());
+    }
+
+    let offset = start.as_int().unwrap() as usize;
+    let main_group: &mut Group = &mut gitql_object.groups[0];
+    main_group.rows.drain(0..cmp::min(offset, main_group.len()));
 
     Ok(())
 }
