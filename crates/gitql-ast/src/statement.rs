@@ -6,7 +6,6 @@ use dyn_clone::DynClone;
 use crate::expression::Expr;
 
 pub enum StatementKind {
-    Do,
     Select,
     Where,
     Having,
@@ -16,7 +15,6 @@ pub enum StatementKind {
     GroupBy,
     AggregateFunction,
     WindowFunction,
-    GlobalVariable,
     Into,
 }
 
@@ -27,13 +25,13 @@ pub trait Statement: DynClone {
     fn as_any(&self) -> &dyn Any;
 }
 
-pub enum Query {
-    Do(DoStatement),
-    Select(GQLQuery),
-    GlobalVariableDeclaration(GlobalVariableStatement),
-    Describe(DescribeStatement),
-    ShowTables,
-}
+// pub enum Query {
+//     Do(DoStatement),
+//     Select(GQLQuery),
+//     GlobalVariableDeclaration(GlobalVariableStatement),
+//     Describe(DescribeStatement),
+//     ShowTables,
+// }
 
 pub struct GQLQuery {
     pub statements: HashMap<&'static str, Box<dyn Statement>>,
@@ -41,27 +39,6 @@ pub struct GQLQuery {
     pub has_aggregation_function: bool,
     pub has_group_by_statement: bool,
     pub hidden_selections: HashMap<String, Vec<String>>,
-}
-
-#[derive(Clone)]
-pub struct DoStatement {
-    pub exprs: Vec<Box<dyn Expr>>,
-}
-
-impl DoStatement {
-    pub fn new(exprs: Vec<Box<dyn Expr>>) -> Self {
-        DoStatement { exprs }
-    }
-}
-
-impl Statement for DoStatement {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn kind(&self) -> StatementKind {
-        StatementKind::Do
-    }
 }
 
 #[derive(Clone)]
@@ -299,22 +276,6 @@ impl Statement for AggregationsStatement {
 }
 
 #[derive(Clone)]
-pub struct GlobalVariableStatement {
-    pub name: String,
-    pub value: Box<dyn Expr>,
-}
-
-impl Statement for GlobalVariableStatement {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn kind(&self) -> StatementKind {
-        StatementKind::GlobalVariable
-    }
-}
-
-#[derive(Clone)]
 pub struct IntoStatement {
     pub file_path: String,
     pub lines_terminated: String,
@@ -330,9 +291,4 @@ impl Statement for IntoStatement {
     fn kind(&self) -> StatementKind {
         StatementKind::Into
     }
-}
-
-#[derive(Debug)]
-pub struct DescribeStatement {
-    pub table_name: String,
 }

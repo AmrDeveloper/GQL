@@ -11,6 +11,11 @@ use gitql_ast::operator::ArithmeticOperator;
 use gitql_ast::operator::BinaryBitwiseOperator;
 use gitql_ast::operator::BinaryLogicalOperator;
 use gitql_ast::operator::PrefixUnaryOperator;
+use gitql_ast::query::DescribeQuery;
+use gitql_ast::query::DoQuery;
+use gitql_ast::query::GlobalVariableDeclQuery;
+use gitql_ast::query::Query;
+use gitql_ast::query::SelectQuery;
 use gitql_ast::statement::*;
 use gitql_ast::types::any::AnyType;
 use gitql_ast::types::array::ArrayType;
@@ -51,7 +56,7 @@ pub fn parse_gql(tokens: Vec<Token>, env: &mut Environment) -> Result<Vec<Query>
             TokenKind::Select => parse_select_query(env, &tokens, &mut position),
             TokenKind::Describe => parse_describe_query(env, &tokens, &mut position),
             TokenKind::Show => parse_show_query(&tokens, &mut position),
-            _ => Err(un_expected_statement_error(&tokens, &mut position)),
+            _ => Err(un_expected_query_start_error(&tokens, &mut position)),
         }?;
 
         // Consume optional `;` at the end of valid statement
@@ -66,7 +71,7 @@ pub fn parse_gql(tokens: Vec<Token>, env: &mut Environment) -> Result<Vec<Query>
 
     // Check for unexpected content after valid statement
     if position < tokens.len() {
-        return Err(un_expected_content_after_correct_statement(
+        return Err(un_expected_content_after_correct_query(
             &tokens[0].to_string(),
             &tokens,
             &mut position,
@@ -107,7 +112,7 @@ fn parse_do_query(
         *position += 1;
     }
 
-    Ok(Query::Do(DoStatement::new(exprs)))
+    Ok(Query::Do(DoQuery { exprs }))
 }
 
 fn parse_set_query(
@@ -162,7 +167,7 @@ fn parse_set_query(
 
     env.define_global(name.to_string(), value.expr_type());
 
-    Ok(Query::GlobalVariableDeclaration(GlobalVariableStatement {
+    Ok(Query::GlobalVariableDecl(GlobalVariableDeclQuery {
         name: name.to_string(),
         value,
     }))
@@ -212,7 +217,7 @@ fn parse_describe_query(
     // Consume Table Name
     *position += 1;
 
-    Ok(Query::Describe(DescribeStatement { table_name }))
+    Ok(Query::DescribeTable(DescribeQuery { table_name }))
 }
 
 fn parse_show_query(tokens: &[Token], position: &mut usize) -> Result<Query, Box<Diagnostic>> {
@@ -467,7 +472,7 @@ fn parse_select_query(
     let hidden_selection_per_table =
         classify_hidden_selection(env, &context.selected_tables, &hidden_selections);
 
-    Ok(Query::Select(GQLQuery {
+    Ok(Query::Select(SelectQuery {
         statements,
         has_aggregation_function: context.is_single_value_query,
         has_group_by_statement: context.has_group_by_statement,
@@ -3900,19 +3905,19 @@ fn parse_global_variable_expression(
     Ok(Box::new(GlobalVariableExpr { name, result_type }))
 }
 
-fn un_expected_statement_error(tokens: &[Token], position: &mut usize) -> Box<Diagnostic> {
+fn un_expected_query_start_error(tokens: &[Token], position: &mut usize) -> Box<Diagnostic> {
     let token: &Token = &tokens[*position];
     let location = token.location;
 
-    // Query starts with invalid statement
+    // Query starts with invalid keyword
     if *position == 0 {
-        return Diagnostic::error("Unexpected statement")
-            .add_help("Expect query to start with `SELECT` or `SET` keyword")
+        return Diagnostic::error("Unexpected query start")
+            .add_help("Expect query to start with `SELECT`, `DO`, `SET` or `DESCRIBE` keyword")
             .with_location(location)
             .as_boxed();
     }
 
-    // General un expected statement error
+    // General un expected query error
     Diagnostic::error("Unexpected statement")
         .with_location(location)
         .as_boxed()
@@ -3999,14 +4004,14 @@ fn un_expected_expression_error(tokens: &[Token], position: &usize) -> Box<Diagn
         .as_boxed()
 }
 
-/// Report error message for extra content after the end of current statement
-fn un_expected_content_after_correct_statement(
+/// Report error message for extra content after the end of current query
+fn un_expected_content_after_correct_query(
     statement_name: &str,
     tokens: &[Token],
     position: &mut usize,
 ) -> Box<Diagnostic> {
     let error_message = &format!(
-        "Unexpected content after the end of `{}` statement",
+        "Unexpected content after the end of `{}` query",
         statement_name.to_uppercase()
     );
 
@@ -4016,7 +4021,7 @@ fn un_expected_content_after_correct_statement(
     location_of_extra_content.expand_until(last_token_location);
 
     Diagnostic::error(error_message)
-        .add_help("Try to check if statement keyword is missing")
+        .add_help("Try to check if query keyword is missing")
         .add_help("Try remove un expected extra content")
         .with_location(location_of_extra_content)
         .as_boxed()
