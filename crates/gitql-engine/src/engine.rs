@@ -36,7 +36,7 @@ const FIXED_LOGICAL_PLAN: [&str; FIXED_LOGICAL_PLAN_LEN] = [
 ];
 
 pub enum EvaluationResult {
-    Do(Box<dyn Value>),
+    Do,
     SelectedGroups(GitQLObject),
     SelectedInfo,
     SetGlobalVariable,
@@ -68,12 +68,10 @@ fn evaluate_do_query(
     env: &mut Environment,
     do_statement: &DoStatement,
 ) -> Result<EvaluationResult, String> {
-    Ok(EvaluationResult::Do(evaluate_expression(
-        env,
-        &do_statement.expression,
-        &[],
-        &vec![],
-    )?))
+    for expr in do_statement.exprs.iter() {
+        evaluate_expression(env, expr, &[], &vec![])?;
+    }
+    Ok(EvaluationResult::Do)
 }
 
 #[allow(clippy::borrowed_box)]

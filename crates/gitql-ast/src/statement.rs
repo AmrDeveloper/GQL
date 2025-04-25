@@ -45,7 +45,13 @@ pub struct GQLQuery {
 
 #[derive(Clone)]
 pub struct DoStatement {
-    pub expression: Box<dyn Expr>,
+    pub exprs: Vec<Box<dyn Expr>>,
+}
+
+impl DoStatement {
+    pub fn new(exprs: Vec<Box<dyn Expr>>) -> Self {
+        DoStatement { exprs }
+    }
 }
 
 impl Statement for DoStatement {

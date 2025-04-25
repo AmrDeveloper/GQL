@@ -29,6 +29,8 @@ use crate::parse_comparisons::parse_comparison_expression;
 use crate::parse_function_call::parse_function_call_expression;
 use crate::parse_function_call::parse_over_window_definition;
 use crate::parse_interval::parse_interval_expression;
+use crate::parse_into::parse_into_statement;
+use crate::parse_ordering::parse_order_by_statement;
 use crate::token::SourceLocation;
 use crate::token::Token;
 use crate::token::TokenKind;
@@ -91,8 +93,21 @@ fn parse_do_query(
     }
 
     let mut context = ParserContext::default();
-    let expression = parse_expression(&mut context, env, tokens, position)?;
-    Ok(Query::Do(DoStatement { expression }))
+    let mut exprs = vec![];
+
+    loop {
+        let expression = parse_expression(&mut context, env, tokens, position)?;
+        exprs.push(expression);
+
+        if !is_current_token(tokens, position, TokenKind::Comma) {
+            break;
+        }
+
+        // Consume `,`
+        *position += 1;
+    }
+
+    Ok(Query::Do(DoStatement::new(exprs)))
 }
 
 fn parse_set_query(
@@ -461,7 +476,6 @@ fn parse_select_query(
     }))
 }
 
-/// Classify hidden selection per table
 fn classify_hidden_selection(
     env: &mut Environment,
     tables: &[String],
@@ -1167,339 +1181,6 @@ fn parse_offset_statement(
     Err(Diagnostic::error("Expect int after `OFFSET` keyword")
         .with_location(calculate_safe_location(tokens, *position - 1))
         .as_boxed())
-}
-
-pub(crate) fn parse_order_by_statement(
-    context: &mut ParserContext,
-    env: &mut Environment,
-    tokens: &[Token],
-    position: &mut usize,
-) -> Result<Box<dyn Statement>, Box<Diagnostic>> {
-    // Consume `ORDER` keyword
-    *position += 1;
-
-    context.inside_order_by = true;
-
-    // Consume `BY` keyword
-    consume_token_or_error(
-        tokens,
-        position,
-        TokenKind::By,
-        "Expect keyword `BY` after keyword `ORDER",
-    )?;
-
-    let mut arguments: Vec<Box<dyn Expr>> = vec![];
-    let mut sorting_orders: Vec<SortingOrder> = vec![];
-    let mut null_ordering_policies: Vec<NullsOrderPolicy> = vec![];
-
-    loop {
-        let argument = parse_expression(context, env, tokens, position)?;
-        let sorting_order = parse_sorting_order(tokens, position)?;
-        let null_ordering_policy = parse_order_by_nulls_policy(tokens, position, &sorting_order)?;
-
-        arguments.push(argument);
-        sorting_orders.push(sorting_order);
-        null_ordering_policies.push(null_ordering_policy);
-
-        if is_current_token(tokens, position, TokenKind::Comma) {
-            // Consume `,` keyword
-            *position += 1;
-        } else {
-            break;
-        }
-    }
-
-    context.inside_order_by = false;
-
-    Ok(Box::new(OrderByStatement {
-        arguments,
-        sorting_orders,
-        nulls_order_policies: null_ordering_policies,
-    }))
-}
-
-fn parse_sorting_order(
-    tokens: &[Token],
-    position: &mut usize,
-) -> Result<SortingOrder, Box<Diagnostic>> {
-    let mut sorting_order = SortingOrder::Ascending;
-    if *position >= tokens.len() {
-        return Ok(sorting_order);
-    }
-
-    // Parse `ASC` or `DESC`
-    if is_asc_or_desc(&tokens[*position]) {
-        if tokens[*position].kind == TokenKind::Descending {
-            sorting_order = SortingOrder::Descending;
-        }
-
-        // Consume `ASC or DESC` keyword
-        *position += 1;
-        return Ok(sorting_order);
-    }
-
-    // Parse `USING <Operator>`
-    if tokens[*position].kind == TokenKind::Using {
-        // Consume `USING` keyword
-        *position += 1;
-
-        if *position < tokens.len() && is_order_by_using_operator(&tokens[*position]) {
-            if tokens[*position].kind == TokenKind::Greater {
-                sorting_order = SortingOrder::Descending;
-            }
-
-            // Consume `> or <` keyword
-            *position += 1;
-            return Ok(sorting_order);
-        }
-
-        return Err(Diagnostic::error("Expect `>` or `<` after `USING` keyword")
-            .with_location(tokens[*position - 1].location)
-            .as_boxed());
-    }
-
-    // Return default sorting order
-    Ok(sorting_order)
-}
-
-fn parse_order_by_nulls_policy(
-    tokens: &[Token],
-    position: &mut usize,
-    sorting_order: &SortingOrder,
-) -> Result<NullsOrderPolicy, Box<Diagnostic>> {
-    // Check for `NULLs FIRST` or `NULLs LAST`
-    if is_current_token(tokens, position, TokenKind::Nulls) {
-        // Consume `NULLs` keyword
-        *position += 1;
-
-        // Consume `FIRST` and return NUlls First policy
-        if is_current_token(tokens, position, TokenKind::First) {
-            *position += 1;
-            return Ok(NullsOrderPolicy::NullsFirst);
-        }
-
-        // Consume `LAST` and return NUlls Last policy
-        if is_current_token(tokens, position, TokenKind::Last) {
-            *position += 1;
-            return Ok(NullsOrderPolicy::NullsLast);
-        }
-
-        return Err(Diagnostic::error("Unexpected NULL ordering policy")
-            .add_note("Null ordering policy must be `FIRST` or `LAST`")
-            .add_help("Please use `NULL FIRST` or `NULL LAST`")
-            .with_location(tokens[*position].location)
-            .as_boxed());
-    }
-
-    let default_null_ordering_policy = match sorting_order {
-        SortingOrder::Ascending => NullsOrderPolicy::NullsLast,
-        SortingOrder::Descending => NullsOrderPolicy::NullsFirst,
-    };
-
-    Ok(default_null_ordering_policy)
-}
-
-fn parse_into_statement(
-    tokens: &[Token],
-    position: &mut usize,
-) -> Result<Box<dyn Statement>, Box<Diagnostic>> {
-    // Consume `INTO` keyword
-    *position += 1;
-
-    // Make sure user define explicitly the into type
-    if *position >= tokens.len()
-        || (tokens[*position].kind != TokenKind::Outfile
-            && tokens[*position].kind != TokenKind::Dumpfile)
-    {
-        return Err(Diagnostic::error(
-            "Expect Keyword `OUTFILE` or `DUMPFILE` after keyword `INTO`",
-        )
-        .with_location(calculate_safe_location(tokens, *position))
-        .as_boxed());
-    }
-
-    // Consume `OUTFILE` or `DUMPFILE` keyword
-    let file_format_kind = &tokens[*position].kind;
-    *position += 1;
-
-    // Make sure user defined a file path as string literal
-    if *position >= tokens.len() || !matches!(tokens[*position].kind, TokenKind::String(_)) {
-        return Err(Diagnostic::error(
-            "Expect String literal as file path after OUTFILE or DUMPFILE keyword",
-        )
-        .with_location(calculate_safe_location(tokens, *position))
-        .as_boxed());
-    }
-
-    let file_path = &tokens[*position].to_string();
-
-    // Consume File path token
-    *position += 1;
-
-    let is_dump_file = *file_format_kind == TokenKind::Dumpfile;
-
-    let mut lines_terminated = if is_dump_file { "" } else { "\n" }.to_string();
-    let mut lines_terminated_used = false;
-
-    let mut fields_terminated = if is_dump_file { "" } else { "," }.to_string();
-    let mut fields_terminated_used = false;
-
-    let mut enclosed = String::new();
-    let mut enclosed_used = false;
-
-    while *position < tokens.len() {
-        let token = &tokens[*position];
-
-        if token.kind == TokenKind::Lines {
-            if is_dump_file {
-                return Err(Diagnostic::error(
-                    "`LINES TERMINATED` option can't be used with INTO DUMPFILE",
-                )
-                .add_help("To customize the format replace `DUMPFILE` with `OUTFILE` option")
-                .with_location(tokens[*position].location)
-                .as_boxed());
-            }
-
-            if lines_terminated_used {
-                return Err(
-                    Diagnostic::error("You already used `LINES TERMINATED` option")
-                        .with_location(tokens[*position].location)
-                        .as_boxed(),
-                );
-            }
-
-            // Consume `LINES` keyword
-            *position += 1;
-
-            // Consume `TERMINATED` KEYWORD, or Error
-            consume_token_or_error(
-                tokens,
-                position,
-                TokenKind::Terminated,
-                "Expect `TERMINATED` keyword after `LINES` keyword",
-            )?;
-
-            // Consume `By` KEYWORD, or Error
-            consume_token_or_error(
-                tokens,
-                position,
-                TokenKind::By,
-                "Expect `BY` after `TERMINATED` keyword",
-            )?;
-
-            if *position >= tokens.len() || !matches!(tokens[*position].kind, TokenKind::String(_))
-            {
-                return Err(Diagnostic::error(
-                    "Expect String literal as lines terminated value after BY keyword",
-                )
-                .with_location(calculate_safe_location(tokens, *position))
-                .as_boxed());
-            }
-
-            // Consume `LINES TERMINATED BY` Value
-            lines_terminated = tokens[*position].to_string();
-            lines_terminated_used = true;
-            *position += 1;
-            continue;
-        }
-
-        if token.kind == TokenKind::Fields {
-            if is_dump_file {
-                return Err(Diagnostic::error(
-                    "`FIELDS TERMINATED` option can't be used with INTO DUMPFILE",
-                )
-                .add_help("To customize the format replace `DUMPFILE` with `OUTFILE` option")
-                .with_location(tokens[*position].location)
-                .as_boxed());
-            }
-
-            if fields_terminated_used {
-                return Err(
-                    Diagnostic::error("You already used `FIELDS TERMINATED` option")
-                        .with_location(tokens[*position].location)
-                        .as_boxed(),
-                );
-            }
-
-            // Consume `FIELDS` keyword
-            *position += 1;
-
-            // Consume `TERMINATED` KEYWORD, or Error
-            consume_token_or_error(
-                tokens,
-                position,
-                TokenKind::Terminated,
-                "Expect `TERMINATED` keyword after `LINES` keyword",
-            )?;
-
-            // Consume `By` KEYWORD, or Error
-            consume_token_or_error(
-                tokens,
-                position,
-                TokenKind::By,
-                "Expect `BY` after `TERMINATED` keyword",
-            )?;
-
-            if *position >= tokens.len() || !matches!(tokens[*position].kind, TokenKind::String(_))
-            {
-                return Err(Diagnostic::error(
-                    "Expect String literal as Field terminated value after BY keyword",
-                )
-                .with_location(calculate_safe_location(tokens, *position))
-                .as_boxed());
-            }
-
-            // Consume `FIELD TERMINATED BY` Value
-            fields_terminated = tokens[*position].to_string();
-            fields_terminated_used = true;
-            *position += 1;
-            continue;
-        }
-
-        if token.kind == TokenKind::Enclosed {
-            if is_dump_file {
-                return Err(Diagnostic::error(
-                    "`ENCLOSED` option can't be used with INTO DUMPFILE",
-                )
-                .add_help("To customize the format replace `DUMPFILE` with `OUTFILE` option")
-                .with_location(tokens[*position].location)
-                .as_boxed());
-            }
-
-            if enclosed_used {
-                return Err(Diagnostic::error("You already used ENCLOSED option")
-                    .with_location(tokens[*position].location)
-                    .as_boxed());
-            }
-
-            // Consume `ENCLOSED` token
-            *position += 1;
-
-            if *position >= tokens.len() || !matches!(tokens[*position].kind, TokenKind::String(_))
-            {
-                return Err(Diagnostic::error(
-                    "Expect String literal as enclosed value after ENCLOSED keyword",
-                )
-                .with_location(calculate_safe_location(tokens, *position))
-                .as_boxed());
-            }
-
-            // Consume `ENCLOSED` Value
-            enclosed = tokens[*position].to_string();
-            enclosed_used = true;
-            *position += 1;
-            continue;
-        }
-
-        break;
-    }
-
-    Ok(Box::new(IntoStatement {
-        file_path: file_path.to_string(),
-        lines_terminated,
-        fields_terminated,
-        enclosed,
-    }))
 }
 
 fn parse_window_named_over_clause(
@@ -4547,11 +4228,6 @@ fn is_factor_operator(tokens: &[Token], position: &usize) -> bool {
 }
 
 #[inline(always)]
-fn is_order_by_using_operator(token: &Token) -> bool {
-    matches!(token.kind, TokenKind::Greater | TokenKind::Less)
-}
-
-#[inline(always)]
 fn is_join_or_join_type_token(tokens: &[Token], position: &usize) -> bool {
     *position < tokens.len()
         && matches!(
@@ -4562,9 +4238,4 @@ fn is_join_or_join_type_token(tokens: &[Token], position: &usize) -> bool {
                 | TokenKind::Cross
                 | TokenKind::Inner
         )
-}
-
-#[inline(always)]
-fn is_asc_or_desc(token: &Token) -> bool {
-    matches!(token.kind, TokenKind::Ascending | TokenKind::Descending)
 }

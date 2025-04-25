@@ -14,12 +14,12 @@ use gitql_core::environment::Environment;
 
 use crate::context::ParserContext;
 use crate::diagnostic::Diagnostic;
+use crate::parse_ordering::parse_order_by_statement;
 use crate::parser::consume_token_or_error;
 use crate::parser::is_current_token;
 use crate::parser::is_current_token_with_condition;
 use crate::parser::parse_expression;
 use crate::parser::parse_member_access_expression;
-use crate::parser::parse_order_by_statement;
 use crate::parser::parse_zero_or_more_values_with_comma_between;
 use crate::token::Token;
 use crate::token::TokenKind;
