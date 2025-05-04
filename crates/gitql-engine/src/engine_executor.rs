@@ -11,6 +11,7 @@ use gitql_ast::statement::IntoStatement;
 use gitql_ast::statement::LimitStatement;
 use gitql_ast::statement::OffsetStatement;
 use gitql_ast::statement::OrderByStatement;
+use gitql_ast::statement::QualifyStatement;
 use gitql_ast::statement::SelectStatement;
 use gitql_ast::statement::Statement;
 use gitql_ast::statement::StatementKind::*;
@@ -68,6 +69,13 @@ pub fn execute_statement(
                 .downcast_ref::<HavingStatement>()
                 .unwrap();
             execute_having_statement(env, statement, gitql_object)
+        }
+        Qualify => {
+            let statement = statement
+                .as_any()
+                .downcast_ref::<QualifyStatement>()
+                .unwrap();
+            execute_qualify_statement(env, statement, gitql_object)
         }
         Limit => {
             let statement = statement.as_any().downcast_ref::<LimitStatement>().unwrap();
@@ -298,6 +306,25 @@ fn execute_having_statement(
 
     // Perform where command only on the first group
     // because group by command not executed yet
+    apply_filter_operation(
+        env,
+        &statement.condition,
+        &gitql_object.titles,
+        &mut gitql_object.groups[0].rows,
+    )?;
+
+    Ok(())
+}
+
+fn execute_qualify_statement(
+    env: &mut Environment,
+    statement: &QualifyStatement,
+    gitql_object: &mut GitQLObject,
+) -> Result<(), String> {
+    if gitql_object.is_empty() {
+        return Ok(());
+    }
+
     apply_filter_operation(
         env,
         &statement.condition,

@@ -21,7 +21,7 @@ use crate::engine_evaluator::evaluate_expression;
 use crate::engine_executor::execute_statement;
 
 /// Static Logical Plan, later must be replaced by a Plan from the Logical query Planner
-const FIXED_LOGICAL_PLAN_LEN: usize = 9;
+const FIXED_LOGICAL_PLAN_LEN: usize = 10;
 const FIXED_LOGICAL_PLAN: [&str; FIXED_LOGICAL_PLAN_LEN] = [
     "select",
     "where",
@@ -29,6 +29,7 @@ const FIXED_LOGICAL_PLAN: [&str; FIXED_LOGICAL_PLAN_LEN] = [
     "aggregation",
     "having",
     "window_functions",
+    "qualify",
     "order",
     "offset",
     "limit",

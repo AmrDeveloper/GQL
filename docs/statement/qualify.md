@@ -1,0 +1,1 @@
+The `QUALIFY` statement is very similar to `WHERE` expect that it evaluated after the `WINDOW functions`

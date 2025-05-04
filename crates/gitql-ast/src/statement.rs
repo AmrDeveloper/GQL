@@ -15,6 +15,7 @@ pub enum StatementKind {
     GroupBy,
     AggregateFunction,
     WindowFunction,
+    Qualify,
     Into,
 }
 
@@ -23,22 +24,6 @@ dyn_clone::clone_trait_object!(Statement);
 pub trait Statement: DynClone {
     fn kind(&self) -> StatementKind;
     fn as_any(&self) -> &dyn Any;
-}
-
-// pub enum Query {
-//     Do(DoStatement),
-//     Select(GQLQuery),
-//     GlobalVariableDeclaration(GlobalVariableStatement),
-//     Describe(DescribeStatement),
-//     ShowTables,
-// }
-
-pub struct GQLQuery {
-    pub statements: HashMap<&'static str, Box<dyn Statement>>,
-    pub alias_table: HashMap<String, String>,
-    pub has_aggregation_function: bool,
-    pub has_group_by_statement: bool,
-    pub hidden_selections: HashMap<String, Vec<String>>,
 }
 
 #[derive(Clone)]
@@ -251,6 +236,21 @@ impl Statement for WindowFunctionsStatement {
 
     fn kind(&self) -> StatementKind {
         StatementKind::WindowFunction
+    }
+}
+
+#[derive(Clone)]
+pub struct QualifyStatement {
+    pub condition: Box<dyn Expr>,
+}
+
+impl Statement for QualifyStatement {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn kind(&self) -> StatementKind {
+        StatementKind::Where
     }
 }
 

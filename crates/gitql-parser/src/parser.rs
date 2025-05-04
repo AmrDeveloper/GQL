@@ -275,6 +275,16 @@ fn parse_select_query(
                 let statement = parse_where_statement(&mut context, env, tokens, position)?;
                 statements.insert("where", statement);
             }
+            TokenKind::Qualify => {
+                if statements.contains_key("qualify") {
+                    return Err(Diagnostic::error("You already used `QUALIFY` statement")
+                        .add_note("Can't use more than one `QUALIFY` statement in the same query")
+                        .with_location(token.location)
+                        .as_boxed());
+                }
+                let statement = parse_qualify_statement(&mut context, env, tokens, position)?;
+                statements.insert("qualify", statement);
+            }
             TokenKind::Group => {
                 if statements.contains_key("group") {
                     return Err(Diagnostic::error("`You already used `GROUP BY` statement")
@@ -1125,6 +1135,53 @@ fn parse_having_statement(
 
     context.inside_having = false;
     Ok(Box::new(HavingStatement { condition }))
+}
+
+fn parse_qualify_statement(
+    context: &mut ParserContext,
+    env: &mut Environment,
+    tokens: &[Token],
+    position: &mut usize,
+) -> Result<Box<dyn Statement>, Box<Diagnostic>> {
+    // Consume `QUALIFY` token
+    *position += 1;
+
+    if *position >= tokens.len() {
+        return Err(
+            Diagnostic::error("Expect expression after `QUALIFY` keyword")
+                .add_help("Try to add boolean expression after `QUALIFY` keyword")
+                .add_note("`QUALIFY` statement expects expression as condition")
+                .with_location(calculate_safe_location(tokens, *position - 1))
+                .as_boxed(),
+        );
+    }
+
+    // Make sure QUALIFY condition expression has boolean type
+    let condition_location = tokens[*position].location;
+    let mut condition = parse_expression(context, env, tokens, position)?;
+
+    // Make sure that the condition type is boolean, or can implicit cast to boolean.
+    if !condition.expr_type().is_bool() {
+        let expected_type: Box<dyn DataType> = Box::new(BoolType);
+        if !expected_type.has_implicit_cast_from(&condition) {
+            return Err(Diagnostic::error(&format!(
+                "Expect `QUALIFY` condition to be type {} but got {}",
+                "Boolean",
+                condition.expr_type().literal()
+            ))
+            .add_note("`QUALIFY` statement condition must be Boolean")
+            .with_location(condition_location)
+            .as_boxed());
+        }
+
+        // Implicit cast the condition to boolean
+        condition = Box::new(CastExpr {
+            value: condition,
+            result_type: expected_type.clone(),
+        })
+    }
+
+    Ok(Box::new(QualifyStatement { condition }))
 }
 
 fn parse_limit_statement(
