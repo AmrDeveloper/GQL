@@ -35,7 +35,7 @@ regex = { version = "1.11.1" }
 rand = { version = "0.9.1" }
 indexmap = { version = "2.9.0" }
 linked-hash-map = { version = "0.5.6" }
-uuid = { version = "1.16.0", features = ["v4"] }
+uuid = { version = "1.17.0", features = ["v4"] }
 
 [profile.release]
 lto = true
@@ -53,7 +53,7 @@ gix = { workspace = true, features = ["blob-diff", "max-performance"] }
 lineeditor = "0.4.1"
 
 [dev-dependencies]
-criterion = "0.5.1"
+criterion = "0.6.0"
 
 # Run all benchmarks with `cargo bench`
 # Run individual benchmarks like `cargo bench -- <regex>` e.g. `cargo bench -- tokenizer`
