@@ -1,5 +1,13 @@
 # Change Log
 
+## Version 0.39.0 _(2025-06-06)_
+
+- Improve the printers to catch pipe errors.
+- Allow OFFSET to take variable expression.
+- Extend `DO` command to execute one or more expression.
+- Implement `QUALIFY` statement.
+- Migrate to Gix 0.72.1.
+
 ## Version 0.38.0 _(2025-04-20)_
 
 - Improve Invalid table name diagnostic to suggest the closest correct name.

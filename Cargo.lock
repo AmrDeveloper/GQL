@@ -540,7 +540,7 @@ dependencies = [
 
 [[package]]
 name = "gitql"
-version = "0.38.0"
+version = "0.39.0"
 dependencies = [
  "criterion",
  "gitql-ast",
@@ -555,14 +555,14 @@ dependencies = [
 
 [[package]]
 name = "gitql-ast"
-version = "0.34.0"
+version = "0.35.0"
 dependencies = [
  "dyn-clone",
 ]
 
 [[package]]
 name = "gitql-cli"
-version = "0.38.0"
+version = "0.39.0"
 dependencies = [
  "comfy-table",
  "csv",
@@ -577,7 +577,7 @@ dependencies = [
 
 [[package]]
 name = "gitql-core"
-version = "0.15.0"
+version = "0.16.0"
 dependencies = [
  "chrono",
  "dyn-clone",
@@ -588,7 +588,7 @@ dependencies = [
 
 [[package]]
 name = "gitql-engine"
-version = "0.38.0"
+version = "0.39.0"
 dependencies = [
  "chrono",
  "gitql-ast",
@@ -597,7 +597,7 @@ dependencies = [
 
 [[package]]
 name = "gitql-parser"
-version = "0.37.0"
+version = "0.38.0"
 dependencies = [
  "gitql-ast",
  "gitql-core",
@@ -605,7 +605,7 @@ dependencies = [
 
 [[package]]
 name = "gitql-std"
-version = "0.15.0"
+version = "0.16.0"
 dependencies = [
  "chrono",
  "gitql-ast",
