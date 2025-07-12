@@ -20,7 +20,6 @@ pub(crate) fn parse_cast_operator_expression(
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
     let expr = parse_index_or_slice_expression(context, env, tokens, position)?;
-
     if *position < tokens.len() && tokens[*position].kind == TokenKind::ColonColon {
         // Consume `::` Token
         let colon_colon_token = &tokens[*position];
@@ -29,7 +28,6 @@ pub(crate) fn parse_cast_operator_expression(
         let target_type = parse_type(env, tokens, position)?;
         return cast_expression_or_error(expr, target_type, colon_colon_token.location);
     }
-
     Ok(expr)
 }
 
@@ -76,10 +74,17 @@ fn cast_expression_or_error(
     target_type: Box<dyn DataType>,
     location: SourceLocation,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
-    let value_type = expr.expr_type();
-    let value_expected_types = value_type.can_perform_explicit_cast_op_to();
+    // Check if it's possiable to perform implicit cast directly
+    if target_type.has_implicit_cast_from(&expr) {
+        return Ok(Box::new(CastExpr {
+            value: expr,
+            result_type: target_type,
+        }));
+    }
 
-    // If it's supported to cast this value to result type, just return CastExpr
+    // Check if it's supported to cast this value to result type, just return CastExpr
+    let value_type: Box<dyn DataType> = expr.expr_type();
+    let value_expected_types = value_type.can_perform_explicit_cast_op_to();
     if value_expected_types.contains(&target_type) {
         return Ok(Box::new(CastExpr {
             value: expr,
@@ -87,7 +92,7 @@ fn cast_expression_or_error(
         }));
     }
 
-    // Check if it possible to implicit cast the value to one of the expected type of result type
+    // Check if it's possible to implicit cast the value to one of the expected type of result type
     // then Cast from expected type to the result type
     // Examples: Cast("true" as Int) can be casted as Text -> Bool -> Int
     let expected_types = target_type.can_perform_explicit_cast_op_to();
