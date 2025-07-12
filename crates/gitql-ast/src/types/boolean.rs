@@ -109,8 +109,12 @@ impl DataType for BoolType {
 
     fn has_implicit_cast_from(&self, expr: &Box<dyn Expr>) -> bool {
         if let Some(string_expr) = expr.as_any().downcast_ref::<StringExpr>() {
-            const BOOLEANS_VALUES_LITERAL: [&str; 10] =
-                ["t", "true", "y", "yes", "1", "f", "false", "n", "no", "0"];
+            const BOOLEANS_VALUES_LITERAL: [&str; 12] = [
+                // String representations for the “true” state
+                "t", "true", "y", "yes", "on", "1",
+                // String representations for the false state
+                "f", "false", "n", "no", "off", "0",
+            ];
             return BOOLEANS_VALUES_LITERAL.contains(&string_expr.value.as_str());
         }
         false
