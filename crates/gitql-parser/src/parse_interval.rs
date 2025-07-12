@@ -72,8 +72,7 @@ fn parse_interval_literal(
 
             if position >= tokens.len() {
                 return Err(Diagnostic::error(&format!(
-                    "Missing interval unit after value {}",
-                    value
+                    "Missing interval unit after value {value}",
                 ))
                 .with_location(location)
                 .as_boxed());
@@ -103,8 +102,7 @@ fn parse_interval_literal(
             }
 
             return Err(Diagnostic::error(&format!(
-                "Invalid input syntax for interval unit `{}`",
-                maybe_unit
+                "Invalid input syntax for interval unit `{maybe_unit}`",
             ))
             .add_help(
                 "Interval date unit can be `[year | years | mon | mons | months | day or days]`",
@@ -197,8 +195,7 @@ fn check_interval_value_and_unit(
 
     if !(-INTERVAL_MAX_VALUE..=INTERVAL_MAX_VALUE).contains(&interval_value) {
         return Err(Diagnostic::error(&format!(
-            "Interval value for unit `{}` is out of the range",
-            unit_name
+            "Interval value for unit `{unit_name}` is out of the range",
         ))
         .add_help("Interval value must be in range from -170_000_000 to 170_000_000")
         .with_location(location)
@@ -206,8 +203,7 @@ fn check_interval_value_and_unit(
     }
 
     Err(Diagnostic::error(&format!(
-        "Can't use the same interval unit `{}` twice",
-        unit_name
+        "Can't use the same interval unit `{unit_name}` twice",
     ))
     .with_location(location)
     .as_boxed())

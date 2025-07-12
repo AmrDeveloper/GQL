@@ -111,7 +111,7 @@ impl Display for Interval {
 
         let (hours, minutes, seconds) = (self.hours, self.minutes, self.seconds);
         if hours != 0 || minutes != 0 || seconds != 0f64 {
-            parts.push(format!("{:02}:{:02}:{:02}", hours, minutes, seconds));
+            parts.push(format!("{hours:02}:{minutes:02}:{seconds:02}"));
         }
 
         if parts.is_empty() {
@@ -127,7 +127,7 @@ fn interval_value_or_error_i64(value: i64) -> Result<i64, String> {
     if (-INTERVAL_MAX_VALUE_I..=INTERVAL_MAX_VALUE_I).contains(&value) {
         return Ok(value);
     }
-    Err(format!("Interval value out of range {}", value))
+    Err(format!("Interval value out of range {value}"))
 }
 
 fn interval_value_or_error_f64(value: f64) -> Result<f64, String> {

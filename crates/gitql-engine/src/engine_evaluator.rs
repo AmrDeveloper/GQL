@@ -258,8 +258,7 @@ fn evaluate_global_variable(
     }
 
     Err(format!(
-        "The value of `{}` may be not exists or calculated yet",
-        name
+        "The value of `{name}` may be not exists or calculated yet",
     ))
 }
 

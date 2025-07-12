@@ -33,12 +33,12 @@ impl BaseOutputPrinter for YAMLPrinter {
         }
 
         if let Err(error) = emitter.dump(&Yaml::Array(rows_rows)) {
-            eprintln!("{}", error);
+            eprintln!("{error}");
             std::process::exit(1);
         }
 
-        if let Err(error) = writeln!(stdout(), "{}", out_str) {
-            eprintln!("{}", error);
+        if let Err(error) = writeln!(stdout(), "{out_str}") {
+            eprintln!("{error}");
             std::process::exit(1);
         }
     }

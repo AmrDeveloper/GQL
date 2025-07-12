@@ -63,8 +63,7 @@ pub fn check_function_call_arguments(
 
     if arguments_count < min_arguments_count {
         return Err(Diagnostic::error(&format!(
-            "Function `{}` expects at least `{}` arguments but got `{}`",
-            function_name, min_arguments_count, arguments_count
+            "Function `{function_name}` expects at least `{min_arguments_count}` arguments but got `{arguments_count}`",
         ))
         .with_location(location)
         .as_boxed());
@@ -72,8 +71,7 @@ pub fn check_function_call_arguments(
 
     if !has_varargs_parameter && arguments_count > parameters_count {
         return Err(Diagnostic::error(&format!(
-            "Function `{}` expects `{}` arguments but got `{}`",
-            function_name, parameters_count, arguments_count
+            "Function `{function_name}` expects `{parameters_count}` arguments but got `{arguments_count}`",
         ))
         .with_location(location)
         .as_boxed());
@@ -89,8 +87,7 @@ pub fn check_function_call_arguments(
         // Catch undefined arguments
         if argument_type.is_undefined() {
             return Err(Diagnostic::error(&format!(
-                "Function `{}` argument number {} has Undefined type",
-                function_name, index,
+                "Function `{function_name}` argument number {index} has Undefined type",
             ))
             .add_help("Make sure you used a correct field name")
             .add_help("Check column names for each table from docs website")
@@ -139,8 +136,7 @@ pub fn check_function_call_arguments(
         // Catch undefined arguments
         if argument_type.is_undefined() {
             return Err(Diagnostic::error(&format!(
-                "Function `{}` argument number {} has Undefined type",
-                function_name, index,
+                "Function `{function_name}` argument number {index} has Undefined type",
             ))
             .add_help("Make sure you used a correct field name")
             .add_help("Check column names for each table from docs website")
@@ -185,8 +181,7 @@ pub fn check_function_call_arguments(
             // Catch undefined arguments
             if argument_type.is_undefined() {
                 return Err(Diagnostic::error(&format!(
-                    "Function `{}` argument number {} has Undefined type",
-                    function_name, index,
+                    "Function `{function_name}` argument number {index} has Undefined type",
                 ))
                 .add_help("Make sure you used a correct field name")
                 .add_help("Check column names for each table from docs website")
@@ -279,8 +274,7 @@ pub fn type_check_and_classify_selected_fields(
             }
 
             return Err(Diagnostic::error(&format!(
-                "Column `{}` not exists in any of the selected tables",
-                selected_column
+                "Column `{selected_column}` not exists in any of the selected tables",
             ))
             .add_help("Check the documentations to see available fields for each tables")
             .with_location(location)
@@ -311,8 +305,7 @@ pub fn type_check_projection_symbols(
 
         if !is_column_resolved {
             return Err(Diagnostic::error(&format!(
-                "Column `{}` not exists in any of the selected tables",
-                selected_column
+                "Column `{selected_column}` not exists in any of the selected tables",
             ))
             .add_help("Check the documentations to see available fields for each tables")
             .with_location(projection_locations[index])

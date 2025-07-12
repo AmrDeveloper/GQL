@@ -624,6 +624,5 @@ pub fn text_str(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
 
 pub fn text_to_hex(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
     let number = inputs[0].as_int().unwrap();
-    let value = format!("0x{}", number);
-    Box::new(TextValue::new(value))
+    Box::new(TextValue::new(format!("0x{number}")))
 }

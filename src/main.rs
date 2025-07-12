@@ -80,7 +80,7 @@ fn main() {
             println!("GitQL version {}", env!("CARGO_PKG_VERSION"));
         }
         Command::Error(error_message) => {
-            println!("{}", error_message);
+            println!("{error_message}");
         }
     }
 }
@@ -147,7 +147,7 @@ fn launch_gitql_repl(arguments: &Arguments) {
                 }
             }
             Err(error) => {
-                reporter.report_diagnostic(&input, Diagnostic::error(&format!("{}", error)));
+                reporter.report_diagnostic(&input, Diagnostic::error(&format!("{error}")));
             }
         }
 
@@ -239,8 +239,7 @@ fn execute_gitql_query(
         if arguments.analysis {
             let total_time = front_duration + engine_duration;
             println!(
-                "{} row in set (total: {:?}, front: {:?}, engine: {:?})",
-                rows_count, total_time, front_duration, engine_duration
+                "{rows_count} row in set (total: {total_time:?}, front: {front_duration:?}, engine: {engine_duration:?})",
             );
         }
     }

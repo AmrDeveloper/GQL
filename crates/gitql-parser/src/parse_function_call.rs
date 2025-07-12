@@ -80,8 +80,7 @@ pub(crate) fn parse_function_call_expression(
 
             // Function has no signature registered on the signature table
             return Err(Diagnostic::error(&format!(
-                "Can't find signature for function with name {}",
-                function_name
+                "Can't find signature for function with name {function_name}",
             ))
             .with_location(function_name_location)
             .as_boxed());
@@ -164,8 +163,7 @@ pub(crate) fn parse_function_call_expression(
 
             // Aggregation Function has no signature registered on the signature table
             return Err(Diagnostic::error(&format!(
-                "Can't find signature for Aggregation function with name {}",
-                function_name
+                "Can't find signature for Aggregation function with name {function_name}",
             ))
             .with_location(function_name_location)
             .as_boxed());
@@ -272,8 +270,7 @@ pub(crate) fn parse_function_call_expression(
 
             // Aggregation Function has no signature registered on the signature table
             return Err(Diagnostic::error(&format!(
-                "Can't find signature for Window function with name {}",
-                function_name
+                "Can't find signature for Window function with name {function_name}",
             ))
             .with_location(function_name_location)
             .as_boxed());
@@ -282,8 +279,7 @@ pub(crate) fn parse_function_call_expression(
         // Report that this function name is not standard or aggregation
         return Err(Diagnostic::error("No such function name")
             .add_help(&format!(
-                "Function `{}` is not an Aggregation or Standard library function name",
-                function_name,
+                "Function `{function_name}` is not an Aggregation or Standard library function name",
             ))
             .with_location(function_name_location)
             .as_boxed());

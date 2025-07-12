@@ -47,17 +47,17 @@ impl DiagnosticReporter {
 
         self.stdout.set_color(Some(Color::Cyan));
         for help in diagnostic.helps() {
-            println!(" = Help: {}", help);
+            println!(" = Help: {help}");
         }
 
         self.stdout.set_color(Some(Color::Yellow));
         for note in diagnostic.notes() {
-            println!(" = Note: {}", note);
+            println!(" = Note: {note}");
         }
 
         self.stdout.set_color(Some(Color::Blue));
         if let Some(docs) = diagnostic.docs() {
-            println!(" = Docs: {}", docs);
+            println!(" = Docs: {docs}");
         }
 
         self.stdout.reset();

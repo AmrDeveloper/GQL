@@ -289,8 +289,7 @@ pub fn date_make_time(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
     let hour = inputs[0].as_int().unwrap();
     let minute = inputs[1].as_int().unwrap();
     let second = inputs[2].as_int().unwrap();
-    let time = format!("{}:{:02}:{:02}", hour, minute, second);
-    Box::new(TimeValue::new(time))
+    Box::new(TimeValue::new(format!("{hour}:{minute:02}:{second:02}")))
 }
 
 pub fn date_day(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
@@ -414,8 +413,7 @@ pub fn date_year_and_week(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
 
     let days_with_offset = days_diff + week_offset;
     let week_number = (days_with_offset / 7) as u32 + 1;
-    let formatted_value = format!("{}{}", year, week_number);
-    Box::new(TextValue::new(formatted_value))
+    Box::new(TextValue::new(format!("{year}{week_number}")))
 }
 
 pub fn date_quarter(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {

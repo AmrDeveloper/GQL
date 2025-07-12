@@ -128,8 +128,7 @@ pub(crate) fn parse_comparison_expression(
             }
 
             let mut diagnostic = Diagnostic::error(&format!(
-                "Operator `=` can't be performed between types `{}` and `{}`",
-                lhs_type, rhs_type
+                "Operator `=` can't be performed between types `{lhs_type}` and `{rhs_type}`",
             ))
             .with_location(operator.location);
 
@@ -208,8 +207,7 @@ pub(crate) fn parse_comparison_expression(
             }
 
             let mut diagnostic = Diagnostic::error(&format!(
-                "Operator `!=` can't be performed between types `{}` and `{}`",
-                lhs_type, rhs_type
+                "Operator `!=` can't be performed between types `{lhs_type}` and `{rhs_type}`",
             ))
             .with_location(operator.location);
 
@@ -290,8 +288,7 @@ pub(crate) fn parse_comparison_expression(
 
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
-                "Operator `>` can't be performed between types `{}` and `{}`",
-                lhs_type, rhs_type
+                "Operator `>` can't be performed between types `{lhs_type}` and `{rhs_type}`",
             ))
             .with_location(operator.location)
             .as_boxed());
@@ -363,8 +360,7 @@ pub(crate) fn parse_comparison_expression(
 
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
-                "Operator `>=` can't be performed between types `{}` and `{}`",
-                lhs_type, rhs_type
+                "Operator `>=` can't be performed between types `{lhs_type}` and `{rhs_type}`",
             ))
             .with_location(operator.location)
             .as_boxed());
@@ -436,8 +432,7 @@ pub(crate) fn parse_comparison_expression(
 
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
-                "Operator `<` can't be performed between types `{}` and `{}`",
-                lhs_type, rhs_type
+                "Operator `<` can't be performed between types `{lhs_type}` and `{rhs_type}`",
             ))
             .with_location(operator.location)
             .as_boxed());
@@ -509,8 +504,7 @@ pub(crate) fn parse_comparison_expression(
 
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
-                "Operator `<=` can't be performed between types `{}` and `{}`",
-                lhs_type, rhs_type
+                "Operator `<=` can't be performed between types `{lhs_type}` and `{rhs_type}`",
             ))
             .with_location(operator.location)
             .as_boxed());
@@ -582,8 +576,7 @@ pub(crate) fn parse_comparison_expression(
 
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
-                "Operator `<=>` can't be performed between types `{}` and `{}`",
-                lhs_type, rhs_type
+                "Operator `<=>` can't be performed between types `{lhs_type}` and `{rhs_type}`",
             ))
             .with_location(operator.location)
             .as_boxed());

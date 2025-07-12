@@ -87,7 +87,7 @@ impl BaseOutputPrinter for TablePrinter {
             let end_index = (start_index + self.page_size).min(group_len);
 
             let current_page_groups = &group.rows[start_index..end_index];
-            println!("Page {}/{}", current_page, number_of_pages);
+            println!("Page {current_page}/{number_of_pages}");
             self.print_group_as_table(titles, table_headers.clone(), current_page_groups);
 
             let pagination_input = self.handle_pagination_input(current_page, number_of_pages);

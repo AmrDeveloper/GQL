@@ -26,8 +26,8 @@ impl BaseOutputPrinter for JSONPrinter {
         }
 
         if let Ok(json_str) = serde_json::to_string(&serde_json::Value::Array(elements)) {
-            if let Err(error) = writeln!(stdout(), "{}", json_str) {
-                eprintln!("{}", error);
+            if let Err(error) = writeln!(stdout(), "{json_str}") {
+                eprintln!("{error}");
                 std::process::exit(1);
             }
         }

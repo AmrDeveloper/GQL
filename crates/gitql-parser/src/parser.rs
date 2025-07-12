@@ -197,17 +197,14 @@ fn parse_describe_query(
         .contains_key(table_name.as_str())
     {
         let mut diagnostic =
-            Diagnostic::error(&format!("Cannot find table with name `{}`", table_name))
+            Diagnostic::error(&format!("Cannot find table with name `{table_name}`"))
                 .add_note("You can use the `SHOW TABLES` query to get list of current tables")
                 .add_note("Check the documentations to see available tables")
                 .with_location(calculate_safe_location(tokens, *position));
 
         let canditates: Vec<&&str> = env.schema.tables_fields_names.keys().collect();
         if let Some(closest_valid_name) = find_closeest_string(&table_name, &canditates) {
-            let message = &format!(
-                "a table with a similar name exists: `{}`",
-                closest_valid_name
-            );
+            let message = &format!("a table with a similar name exists: `{closest_valid_name}`");
             diagnostic = diagnostic.add_help(message);
         }
 
@@ -444,8 +441,7 @@ fn parse_select_query(
                 if let Some(window_name) = &function.window_definition.name {
                     if !context.named_window_clauses.contains_key(window_name) {
                         return Err(Diagnostic::error(&format!(
-                            "Can't resolve `WINDOW Definition` with name {}",
-                            window_name
+                            "Can't resolve `WINDOW Definition` with name {window_name}"
                         ))
                         .add_note("Make sure you already defined window over clause with this name")
                         .as_boxed());
@@ -850,17 +846,15 @@ fn parse_from_option(
             .contains_key(table_name.as_str())
         {
             let mut diagnostic =
-                Diagnostic::error(&format!("Cannot find table with name `{}`", table_name))
+                Diagnostic::error(&format!("Cannot find table with name `{table_name}`"))
                     .add_note("You can use the `SHOW TABLES` query to get list of current tables")
                     .add_note("Check the documentations to see available tables")
                     .with_location(calculate_safe_location(tokens, *position));
 
             let canditates: Vec<&&str> = env.schema.tables_fields_names.keys().collect();
             if let Some(closest_valid_name) = find_closeest_string(&table_name, &canditates) {
-                let message = &format!(
-                    "a table with a similar name exists: `{}`",
-                    closest_valid_name
-                );
+                let message =
+                    &format!("a table with a similar name exists: `{closest_valid_name}`");
                 diagnostic = diagnostic.add_help(message);
             }
 
@@ -1280,8 +1274,7 @@ fn parse_window_named_over_clause(
     // Make sure each window clauses has unique name
     if context.named_window_clauses.contains_key(&window_name) {
         return Err(Diagnostic::error(&format!(
-            "There is already defined window clauses with name {}",
-            window_name
+            "There is already defined window clauses with name {window_name}"
         ))
         .add_note("Window over clauses names must be unique from each other")
         .with_location(location)
@@ -1461,8 +1454,7 @@ fn parse_regex_expression(
 
         // Return error if this operator can't be performed even with implicit cast
         return Err(Diagnostic::error(&format!(
-            "Operator `REGEXP` can't be performed between types `{}` and `{}`",
-            lhs_type, rhs_type
+            "Operator `REGEXP` can't be performed between types `{lhs_type}` and `{rhs_type}`",
         ))
         .with_location(operator_location)
         .as_boxed());
@@ -1658,8 +1650,7 @@ fn parse_logical_or_expression(
 
         // Return error if this operator can't be performed even with implicit cast
         return Err(Diagnostic::error(&format!(
-            "Operator `OR` can't be performed between types `{}` and `{}`",
-            lhs_type, rhs_type
+            "Operator `OR` can't be performed between types `{lhs_type}` and `{rhs_type}`"
         ))
         .with_location(operator.location)
         .as_boxed());
@@ -1745,8 +1736,7 @@ fn parse_logical_and_expression(
 
         // Return error if this operator can't be performed even with implicit cast
         return Err(Diagnostic::error(&format!(
-            "Operator `AND` can't be performed between types `{}` and `{}`",
-            lhs_type, rhs_type
+            "Operator `AND` can't be performed between types `{lhs_type}` and `{rhs_type}`"
         ))
         .with_location(operator.location)
         .as_boxed());
@@ -1835,8 +1825,7 @@ fn parse_bitwise_or_expression(
 
         // Return error if this operator can't be performed even with implicit cast
         return Err(Diagnostic::error(&format!(
-            "Operator `|` can't be performed between types `{}` and `{}`",
-            lhs_type, rhs_type
+            "Operator `|` can't be performed between types `{lhs_type}` and `{rhs_type}`"
         ))
         .with_location(operator.location)
         .as_boxed());
@@ -1925,8 +1914,7 @@ fn parse_bitwise_xor_expression(
 
         // Return error if this operator can't be performed even with implicit cast
         return Err(Diagnostic::error(&format!(
-            "Operator `#` can't be performed between types `{}` and `{}`",
-            lhs_type, rhs_type
+            "Operator `#` can't be performed between types `{lhs_type}` and `{rhs_type}`"
         ))
         .with_location(operator.location)
         .as_boxed());
@@ -2012,8 +2000,7 @@ fn parse_logical_xor_expression(
 
         // Return error if this operator can't be performed even with implicit cast
         return Err(Diagnostic::error(&format!(
-            "Operator `XOR` can't be performed between types `{}` and `{}`",
-            lhs_type, rhs_type
+            "Operator `XOR` can't be performed between types `{lhs_type}` and `{rhs_type}`"
         ))
         .with_location(operator.location)
         .as_boxed());
@@ -2100,8 +2087,7 @@ fn parse_bitwise_and_expression(
 
         // Return error if this operator can't be performed even with implicit cast
         return Err(Diagnostic::error(&format!(
-            "Operator `&&` can't be performed between types `{}` and `{}`",
-            lhs_type, rhs_type
+            "Operator `&&` can't be performed between types `{lhs_type}` and `{rhs_type}`"
         ))
         .with_location(operator.location)
         .as_boxed());
@@ -2158,8 +2144,7 @@ pub(crate) fn parse_contains_expression(
 
         // Return error if this operator can't be performed even with implicit cast
         return Err(Diagnostic::error(&format!(
-            "Operator `@>` can't be performed between types `{}` and `{}`",
-            lhs_type, rhs_type
+            "Operator `@>` can't be performed between types `{lhs_type}` and `{rhs_type}`"
         ))
         .with_location(operator.location)
         .as_boxed());
@@ -2216,8 +2201,7 @@ fn parse_contained_by_expression(
 
         // Return error if this operator can't be performed even with implicit cast
         return Err(Diagnostic::error(&format!(
-            "Operator `<@` can't be performed between types `{}` and `{}`",
-            lhs_type, rhs_type
+            "Operator `<@` can't be performed between types `{lhs_type}` and `{rhs_type}`"
         ))
         .with_location(operator.location)
         .as_boxed());
@@ -2307,8 +2291,7 @@ fn parse_bitwise_shift_expression(
 
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
-                "Operator `>>` can't be performed between types `{}` and `{}`",
-                lhs_type, rhs_type
+                "Operator `>>` can't be performed between types `{lhs_type}` and `{rhs_type}`"
             ))
             .with_location(operator.location)
             .as_boxed());
@@ -2377,8 +2360,7 @@ fn parse_bitwise_shift_expression(
 
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
-                "Operator `<<` can't be performed between types `{}` and `{}`",
-                lhs_type, rhs_type
+                "Operator `<<` can't be performed between types `{lhs_type}` and `{rhs_type}`"
             ))
             .with_location(operator.location)
             .as_boxed());
@@ -2470,8 +2452,7 @@ fn parse_term_expression(
 
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
-                "Operator `+` can't be performed between types `{}` and `{}`",
-                lhs_type, rhs_type
+                "Operator `+` can't be performed between types `{lhs_type}` and `{rhs_type}`"
             ))
             .add_help(
                 "You can use `CONCAT(Any, Any, ...Any)` function to concatenate values with different types",
@@ -2542,8 +2523,7 @@ fn parse_term_expression(
 
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
-                "Operator `-` can't be performed between types `{}` and `{}`",
-                lhs_type, rhs_type
+                "Operator `-` can't be performed between types `{lhs_type}` and `{rhs_type}`"
             ))
             .with_location(operator.location)
             .as_boxed());
@@ -2635,8 +2615,7 @@ fn parse_factor_expression(
 
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
-                "Operator `*` can't be performed between types `{}` and `{}`",
-                lhs_type, rhs_type
+                "Operator `*` can't be performed between types `{lhs_type}` and `{rhs_type}`"
             ))
             .with_location(operator.location)
             .as_boxed());
@@ -2705,8 +2684,7 @@ fn parse_factor_expression(
 
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
-                "Operator `/` can't be performed between types `{}` and `{}`",
-                lhs_type, rhs_type
+                "Operator `/` can't be performed between types `{lhs_type}` and `{rhs_type}`"
             ))
             .with_location(operator.location)
             .as_boxed());
@@ -2775,8 +2753,7 @@ fn parse_factor_expression(
 
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
-                "Operator `%` can't be performed between types `{}` and `{}`",
-                lhs_type, rhs_type
+                "Operator `%` can't be performed between types `{lhs_type}` and `{rhs_type}`"
             ))
             .with_location(operator.location)
             .as_boxed());
@@ -2844,8 +2821,7 @@ fn parse_factor_expression(
 
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
-                "Operator `^` can't be performed between types `{}` and `{}`",
-                lhs_type, rhs_type
+                "Operator `^` can't be performed between types `{lhs_type}` and `{rhs_type}`"
             ))
             .with_location(operator.location)
             .as_boxed());
@@ -2922,8 +2898,7 @@ fn parse_like_expression(
 
         // Return error if this operator can't be performed even with implicit cast
         return Err(Diagnostic::error(&format!(
-            "Operator `LIKE` can't be performed between types `{}` and `{}`",
-            lhs_type, rhs_type
+            "Operator `LIKE` can't be performed between types `{lhs_type}` and `{rhs_type}`"
         ))
         .with_location(operator_location)
         .as_boxed());
@@ -2980,8 +2955,7 @@ fn parse_glob_expression(
 
         // Return error if this operator can't be performed even with implicit cast
         return Err(Diagnostic::error(&format!(
-            "Operator `GLOB` can't be performed between types `{}` and `{}`",
-            lhs_type, rhs_type
+            "Operator `GLOB` can't be performed between types `{lhs_type}` and `{rhs_type}`"
         ))
         .with_location(glob_location)
         .as_boxed());
@@ -3026,8 +3000,7 @@ pub(crate) fn parse_index_or_slice_expression(
             // Check if LHS already support slice op
             if !lhs_type.can_perform_slice_op() {
                 return Err(Diagnostic::error(&format!(
-                    "Operator `[:]` can't be performed on type `{}`",
-                    lhs_type
+                    "Operator `[:]` can't be performed on type `{lhs_type}`"
                 ))
                 .with_location(calculate_safe_location(tokens, *position))
                 .as_boxed());
@@ -3216,8 +3189,7 @@ fn parse_prefix_unary_expression(
             };
 
             return Err(Diagnostic::error(&format!(
-                "Operator unary `{}` can't be performed on type `{}`",
-                op_name, rhs_type
+                "Operator unary `{op_name}` can't be performed on type `{rhs_type}`"
             ))
             .with_location(operator.location)
             .as_boxed());
@@ -3236,8 +3208,7 @@ fn parse_prefix_unary_expression(
 
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
-                "Operator unary `-` can't be performed on type `{}`",
-                rhs_type
+                "Operator unary `-` can't be performed on type `{rhs_type}`"
             ))
             .with_location(operator.location)
             .as_boxed());
@@ -3256,8 +3227,7 @@ fn parse_prefix_unary_expression(
 
             // Return error if this operator can't be performed even with implicit cast
             return Err(Diagnostic::error(&format!(
-                "Operator unary `~` can't be performed on type `{}`",
-                rhs_type
+                "Operator unary `~` can't be performed on type `{rhs_type}`"
             ))
             .with_location(operator.location)
             .as_boxed());
@@ -3316,8 +3286,7 @@ fn parse_between_expression(
         // Make sure LHS and Range start and end types all are equals
         if !lhs_type.equals(range_start_type) || !lhs_type.equals(range_end_type) {
             return Err(Diagnostic::error(&format!(
-                "Expect `BETWEEN` Left hand side type, range start and end to has same type but got {}, {} and {}",
-                lhs_type,
+                "Expect `BETWEEN` Left hand side type, range start and end to has same type but got {lhs_type}, {} and {}",
                 range_start_type.literal(),
                 range_end_type.literal()
             ))
@@ -3329,8 +3298,7 @@ fn parse_between_expression(
         // Make sure that type is supporting >= operator
         if !lhs_type.can_perform_gte_op_with().contains(&lhs_type) {
             return Err(Diagnostic::error(&format!(
-                "Type `{}` used in Between expression can't support `>=` operator",
-                lhs_type
+                "Type `{lhs_type}` used in Between expression can't support `>=` operator"
             ))
             .with_location(operator_location)
             .as_boxed());
@@ -3339,8 +3307,7 @@ fn parse_between_expression(
         // Make sure that type is supporting <= operator
         if !lhs_type.can_perform_lte_op_with().contains(&lhs_type) {
             return Err(Diagnostic::error(&format!(
-                "Type `{}` used in Between expression can't support `<=` operator",
-                lhs_type
+                "Type `{lhs_type}` used in Between expression can't support `<=` operator"
             ))
             .with_location(operator_location)
             .as_boxed());
@@ -3386,7 +3353,7 @@ pub(crate) fn parse_zero_or_more_values_with_comma_between(
         tokens,
         position,
         TokenKind::LeftParen,
-        &format!("Expect `(` after {}", expression_name),
+        &format!("Expect `(` after {expression_name}"),
     )?;
 
     let mut arguments: Vec<Box<dyn Expr>> = vec![];
@@ -4121,8 +4088,7 @@ fn register_current_table_fields_types(
 
         return Err(Diagnostic::error(
             &format!(
-                "Column name {} in table {} has no type registered in the schema",
-                field_name, table_name
+                "Column name {field_name} in table {table_name} has no type registered in the schema",
             )
             .to_string(),
         )

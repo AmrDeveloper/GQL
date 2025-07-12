@@ -86,7 +86,7 @@ fn select_references(
 
             if column_name == "type" {
                 let category = if let Some(category) = reference.name().category() {
-                    format!("{:?}", category)
+                    format!("{category:?}")
                 } else {
                     "Other".to_string()
                 };

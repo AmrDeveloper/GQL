@@ -25,8 +25,8 @@ impl BaseOutputPrinter for CSVPrinter {
 
         if let Ok(writer_content) = writer.into_inner() {
             if let Ok(content) = String::from_utf8(writer_content) {
-                if let Err(error) = writeln!(stdout(), "{}", content) {
-                    eprintln!("{}", error);
+                if let Err(error) = writeln!(stdout(), "{content}") {
+                    eprintln!("{error}");
                     std::process::exit(1);
                 }
             }

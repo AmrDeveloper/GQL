@@ -72,8 +72,7 @@ fn parse_primitive_type(
     }
 
     Err(Diagnostic::error(&format!(
-        "No available type in TypeTable with name `{}`",
-        type_literal
+        "No available type in TypeTable with name `{type_literal}`",
     ))
     .with_location(type_name_token.location)
     .as_boxed())
