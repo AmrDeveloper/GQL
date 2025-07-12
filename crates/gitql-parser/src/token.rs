@@ -394,6 +394,7 @@ fn resolve_symbol_kind(symbol: String) -> TokenKind {
 
         // Infinity and NaN
         "infinity" => TokenKind::Infinity,
+        "inf" => TokenKind::Infinity,
         "nan" => TokenKind::NaN,
 
         // As for alias
