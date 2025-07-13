@@ -61,27 +61,27 @@ pub fn register_std_range_function_signatures(map: &mut HashMap<&'static str, Si
 }
 
 pub fn int4range(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
-    Box::new(RangeValue {
-        start: inputs[0].clone(),
-        end: inputs[1].clone(),
-        base_type: Box::new(IntType),
-    })
+    Box::new(RangeValue::new(
+        inputs[0].clone(),
+        inputs[1].clone(),
+        Box::new(IntType),
+    ))
 }
 
 pub fn daterange(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
-    Box::new(RangeValue {
-        start: inputs[0].clone(),
-        end: inputs[1].clone(),
-        base_type: Box::new(DateType),
-    })
+    Box::new(RangeValue::new(
+        inputs[0].clone(),
+        inputs[1].clone(),
+        Box::new(DateType),
+    ))
 }
 
 pub fn tsrange(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
-    Box::new(RangeValue {
-        start: inputs[0].clone(),
-        end: inputs[1].clone(),
-        base_type: Box::new(DateTimeType),
-    })
+    Box::new(RangeValue::new(
+        inputs[0].clone(),
+        inputs[1].clone(),
+        Box::new(DateTimeType),
+    ))
 }
 
 pub fn isempty(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {

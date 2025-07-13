@@ -484,7 +484,7 @@ impl dyn Value {
     /// or None if this type it's called from wrong [`Value`]
     pub fn as_range(&self) -> Option<(Box<dyn Value>, Box<dyn Value>)> {
         if let Some(range_value) = self.as_any().downcast_ref::<RangeValue>() {
-            return Some((range_value.start.clone(), range_value.end.clone()));
+            return Some((range_value.lower.clone(), range_value.upper.clone()));
         }
         None
     }

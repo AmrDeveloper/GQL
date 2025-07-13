@@ -39,11 +39,11 @@ impl DataType for RangeType {
         vec![Box::new(self.clone()), self.base.clone()]
     }
 
-    fn can_perform_logical_or_op_with(&self) -> Vec<Box<dyn DataType>> {
+    fn can_perform_logical_and_op_with(&self) -> Vec<Box<dyn DataType>> {
         vec![Box::new(self.clone())]
     }
 
-    fn logical_or_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
+    fn logical_and_op_result_type(&self, _other: &Box<dyn DataType>) -> Box<dyn DataType> {
         Box::new(BoolType)
     }
 }
