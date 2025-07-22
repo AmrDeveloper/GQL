@@ -9,6 +9,7 @@ use gitql_ast::expression::BooleanExpr;
 use gitql_ast::expression::CallExpr;
 use gitql_ast::expression::CaseExpr;
 use gitql_ast::expression::CastExpr;
+use gitql_ast::expression::ColumnExpr;
 use gitql_ast::expression::ComparisonExpr;
 use gitql_ast::expression::ContainedByExpr;
 use gitql_ast::expression::ContainsExpr;
@@ -17,7 +18,6 @@ use gitql_ast::expression::ExprKind::*;
 use gitql_ast::expression::GlobExpr;
 use gitql_ast::expression::GlobalVariableExpr;
 use gitql_ast::expression::GroupComparisonExpr;
-use gitql_ast::expression::GroupExpr;
 use gitql_ast::expression::InExpr;
 use gitql_ast::expression::IndexExpr;
 use gitql_ast::expression::IntervalExpr;
@@ -28,6 +28,7 @@ use gitql_ast::expression::MemberAccessExpr;
 use gitql_ast::expression::Number;
 use gitql_ast::expression::NumberExpr;
 use gitql_ast::expression::RegexExpr;
+use gitql_ast::expression::RowExpr;
 use gitql_ast::expression::SliceExpr;
 use gitql_ast::expression::StringExpr;
 use gitql_ast::expression::SymbolExpr;
@@ -45,6 +46,7 @@ use gitql_core::values::float::FloatValue;
 use gitql_core::values::integer::IntValue;
 use gitql_core::values::interval::IntervalValue;
 use gitql_core::values::null::NullValue;
+use gitql_core::values::row::RowValue;
 use gitql_core::values::text::TextValue;
 use gitql_core::values::Value;
 
@@ -192,9 +194,13 @@ pub fn evaluate_expression(
             let expr = expression.as_any().downcast_ref::<CastExpr>().unwrap();
             evaluate_cast(env, expr, titles, object)
         }
-        Grouping => {
-            let expr = expression.as_any().downcast_ref::<GroupExpr>().unwrap();
-            evaluate_grouping(env, expr, titles, object)
+        Column => {
+            let expr = expression.as_any().downcast_ref::<ColumnExpr>().unwrap();
+            evaluate_column(env, expr, titles, object)
+        }
+        Row => {
+            let expr = expression.as_any().downcast_ref::<RowExpr>().unwrap();
+            evaluate_row(env, expr, titles, object)
         }
         MemberAccess => {
             let expr = expression
@@ -590,14 +596,27 @@ fn evaluate_cast(
     value.cast_op(&expr.result_type)
 }
 
-fn evaluate_grouping(
+fn evaluate_column(
     env: &mut Environment,
-    expr: &GroupExpr,
+    expr: &ColumnExpr,
     titles: &[String],
     object: &Vec<Box<dyn Value>>,
 ) -> Result<Box<dyn Value>, String> {
     let value = evaluate_expression(env, &expr.expr, titles, object)?;
     Ok(value)
+}
+
+fn evaluate_row(
+    env: &mut Environment,
+    expr: &RowExpr,
+    titles: &[String],
+    object: &Vec<Box<dyn Value>>,
+) -> Result<Box<dyn Value>, String> {
+    let mut values = Vec::with_capacity(expr.exprs.len());
+    for column in expr.exprs.iter() {
+        values.push(evaluate_expression(env, column, titles, object)?);
+    }
+    Ok(Box::new(RowValue::new(values, expr.row_type.to_owned())))
 }
 
 fn evaluate_member_access(

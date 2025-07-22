@@ -21,6 +21,7 @@ use gitql_ast::types::any::AnyType;
 use gitql_ast::types::array::ArrayType;
 use gitql_ast::types::boolean::BoolType;
 use gitql_ast::types::composite::CompositeType;
+use gitql_ast::types::row::RowType;
 use gitql_ast::types::undefined::UndefType;
 use gitql_ast::types::DataType;
 use gitql_core::environment::Environment;
@@ -3396,7 +3397,7 @@ pub(crate) fn parse_member_access_expression(
 
         // The syntax for member access is (composite).member
         // The composite expr must be in group, that make it different from table access table.name
-        if expr.kind() != ExprKind::Grouping {
+        if expr.kind() != ExprKind::Column {
             return Err(
                 Diagnostic::error("Dot token expect composite value between `(` and `)`")
                     .add_note("The syntax for accessing composite element is (composite).member")
@@ -3474,7 +3475,7 @@ fn parse_primary_expression(
         TokenKind::Symbol(_) => parse_symbol_expression(context, env, tokens, position),
         TokenKind::Array => parse_array_value_expression(context, env, tokens, position),
         TokenKind::LeftBracket => parse_array_value_expression(context, env, tokens, position),
-        TokenKind::LeftParen => parse_group_expression(context, env, tokens, position),
+        TokenKind::LeftParen => parse_column_or_row_expression(context, env, tokens, position),
         TokenKind::Case => parse_case_expression(context, env, tokens, position),
         TokenKind::Cast => parse_cast_call_expression(context, env, tokens, position),
         TokenKind::Benchmark => parse_benchmark_call_expression(context, env, tokens, position),
@@ -3721,27 +3722,57 @@ fn parse_array_value_expression(
     }))
 }
 
-fn parse_group_expression(
+fn parse_column_or_row_expression(
     context: &mut ParserContext,
     env: &mut Environment,
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
     // Consume '(' token
-    *position += 1;
+    consume_token_or_error(
+        tokens,
+        position,
+        TokenKind::LeftParen,
+        "Expect `(` at the start of column or row expression",
+    )?;
 
-    let expression = parse_expression(context, env, tokens, position)?;
-    if tokens[*position].kind != TokenKind::RightParen {
-        return Err(Diagnostic::error("Expect `)` to end group expression")
+    let mut exprs = vec![];
+    while !is_current_token(tokens, position, TokenKind::RightParen) {
+        exprs.push(parse_expression(context, env, tokens, position)?);
+
+        if !is_current_token(tokens, position, TokenKind::Comma) {
+            break;
+        }
+
+        // Consume `,`
+        *position += 1;
+    }
+
+    if exprs.is_empty() {
+        return Err(Diagnostic::error("Column or Row expression can't be empty")
             .with_location(calculate_safe_location(tokens, *position))
-            .add_help("Try to add ')' at the end of group expression")
             .as_boxed());
     }
 
     // Consume ')' token
-    *position += 1;
+    consume_token_or_error(
+        tokens,
+        position,
+        TokenKind::RightParen,
+        "Expect `(` at the end of column or row expression",
+    )?;
 
-    Ok(Box::new(GroupExpr { expr: expression }))
+    if exprs.len() == 1 {
+        let expr = exprs[0].clone();
+        Ok(Box::new(ColumnExpr { expr }))
+    } else {
+        let mut column_types = Vec::with_capacity(exprs.len());
+        for expr in exprs.iter() {
+            column_types.push(expr.expr_type());
+        }
+        let row_type = RowType::new(column_types);
+        Ok(Box::new(RowExpr { exprs, row_type }))
+    }
 }
 
 fn parse_case_expression(

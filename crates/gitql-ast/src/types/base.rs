@@ -4,6 +4,7 @@ use std::fmt;
 use dyn_clone::DynClone;
 
 use crate::expression::Expr;
+use crate::types::row::RowType;
 
 use super::any::AnyType;
 use super::array::ArrayType;
@@ -587,6 +588,11 @@ impl dyn DataType {
     /// Return true if this type is [`VarargsType`]
     pub fn is_varargs(&self) -> bool {
         self.as_any().downcast_ref::<VarargsType>().is_some()
+    }
+
+    /// Return true if this type is [`RowType`]
+    pub fn is_row(&self) -> bool {
+        self.as_any().downcast_ref::<RowType>().is_some()
     }
 
     /// Return true if this type is [`CompositeType`]

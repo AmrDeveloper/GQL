@@ -11,6 +11,7 @@ pub mod interval;
 pub mod null;
 pub mod optional;
 pub mod range;
+pub mod row;
 pub mod text;
 pub mod time;
 pub mod undefined;

@@ -18,6 +18,7 @@ use crate::operator::GroupComparisonOperator;
 use crate::operator::PrefixUnaryOperator;
 use crate::types::float::FloatType;
 use crate::types::interval::IntervalType;
+use crate::types::row::RowType;
 
 #[derive(PartialEq)]
 pub enum ExprKind {
@@ -50,7 +51,8 @@ pub enum ExprKind {
     IsNull,
     Null,
     Cast,
-    Grouping,
+    Column,
+    Row,
     MemberAccess,
 }
 
@@ -711,17 +713,37 @@ impl Expr for CastExpr {
 }
 
 #[derive(Clone)]
-pub struct GroupExpr {
+pub struct ColumnExpr {
     pub expr: Box<dyn Expr>,
 }
 
-impl Expr for GroupExpr {
+impl Expr for ColumnExpr {
     fn kind(&self) -> ExprKind {
-        ExprKind::Grouping
+        ExprKind::Column
     }
 
     fn expr_type(&self) -> Box<dyn DataType> {
         self.expr.expr_type().clone()
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+#[derive(Clone)]
+pub struct RowExpr {
+    pub exprs: Vec<Box<dyn Expr>>,
+    pub row_type: RowType,
+}
+
+impl Expr for RowExpr {
+    fn kind(&self) -> ExprKind {
+        ExprKind::Row
+    }
+
+    fn expr_type(&self) -> Box<dyn DataType> {
+        Box::new(self.row_type.clone())
     }
 
     fn as_any(&self) -> &dyn Any {

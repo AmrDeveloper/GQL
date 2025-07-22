@@ -9,6 +9,7 @@ pub mod integer;
 pub mod interval;
 pub mod null;
 pub mod range;
+pub mod row;
 pub mod text;
 pub mod time;
 
