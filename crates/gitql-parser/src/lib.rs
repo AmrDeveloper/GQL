@@ -13,5 +13,6 @@ pub(crate) mod parse_function_call;
 pub(crate) mod parse_interval;
 pub(crate) mod parse_into;
 pub(crate) mod parse_ordering;
+pub(crate) mod parse_string_matchers;
 pub(crate) mod parse_type;
 pub mod parser;
