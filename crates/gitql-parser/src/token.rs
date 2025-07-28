@@ -67,6 +67,7 @@ pub enum TokenKind {
     Interval,
 
     // Values
+    Row,
     Symbol(String),
     GlobalVariable(String),
     String(String),
@@ -187,6 +188,7 @@ impl Display for TokenKind {
             TokenKind::Interval => "INTERVAL",
 
             // Values
+            TokenKind::Row => "Row",
             TokenKind::Symbol(literal) => literal,
             TokenKind::GlobalVariable(literal) => literal,
             TokenKind::String(string) => string,
@@ -385,6 +387,8 @@ fn resolve_symbol_kind(symbol: String) -> TokenKind {
         "all" => TokenKind::All,
         "some" => TokenKind::Some,
         "any" => TokenKind::Any,
+
+        "row" => TokenKind::Row,
 
         // True, False and Null
         "true" => TokenKind::True,

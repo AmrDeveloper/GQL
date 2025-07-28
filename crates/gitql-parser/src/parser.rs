@@ -3267,7 +3267,10 @@ fn parse_primary_expression(
         TokenKind::Symbol(_) => parse_symbol_expression(context, env, tokens, position),
         TokenKind::Array => parse_array_value_expression(context, env, tokens, position),
         TokenKind::LeftBracket => parse_array_value_expression(context, env, tokens, position),
-        TokenKind::LeftParen => parse_column_or_row_expression(context, env, tokens, position),
+        TokenKind::LeftParen => {
+            parse_column_or_row_expression(context, env, tokens, position, false)
+        }
+        TokenKind::Row => parse_column_or_row_expression(context, env, tokens, position, true),
         TokenKind::Case => parse_case_expression(context, env, tokens, position),
         TokenKind::Cast => parse_cast_call_expression(context, env, tokens, position),
         TokenKind::Benchmark => parse_benchmark_call_expression(context, env, tokens, position),
@@ -3519,26 +3522,20 @@ fn parse_column_or_row_expression(
     env: &mut Environment,
     tokens: &[Token],
     position: &mut usize,
+    has_row_keyword: bool,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
-    // Consume '(' token
-    consume_token_or_error(
-        tokens,
-        position,
-        TokenKind::LeftParen,
-        "Expect `(` at the start of column or row expression",
-    )?;
-
-    let mut exprs = vec![];
-    while !is_current_token(tokens, position, TokenKind::RightParen) {
-        exprs.push(parse_expression(context, env, tokens, position)?);
-
-        if !is_current_token(tokens, position, TokenKind::Comma) {
-            break;
-        }
-
-        // Consume `,`
+    // Consume 'row' keyword if present
+    if has_row_keyword {
         *position += 1;
     }
+
+    let exprs = parse_zero_or_more_values_with_comma_between(
+        context,
+        env,
+        tokens,
+        position,
+        "Column or Row",
+    )?;
 
     if exprs.is_empty() {
         return Err(Diagnostic::error("Column or Row expression can't be empty")
@@ -3546,24 +3543,16 @@ fn parse_column_or_row_expression(
             .as_boxed());
     }
 
-    // Consume ')' token
-    consume_token_or_error(
-        tokens,
-        position,
-        TokenKind::RightParen,
-        "Expect `(` at the end of column or row expression",
-    )?;
-
-    if exprs.len() == 1 {
-        let expr = exprs[0].clone();
-        Ok(Box::new(ColumnExpr { expr }))
-    } else {
+    if has_row_keyword || exprs.len() > 1 {
         let mut column_types = Vec::with_capacity(exprs.len());
         for expr in exprs.iter() {
             column_types.push(expr.expr_type());
         }
         let row_type = RowType::new(column_types);
         Ok(Box::new(RowExpr { exprs, row_type }))
+    } else {
+        let expr = exprs[0].clone();
+        Ok(Box::new(ColumnExpr { expr }))
     }
 }
 
