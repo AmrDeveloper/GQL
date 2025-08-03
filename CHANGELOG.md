@@ -1,5 +1,14 @@
 # Change Log
 
+## Version 0.40.0 _(2025-08-03)_
+
+- Extend the list of string representation of true & false state.
+- Always check the posibility for implicit casting before explicit one.
+- Support `inf` keyword as alias for infinity.
+- Add support for Range lower and upper bounds.
+- Implement `Row` type and value.
+- Add support for `Row` keyword.
+
 ## Version 0.39.0 _(2025-06-06)_
 
 - Improve the printers to catch pipe errors.
