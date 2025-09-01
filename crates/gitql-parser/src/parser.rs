@@ -1,3 +1,4 @@
+use core::f64;
 use std::collections::HashMap;
 use std::vec;
 
@@ -3260,8 +3261,8 @@ fn parse_primary_expression(
     }
 
     match &tokens[*position].kind {
-        TokenKind::Integer(_) => parse_const_integer_expression(tokens, position),
-        TokenKind::Float(_) => parse_const_float_expression(tokens, position),
+        TokenKind::Integer(value) => Ok(Box::new(NumberExpr::int(*value))),
+        TokenKind::Float(value) => Ok(Box::new(NumberExpr::float(*value))),
         TokenKind::Infinity => parse_float_infinity_or_nan_expression(tokens, position),
         TokenKind::NaN => parse_float_infinity_or_nan_expression(tokens, position),
         TokenKind::Symbol(_) => parse_symbol_expression(context, env, tokens, position),
@@ -3297,64 +3298,17 @@ fn parse_primary_expression(
     }
 }
 
-fn parse_const_integer_expression(
-    tokens: &[Token],
-    position: &mut usize,
-) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
-    match tokens[*position].kind {
-        TokenKind::Integer(integer) => {
-            *position += 1;
-            let value = Number::Int(integer);
-            Ok(Box::new(NumberExpr { value }))
-        }
-        _ => Err(Diagnostic::error("Too big Integer value")
-            .add_help("Try to use smaller value")
-            .add_note(&format!(
-                "Integer value must be between {} and {}",
-                i64::MIN,
-                i64::MAX
-            ))
-            .with_location(tokens[*position].location)
-            .as_boxed()),
-    }
-}
-
-fn parse_const_float_expression(
-    tokens: &[Token],
-    position: &mut usize,
-) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
-    match tokens[*position].kind {
-        TokenKind::Float(float) => {
-            *position += 1;
-            let value = Number::Float(float);
-            Ok(Box::new(NumberExpr { value }))
-        }
-        _ => Err(Diagnostic::error("Too big Float value")
-            .add_help("Try to use smaller value")
-            .add_note(&format!(
-                "Float value must be between {} and {}",
-                f64::MIN,
-                f64::MAX
-            ))
-            .with_location(tokens[*position].location)
-            .as_boxed()),
-    }
-}
-
 fn parse_float_infinity_or_nan_expression(
     tokens: &[Token],
     position: &mut usize,
 ) -> Result<Box<dyn Expr>, Box<Diagnostic>> {
-    if tokens[*position].kind == TokenKind::Infinity {
-        *position += 1;
-        let value = Number::Float(f64::INFINITY);
-        return Ok(Box::new(NumberExpr { value }));
-    }
-
     *position += 1;
-
-    let value = Number::Float(f64::NAN);
-    Ok(Box::new(NumberExpr { value }))
+    let value = if tokens[*position].kind == TokenKind::Infinity {
+        f64::INFINITY
+    } else {
+        f64::NAN
+    };
+    Ok(Box::new(NumberExpr::float(value)))
 }
 
 fn parse_symbol_expression(

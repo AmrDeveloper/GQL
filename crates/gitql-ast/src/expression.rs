@@ -191,6 +191,20 @@ pub struct NumberExpr {
     pub value: Number,
 }
 
+impl NumberExpr {
+    pub fn int(int_value: i64) -> Self {
+        NumberExpr {
+            value: Number::Int(int_value),
+        }
+    }
+
+    pub fn float(int_value: f64) -> Self {
+        NumberExpr {
+            value: Number::Float(int_value),
+        }
+    }
+}
+
 impl Expr for NumberExpr {
     fn kind(&self) -> ExprKind {
         ExprKind::Number
