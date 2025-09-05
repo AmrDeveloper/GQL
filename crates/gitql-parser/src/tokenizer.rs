@@ -76,25 +76,32 @@ impl Tokenizer {
             // Number
             if char.is_numeric() {
                 if char == '0' && self.index + 1 < len {
-                    if self.content[self.index + 1] == 'x' {
-                        self.index += 2;
-                        self.column_start += 2;
-                        tokens.push(self.consume_hex_number()?);
-                        continue;
-                    }
-
-                    if self.content[self.index + 1] == 'b' {
-                        self.index += 2;
-                        self.column_start += 2;
-                        tokens.push(self.consume_binary_number()?);
-                        continue;
-                    }
-
-                    if self.content[self.index + 1] == 'o' {
-                        self.index += 2;
-                        self.column_start += 2;
-                        tokens.push(self.consume_octal_number()?);
-                        continue;
+                    match self.content[self.index + 1] {
+                        // bindigits
+                        'b' | 'B' => {
+                            self.index += 2;
+                            self.column_start += 2;
+                            tokens.push(self.consume_binary_number()?);
+                            continue;
+                        }
+                        // hexdigits
+                        'x' | 'X' => {
+                            self.index += 2;
+                            self.column_start += 2;
+                            tokens.push(self.consume_hex_number()?);
+                            continue;
+                        }
+                        // octdigits
+                        'o' | 'O' => {
+                            self.index += 2;
+                            self.column_start += 2;
+                            tokens.push(self.consume_octal_number()?);
+                            continue;
+                        }
+                        _ => {
+                            tokens.push(self.consume_number()?);
+                            continue;
+                        }
                     }
                 }
 
@@ -589,7 +596,7 @@ impl Tokenizer {
         let string: String = literal.iter().collect();
         let literal_num = string.replace('_', "");
 
-        const OCTAL_RADIX: u32 = 2;
+        const OCTAL_RADIX: u32 = 8;
         match i64::from_str_radix(&literal_num, OCTAL_RADIX) {
             Ok(integer) => {
                 let location = self.current_source_location();
