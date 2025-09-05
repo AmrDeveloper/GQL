@@ -534,14 +534,11 @@ impl Tokenizer {
 
     fn consume_binary_number(&mut self) -> Result<Token, Box<Diagnostic>> {
         let start_index = self.index;
-        let mut has_digit = false;
-
         while self.has_next() && self.is_current_char_func(|c| c == '_' || c == '0' || c >= '1') {
             self.advance();
-            has_digit = true;
         }
 
-        if !has_digit {
+        if start_index == self.index {
             return Err(
                 Diagnostic::error("Missing digits after the integer base prefix")
                     .add_help("Expect at least one binary digits after the prefix 0b")
@@ -574,15 +571,12 @@ impl Tokenizer {
 
     fn consume_octal_number(&mut self) -> Result<Token, Box<Diagnostic>> {
         let start_index = self.index;
-        let mut has_digit = false;
-
         while self.has_next() && self.is_current_char_func(|c| c == '_' || ('0'..='8').contains(&c))
         {
             self.advance();
-            has_digit = true;
         }
 
-        if !has_digit {
+        if start_index == self.index {
             return Err(
                 Diagnostic::error("Missing digits after the integer base prefix")
                     .add_help("Expect at least one octal digits after the prefix 0o")
@@ -615,14 +609,11 @@ impl Tokenizer {
 
     fn consume_hex_number(&mut self) -> Result<Token, Box<Diagnostic>> {
         let start_index = self.index;
-        let mut has_digit = false;
-
         while self.has_next() && self.is_current_char_func(|c| c == '_' || c.is_ascii_hexdigit()) {
             self.advance();
-            has_digit = true;
         }
 
-        if !has_digit {
+        if start_index == self.index {
             return Err(
                 Diagnostic::error("Missing digits after the integer base prefix")
                     .add_help("Expect at least one hex digits after the prefix 0x")
