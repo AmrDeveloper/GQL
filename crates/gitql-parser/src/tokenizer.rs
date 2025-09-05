@@ -63,7 +63,7 @@ impl Tokenizer {
             // @> or Global Variable Symbol
             if char == '@' {
                 // @>
-                if self.index + 1 < len && self.content[self.index + 1] == '>' {
+                if self.is_next_char('>') {
                     self.index += 2;
                     let location = self.current_source_location();
                     tokens.push(Token::new(TokenKind::AtRightArrow, location));
@@ -139,8 +139,8 @@ impl Tokenizer {
             // Minus
             if char == '-' {
                 // Ignore single line comment which from -- until the end of the current line
-                if self.index + 1 < self.content_len && self.content[self.index + 1] == '-' {
-                    self.ignore_single_line_comment();
+                if self.is_next_char('-') {
+                    self.consume_single_line_comment();
                     continue;
                 }
 
@@ -161,8 +161,8 @@ impl Tokenizer {
             // Slash
             if char == '/' {
                 // Ignore C style comment which from /* comment */
-                if self.index + 1 < self.content_len && self.content[self.index + 1] == '*' {
-                    self.ignore_c_style_comment()?;
+                if self.is_next_char('*') {
+                    self.consume_c_style_block_comment()?;
                     continue;
                 }
 
@@ -201,7 +201,7 @@ impl Tokenizer {
                 let location = self.current_source_location();
 
                 self.advance();
-                let kind = if self.index < len && self.content[self.index] == '|' {
+                let kind = if self.is_current_char('|') {
                     self.advance();
                     TokenKind::OrOr
                 } else {
@@ -217,7 +217,7 @@ impl Tokenizer {
                 let location = self.current_source_location();
 
                 self.advance();
-                let kind = if self.index < len && self.content[self.index] == '&' {
+                let kind = if self.is_current_char('&') {
                     self.advance();
                     TokenKind::AndAnd
                 } else {
@@ -257,10 +257,10 @@ impl Tokenizer {
                 let location = self.current_source_location();
 
                 self.advance();
-                let kind = if self.index < len && self.content[self.index] == '=' {
+                let kind = if self.is_current_char('=') {
                     self.advance();
                     TokenKind::GreaterEqual
-                } else if self.index < len && self.content[self.index] == '>' {
+                } else if self.is_current_char('>') {
                     self.advance();
                     TokenKind::BitwiseRightShift
                 } else {
@@ -276,21 +276,21 @@ impl Tokenizer {
                 let location = self.current_source_location();
 
                 self.advance();
-                let kind = if self.index < len && self.content[self.index] == '=' {
+                let kind = if self.is_current_char('=') {
                     self.advance();
-                    if self.index < len && self.content[self.index] == '>' {
+                    if self.is_current_char('>') {
                         self.advance();
                         TokenKind::NullSafeEqual
                     } else {
                         TokenKind::LessEqual
                     }
-                } else if self.index < len && self.content[self.index] == '<' {
+                } else if self.is_current_char('<') {
                     self.advance();
                     TokenKind::BitwiseLeftShift
-                } else if self.index < len && self.content[self.index] == '>' {
+                } else if self.is_current_char('>') {
                     self.advance();
                     TokenKind::BangEqual
-                } else if self.index < len && self.content[self.index] == '@' {
+                } else if self.is_current_char('@') {
                     self.advance();
                     TokenKind::ArrowRightAt
                 } else {
@@ -314,7 +314,7 @@ impl Tokenizer {
                 let location = self.current_source_location();
 
                 // :=
-                if self.index + 1 < len && self.content[self.index + 1] == '=' {
+                if self.is_next_char('=') {
                     tokens.push(Token::new(TokenKind::ColonEqual, location));
                     // Advance `:=`
                     self.advance_n(2);
@@ -322,7 +322,7 @@ impl Tokenizer {
                 }
 
                 // ::
-                if self.index + 1 < len && self.content[self.index + 1] == ':' {
+                if self.is_next_char(':') {
                     tokens.push(Token::new(TokenKind::ColonColon, location));
                     // Advance `::`
                     self.advance_n(2);
@@ -685,7 +685,7 @@ impl Tokenizer {
         self.advance();
 
         let mut buffer = String::new();
-        while self.has_next() && self.content[self.index] != around {
+        while self.has_next() && !self.is_current_char(around) {
             if !self.is_current_char('\\') {
                 buffer.push(self.content[self.index]);
                 self.advance();
@@ -744,7 +744,7 @@ impl Tokenizer {
         Ok(buffer)
     }
 
-    fn ignore_single_line_comment(&mut self) {
+    fn consume_single_line_comment(&mut self) {
         // Advance `--`
         self.advance_n(2);
 
@@ -758,15 +758,25 @@ impl Tokenizer {
         self.column_end = 0;
     }
 
-    fn ignore_c_style_comment(&mut self) -> Result<(), Box<Diagnostic>> {
+    fn consume_c_style_block_comment(&mut self) -> Result<(), Box<Diagnostic>> {
         // Advance `/*`
         self.advance_n(2);
 
-        while self.index + 1 < self.content_len
-            && (!self.is_current_char('*') && self.content[self.index + 1] != '/')
-        {
+        let mut number_nested_block_start = 0;
+        loop {
+            if self.is_current_char('/') && self.is_next_char('*') {
+                number_nested_block_start += 1;
+            }
+
             // Advance char
             self.advance();
+
+            if self.is_current_char('*') && self.is_next_char('/') {
+                number_nested_block_start -= 1;
+                if number_nested_block_start < 0 {
+                    break;
+                }
+            }
         }
 
         if self.index + 2 > self.content_len {
@@ -792,11 +802,15 @@ impl Tokenizer {
     }
 
     fn is_current_char(&self, ch: char) -> bool {
-        self.content[self.index] == ch
+        self.index < self.content_len && self.content[self.index] == ch
+    }
+
+    fn is_next_char(&self, ch: char) -> bool {
+        self.index + 1 < self.content_len && self.content[self.index + 1] == ch
     }
 
     fn is_current_char_func(&self, func: fn(char) -> bool) -> bool {
-        func(self.content[self.index])
+        self.index < self.content_len && func(self.content[self.index])
     }
 
     fn has_next(&self) -> bool {
