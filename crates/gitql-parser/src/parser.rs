@@ -3261,8 +3261,14 @@ fn parse_primary_expression(
     }
 
     match &tokens[*position].kind {
-        TokenKind::Integer(value) => Ok(Box::new(NumberExpr::int(*value))),
-        TokenKind::Float(value) => Ok(Box::new(NumberExpr::float(*value))),
+        TokenKind::Integer(value) => {
+            *position += 1;
+            Ok(Box::new(NumberExpr::int(*value)))
+        }
+        TokenKind::Float(value) => {
+            *position += 1;
+            Ok(Box::new(NumberExpr::float(*value)))
+        }
         TokenKind::Infinity => parse_float_infinity_or_nan_expression(tokens, position),
         TokenKind::NaN => parse_float_infinity_or_nan_expression(tokens, position),
         TokenKind::Symbol(_) => parse_symbol_expression(context, env, tokens, position),
