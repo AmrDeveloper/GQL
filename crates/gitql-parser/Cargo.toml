@@ -12,3 +12,4 @@ categories = ["command-line-utilities"]
 [dependencies]
 gitql-core = { workspace = true }
 gitql-ast = { workspace = true }
+phf = { workspace = true, features = ["macros"] }

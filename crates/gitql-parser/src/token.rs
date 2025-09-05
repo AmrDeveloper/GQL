@@ -2,7 +2,9 @@ use std::fmt::Display;
 use std::fmt::Formatter;
 use std::fmt::Result;
 
-#[derive(PartialEq)]
+use phf::phf_map;
+
+#[derive(Clone, PartialEq)]
 pub enum TokenKind {
     Do,
     Set,
@@ -119,6 +121,115 @@ pub enum TokenKind {
     Dot,
     Semicolon,
 }
+
+pub static GITQL_RESERVED_KEYWORDS: phf::Map<&'static str, TokenKind> = phf_map! {
+    // Reserved keywords
+    "do" => TokenKind::Do,
+    "set" => TokenKind::Set,
+    "select" => TokenKind::Select,
+    "distinct" => TokenKind::Distinct,
+    "from" => TokenKind::From,
+    "where" => TokenKind::Where,
+    "qualify" => TokenKind::Qualify,
+    "limit" => TokenKind::Limit,
+    "offset" => TokenKind::Offset,
+    "order" => TokenKind::Order,
+    "using" => TokenKind::Using,
+    "case" => TokenKind::Case,
+    "when" => TokenKind::When,
+    "then" => TokenKind::Then,
+    "else" => TokenKind::Else,
+    "end" => TokenKind::End,
+    "between" => TokenKind::Between,
+    "in" => TokenKind::In,
+    "is" => TokenKind::Is,
+    "on" => TokenKind::On,
+    "not" => TokenKind::Not,
+    "like" => TokenKind::Like,
+    "glob" => TokenKind::Glob,
+    "describe" => TokenKind::Describe,
+    "show" => TokenKind::Show,
+    "regexp" => TokenKind::RegExp,
+
+    "cast" => TokenKind::Cast,
+    "benchmark" => TokenKind::Benchmark,
+
+    "interval" => TokenKind::Interval,
+
+    // Select into
+    "into" => TokenKind::Into,
+    "outfile" => TokenKind::Outfile,
+    "dumpfile" => TokenKind::Dumpfile,
+    "lines" => TokenKind::Lines,
+    "fields" => TokenKind::Fields,
+    "enclosed" => TokenKind::Enclosed,
+    "terminated" => TokenKind::Terminated,
+
+    // Joins
+    "join" => TokenKind::Join,
+    "left" => TokenKind::Left,
+    "right" => TokenKind::Right,
+    "cross" => TokenKind::Cross,
+    "inner" => TokenKind::Inner,
+    "outer" => TokenKind::Outer,
+
+    // Grouping
+    "group" => TokenKind::Group,
+    "by" => TokenKind::By,
+    "having" => TokenKind::Having,
+    "with" => TokenKind::With,
+    "rollup" => TokenKind::Rollup,
+
+    // Between kind
+    "symmetric" => TokenKind::Symmetric,
+    "asymmetric" => TokenKind::Asymmetric,
+
+    // Integer division and Modulo operator
+    "div" => TokenKind::Slash,
+    "mod" => TokenKind::Percentage,
+
+    // Logical Operators
+    "or" => TokenKind::OrKeyword,
+    "and" => TokenKind::AndKeyword,
+    "xor" => TokenKind::XorKeyword,
+
+    // Group Operators
+    "all" => TokenKind::All,
+    "some" => TokenKind::Some,
+    "any" => TokenKind::Any,
+
+    "row" => TokenKind::Row,
+
+    // True, False and Null
+    "true" => TokenKind::True,
+    "false" => TokenKind::False,
+    "null" => TokenKind::Null,
+    "nulls" => TokenKind::Nulls,
+
+    // Infinity and NaN
+    "infinity" => TokenKind::Infinity,
+    "inf" => TokenKind::Infinity,
+    "nan" => TokenKind::NaN,
+
+    // As for alias
+    "as" => TokenKind::As,
+
+    // Order by DES and ASC
+    "asc" => TokenKind::Ascending,
+     "desc" => TokenKind::Descending,
+
+    // Order by null ordering policy Null first and last
+    "first" => TokenKind::First,
+    "last" => TokenKind::Last,
+
+    // Array data type
+    "array" => TokenKind::Array,
+
+    // Over
+    "window" => TokenKind::Window,
+    "over" => TokenKind::Over,
+    "partition" => TokenKind::Partition,
+};
 
 impl Display for TokenKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
@@ -293,13 +404,6 @@ impl Token {
         Token { kind, location }
     }
 
-    pub fn new_symbol(symbol: String, location: SourceLocation) -> Token {
-        Token {
-            kind: resolve_symbol_kind(symbol),
-            location,
-        }
-    }
-
     pub fn has_kind(&self, kind: TokenKind) -> bool {
         self.kind == kind
     }
@@ -308,119 +412,5 @@ impl Token {
 impl Display for Token {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         f.write_str(&self.kind.to_string())
-    }
-}
-
-fn resolve_symbol_kind(symbol: String) -> TokenKind {
-    match symbol.to_lowercase().as_str() {
-        // Reserved keywords
-        "do" => TokenKind::Do,
-        "set" => TokenKind::Set,
-        "select" => TokenKind::Select,
-        "distinct" => TokenKind::Distinct,
-        "from" => TokenKind::From,
-        "where" => TokenKind::Where,
-        "qualify" => TokenKind::Qualify,
-        "limit" => TokenKind::Limit,
-        "offset" => TokenKind::Offset,
-        "order" => TokenKind::Order,
-        "using" => TokenKind::Using,
-        "case" => TokenKind::Case,
-        "when" => TokenKind::When,
-        "then" => TokenKind::Then,
-        "else" => TokenKind::Else,
-        "end" => TokenKind::End,
-        "between" => TokenKind::Between,
-        "in" => TokenKind::In,
-        "is" => TokenKind::Is,
-        "on" => TokenKind::On,
-        "not" => TokenKind::Not,
-        "like" => TokenKind::Like,
-        "glob" => TokenKind::Glob,
-        "describe" => TokenKind::Describe,
-        "show" => TokenKind::Show,
-        "regexp" => TokenKind::RegExp,
-
-        "cast" => TokenKind::Cast,
-        "benchmark" => TokenKind::Benchmark,
-
-        "interval" => TokenKind::Interval,
-
-        // Select into
-        "into" => TokenKind::Into,
-        "outfile" => TokenKind::Outfile,
-        "dumpfile" => TokenKind::Dumpfile,
-        "lines" => TokenKind::Lines,
-        "fields" => TokenKind::Fields,
-        "enclosed" => TokenKind::Enclosed,
-        "terminated" => TokenKind::Terminated,
-
-        // Joins
-        "join" => TokenKind::Join,
-        "left" => TokenKind::Left,
-        "right" => TokenKind::Right,
-        "cross" => TokenKind::Cross,
-        "inner" => TokenKind::Inner,
-        "outer" => TokenKind::Outer,
-
-        // Grouping
-        "group" => TokenKind::Group,
-        "by" => TokenKind::By,
-        "having" => TokenKind::Having,
-        "with" => TokenKind::With,
-        "rollup" => TokenKind::Rollup,
-
-        // Between kind
-        "symmetric" => TokenKind::Symmetric,
-        "asymmetric" => TokenKind::Asymmetric,
-
-        // Integer division and Modulo operator
-        "div" => TokenKind::Slash,
-        "mod" => TokenKind::Percentage,
-
-        // Logical Operators
-        "or" => TokenKind::OrKeyword,
-        "and" => TokenKind::AndKeyword,
-        "xor" => TokenKind::XorKeyword,
-
-        // Group Operators
-        "all" => TokenKind::All,
-        "some" => TokenKind::Some,
-        "any" => TokenKind::Any,
-
-        "row" => TokenKind::Row,
-
-        // True, False and Null
-        "true" => TokenKind::True,
-        "false" => TokenKind::False,
-        "null" => TokenKind::Null,
-        "nulls" => TokenKind::Nulls,
-
-        // Infinity and NaN
-        "infinity" => TokenKind::Infinity,
-        "inf" => TokenKind::Infinity,
-        "nan" => TokenKind::NaN,
-
-        // As for alias
-        "as" => TokenKind::As,
-
-        // Order by DES and ASC
-        "asc" => TokenKind::Ascending,
-        "desc" => TokenKind::Descending,
-
-        // Order by null ordering policy Null first and last
-        "first" => TokenKind::First,
-        "last" => TokenKind::Last,
-
-        // Array data type
-        "array" => TokenKind::Array,
-
-        // Over
-        "window" => TokenKind::Window,
-        "over" => TokenKind::Over,
-        "partition" => TokenKind::Partition,
-
-        // Identifier
-        _ => TokenKind::Symbol(symbol),
     }
 }

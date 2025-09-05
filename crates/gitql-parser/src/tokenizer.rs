@@ -2,6 +2,7 @@ use crate::diagnostic::Diagnostic;
 use crate::token::SourceLocation;
 use crate::token::Token;
 use crate::token::TokenKind;
+use crate::token::GITQL_RESERVED_KEYWORDS;
 
 pub struct Tokenizer {
     pub(crate) content: Vec<char>,
@@ -453,8 +454,11 @@ impl Tokenizer {
         let mut string: String = literal.iter().collect();
         string = string.to_lowercase();
 
-        let location = self.current_source_location();
-        Token::new_symbol(string, location)
+        let kind = GITQL_RESERVED_KEYWORDS
+            .get(string.as_str())
+            .cloned()
+            .unwrap_or(TokenKind::Symbol(string));
+        Token::new(kind, self.current_source_location())
     }
 
     fn consume_backticks_identifier(&mut self) -> Result<Token, Box<Diagnostic>> {

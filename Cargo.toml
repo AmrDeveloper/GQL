@@ -34,6 +34,7 @@ chrono = { version = "0.4.41" }
 regex = { version = "1.11.1" }
 rand = { version = "0.9.2" }
 indexmap = { version = "2.10.0" }
+phf = { version = "0.13.1" }
 linked-hash-map = { version = "0.5.6" }
 uuid = { version = "1.17.0", features = ["v4"] }
 gitql-core = { path = "./crates/gitql-core", version = "0.17.0" }
@@ -60,6 +61,9 @@ lineeditor = "0.4.1"
 
 [dev-dependencies]
 criterion = "0.7.0"
+
+[build-dependencies]
+phf_codegen = "0.13.1"
 
 # Run all benchmarks with `cargo bench`
 # Run individual benchmarks like `cargo bench -- <regex>` e.g. `cargo bench -- tokenizer`
