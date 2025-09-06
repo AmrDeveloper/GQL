@@ -21,3 +21,4 @@
 | ARRAY_DIMS      | Array           | Text           | Returns a text representation of the array's dimensions.                          |
 | ARRAY_REPLACE   | Array, Any, Any | Array          | Replaces each array element equal to the second argument with the third argument. |
 | TRIM_ARRAY      | Array, Integer  | Array          | Remove the last n elements from the array.                                        |
+| CARDINALITY     | Array           | Integer        | Counts the total number of array elements.                                        |

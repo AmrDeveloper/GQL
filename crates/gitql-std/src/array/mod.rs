@@ -33,6 +33,7 @@ pub fn register_std_array_functions(map: &mut HashMap<&'static str, StandardFunc
     map.insert("array_dims", array_dims);
     map.insert("array_replace", array_replace);
     map.insert("trim_array", array_trim);
+    map.insert("cardinality", array_cardinality);
 }
 
 #[inline(always)]
@@ -159,6 +160,13 @@ pub fn register_std_array_function_signatures(map: &mut HashMap<&'static str, Si
             }),
         },
     );
+    map.insert(
+        "cardinality",
+        Signature {
+            parameters: vec![Box::new(ArrayType::new(Box::new(AnyType)))],
+            return_type: Box::new(IntType),
+        },
+    );
 }
 
 pub fn array_append(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
@@ -266,4 +274,21 @@ pub fn array_trim(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
     let n = i64::min(array.len().try_into().unwrap(), inputs[1].as_int().unwrap());
     array.truncate(array_len - n as usize);
     Box::new(ArrayValue::new(array, array_type))
+}
+
+#[allow(clippy::borrowed_box)]
+pub fn array_cardinality(inputs: &[Box<dyn Value>]) -> Box<dyn Value> {
+    fn calculate_array_cardinality(value: &Box<dyn Value>) -> usize {
+        if let Some(array) = value.as_array() {
+            if array.is_empty() {
+                return 0;
+            }
+
+            return array.len() * calculate_array_cardinality(&array[0]);
+        }
+        1
+    }
+
+    let cardinality: usize = calculate_array_cardinality(&inputs[0]);
+    Box::new(IntValue::new(cardinality as i64))
 }
