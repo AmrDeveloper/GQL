@@ -250,7 +250,7 @@ impl Statement for QualifyStatement {
     }
 
     fn kind(&self) -> StatementKind {
-        StatementKind::Where
+        StatementKind::Qualify
     }
 }
 
