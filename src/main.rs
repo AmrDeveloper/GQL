@@ -55,7 +55,7 @@ fn main() {
             let mut env = create_gitql_environment();
             let query =
                 fs::read_to_string(script_file).expect("Should have been able to read the file");
-            execute_gitql_query(query, &arguments, &repos, &mut env, &mut reporter);
+            execute_gitql_query(&query, &arguments, &repos, &mut env, &mut reporter);
         }
         Command::QueryMode(query, arguments) => {
             let mut reporter = diagnostic_reporter::DiagnosticReporter::default();
@@ -70,8 +70,7 @@ fn main() {
 
             let repos = git_repos_result.ok().unwrap();
             let mut env = create_gitql_environment();
-
-            execute_gitql_query(query, &arguments, &repos, &mut env, &mut reporter);
+            execute_gitql_query(&query, &arguments, &repos, &mut env, &mut reporter);
         }
         Command::Help => {
             arguments::print_help_list();
@@ -117,7 +116,7 @@ fn launch_gitql_repl(arguments: &Arguments) {
                 }
 
                 execute_gitql_query(
-                    input.to_owned(),
+                    &input,
                     arguments,
                     &git_repositories,
                     &mut global_env,
@@ -162,7 +161,7 @@ fn launch_gitql_repl(arguments: &Arguments) {
         }
 
         execute_gitql_query(
-            stdin_input.to_owned(),
+            stdin_input,
             arguments,
             &git_repositories,
             &mut global_env,
@@ -175,17 +174,17 @@ fn launch_gitql_repl(arguments: &Arguments) {
 }
 
 fn execute_gitql_query(
-    query: String,
+    query: &str,
     arguments: &Arguments,
     repos: &[gix::Repository],
     env: &mut Environment,
     reporter: &mut DiagnosticReporter,
 ) {
     let front_start = std::time::Instant::now();
-    let tokenizer_result = Tokenizer::tokenize(query.clone());
+    let tokenizer_result = Tokenizer::tokenize(query);
     if tokenizer_result.is_err() {
         let diagnostic = tokenizer_result.err().unwrap();
-        reporter.report_diagnostic(&query, *diagnostic);
+        reporter.report_diagnostic(query, *diagnostic);
         std::process::exit(1);
     }
 
@@ -197,7 +196,7 @@ fn execute_gitql_query(
     let parser_result = parser::parse_gql(tokens, env);
     if parser_result.is_err() {
         let diagnostic = parser_result.err().unwrap();
-        reporter.report_diagnostic(&query, *diagnostic);
+        reporter.report_diagnostic(query, *diagnostic);
         std::process::exit(1);
     }
 

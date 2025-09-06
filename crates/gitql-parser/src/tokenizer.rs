@@ -4,23 +4,22 @@ use crate::token::Token;
 use crate::token::TokenKind;
 use crate::token::GITQL_RESERVED_KEYWORDS;
 
-pub struct Tokenizer {
-    pub(crate) content: Vec<char>,
-    pub(crate) content_len: usize,
-    pub(crate) index: usize,
+pub struct Tokenizer<'a> {
+    content: &'a [char],
+    content_len: usize,
+    index: usize,
 
-    pub(crate) line_start: u32,
-    pub(crate) line_end: u32,
-    pub(crate) column_start: u32,
-    pub(crate) column_end: u32,
+    line_start: u32,
+    line_end: u32,
+    column_start: u32,
+    column_end: u32,
 }
 
-impl Tokenizer {
-    pub(crate) fn new(chars: Vec<char>) -> Tokenizer {
-        let content_len = chars.len();
+impl<'a> Tokenizer<'a> {
+    pub(crate) fn new(chars: &'a [char]) -> Tokenizer<'a> {
         Tokenizer {
             content: chars,
-            content_len,
+            content_len: chars.len(),
             index: 0,
 
             line_start: 1,
@@ -30,9 +29,9 @@ impl Tokenizer {
         }
     }
 
-    pub fn tokenize(content: String) -> Result<Vec<Token>, Box<Diagnostic>> {
-        let mut tokenizer = Tokenizer::new(content.chars().collect());
-        tokenizer.tokenize_characters()
+    pub fn tokenize(chars: &'a str) -> Result<Vec<Token>, Box<Diagnostic>> {
+        let chars: Vec<char> = chars.chars().collect();
+        Tokenizer::new(&chars).tokenize_characters()
     }
 
     fn current_source_location(&self) -> SourceLocation {
@@ -340,7 +339,7 @@ impl Tokenizer {
 
                 // Consume `!`
                 self.advance();
-                let kind = if self.index < len && self.content[self.index] == '=' {
+                let kind = if self.is_current_char('=') {
                     // Consume `=`
                     self.advance();
                     TokenKind::BangEqual
@@ -420,7 +419,7 @@ impl Tokenizer {
         self.advance();
 
         // Make sure first character is  alphabetic
-        if self.has_next() && !self.content[self.index].is_alphabetic() {
+        if !self.is_current_char_func(|c| c.is_alphanumeric()) {
             return Err(Diagnostic::error(
                 "Global variable name must start with alphabetic character",
             )
@@ -429,7 +428,7 @@ impl Tokenizer {
             .as_boxed());
         }
 
-        while self.has_next() && self.is_current_char_func(|c| c == '_' || c.is_alphanumeric()) {
+        while self.is_current_char_func(|c| c == '_' || c.is_alphanumeric()) {
             self.advance();
         }
 
@@ -444,8 +443,7 @@ impl Tokenizer {
 
     fn consume_identifier(&mut self) -> Token {
         let start_index = self.index;
-
-        while self.has_next() && self.is_current_char_func(|c| c == '_' || c.is_alphanumeric()) {
+        while self.is_current_char_func(|c| c == '_' || c.is_alphanumeric()) {
             self.advance();
         }
 
@@ -467,7 +465,7 @@ impl Tokenizer {
         // Advance '`'
         self.advance();
 
-        while self.has_next() && !self.is_current_char('`') {
+        while !self.is_current_char('`') {
             self.advance();
         }
 
@@ -490,16 +488,16 @@ impl Tokenizer {
     fn consume_number(&mut self) -> Result<Token, Box<Diagnostic>> {
         let start_index = self.index;
 
-        while self.has_next() && self.is_current_char_func(|c| c == '_' || c.is_numeric()) {
+        while self.is_current_char_func(|c| c == '_' || c.is_numeric()) {
             self.advance();
         }
 
         let mut is_float_value = false;
-        if self.has_next() && self.is_current_char('.') {
+        if self.is_current_char('.') {
             self.advance();
 
             is_float_value = true;
-            while self.has_next() && self.is_current_char_func(|c| c == '_' || c.is_numeric()) {
+            while self.is_current_char_func(|c| c == '_' || c.is_numeric()) {
                 self.advance();
             }
         }
@@ -538,7 +536,7 @@ impl Tokenizer {
 
     fn consume_binary_number(&mut self) -> Result<Token, Box<Diagnostic>> {
         let start_index = self.index;
-        while self.has_next() && self.is_current_char_func(|c| c == '_' || c == '0' || c >= '1') {
+        while self.is_current_char_func(|c| c == '_' || c == '0' || c >= '1') {
             self.advance();
         }
 
@@ -575,8 +573,7 @@ impl Tokenizer {
 
     fn consume_octal_number(&mut self) -> Result<Token, Box<Diagnostic>> {
         let start_index = self.index;
-        while self.has_next() && self.is_current_char_func(|c| c == '_' || ('0'..='8').contains(&c))
-        {
+        while self.is_current_char_func(|c| c == '_' || ('0'..='8').contains(&c)) {
             self.advance();
         }
 
@@ -613,7 +610,7 @@ impl Tokenizer {
 
     fn consume_hex_number(&mut self) -> Result<Token, Box<Diagnostic>> {
         let start_index = self.index;
-        while self.has_next() && self.is_current_char_func(|c| c == '_' || c.is_ascii_hexdigit()) {
+        while self.is_current_char_func(|c| c == '_' || c.is_ascii_hexdigit()) {
             self.advance();
         }
 
@@ -685,7 +682,7 @@ impl Tokenizer {
         self.advance();
 
         let mut buffer = String::new();
-        while self.has_next() && !self.is_current_char(around) {
+        while !self.is_current_char(around) {
             if !self.is_current_char('\\') {
                 buffer.push(self.content[self.index]);
                 self.advance();
@@ -748,7 +745,7 @@ impl Tokenizer {
         // Advance `--`
         self.advance_n(2);
 
-        while self.has_next() && !self.is_current_char('\n') {
+        while !self.is_current_char('\n') {
             self.advance();
         }
 
