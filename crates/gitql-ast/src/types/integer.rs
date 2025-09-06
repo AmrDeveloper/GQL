@@ -158,6 +158,14 @@ impl DataType for IntType {
         vec![Box::new(ArrayType::new(Box::new(IntType)))]
     }
 
+    fn can_perform_plus_op(&self) -> bool {
+        true
+    }
+
+    fn plus_op_result_type(&self) -> Box<dyn DataType> {
+        Box::new(self.clone())
+    }
+
     fn can_perform_neg_op(&self) -> bool {
         true
     }

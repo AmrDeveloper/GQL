@@ -289,6 +289,11 @@ pub trait Value: DynClone {
         Err("Unsupported operator for this type".to_string())
     }
 
+    /// Perform unary `+` operator and return new [`Value`] represent the result or Exception message as [`String`]
+    fn plus_op(&self) -> Result<Box<dyn Value>, String> {
+        Err("Unsupported operator for this type".to_string())
+    }
+
     /// Perform unary `-` operator and return new [`Value`] represent the result or Exception message as [`String`]
     fn neg_op(&self) -> Result<Box<dyn Value>, String> {
         Err("Unsupported operator for this type".to_string())

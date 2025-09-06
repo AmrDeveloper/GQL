@@ -355,8 +355,12 @@ impl Value for IntValue {
         Err("Unexpected type to perform `<=` with".to_string())
     }
 
+    fn plus_op(&self) -> Result<Box<dyn Value>, String> {
+        Ok(Box::new(IntValue::new(self.value)))
+    }
+
     fn neg_op(&self) -> Result<Box<dyn Value>, String> {
-        Ok(Box::new(IntValue { value: -self.value }))
+        Ok(Box::new(IntValue::new(-self.value)))
     }
 
     fn cast_op(&self, target_type: &Box<dyn DataType>) -> Result<Box<dyn Value>, String> {

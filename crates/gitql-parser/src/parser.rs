@@ -2958,11 +2958,49 @@ fn parse_prefix_unary_expression(
     if *position < tokens.len() && is_prefix_unary_operator(&tokens[*position]) {
         let operator = &tokens[*position];
 
-        // Consume `!`, `-` or `~` operator
+        // Consume `+`, `-`, `!`, `~` operator
         *position += 1;
 
         let rhs = parse_prefix_unary_expression(context, env, tokens, position)?;
         let rhs_type = rhs.expr_type();
+
+        // Parse and Check side for unary `+` operator
+        if operator.kind == TokenKind::Plus {
+            // Can perform this operator between RHS
+            if rhs_type.can_perform_plus_op() {
+                return Ok(Box::new(UnaryExpr {
+                    right: rhs,
+                    operator: PrefixUnaryOperator::Plus,
+                    result_type: rhs_type.neg_op_result_type(),
+                }));
+            }
+
+            // Return error if this operator can't be performed even with implicit cast
+            return Err(Diagnostic::error(&format!(
+                "Operator unary `+` can't be performed on type `{rhs_type}`"
+            ))
+            .with_location(operator.location)
+            .as_boxed());
+        }
+
+        // Parse and Check side for unary `-` operator
+        if operator.kind == TokenKind::Minus {
+            // Can perform this operator between RHS
+            if rhs_type.can_perform_neg_op() {
+                return Ok(Box::new(UnaryExpr {
+                    right: rhs,
+                    operator: PrefixUnaryOperator::Minus,
+                    result_type: rhs_type.neg_op_result_type(),
+                }));
+            }
+
+            // Return error if this operator can't be performed even with implicit cast
+            return Err(Diagnostic::error(&format!(
+                "Operator unary `-` can't be performed on type `{rhs_type}`"
+            ))
+            .with_location(operator.location)
+            .as_boxed());
+        }
 
         // Parse and Check side for unary `!`or `NOT` operator
         if operator.kind == TokenKind::Bang || operator.kind == TokenKind::Not {
@@ -2989,25 +3027,6 @@ fn parse_prefix_unary_expression(
             .as_boxed());
         }
 
-        // Parse and Check side for unary `-` operator
-        if operator.kind == TokenKind::Minus {
-            // Can perform this operator between RHS
-            if rhs_type.can_perform_neg_op() {
-                return Ok(Box::new(UnaryExpr {
-                    right: rhs,
-                    operator: PrefixUnaryOperator::Negative,
-                    result_type: rhs_type.neg_op_result_type(),
-                }));
-            }
-
-            // Return error if this operator can't be performed even with implicit cast
-            return Err(Diagnostic::error(&format!(
-                "Operator unary `-` can't be performed on type `{rhs_type}`"
-            ))
-            .with_location(operator.location)
-            .as_boxed());
-        }
-
         // Parse and Check side for unary `~` operator
         if operator.kind == TokenKind::BitwiseNot {
             // Can perform this operator between RHS
@@ -3026,6 +3045,14 @@ fn parse_prefix_unary_expression(
             .with_location(operator.location)
             .as_boxed());
         }
+
+        // Unkown unary operator
+        return Err(Diagnostic::error(&format!(
+            "Operator unary `{}` is not supported for `{rhs_type}`",
+            operator
+        ))
+        .with_location(operator.location)
+        .as_boxed());
     }
 
     parse_between_expression(context, env, tokens, position)
@@ -4017,7 +4044,11 @@ fn is_bitwise_shift_operator(tokens: &[Token], position: &usize) -> bool {
 fn is_prefix_unary_operator(token: &Token) -> bool {
     matches!(
         token.kind,
-        TokenKind::Bang | TokenKind::Not | TokenKind::Minus | TokenKind::BitwiseNot
+        TokenKind::Plus
+            | TokenKind::Bang
+            | TokenKind::Not
+            | TokenKind::Minus
+            | TokenKind::BitwiseNot
     )
 }
 

@@ -1,6 +1,7 @@
 #[derive(Clone, PartialEq)]
 pub enum PrefixUnaryOperator {
-    Negative,
+    Plus,
+    Minus,
     Bang,
     Not,
 }

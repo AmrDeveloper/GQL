@@ -413,6 +413,19 @@ pub trait DataType: DynClone {
         Box::new(NullType)
     }
 
+    /// Return a list of types that it's possible to perform unary `+' operator with
+    /// between current DataType and any one of them
+    fn can_perform_plus_op(&self) -> bool {
+        false
+    }
+
+    /// Return the expected type after perform unary `+' operator on current type
+    ///
+    /// Note that you don't need to check again that the argument type is possible to perform operator with
+    fn plus_op_result_type(&self) -> Box<dyn DataType> {
+        Box::new(NullType)
+    }
+
     /// Return a list of types that it's possible to perform unary `-' operator with
     /// between current DataType and any one of them
     fn can_perform_neg_op(&self) -> bool {
