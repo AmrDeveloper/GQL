@@ -7,7 +7,7 @@ use gitql_ast::query::GlobalVariableDeclQuery;
 use gitql_ast::query::Query;
 use gitql_ast::query::SelectQuery;
 use gitql_ast::statement::Distinct;
-use gitql_ast::statement::SelectStatement;
+use gitql_ast::statement::Statement;
 use gitql_core::environment::Environment;
 use gitql_core::object::GitQLObject;
 use gitql_core::object::Group;
@@ -90,42 +90,23 @@ fn evaluate_select_query(
     let mut distinct: Option<Distinct> = None;
     for logical_node_name in FIXED_LOGICAL_PLAN {
         if let Some(statement) = statements_map.get_mut(logical_node_name) {
-            match logical_node_name {
-                "select" => {
-                    // Select statement should be performed on all repositories, can be executed in parallel
-                    let select_statement = statement
-                        .as_any()
-                        .downcast_ref::<SelectStatement>()
-                        .unwrap();
+            execute_statement(
+                env,
+                statement,
+                data_provider,
+                &mut gitql_object,
+                &mut alias_table,
+                &hidden_selections_map,
+                has_group_by_statement,
+            )?;
 
-                    execute_statement(
-                        env,
-                        statement,
-                        data_provider,
-                        &mut gitql_object,
-                        &mut alias_table,
-                        &hidden_selections_map,
-                        has_group_by_statement,
-                    )?;
-
-                    // If the main group is empty, no need to perform other statements
-                    if gitql_object.is_empty() || gitql_object.groups[0].is_empty() {
-                        return Ok(EvaluationResult::SelectedGroups(gitql_object));
-                    }
-
-                    distinct = Some(select_statement.distinct.to_owned());
+            if let Statement::Select(select_statement) = statement {
+                // If the main group is empty, no need to perform other statements
+                if gitql_object.is_empty() || gitql_object.groups[0].is_empty() {
+                    return Ok(EvaluationResult::SelectedGroups(gitql_object));
                 }
-                _ => {
-                    execute_statement(
-                        env,
-                        statement,
-                        data_provider,
-                        &mut gitql_object,
-                        &mut alias_table,
-                        &hidden_selections_map,
-                        has_group_by_statement,
-                    )?;
-                }
+
+                distinct = Some(select_statement.distinct.to_owned());
             }
         }
     }

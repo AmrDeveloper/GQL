@@ -3,7 +3,7 @@ use gitql_ast::expression::Expr;
 use gitql_ast::expression::SymbolExpr;
 use gitql_ast::expression::SymbolFlag;
 use gitql_ast::statement::AggregateValue;
-use gitql_ast::statement::OrderByStatement;
+use gitql_ast::statement::Statement;
 use gitql_ast::statement::WindowDefinition;
 use gitql_ast::statement::WindowFunction;
 use gitql_ast::statement::WindowFunctionKind;
@@ -369,13 +369,13 @@ pub(crate) fn parse_over_window_definition(
                 .as_boxed());
             }
 
-            let order_by = parse_order_by_statement(context, env, tokens, position)?
-                .as_any()
-                .downcast_ref::<OrderByStatement>()
-                .unwrap()
-                .to_owned();
+            if let Statement::OrderBy(order_by) =
+                parse_order_by_statement(context, env, tokens, position)?
+            {
+                window_definition.ordering_clause = Some(WindowOrderingClause { order_by });
+            }
 
-            window_definition.ordering_clause = Some(WindowOrderingClause { order_by });
+            // TODO: Can report error or assert here
             continue;
         }
 

@@ -245,7 +245,7 @@ fn parse_select_query(
     let len = tokens.len();
 
     let mut context = ParserContext::default();
-    let mut statements: HashMap<&'static str, Box<dyn Statement>> = HashMap::new();
+    let mut statements: HashMap<&'static str, Statement> = HashMap::new();
 
     while *position < len {
         let token = &tokens[*position];
@@ -371,7 +371,9 @@ fn parse_select_query(
                             let start = Box::new(NumberExpr {
                                 value: Number::Int(integer),
                             });
-                            statements.insert("offset", Box::new(OffsetStatement { start }));
+
+                            statements
+                                .insert("offset", Statement::Offset(OffsetStatement { start }));
                         }
                         _ => {
                             return Err(Diagnostic::error("`OFFSET` integer value is invalid")
@@ -430,7 +432,11 @@ fn parse_select_query(
         let aggregation_functions = AggregationsStatement {
             aggregations: context.aggregations,
         };
-        statements.insert("aggregation", Box::new(aggregation_functions));
+
+        statements.insert(
+            "aggregation",
+            Statement::AggregateFunction(aggregation_functions),
+        );
     }
 
     // If any window function is used, add Window Functions Node to the GitQL Query
@@ -457,7 +463,7 @@ fn parse_select_query(
 
         statements.insert(
             "window_functions",
-            Box::new(WindowFunctionsStatement {
+            Statement::WindowFunction(WindowFunctionsStatement {
                 window_values: context.window_functions,
             }),
         );
@@ -532,7 +538,7 @@ fn parse_select_statement(
     env: &mut Environment,
     tokens: &[Token],
     position: &mut usize,
-) -> Result<Box<dyn Statement>, Box<Diagnostic>> {
+) -> Result<Statement, Box<Diagnostic>> {
     // Consume `SELECT` keyword
     *position += 1;
 
@@ -625,7 +631,7 @@ fn parse_select_statement(
         calculate_safe_location(tokens, *position),
     )?;
 
-    Ok(Box::new(SelectStatement {
+    Ok(Statement::Select(SelectStatement {
         table_selections,
         joins,
         selected_expr_titles,
@@ -981,7 +987,7 @@ fn parse_where_statement(
     env: &mut Environment,
     tokens: &[Token],
     position: &mut usize,
-) -> Result<Box<dyn Statement>, Box<Diagnostic>> {
+) -> Result<Statement, Box<Diagnostic>> {
     *position += 1;
     if *position >= tokens.len() {
         return Err(Diagnostic::error("Expect expression after `WHERE` keyword")
@@ -1029,7 +1035,7 @@ fn parse_where_statement(
         );
     }
 
-    Ok(Box::new(WhereStatement { condition }))
+    Ok(Statement::Where(WhereStatement { condition }))
 }
 
 fn parse_group_by_statement(
@@ -1037,7 +1043,7 @@ fn parse_group_by_statement(
     env: &mut Environment,
     tokens: &[Token],
     position: &mut usize,
-) -> Result<Box<dyn Statement>, Box<Diagnostic>> {
+) -> Result<Statement, Box<Diagnostic>> {
     // Consume `Group` keyword
     *position += 1;
 
@@ -1078,7 +1084,7 @@ fn parse_group_by_statement(
     }
 
     context.has_group_by_statement = true;
-    Ok(Box::new(GroupByStatement {
+    Ok(Statement::GroupBy(GroupByStatement {
         values,
         has_with_roll_up: has_with_rollup,
     }))
@@ -1089,7 +1095,7 @@ fn parse_having_statement(
     env: &mut Environment,
     tokens: &[Token],
     position: &mut usize,
-) -> Result<Box<dyn Statement>, Box<Diagnostic>> {
+) -> Result<Statement, Box<Diagnostic>> {
     context.inside_having = true;
 
     // Consume `HAVING` token
@@ -1131,7 +1137,7 @@ fn parse_having_statement(
     }
 
     context.inside_having = false;
-    Ok(Box::new(HavingStatement { condition }))
+    Ok(Statement::Having(HavingStatement { condition }))
 }
 
 fn parse_qualify_statement(
@@ -1139,7 +1145,7 @@ fn parse_qualify_statement(
     env: &mut Environment,
     tokens: &[Token],
     position: &mut usize,
-) -> Result<Box<dyn Statement>, Box<Diagnostic>> {
+) -> Result<Statement, Box<Diagnostic>> {
     // Consume `QUALIFY` token
     *position += 1;
 
@@ -1178,13 +1184,13 @@ fn parse_qualify_statement(
         })
     }
 
-    Ok(Box::new(QualifyStatement { condition }))
+    Ok(Statement::Qualify(QualifyStatement { condition }))
 }
 
 fn parse_limit_statement(
     tokens: &[Token],
     position: &mut usize,
-) -> Result<Box<dyn Statement>, Box<Diagnostic>> {
+) -> Result<Statement, Box<Diagnostic>> {
     // Consume `LIMIT` keyword
     *position += 1;
 
@@ -1209,7 +1215,7 @@ fn parse_limit_statement(
             }
 
             let count = integer as usize;
-            Ok(Box::new(LimitStatement { count }))
+            Ok(Statement::Limit(LimitStatement { count }))
         }
         _ => Err(Diagnostic::error("Expect number after `LIMIT` keyword")
             .with_location(calculate_safe_location(tokens, *position - 1))
@@ -1222,7 +1228,7 @@ fn parse_offset_statement(
     env: &mut Environment,
     tokens: &[Token],
     position: &mut usize,
-) -> Result<Box<dyn Statement>, Box<Diagnostic>> {
+) -> Result<Statement, Box<Diagnostic>> {
     // Consume `OFFSET` keyword
     *position += 1;
 
@@ -1234,7 +1240,7 @@ fn parse_offset_statement(
 
     let start = parse_expression(context, env, tokens, position)?;
     if start.expr_type().is_int() {
-        return Ok(Box::new(OffsetStatement { start }));
+        return Ok(Statement::Offset(OffsetStatement { start }));
     }
 
     Err(Diagnostic::error("Expect int after `OFFSET` keyword")

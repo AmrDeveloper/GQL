@@ -5,18 +5,13 @@ use gitql_ast::expression::Expr;
 use gitql_ast::expression::ExprKind;
 use gitql_ast::statement::AggregateValue;
 use gitql_ast::statement::AggregationsStatement;
-use gitql_ast::statement::GroupByStatement;
 use gitql_ast::statement::HavingStatement;
-use gitql_ast::statement::IntoStatement;
 use gitql_ast::statement::LimitStatement;
 use gitql_ast::statement::OffsetStatement;
-use gitql_ast::statement::OrderByStatement;
 use gitql_ast::statement::QualifyStatement;
 use gitql_ast::statement::SelectStatement;
 use gitql_ast::statement::Statement;
-use gitql_ast::statement::StatementKind::*;
 use gitql_ast::statement::WhereStatement;
-use gitql_ast::statement::WindowFunctionsStatement;
 use gitql_core::environment::Environment;
 use gitql_core::object::GitQLObject;
 use gitql_core::object::Group;
@@ -36,102 +31,46 @@ use crate::engine_window_functions::execute_window_functions_statement;
 #[allow(clippy::borrowed_box)]
 pub fn execute_statement(
     env: &mut Environment,
-    statement: &Box<dyn Statement>,
+    statement: &Statement,
     data_provider: &Box<dyn DataProvider>,
     gitql_object: &mut GitQLObject,
     alias_table: &mut HashMap<String, String>,
     hidden_selection: &HashMap<String, Vec<String>>,
     has_group_by_statement: bool,
 ) -> Result<(), String> {
-    match statement.kind() {
-        Select => {
-            let statement = statement
-                .as_any()
-                .downcast_ref::<SelectStatement>()
-                .unwrap();
-
-            execute_select_statement(
-                env,
-                statement,
-                alias_table,
-                data_provider,
-                gitql_object,
-                hidden_selection,
-            )
-        }
-        Where => {
-            let statement = statement.as_any().downcast_ref::<WhereStatement>().unwrap();
-            execute_where_statement(env, statement, gitql_object)
-        }
-        Having => {
-            let statement = statement
-                .as_any()
-                .downcast_ref::<HavingStatement>()
-                .unwrap();
-            execute_having_statement(env, statement, gitql_object)
-        }
-        Qualify => {
-            let statement = statement
-                .as_any()
-                .downcast_ref::<QualifyStatement>()
-                .unwrap();
-            execute_qualify_statement(env, statement, gitql_object)
-        }
-        Limit => {
-            let statement = statement.as_any().downcast_ref::<LimitStatement>().unwrap();
-            execute_limit_statement(statement, gitql_object)
-        }
-        Offset => {
-            let statement = statement
-                .as_any()
-                .downcast_ref::<OffsetStatement>()
-                .unwrap();
-            execute_offset_statement(env, statement, gitql_object)
-        }
-        OrderBy => {
-            let statement = statement
-                .as_any()
-                .downcast_ref::<OrderByStatement>()
-                .unwrap();
-
+    match statement {
+        Statement::Select(statement) => execute_select_statement(
+            env,
+            statement,
+            alias_table,
+            data_provider,
+            gitql_object,
+            hidden_selection,
+        ),
+        Statement::Where(statement) => execute_where_statement(env, statement, gitql_object),
+        Statement::Having(statement) => execute_having_statement(env, statement, gitql_object),
+        Statement::Limit(statement) => execute_limit_statement(statement, gitql_object),
+        Statement::Offset(statement) => execute_offset_statement(env, statement, gitql_object),
+        Statement::OrderBy(statement) => {
             if gitql_object.len() > 1 {
                 gitql_object.flat();
             }
-
             let main_group_index = 0;
             execute_order_by_statement(env, statement, gitql_object, main_group_index)
         }
-        GroupBy => {
-            let statement = statement
-                .as_any()
-                .downcast_ref::<GroupByStatement>()
-                .unwrap();
-            execute_group_by_statement(env, statement, gitql_object)
-        }
-        AggregateFunction => {
-            let statement = statement
-                .as_any()
-                .downcast_ref::<AggregationsStatement>()
-                .unwrap();
-            execute_aggregation_functions_statement(
-                env,
-                statement,
-                gitql_object,
-                alias_table,
-                has_group_by_statement,
-            )
-        }
-        WindowFunction => {
-            let statement = statement
-                .as_any()
-                .downcast_ref::<WindowFunctionsStatement>()
-                .unwrap();
+        Statement::GroupBy(statement) => execute_group_by_statement(env, statement, gitql_object),
+        Statement::AggregateFunction(statement) => execute_aggregation_functions_statement(
+            env,
+            statement,
+            gitql_object,
+            alias_table,
+            has_group_by_statement,
+        ),
+        Statement::WindowFunction(statement) => {
             execute_window_functions_statement(env, statement, gitql_object, alias_table)
         }
-        Into => {
-            let statement = statement.as_any().downcast_ref::<IntoStatement>().unwrap();
-            execute_into_statement(statement, gitql_object)
-        }
+        Statement::Qualify(statement) => execute_qualify_statement(env, statement, gitql_object),
+        Statement::Into(statement) => execute_into_statement(statement, gitql_object),
     }
 }
 

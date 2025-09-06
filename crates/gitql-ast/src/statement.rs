@@ -1,29 +1,19 @@
-use std::any::Any;
 use std::collections::HashMap;
-
-use dyn_clone::DynClone;
 
 use crate::expression::Expr;
 
-pub enum StatementKind {
-    Select,
-    Where,
-    Having,
-    Limit,
-    Offset,
-    OrderBy,
-    GroupBy,
-    AggregateFunction,
-    WindowFunction,
-    Qualify,
-    Into,
-}
-
-dyn_clone::clone_trait_object!(Statement);
-
-pub trait Statement: DynClone {
-    fn kind(&self) -> StatementKind;
-    fn as_any(&self) -> &dyn Any;
+pub enum Statement {
+    Select(SelectStatement),
+    Where(WhereStatement),
+    Having(HavingStatement),
+    Limit(LimitStatement),
+    Offset(OffsetStatement),
+    OrderBy(OrderByStatement),
+    GroupBy(GroupByStatement),
+    AggregateFunction(AggregationsStatement),
+    WindowFunction(WindowFunctionsStatement),
+    Qualify(QualifyStatement),
+    Into(IntoStatement),
 }
 
 #[derive(Clone)]
@@ -72,29 +62,9 @@ pub struct SelectStatement {
     pub distinct: Distinct,
 }
 
-impl Statement for SelectStatement {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn kind(&self) -> StatementKind {
-        StatementKind::Select
-    }
-}
-
 #[derive(Clone)]
 pub struct WhereStatement {
     pub condition: Box<dyn Expr>,
-}
-
-impl Statement for WhereStatement {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn kind(&self) -> StatementKind {
-        StatementKind::Where
-    }
 }
 
 #[derive(Clone)]
@@ -102,44 +72,14 @@ pub struct HavingStatement {
     pub condition: Box<dyn Expr>,
 }
 
-impl Statement for HavingStatement {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn kind(&self) -> StatementKind {
-        StatementKind::Having
-    }
-}
-
 #[derive(Clone)]
 pub struct LimitStatement {
     pub count: usize,
 }
 
-impl Statement for LimitStatement {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn kind(&self) -> StatementKind {
-        StatementKind::Limit
-    }
-}
-
 #[derive(Clone)]
 pub struct OffsetStatement {
     pub start: Box<dyn Expr>,
-}
-
-impl Statement for OffsetStatement {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn kind(&self) -> StatementKind {
-        StatementKind::Offset
-    }
 }
 
 #[derive(Clone, PartialEq)]
@@ -161,30 +101,10 @@ pub struct OrderByStatement {
     pub nulls_order_policies: Vec<NullsOrderPolicy>,
 }
 
-impl Statement for OrderByStatement {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn kind(&self) -> StatementKind {
-        StatementKind::OrderBy
-    }
-}
-
 #[derive(Clone)]
 pub struct GroupByStatement {
     pub values: Vec<Box<dyn Expr>>,
     pub has_with_roll_up: bool,
-}
-
-impl Statement for GroupByStatement {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn kind(&self) -> StatementKind {
-        StatementKind::GroupBy
-    }
 }
 
 #[derive(Clone)]
@@ -229,29 +149,9 @@ pub struct WindowFunctionsStatement {
     pub window_values: HashMap<String, WindowValue>,
 }
 
-impl Statement for WindowFunctionsStatement {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn kind(&self) -> StatementKind {
-        StatementKind::WindowFunction
-    }
-}
-
 #[derive(Clone)]
 pub struct QualifyStatement {
     pub condition: Box<dyn Expr>,
-}
-
-impl Statement for QualifyStatement {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn kind(&self) -> StatementKind {
-        StatementKind::Qualify
-    }
 }
 
 #[derive(Clone)]
@@ -265,30 +165,10 @@ pub struct AggregationsStatement {
     pub aggregations: HashMap<String, AggregateValue>,
 }
 
-impl Statement for AggregationsStatement {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn kind(&self) -> StatementKind {
-        StatementKind::AggregateFunction
-    }
-}
-
 #[derive(Clone)]
 pub struct IntoStatement {
     pub file_path: String,
     pub lines_terminated: String,
     pub fields_terminated: String,
     pub enclosed: String,
-}
-
-impl Statement for IntoStatement {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn kind(&self) -> StatementKind {
-        StatementKind::Into
-    }
 }

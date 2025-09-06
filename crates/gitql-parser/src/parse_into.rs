@@ -7,7 +7,7 @@ use crate::token::{Token, TokenKind};
 pub(crate) fn parse_into_statement(
     tokens: &[Token],
     position: &mut usize,
-) -> Result<Box<dyn Statement>, Box<Diagnostic>> {
+) -> Result<Statement, Box<Diagnostic>> {
     // Consume `INTO` keyword
     *position += 1;
 
@@ -199,7 +199,7 @@ pub(crate) fn parse_into_statement(
         break;
     }
 
-    Ok(Box::new(IntoStatement {
+    Ok(Statement::Into(IntoStatement {
         file_path: file_path.to_string(),
         lines_terminated,
         fields_terminated,

@@ -12,7 +12,7 @@ pub enum Query {
 }
 
 pub struct SelectQuery {
-    pub statements: HashMap<&'static str, Box<dyn Statement>>,
+    pub statements: HashMap<&'static str, Statement>,
     pub alias_table: HashMap<String, String>,
     pub has_aggregation_function: bool,
     pub has_group_by_statement: bool,

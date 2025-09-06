@@ -18,7 +18,7 @@ pub(crate) fn parse_order_by_statement(
     env: &mut Environment,
     tokens: &[Token],
     position: &mut usize,
-) -> Result<Box<dyn Statement>, Box<Diagnostic>> {
+) -> Result<Statement, Box<Diagnostic>> {
     // Consume `ORDER` keyword
     *position += 1;
 
@@ -55,7 +55,7 @@ pub(crate) fn parse_order_by_statement(
 
     context.inside_order_by = false;
 
-    Ok(Box::new(OrderByStatement {
+    Ok(Statement::OrderBy(OrderByStatement {
         arguments,
         sorting_orders,
         nulls_order_policies: null_ordering_policies,
