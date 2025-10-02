@@ -1,7 +1,3 @@
-use lineeditor::event::LineEditorEvent;
-use lineeditor::keybindings::KeyCombination;
-use lineeditor::style::Style;
-use lineeditor::styled_buffer::StyledBuffer;
 use lineeditor::Color;
 use lineeditor::Completer;
 use lineeditor::Highlighter;
@@ -11,6 +7,10 @@ use lineeditor::LineEditor;
 use lineeditor::Span;
 use lineeditor::StringPrompt;
 use lineeditor::Suggestion;
+use lineeditor::event::LineEditorEvent;
+use lineeditor::keybindings::KeyCombination;
+use lineeditor::style::Style;
+use lineeditor::styled_buffer::StyledBuffer;
 
 const GITQL_RESERVED_KEYWORDS: [&str; 57] = [
     "do",

@@ -1,8 +1,8 @@
 use std::hint::black_box;
 
+use criterion::Criterion;
 use criterion::criterion_group;
 use criterion::criterion_main;
-use criterion::Criterion;
 use gitql_parser::tokenizer::Tokenizer;
 
 const QUERY_100_CHAR: &str = "SELECT name, COUNT(name) FROM commits GROUP BY name, author_email ORDER BY commit_num DESC LIMIT 100";

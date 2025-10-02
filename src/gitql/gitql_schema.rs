@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
+use gitql_ast::types::DataType;
 use gitql_ast::types::boolean::BoolType;
 use gitql_ast::types::datetime::DateTimeType;
 use gitql_ast::types::integer::IntType;
 use gitql_ast::types::text::TextType;
-use gitql_ast::types::DataType;
 
 use crate::gitql::types::diff_changes::DiffChangesType;
 

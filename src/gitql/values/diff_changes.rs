@@ -3,9 +3,9 @@ use std::cmp::Ordering;
 
 use gitql_ast::types::DataType;
 use gitql_core::values::Value;
+use gix::Repository;
 use gix::diff::blob::Platform;
 use gix::object::tree::diff::Change;
-use gix::Repository;
 
 use crate::gitql::types::diff_changes::DiffChangesType;
 
@@ -90,11 +90,11 @@ impl DiffChange {
                 }
             }
             _ => {
-                if let Ok(mut platform) = change.diff(diff_cache) {
-                    if let Ok(Some(counts)) = platform.line_counts() {
-                        insertions = counts.insertions;
-                        removals = counts.removals;
-                    }
+                if let Ok(mut platform) = change.diff(diff_cache)
+                    && let Ok(Some(counts)) = platform.line_counts()
+                {
+                    insertions = counts.insertions;
+                    removals = counts.removals;
                 };
             }
         }
@@ -110,10 +110,10 @@ impl DiffChange {
 
     pub fn new_with_content(change: &Change, diff_cache: &mut Platform, repo: &Repository) -> Self {
         let mut diff_change = DiffChange::new_without_content(change, diff_cache);
-        if let Ok(object) = repo.find_object(change.id()) {
-            if let Ok(blob) = object.try_into_blob() {
-                diff_change.content = blob.data.clone()
-            }
+        if let Ok(object) = repo.find_object(change.id())
+            && let Ok(blob) = object.try_into_blob()
+        {
+            diff_change.content = blob.data.clone()
         }
         diff_change
     }

@@ -29,8 +29,10 @@ mod gitql;
 
 fn main() {
     if cfg!(debug_assertions) {
-        std::env::set_var("RUST_BACKTRACE", "full");
-        std::env::set_var("RUST_LIB_BACKTRACE", "1");
+        unsafe {
+            std::env::set_var("RUST_BACKTRACE", "full");
+            std::env::set_var("RUST_LIB_BACKTRACE", "1");
+        };
     }
 
     let args: Vec<String> = std::env::args().collect();
@@ -228,11 +230,11 @@ fn execute_gitql_query(
     let evaluations_results = evaluation_result.ok().unwrap();
     for evaluation_result in evaluations_results {
         let mut rows_count = 0;
-        if let SelectedGroups(mut groups) = evaluation_result {
-            if !groups.is_empty() {
-                rows_count += groups.groups[0].len();
-                printer.print(&mut groups);
-            }
+        if let SelectedGroups(mut groups) = evaluation_result
+            && !groups.is_empty()
+        {
+            rows_count += groups.groups[0].len();
+            printer.print(&mut groups);
         }
 
         if arguments.analysis {

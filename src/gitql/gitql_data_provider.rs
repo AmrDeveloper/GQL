@@ -1,12 +1,12 @@
 use std::convert::Infallible;
 
 use gitql_core::object::Row;
+use gitql_core::values::Value;
 use gitql_core::values::boolean::BoolValue;
 use gitql_core::values::datetime::DateTimeValue;
 use gitql_core::values::integer::IntValue;
 use gitql_core::values::null::NullValue;
 use gitql_core::values::text::TextValue;
-use gitql_core::values::Value;
 use gitql_engine::data_provider::DataProvider;
 
 use gix::diff::blob::pipeline::Mode;
@@ -227,11 +227,11 @@ fn select_branches(
             }
 
             if column_name == "commit_count" {
-                if let Some(id) = branch.try_id() {
-                    if let Ok(walker) = id.ancestors().all() {
-                        values.push(Box::new(IntValue::new(walker.count() as i64)));
-                        continue;
-                    }
+                if let Some(id) = branch.try_id()
+                    && let Ok(walker) = id.ancestors().all()
+                {
+                    values.push(Box::new(IntValue::new(walker.count() as i64)));
+                    continue;
                 }
                 values.push(Box::new(IntValue::new_zero()));
                 continue;
@@ -316,31 +316,30 @@ fn select_diffs(repo: &gix::Repository, selected_columns: &[String]) -> Result<V
         let (mut insertions, mut removals, mut files_changed) = (0, 0, 0);
         let mut diff_changes: Vec<DiffChange> = vec![];
 
-        if should_calculate_diffs {
-            if let Some(parent) = commit_info
+        if should_calculate_diffs
+            && let Some(parent) = commit_info
                 .parent_ids()
                 .next()
                 .map(|id| id.object().unwrap().into_commit().tree().unwrap())
-            {
-                let current = commit.tree().unwrap();
-                rewrite_cache.clear_resource_cache_keep_allocation();
-                diff_cache.clear_resource_cache_keep_allocation();
+        {
+            let current = commit.tree().unwrap();
+            rewrite_cache.clear_resource_cache_keep_allocation();
+            diff_cache.clear_resource_cache_keep_allocation();
 
-                if let Ok(mut changes) = current.changes() {
-                    let _ = changes.for_each_to_obtain_tree_with_cache(
-                        &parent,
-                        &mut rewrite_cache,
-                        |change| {
-                            files_changed += usize::from(change.entry_mode().is_no_tree());
-                            let diff_change =
-                                DiffChange::new_with_content(&change, &mut diff_cache, &repo);
-                            insertions += diff_change.insertions;
-                            removals += diff_change.removals;
-                            diff_changes.push(diff_change);
-                            Ok::<_, Infallible>(Default::default())
-                        },
-                    );
-                }
+            if let Ok(mut changes) = current.changes() {
+                let _ = changes.for_each_to_obtain_tree_with_cache(
+                    &parent,
+                    &mut rewrite_cache,
+                    |change| {
+                        files_changed += usize::from(change.entry_mode().is_no_tree());
+                        let diff_change =
+                            DiffChange::new_with_content(&change, &mut diff_cache, &repo);
+                        insertions += diff_change.insertions;
+                        removals += diff_change.removals;
+                        diff_changes.push(diff_change);
+                        Ok::<_, Infallible>(Default::default())
+                    },
+                );
             }
         }
 
