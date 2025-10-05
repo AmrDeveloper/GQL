@@ -1,5 +1,13 @@
 # Change Log
 
+## Version 0.41.0 _(2025-10-05)_
+
+- Support postgresql style for defining number literal.
+  - `SELECT 0b_100_101, 0B_100_11001, 0o_273, 0O_755, 0x_42f, 0X_FFFF`
+- Support C-style block comments.
+- Support Unary plus operator.
+- Implement `cardinality` function for array.
+
 ## Version 0.40.0 _(2025-08-03)_
 
 - Extend the list of string representation of true & false state.
