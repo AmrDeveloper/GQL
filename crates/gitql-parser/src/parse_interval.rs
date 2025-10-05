@@ -37,6 +37,8 @@ pub(crate) fn parse_interval_expression(
     Ok(Box::new(IntervalExpr::new(interval)))
 }
 
+/// Parse string intl Interval expression.
+/// Ref: https://www.postgresql.org/docs/current/datatype-datetime.html#DATATYPE-INTERVAL-INPUT
 fn parse_interval_literal(
     interval_str: &str,
     location: SourceLocation,
@@ -54,7 +56,8 @@ fn parse_interval_literal(
     let mut has_years = false;
     let mut has_months = false;
     let mut has_days = false;
-    let mut has_hours = false;
+    let mut has_any_time_part = false;
+    let mut has_hours: bool = false;
     let mut has_minutes = false;
     let mut has_seconds = false;
 
@@ -79,24 +82,34 @@ fn parse_interval_literal(
             }
 
             // Parse the unit
-            let maybe_unit = tokens[position];
-            if matches!(maybe_unit, "year" | "years") {
+            let mut maybe_unit = tokens[position];
+            let unit_lower = &maybe_unit.to_lowercase();
+            maybe_unit = &unit_lower.as_str();
+
+            if matches!(maybe_unit, "y" | "year" | "years") {
                 check_interval_value_and_unit(&mut has_years, value, maybe_unit, location)?;
                 interval.years = value;
                 position += 1;
                 continue;
             }
 
-            if matches!(maybe_unit, "mon" | "mons" | "months") {
+            if matches!(maybe_unit, "m" | "mon" | "mons" | "months") {
                 check_interval_value_and_unit(&mut has_months, value, maybe_unit, location)?;
                 interval.months = value;
                 position += 1;
                 continue;
             }
 
-            if matches!(maybe_unit, "day" | "days") {
+            if matches!(maybe_unit, "d" | "day" | "days") {
                 check_interval_value_and_unit(&mut has_days, value, maybe_unit, location)?;
                 interval.days = value;
+                position += 1;
+                continue;
+            }
+
+            if matches!(maybe_unit, "h" | "hour" | "hours") {
+                check_interval_value_and_unit(&mut has_any_time_part, value, maybe_unit, location)?;
+                interval.hours = value;
                 position += 1;
                 continue;
             }
@@ -113,6 +126,14 @@ fn parse_interval_literal(
 
         // Parse Seconds, Minutes or Hours
         if token.contains(':') {
+            if has_any_time_part {
+                return Err(
+                    Diagnostic::error("You can't have time value twice in same interval")
+                        .with_location(location)
+                        .as_boxed(),
+                );
+            }
+
             let time_parts: Vec<&str> = token.split(':').collect();
             if time_parts.len() != 3 && time_parts.len() != 2 {
                 return Err(Diagnostic::error("Invalid input syntax for type interval")
@@ -207,4 +228,31 @@ fn check_interval_value_and_unit(
     ))
     .with_location(location)
     .as_boxed())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn valid_hours() {
+        let inputs = ["1 h", "1 hour", "1 hours", "1:00:00"];
+        for input in inputs {
+            let parse_result = parse_interval_literal(input, SourceLocation::default());
+            assert!(parse_result.is_ok());
+
+            if let Ok(interval) = parse_result {
+                assert_eq!(interval.hours, 1);
+            }
+        }
+    }
+
+    #[test]
+    fn invalid_time() {
+        let inputs = ["1 h 1:00:00", "1 h 1 h"];
+        for input in inputs {
+            let parse_result = parse_interval_literal(input, SourceLocation::default());
+            assert!(parse_result.is_err());
+        }
+    }
 }

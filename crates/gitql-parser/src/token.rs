@@ -356,7 +356,7 @@ impl Display for TokenKind {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Default, Copy, Clone)]
 pub struct SourceLocation {
     pub line_start: u32,
     pub line_end: u32,
