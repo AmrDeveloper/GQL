@@ -41,6 +41,7 @@ SELECT LEN("Git Query Language")
 SELECT "One" IN ("One", "Two", "Three")
 SELECT "Git Query Language" LIKE "%Query%"
 SELECT INTERVAL '1 year 2 mons 3 days 04:05:06.789'
+SELECT INTERVAL '1 millennium 2 centuries 1 decade ago'
 
 SET @arr = [1, 2, 3];
 SELECT [[1, 2, 3], [4, 5, 6], [7, 8, 9]];

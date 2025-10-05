@@ -7,7 +7,7 @@ use std::ops::Mul;
 const INTERVAL_MAX_VALUE_I: i64 = 170_000_000;
 const INTERVAL_MAX_VALUE_F: f64 = 170_000_000.0;
 
-#[derive(Default, PartialEq, Clone)]
+#[derive(Default, Debug, PartialEq, Clone)]
 pub struct Interval {
     pub years: i64,
     pub months: i64,
@@ -109,9 +109,18 @@ impl Display for Interval {
             ));
         }
 
-        let (hours, minutes, seconds) = (self.hours, self.minutes, self.seconds);
+        let (mut hours, mut minutes, mut seconds) = (self.hours, self.minutes, self.seconds);
         if hours != 0 || minutes != 0 || seconds != 0f64 {
-            parts.push(format!("{hours:02}:{minutes:02}:{seconds:02}"));
+            let has_minus_sign =
+                hours.is_negative() || minutes.is_negative() || seconds.is_sign_negative();
+            if has_minus_sign {
+                hours = hours.abs();
+                minutes = minutes.abs();
+                seconds = seconds.abs();
+                parts.push(format!("-{hours:02}:{minutes:02}:{seconds:02}"));
+            } else {
+                parts.push(format!("{hours:02}:{minutes:02}:{seconds:02}"));
+            }
         }
 
         if parts.is_empty() {
