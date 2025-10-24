@@ -238,7 +238,7 @@ fn select_branches(
             }
 
             if column_name == "updated" {
-                if let Ok(top_commit_id) = branch.peel_to_id_in_place() {
+                if let Ok(top_commit_id) = branch.peel_to_id() {
                     let walker = top_commit_id.ancestors().all().unwrap();
                     if let Some(commit_info) = walker.into_iter().next() {
                         let commit_info = commit_info.unwrap();
