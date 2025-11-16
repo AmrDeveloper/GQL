@@ -37,6 +37,7 @@ fn levenshtein_distance(s1: &str, s2: &str) -> usize {
         vector[0] = i;
     }
 
+    #[allow(clippy::needless_range_loop)]
     for j in 0..vec12_len {
         matrix[0][j] = j;
     }
