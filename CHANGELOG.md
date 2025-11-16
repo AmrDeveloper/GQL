@@ -1,5 +1,10 @@
 # Change Log
 
+## Version 0.42.0 _(2025-11-16)_
+
+- Support postgresql syntax of intervals.
+- Migrate to Gix 0.74.1.
+
 ## Version 0.41.0 _(2025-10-05)_
 
 - Support postgresql style for defining number literal.

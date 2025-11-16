@@ -1,7 +1,7 @@
 [package]
 name = "gitql-cli"
 authors = ["AmrDeveloper"]
-version = "0.41.0"
+version = "0.42.0"
 edition = "2021"
 description = "GitQL Command line interface (CLI) components"
 repository = "https://github.com/amrdeveloper/gql/tree/main/crates/gitql-cli"
