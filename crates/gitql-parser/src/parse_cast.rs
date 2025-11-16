@@ -84,6 +84,10 @@ fn cast_expression_or_error(
 
     // Check if it's supported to cast this value to result type, just return CastExpr
     let value_type: Box<dyn DataType> = expr.expr_type();
+    if value_type.equals(&target_type) {
+        return Ok(expr);
+    }
+
     let value_expected_types = value_type.can_perform_explicit_cast_op_to();
     if value_expected_types.contains(&target_type) {
         return Ok(Box::new(CastExpr {
