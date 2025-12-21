@@ -5,6 +5,7 @@ use gitql_ast::types::date::DateType;
 use gitql_ast::types::datetime::DateTimeType;
 use gitql_ast::types::float::FloatType;
 use gitql_ast::types::integer::IntType;
+use gitql_ast::types::interval::IntervalType;
 use gitql_ast::types::text::TextType;
 use gitql_ast::types::time::TimeType;
 use gitql_ast::types::DataType;
@@ -78,6 +79,7 @@ fn register_primitives_types(types_map: &mut HashMap<&'static str, Box<dyn DataT
     types_map.insert("date", Box::new(DateType));
     types_map.insert("time", Box::new(TimeType));
     types_map.insert("datetime", Box::new(DateTimeType));
+    types_map.insert("interval", Box::new(IntervalType));
 
     // SQL Type Aliases
     types_map.insert("int", Box::new(IntType));

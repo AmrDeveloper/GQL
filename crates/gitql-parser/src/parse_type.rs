@@ -62,11 +62,11 @@ fn parse_primitive_type(
     let type_name_token = consume_conditional_token_or_errors(
         tokens,
         position,
-        |token| matches!(token.kind, TokenKind::Symbol(_)),
+        |token| matches!(token.kind, TokenKind::Symbol(_) | TokenKind::Interval),
         "Expect Symbol to represent Type name",
     )?;
 
-    let type_literal = type_name_token.to_string();
+    let type_literal = type_name_token.to_string().to_lowercase();
     if let Some(data_type) = env.types_table.lookup(type_literal.as_str()) {
         return Ok(data_type);
     }
