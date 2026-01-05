@@ -1,6 +1,6 @@
 ## Install from Package managers
 
-## Cargo.io
+### Cargo.io
 
 ```sh
 cargo install gitql
@@ -8,32 +8,22 @@ cargo install gitql
 
 > Note that from version `0.10.0` onward installing from Cargo requires `Cmake` to be installed so it can build the dependencies.
 
-## Winget on Windows
+### Winget on Windows
 
 ```sh
 winget install gitql
 ```
 
-## Scoop on Windows
+### Scoop on Windows
 
 ```sh
 scoop install gitql
 ```
 
-## Homebrew on MacOS and Linux
+### Homebrew on MacOS and Linux
 
 ```sh
 brew install gql
-```
-
-# On Single repository
-gitql <repository_path>
-
-# On multi repositories
-gitql --repo <repository_path> <repository_path> ...etc
-
-# Or
-gitql -r <repository_path> <repository_path> ...etc
 ```
 
 ## Download Binaries
@@ -54,7 +44,20 @@ cargo run -- --repo <repository_path> <repository_path> ...etc
 cargo run -- -r <repository_path> <repository_path> ...etc
 ```
 
-# Command line arguments
+## Samples for using command line
+
+```sh
+# On Single repository
+gitql <repository_path>
+
+# On multi repositories
+gitql --repo <repository_path> <repository_path> ...etc
+
+# Or
+gitql -r <repository_path> <repository_path> ...etc
+```
+
+## Command line arguments
 
 ```
 Usage: gitql [OPTIONS]
