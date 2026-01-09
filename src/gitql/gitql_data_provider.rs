@@ -132,25 +132,25 @@ fn select_commits(repo: &gix::Repository, selected_columns: &[String]) -> Result
             }
 
             if column_name == "author_name" {
-                let author_name = commit.author().name.to_string();
+                let author_name = commit.author().unwrap().name.to_string();
                 values.push(Box::new(TextValue::new(author_name)));
                 continue;
             }
 
             if column_name == "author_email" {
-                let author_email = commit.author().email.to_string();
+                let author_email = commit.author().unwrap().email.to_string();
                 values.push(Box::new(TextValue::new(author_email)));
                 continue;
             }
 
             if column_name == "committer_name" {
-                let committer_name = commit.committer().name.to_string();
+                let committer_name = commit.committer().unwrap().name.to_string();
                 values.push(Box::new(TextValue::new(committer_name)));
                 continue;
             }
 
             if column_name == "committer_email" {
-                let committer_email = commit.committer().email.to_string();
+                let committer_email = commit.committer().unwrap().email.to_string();
                 values.push(Box::new(TextValue::new(committer_email)));
                 continue;
             }
@@ -169,7 +169,7 @@ fn select_commits(repo: &gix::Repository, selected_columns: &[String]) -> Result
             if column_name == "datetime" {
                 let time_stamp = commit_info
                     .commit_time
-                    .unwrap_or_else(|| commit.time().seconds);
+                    .unwrap_or_else(|| commit.time().unwrap().seconds);
                 values.push(Box::new(DateTimeValue::new(time_stamp)));
                 continue;
             }
@@ -249,7 +249,7 @@ fn select_branches(
 
                         let commit = repo.find_object(commit_info.id).unwrap().into_commit();
                         let commit = commit.decode().unwrap();
-                        values.push(Box::new(DateTimeValue::new(commit.time().seconds)));
+                        values.push(Box::new(DateTimeValue::new(commit.time().unwrap().seconds)));
                         continue;
                     }
                 }
@@ -350,13 +350,13 @@ fn select_diffs(repo: &gix::Repository, selected_columns: &[String]) -> Result<V
             }
 
             if column_name == "author_name" {
-                let author_name = commit_ref.author().name.to_string();
+                let author_name = commit_ref.author().unwrap().name.to_string();
                 values.push(Box::new(TextValue::new(author_name)));
                 continue;
             }
 
             if column_name == "author_email" {
-                let author_email = commit_ref.author().email.to_string();
+                let author_email = commit_ref.author().unwrap().email.to_string();
                 values.push(Box::new(TextValue::new(author_email)));
                 continue;
             }
@@ -364,7 +364,7 @@ fn select_diffs(repo: &gix::Repository, selected_columns: &[String]) -> Result<V
             if column_name == "datetime" {
                 let time_stamp = commit_info
                     .commit_time
-                    .unwrap_or_else(|| commit_ref.time().seconds);
+                    .unwrap_or_else(|| commit_ref.time().unwrap().seconds);
                 values.push(Box::new(DateTimeValue::new(time_stamp)));
                 continue;
             }
@@ -479,7 +479,7 @@ fn select_diffs_changes(
                             if column_name == "datetime" {
                                 let time_stamp = commit_info
                                     .commit_time
-                                    .unwrap_or_else(|| commit_ref.time().seconds);
+                                    .unwrap_or_else(|| commit_ref.time().unwrap().seconds);
                                 values.push(Box::new(DateTimeValue::new(time_stamp)));
                                 continue;
                             }
