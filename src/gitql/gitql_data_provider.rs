@@ -132,26 +132,38 @@ fn select_commits(repo: &gix::Repository, selected_columns: &[String]) -> Result
             }
 
             if column_name == "author_name" {
-                let author_name = commit.author().unwrap().name.to_string();
-                values.push(Box::new(TextValue::new(author_name)));
+                if let Ok(commit_author) = commit.author() {
+                    values.push(Box::new(TextValue::new(commit_author.name.to_string())));
+                    continue;
+                }
+                values.push(Box::new(TextValue::empty()));
                 continue;
             }
 
             if column_name == "author_email" {
-                let author_email = commit.author().unwrap().email.to_string();
-                values.push(Box::new(TextValue::new(author_email)));
+                if let Ok(commit_author) = commit.author() {
+                    values.push(Box::new(TextValue::new(commit_author.email.to_string())));
+                    continue;
+                }
+                values.push(Box::new(TextValue::empty()));
                 continue;
             }
 
             if column_name == "committer_name" {
-                let committer_name = commit.committer().unwrap().name.to_string();
-                values.push(Box::new(TextValue::new(committer_name)));
+                if let Ok(commit_committer) = commit.committer() {
+                    values.push(Box::new(TextValue::new(commit_committer.name.to_string())));
+                    continue;
+                }
+                values.push(Box::new(TextValue::empty()));
                 continue;
             }
 
             if column_name == "committer_email" {
-                let committer_email = commit.committer().unwrap().email.to_string();
-                values.push(Box::new(TextValue::new(committer_email)));
+                if let Ok(commit_committer) = commit.committer() {
+                    values.push(Box::new(TextValue::new(commit_committer.email.to_string())));
+                    continue;
+                }
+                values.push(Box::new(TextValue::empty()));
                 continue;
             }
 
@@ -350,14 +362,20 @@ fn select_diffs(repo: &gix::Repository, selected_columns: &[String]) -> Result<V
             }
 
             if column_name == "author_name" {
-                let author_name = commit_ref.author().unwrap().name.to_string();
-                values.push(Box::new(TextValue::new(author_name)));
+                if let Ok(commit_author) = commit.author() {
+                    values.push(Box::new(TextValue::new(commit_author.name.to_string())));
+                    continue;
+                }
+                values.push(Box::new(TextValue::empty()));
                 continue;
             }
 
             if column_name == "author_email" {
-                let author_email = commit_ref.author().unwrap().email.to_string();
-                values.push(Box::new(TextValue::new(author_email)));
+                if let Ok(commit_author) = commit.author() {
+                    values.push(Box::new(TextValue::new(commit_author.email.to_string())));
+                    continue;
+                }
+                values.push(Box::new(TextValue::empty()));
                 continue;
             }
 
