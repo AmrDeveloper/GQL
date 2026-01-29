@@ -349,7 +349,7 @@ fn select_diffs(repo: &gix::Repository, selected_columns: &[String]) -> Result<V
                         insertions += diff_change.insertions;
                         removals += diff_change.removals;
                         diff_changes.push(diff_change);
-                        Ok::<_, Infallible>(Default::default())
+                        Ok::<_, Infallible>(std::ops::ControlFlow::Continue(()))
                     },
                 );
             }
@@ -513,7 +513,7 @@ fn select_diffs_changes(
                         let row = Row { values };
                         rows.push(row);
 
-                        Ok::<_, Infallible>(Default::default())
+                        Ok::<_, Infallible>(std::ops::ControlFlow::Continue(()))
                     },
                 );
             }
