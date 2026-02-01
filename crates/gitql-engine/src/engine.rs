@@ -124,26 +124,28 @@ fn evaluate_select_query(
     );
 
     let number_of_groups = gitql_object.groups.len();
-    let main_group: &mut Group = &mut gitql_object.groups[0];
+    if number_of_groups > 0 {
+        let main_group: &mut Group = &mut gitql_object.groups[0];
 
-    // If there are many groups that mean group by is executed before.
-    // must merge each group into only one element
-    if number_of_groups > 1 {
-        for group in gitql_object.groups.iter_mut() {
-            if group.len() > 1 {
-                group.rows.drain(1..);
+        // If there are many groups that mean group by is executed before.
+        // must merge each group into only one element
+        if number_of_groups > 1 {
+            for group in gitql_object.groups.iter_mut() {
+                if group.len() > 1 {
+                    group.rows.drain(1..);
+                }
             }
+            gitql_object.flat();
         }
-        gitql_object.flat();
-    }
-    // If it a single group but it select only aggregations function,
-    // should return only first element in the group
-    else if number_of_groups == 1
-        && !select_query.has_group_by_statement
-        && select_query.has_aggregation_function
-        && main_group.len() > 1
-    {
-        main_group.rows.drain(1..);
+        // If it a single group but it select only aggregations function,
+        // should return only first element in the group
+        else if number_of_groups == 1
+            && !select_query.has_group_by_statement
+            && select_query.has_aggregation_function
+            && main_group.len() > 1
+        {
+            main_group.rows.drain(1..);
+        }
     }
 
     // Into statement must be executed last after flatted and remove hidden selections
