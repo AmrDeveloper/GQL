@@ -71,4 +71,11 @@ impl Value for RowValue {
         }
         Ok(Box::new(BoolValue::new(self.equals(other))))
     }
+
+    fn bang_eq_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+        if other.as_any().downcast_ref::<RowValue>().is_none() {
+            return Err("Unexpected type to perform `!=` with".to_string());
+        }
+        Ok(Box::new(BoolValue::new(!self.equals(other))))
+    }
 }
