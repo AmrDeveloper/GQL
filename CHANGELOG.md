@@ -1,5 +1,14 @@
 # Change Log
 
+## Version 0.43.0 _(2026-03-09)_
+
+- Support `=` operator between Raw expressions.
+- Support `!=` operator between Raw expressions.
+- Migrate to Gix 0.80.0.
+- Fix out of index panic when groups length is zero.
+- Handling optional commit author and committer.
+- Add interval to supported types.
+
 ## Version 0.42.0 _(2025-11-16)_
 
 - Support postgresql syntax of intervals.
