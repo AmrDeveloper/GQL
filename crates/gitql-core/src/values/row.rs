@@ -4,6 +4,8 @@ use std::cmp::Ordering;
 use gitql_ast::types::row::RowType;
 use gitql_ast::types::DataType;
 
+use crate::values::boolean::BoolValue;
+
 use super::base::Value;
 
 #[derive(Clone)]
@@ -61,5 +63,12 @@ impl Value for RowValue {
 
     fn as_any(&self) -> &dyn Any {
         self
+    }
+
+    fn eq_op(&self, other: &Box<dyn Value>) -> Result<Box<dyn Value>, String> {
+        if other.as_any().downcast_ref::<RowValue>().is_none() {
+            return Err("Unexpected type to perform `=` with".to_string());
+        }
+        Ok(Box::new(BoolValue::new(self.equals(other))))
     }
 }

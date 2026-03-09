@@ -55,4 +55,8 @@ impl DataType for RowType {
     fn as_any(&self) -> &dyn Any {
         self
     }
+
+    fn can_perform_eq_op_with(&self) -> Vec<Box<dyn DataType>> {
+        vec![Box::new(self.clone())]
+    }
 }
