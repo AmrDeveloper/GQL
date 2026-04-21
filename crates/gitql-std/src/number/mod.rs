@@ -16,7 +16,7 @@ use gitql_core::values::Value;
 use crate::meta_types::first_element_type;
 
 use rand::rngs::StdRng;
-use rand::Rng;
+use rand::RngExt;
 use rand::SeedableRng;
 
 #[inline(always)]
